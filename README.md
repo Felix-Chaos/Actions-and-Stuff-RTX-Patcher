@@ -27,7 +27,7 @@ Because this is a modification of an existing pack, the `.mcpack` is **NOT distr
 
 ## Requirements
 
-- BetterRTX (must be installed)  
+- [BetterRTX](https://bedrock.graphics/) (must be installed)
 - A copy of **Actions & Stuff** from the Minecraft Marketplace or `.zip`/`.mcpack` file
 
 ---
@@ -81,6 +81,15 @@ Discord ID: **498173069517651998**
 Discord Nickname: Demente Parker
 Discord Name: demente_parker
 
+
+---
+
+## Tools Used
+
+This project utilizes the following open-source tools:
+
+-   [**xdelta3**](https://github.com/jmacd/xdelta): For creating and applying binary patches.
+-   [**Blockbench**](https://www.blockbench.net/): For editing 3D models.
 
 ---
 
