@@ -41,6 +41,8 @@ Because this is a modification of an existing pack, the `.mcpack` is **NOT distr
 5. Install and enable **only** the patched pack in Minecraft, placing it at the very top of your resource pack list.  
 6. Close the patcher and confirm the `.exe` process is no longer running in the background.
 
+For detailed instructions and a guide for patch creators, please see the [New RTX Patcher Documentation](./New%20AnSRTXPatcher/README.md).
+
 ---
 
 ## Downloads
