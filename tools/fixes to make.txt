@@ -1,2 +1,0 @@
-bee eye z fighting
-any rtx on top causes issues with enity.player.json not fixable
