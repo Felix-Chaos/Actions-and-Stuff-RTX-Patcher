@@ -222,8 +222,8 @@ def patch_from_marketplace(root):
     frame.pack()
     center_window(top)
 
-    target_files = 16661
-    target_dirs = 301
+    target_files = 12951 # Old 1.4 Value: 16661
+    target_dirs = 161 # Old 1.4 Value: 301
 
     resource_paths = [
         os.path.expandvars(
