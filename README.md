@@ -40,7 +40,7 @@ Because this is a modification of an existing pack, the `.mcpack` is **NOT distr
 | Name | Description | Link | Status / Compatibility |
 |------|--------------|------|-------------------------|
 | **AnSRTXPatcher.exe** | Main patcher executable for *A&S RTX 1.4* (and soon 1.6) | [A&S RTX Patcher](./A&S%20RTX%20Patcher) | ✅ Working (1.4) / ⚙️ Update for 1.6 in progress |
-| **Universal A&S Patcher** | Universal patcher for *A&S versions 1.3 – 1.6* (when patch files are available) | [Universal A&S RTX Patcher](./Universial%20A&S%20RTX%20Patcher) | 🟡 Partially functional / depends on available patch files |
+| **Universal A&S Patcher** | Universal patcher for *A&S versions 1.3 – 1.6* (when patch files are available) | [Universal A&S RTX Patcher](./Universial%20A&S%20RTX%20Patcher) | ✅/🟡 You need a working Patch file, you will find them in this Repo. (only 1.4 yet) |
 
 
 ## Requirements
