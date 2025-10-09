@@ -87,8 +87,7 @@ You need two "original" files to create patches against. You must generate these
     **Important:** This step is necessary because xdelta3 requires the source file to be a perfect, byte-for-byte match. Different zip programs create slightly different archives. This patcher uses **deterministic compression** (fixing file order and timestamps) to guarantee that the zip files it creates are always identical, allowing the patches to apply correctly.
 
 
-    Alternatively you can use a deterministic compression script like the one used by this patcher. [Get the Deterministic Compression Script]([https://www.google.com/search?q=https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/tree/main/tools/Folder%2520Zip%2520(Determenistic)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/blob/8e45bcfe37fb8c3ab6bf65ea1baf3c1b37bcb082/tools/Folder%20Zip%20(Determenistic)/deterministic_zipper.py))
-
+    Alternatively you can use a deterministic compression script like the one used by this patcher. [Get the Deterministic Compression Script](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/blob/main/tools/Folder%20Zip%20Determenistic/deterministic_zipper.py)
 
 2. Create Your Modified Pack:
 
