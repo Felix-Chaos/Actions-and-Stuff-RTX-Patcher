@@ -39,7 +39,7 @@ Because this is a modification of an existing pack, the `.mcpack` is **NOT distr
 
 | Name | Description | Link | Status / Compatibility |
 |------|--------------|------|-------------------------|
-| **AnSRTXPatcher.exe** | Main patcher executable for *A&S RTX 1.4* (and soon 1.6) | [AnSRTXPatcher.exe](./AnSRTXPatcher.exe) | ✅ Working (1.4) / ⚙️ Update for 1.6 in progress |
+| **AnSRTXPatcher.exe** | Main patcher executable for *A&S RTX 1.4* (and soon 1.6) | [AnSRTXPatcher.exe]([./AnSRTXPatcher.exe](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/tree/main/A%26S%20Patcher)) | ✅ Working (1.4) / ⚙️ Update for 1.6 in progress |
 | **Universal A&S Patcher** | Universal patcher for *A&S versions 1.3 – 1.6* (when patch files are available) | [Universal A&S Patcher](./Universial%20A&S%20Patcher) | 🟡 Partially functional / depends on available patch files |
 
 
