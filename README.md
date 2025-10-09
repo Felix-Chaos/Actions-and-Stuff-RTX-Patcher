@@ -59,13 +59,13 @@ Because this is a modification of an existing pack, the `.mcpack` is **NOT distr
 5. Install and enable **only** the patched pack in Minecraft, placing it at the very top of your resource pack list.  
 6. Close the patcher and confirm the `.exe` process is no longer running in the background.
 
-For detailed instructions and a guide for patch creators, please see the [New RTX Patcher Documentation](./New%20AnSRTXPatcher/README.md).
+For detailed instructions and a guide for patch creators, please see the [Universal RTX Patcher Documentation](./Universial%20A&S%20RTX%20Patcher/README.md).
 
 ---
 
 ## Downloads
 
-- Latest stable version: [**AnSRTXPatcher v1.13**](https://gofile.io/d/eXvdte)  
+- Latest stable version: [**A&S RTX Patcher v1.13**](https://gofile.io/d/eXvdte)  
 - Older versions for legacy packs:  
   - v1.07 for A&S 1.3  
   - v1.08 for A&S 1.3.1  
