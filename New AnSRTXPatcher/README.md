@@ -20,7 +20,8 @@ This tool allows you to patch "Actions & Stuff" to be compatible with RTX. It pr
 
 For a visual guide on how to use the patcher, watch this video:
 
-[Watch the Tutorial](https://www.google.com/search?q=https://cdn.discordapp.com/attachments/1425032971542462495/1425580233225928894/Desktop_2025.10.08_-_14.26.01.06.mp4?ex%3D68e81a8d%26is%3D68e6c90d%26hm%3De1d07a26b5bb8e1da5e3442988ae7cc93bb84c7fc1f94564f9e9d190a98a9fb8%26)
+https://github.com/user-attachments/assets/9918b1bc-0f5a-4d80-b63c-e84cc5ffade6
+
 
 
 ### Patching from the Marketplace
