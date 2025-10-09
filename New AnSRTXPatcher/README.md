@@ -97,29 +97,29 @@ Unzip one of the original packs, make your RTX modifications, and re-zip the con
 
 Use the xdelta3 command-line tool to create a patch file for each version.
 
-# For patching the Marketplace version \
-`xdelta3 -e -s "Actions & Stuff encrypted.zip" MyModifiedPack.zip "Actions & Stuff encrypted.zip.vcdiff"` \
- \
-# For patching a decrypted .zip/.mcpack \
-`xdelta3 -e -s "Actions & Stuff decrypted.zip" MyModifiedPack.zip "Actions & Stuff decrypted.zip.vcdiff"` \
+# For patching the Marketplace version 
+`xdelta3 -e -s "Actions & Stuff encrypted.zip" MyModifiedPack.zip "Actions & Stuff encrypted.zip.vcdiff"` 
+ 
+# For patching a decrypted .zip/.mcpack 
+`xdelta3 -e -s "Actions & Stuff decrypted.zip" MyModifiedPack.zip "Actions & Stuff decrypted.zip.vcdiff"` 
 
 
 4. Configure patch_config.json:
 
 Create a patch_config.json file. This file tells the patcher key information. Important: Use forward slashes / for paths.
 ```
-{ \
-    "paths": { \
-        "minecraft_uwp": "%LocalAppData%/Packages/Microsoft.MinecraftUWP_8wekyb3d8bbwe/LocalState", \
-        "minecraft_beta": "%LocalAppData%/Packages/Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe/LocalState" \
-    }, \
-    "marketplace_pack_stats": { \
-        "v1": { \
-            "files": 16661, \
-            "dirs": 301 \
-        } \
-    } \
-} \
+{ 
+    "paths": { 
+        "minecraft_uwp": "%LocalAppData%/Packages/Microsoft.MinecraftUWP_8wekyb3d8bbwe/LocalState", 
+        "minecraft_beta": "%LocalAppData%/Packages/Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe/LocalState" 
+    }, 
+    "marketplace_pack_stats": { 
+        "v1": { 
+            "files": 16661, 
+            "dirs": 301 
+        } 
+    } 
+} 
 ```
 
 
