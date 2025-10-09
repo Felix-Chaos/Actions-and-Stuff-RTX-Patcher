@@ -24,6 +24,24 @@ Because this is a modification of an existing pack, the `.mcpack` is **NOT distr
 - Builds the enhanced version from your official version installed from the Minecraft Marketplace or from a provided `.zip` or `.mcpack` file.
 
 ---
+## 🧩 Project Progress
+
+| Task | Status |
+|------|--------|
+| 🚀 **Project Start** | ✅ Finished |
+| 📂 **Updated Files and Folders** | ✅ Finished |
+| 🔍 **Updated Search Criteria in Script for 1.6** | ✅ Finished |
+| 🧭 **Updating Paths / Removing outdated paths** | 🟡 Working on it |
+| 🧱 **Creating Patch files** | ⏳ Soon |
+| 📦 **Releasing the Patcher** | ⏳ Soon |
+---
+## 🔗 Repository Overview
+
+| Name | Description | Link | Status / Compatibility |
+|------|--------------|------|-------------------------|
+| **AnSRTXPatcher.exe** | Main patcher executable for *A&S RTX 1.4* (and soon 1.6) | [AnSRTXPatcher.exe](./AnSRTXPatcher.exe) | ✅ Working (1.4) / ⚙️ Update for 1.6 in progress |
+| **Universal A&S Patcher** | Universal patcher for *A&S versions 1.3 – 1.6* (when patch files are available) | [Universal A&S Patcher](./Universial%20A&S%20Patcher) | 🟡 Partially functional / depends on available patch files |
+
 
 ## Requirements
 
