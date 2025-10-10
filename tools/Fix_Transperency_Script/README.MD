@@ -2,7 +2,7 @@
 
 This tool is a simple utility designed to clean up transparency in image files (`.tga` and `.png`). 
 Its Inteded to be used after Photoshop have been used to clean up Textures from transperency (as shown in the video) to set the pixels to the right color fromat.
-
+https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/blob/8e68e2d68661bc1166ad796eabc8e2c75b48cb68/tools/Fix_Transperency_Script/Desktop_2025.10.10_-_15.40.41.12.mp4
 
 ## Features
 
