@@ -1,3 +1,8 @@
+#This is a Script that should be run ater editing the Textures with photoshop to have 0 transparency
+#It will remove any transparency from the image and save it as a new file
+#exe will be added later
+#
+
 import locale
 
 try:
@@ -222,8 +227,8 @@ def patch_from_marketplace(root):
     frame.pack()
     center_window(top)
 
-    target_files = 12951 # Old 1.4 Value: 16661
-    target_dirs = 161 # Old 1.4 Value: 301
+    target_files = 12951 #! Old 1.4 Value: 16661
+    target_dirs = 161 #! Old 1.4 Value: 301
 
     resource_paths = [
         os.path.expandvars(
@@ -301,11 +306,12 @@ def patch_from_marketplace(root):
         except Exception as e:
             messagebox.showerror("Error", f"Couldn't read zip file size:\n{e}")
             return
-
-        if file_size == 36014510:
+        #! Old 1.4 Value=>36014510
+        #Todo: Remove if statement if it is not needed anymore
+        if file_size == 31510910: 
             vcdiff_path_to_use = resource_path(os.path.join("xdelta3", "vcdiff", "Actions & Stuff encrypted.zip.vcdiff"))
         else:
-            vcdiff_path_to_use = resource_path(os.path.join("xdelta3", "vcdiff", "Actions & Stuff encrypted 2.zip.vcdiff"))
+            messagebox.showerror("Error", f"No file size match for encrypted.zip ({file_size} bytes). Cannot determine correct patch.")
 
         if not os.path.exists(vcdiff_path_to_use):
             messagebox.showerror("Error", f"Missing patch file:\n{vcdiff_path_to_use}")
