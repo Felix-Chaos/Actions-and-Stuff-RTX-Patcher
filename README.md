@@ -1,4 +1,5 @@
 # Actions & Stuff: Enhanced for RTX (Community Patcher)
+<img width="804" height="264" alt="generated-image (1)" src="https://github.com/user-attachments/assets/c1d10c7b-2f6b-40f7-bb27-fc03d0007c01" />
 
 ---
 
