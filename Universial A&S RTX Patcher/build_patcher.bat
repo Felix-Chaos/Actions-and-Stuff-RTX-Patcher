@@ -1,98 +1,83 @@
 @ECHO OFF
-SETLOCAL EnableExtensions
 TITLE AnS RTX Patcher Build Script
 
-REM --- CONFIGURATION ---
-SET SCRIPT_NAME=AnS_RTX_Universial_Patcher.py
-SET ICON_FILE=AnSPatchericon.ico
-SET PATCHER_EXEC=xdelta3\exec\xdelta3_x86_64_win.exe
-SET MANIFEST_FILE=xdelta3\manifest\manifest.json
+:: --- Configuration ---
+:: !!! IMPORTANT: Change this to the name of your Python script !!!
+SET SCRIPT_NAME=AnSRTXPatcher.py
 
-REM --- PRE-CHECK: PYTHON ---
-WHERE python >NUL 2>NUL
-IF ERRORLEVEL 1 (
-    ECHO ERROR: Python is not installed or not in PATH!
-    ECHO Please install Python from https://www.python.org/downloads/
-    PAUSE
-    EXIT /B 1
-)
+:: --- Script Start ---
+CLS
+ECHO ###################################
+ECHO # AnS RTX Patcher Build Script    #
+ECHO ###################################
+ECHO.
 
-REM --- PRE-CHECK: PIP ---
-python -m pip --version >NUL 2>NUL
-IF ERRORLEVEL 1 (
-    ECHO Pip is not installed. Trying to install...
-    python -m ensurepip --upgrade
-    IF ERRORLEVEL 1 (
-        ECHO ERROR: Pip could not be installed.
-        PAUSE
-        EXIT /B 1
-    )
-)
-
-REM --- PRE-CHECK: PYINSTALLER ---
-python -m pip show pyinstaller >NUL 2>NUL
-IF ERRORLEVEL 1 (
-    ECHO PyInstaller not found. Installing...
-    python -m pip install --upgrade pip
-    python -m pip install pyinstaller
-    IF ERRORLEVEL 1 (
-        ECHO ERROR: Failed to install PyInstaller!
-        PAUSE
-        EXIT /B 1
-    )
-)
-
-REM --- PRE-CHECK: FILE STRUCTURE ---
+:: --- Pre-build Checks ---
+ECHO Checking file structure...
 IF NOT EXIST "%SCRIPT_NAME%" (
     ECHO ERROR: Script '%SCRIPT_NAME%' not found!
-    PAUSE
-    EXIT /B 1
+    GOTO :error
 )
-IF NOT EXIST "%ICON_FILE%" (
-    ECHO ERROR: Icon file '%ICON_FILE%' not found!
-    PAUSE
-    EXIT /B 1
+IF NOT EXIST "AnSPatchericon.ico" (
+    ECHO ERROR: Icon file 'AnSPatchericon.ico' not found!
+    GOTO :error
 )
-IF NOT EXIST "%PATCHER_EXEC%" (
-    ECHO ERROR: Patcher '%PATCHER_EXEC%' not found!
-    PAUSE
-    EXIT /B 1
+IF NOT EXIST "xdelta3\exec\xdelta3_x86_64_win.exe" (
+    ECHO ERROR: Patcher 'xdelta3\exec\xdelta3_x86_64_win.exe' not found!
+    GOTO :error
 )
-IF NOT EXIST "%MANIFEST_FILE%" (
-    ECHO ERROR: Manifest '%MANIFEST_FILE%' not found!
-    PAUSE
-    EXIT /B 1
+IF NOT EXIST "xdelta3\manifest\manifest.json" (
+    ECHO ERROR: Manifest 'xdelta3\manifest\manifest.json' not found!
+    GOTO :error
 )
-
-ECHO All dependencies are present.
-ECHO Building standalone executable...
-
-REM --- BUILD ---
-python -m PyInstaller --onefile --windowed ^
---icon="%ICON_FILE%" ^
---add-data "xdelta3/exec;xdelta3/exec" ^
---add-data "xdelta3/manifest;xdelta3/manifest" ^
---add-data "%ICON_FILE%;." ^
-"%SCRIPT_NAME%"
-
-REM --- RESULT ---
-SET "EXE_FILE=dist\%SCRIPT_NAME:.py=.exe%"
-IF EXIST "%EXE_FILE%" (
-    ECHO Success! Your executable "%EXE_FILE%" was created.
-) ELSE (
-    ECHO ERROR: Build failed. Please check the output above for details.
-)
-
-REM --- OPTIONAL: CLEAN UP ---
-CHOICE /C YN /M "Do you want to clean up temporary build files (the 'build' folder and .spec file)?"
-IF ERRORLEVEL 1 (
-    ECHO Cleaning up...
-    IF EXIST "build" (RMDIR /S /Q build)
-    IF EXIST "%SCRIPT_NAME:.py=.spec%" (DEL "%SCRIPT_NAME:.py=.spec%")
-    ECHO Cleanup complete.
-)
-
-ECHO Done.
+ECHO File structure looks OK.
+ECHO.
+ECHO This script will build %SCRIPT_NAME% into a standalone .exe file.
+ECHO The final .exe will be located in a new 'dist' folder.
 PAUSE
 
-ENDLOCAL
+ECHO.
+ECHO --- Starting Build ---
+ECHO.
+
+:: Build command - call PyInstaller through Python launcher
+py -3.14 -m PyInstaller --onefile --windowed --icon="AnSPatchericon.ico" ^
+--add-data "xdelta3/exec;xdelta3/exec" ^
+--add-data "xdelta3/manifest;xdelta3/manifest" ^
+--add-data "AnSPatchericon.ico;." ^
+%SCRIPT_NAME%
+
+
+
+ECHO.
+ECHO --- Build Finished ---
+ECHO.
+
+IF EXIST "dist\%SCRIPT_NAME:.py=.exe%" (
+    ECHO SUCCESS: Your .exe file has been created in the 'dist' folder.
+) ELSE (
+    ECHO ERROR: The build process failed. Please check the output above for errors.
+)
+
+ECHO.
+CHOICE /C YN /M "Do you want to clean up temporary build files (build folder and .spec file)?"
+
+IF %ERRORLEVEL%==1 (
+    ECHO.
+    ECHO Cleaning up temporary files...
+    IF EXIST "build" ( RMDIR /S /Q build )
+    IF EXIST "%SCRIPT_NAME:.py=.spec%" ( DEL "%SCRIPT_NAME:.py=.spec%" )
+    ECHO Cleanup complete.
+)
+GOTO :end
+
+:error
+ECHO.
+ECHO Build failed due to missing files.
+ECHO Please make sure your folder structure is correct and all required files are present.
+ECHO.
+
+:end
+ECHO Build process finished.
+PAUSE
+
