@@ -1,10 +1,15 @@
 # A&S RTX Patcher
 
-This directory contains the primary patcher tool for **Actions & Stuff: Enhanced for RTX**. This tool is designed to apply community-made patches to your official copy of the "Actions & Stuff" resource pack, enabling RTX features and fixing visual issues.
+This directory contains the primary patcher tool for **Actions & Stuff: Patcher for RTX**. This tool is designed to apply community-made patches to your official copy of the "Actions & Stuff" resource pack, enabling RTX features and fixing visual issues.
 
-## ⚠️ Important Notice
+---
 
-This patcher is an early-stage community project and has not been fully polished for end-users. It is currently under active development to support future versions of the "Actions & Stuff" resource pack.
+## ⚠️ Important 
+
+This is a **community project** based on the original *Actions & Stuff* resource pack by Oreville Studios.  
+We have uploaded the original creator’s files to support community development and plan to enable support for **A&S 1.6** soon.
+You can find Stable versions at the Releases Tab.
+---
 
 ## Features
 
@@ -25,14 +30,14 @@ This patcher is an early-stage community project and has not been fully polished
 | 🚀 **Project Start** | ✅ Finished |
 | 📂 **Updated Files and Folders** | ✅ Finished |
 | 🔍 **Updated Search Criteria in Script for 1.6** | ✅ Finished |
-| 🧭 **Updating Paths / Removing outdated paths** | 🟡 Working on it |
-| 🧱 **Creating Patch files** | ⏳ Soon |
+| 🧭 **Updating Paths / Removing outdated paths** | ✅ Finished |
+| 🧱 **Creating Patch files** | 🟡/⏳ Soon |
 | 📦 **Releasing the Patcher** | ⏳ Soon |
 ---
 
 ## How to Use
 
-1.  **Run the Patcher**: Extract the contents of the release and run `AnSRTXPatcher.exe`.
+1.  **Run the Patcher**: Extract the contents of the release and run `AnSRTXPatcher.exe`.<sup><sub>The Name can Variate between versions</sub></sup>
 2.  **Choose a Patching Method**:
     -   **Patch from Marketplace**: The patcher will automatically locate your Marketplace installation of "Actions & Stuff".
     -   **Patch from .zip/.mcpack**: You will be prompted to select the `.zip` or `.mcpack` file you wish to patch.
@@ -44,8 +49,16 @@ This patcher is an early-stage community project and has not been fully polished
 ## Files in this Directory
 
 -   `AnSRTXPatcher.py`: The main Python script for the patcher.
--   `AnSRTXPatcher.spec`: The PyInstaller specification file used to build the executable.
 -   `AnSPatchericon.ico` / `AnSPatchericon.png`: Icons for the patcher.
 -   `build_patcher.bat`: A batch script to build the patcher from the source.
 -   `xdelta3/`: Contains the `xdelta3` tool used for applying binary patches.
 -   `build/`: This directory is created during the build process and contains temporary files.
+
+---
+
+## Disclaimer
+
+This patcher is provided by the community for personal use only.  
+It is a work in progress with no official endorsement. Use responsibly.
+
+---

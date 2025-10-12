@@ -28,7 +28,7 @@ https://github.com/user-attachments/assets/9918b1bc-0f5a-4d80-b63c-e84cc5ffade6
 
 
 
-1. **Launch the Patcher:** Open AnSRTXPatcher.exe.
+1. **Launch the Patcher:** Open AnSRTXPatcher.exe.<sup><sub>The Name can Variate between versions</sub></sup>
 2. **Select Patch File:** When prompted, select the .zip file provided by the patch creator. This file contains the necessary .vcdiff patches and configuration.
 3. **Main Menu:** From the main menu, click **Patch from Marketplace**.
 4. **Wait for Compression:** The patcher will search for your Minecraft installation and compress the necessary files. The UI will remain responsive, and a progress bar will show the status. This may take a minute.

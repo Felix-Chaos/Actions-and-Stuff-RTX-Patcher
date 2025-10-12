@@ -1,28 +1,25 @@
-# Actions & Stuff: Enhanced for RTX (Community Patcher)
-<img width="804" height="264" alt="generated-image (1)" src="https://github.com/user-attachments/assets/c1d10c7b-2f6b-40f7-bb27-fc03d0007c01" />
+<img width="804" height="264" alt="Favicon" src="https://github.com/user-attachments/assets/c1d10c7b-2f6b-40f7-bb27-fc03d0007c01" />
 
 ---
 
-## ⚠️ Important Community Notice
+## ⚠️ Important 
 
 This is a **community project** based on the original *Actions & Stuff* resource pack by Oreville Studios.  
-**This patcher is currently an early-stage tool** — it has NOT been fully tested or polished for end users yet.  
 We have uploaded the original creator’s files to support community development and plan to enable support for **A&S 1.6** soon.
 You can find Stable versions at the Releases Tab.
-
 ---
 
 ## What is Actions & Stuff: Enhanced for RTX?
 
-**Actions & Stuff: Enhanced for RTX** is a modified version of the original *Actions & Stuff* resource pack designed to:
+**Actions & Stuff Patcher for BetterRTX** is a Patcher for the original *Actions & Stuff* resource pack designed to:
 
-- Fix visual issues with 3D items and animations  
-- Add dynamic lights for select items  
-- Improve the RTX experience in Minecraft Bedrock Edition
+- Enable RTX for A&S 
+  - by Patching the Modified and your version Together
+- Enable RTX for Serves
 
 Because this is a modification of an existing pack, the `.mcpack` is **NOT distributed directly**. Instead, this project provides a **patcher tool** that:
 
-- Builds the enhanced version from your official version installed from the Minecraft Marketplace or from a provided `.zip` or `.mcpack` file.
+- Builds the Patched version from your official version installed from the Minecraft Marketplace or from a provided `.zip` or `.mcpack` file.
 
 ---
 ## 🧩 Project Progress
@@ -41,37 +38,42 @@ Because this is a modification of an existing pack, the `.mcpack` is **NOT distr
 | Name | Description | Link | Status / Compatibility |
 |------|--------------|------|-------------------------|
 | **AnSRTXPatcher.exe** | Main patcher executable for *A&S RTX 1.4* (and soon 1.6) | [A&S RTX Patcher](./A&S%20RTX%20Patcher) | ✅ Working (1.4) / ⚙️ Update for 1.6 in progress |
-| **Universal A&S Patcher** | Universal patcher for *A&S versions 1.3 – 1.6* (when patch files are available) | [Universal A&S RTX Patcher](./Universial%20A&S%20RTX%20Patcher) | ✅/🟡 You need a working Patch file, you will find them in this Repo. (only 1.4 yet) |
+| **Universal A&S Patcher** | Universal patcher for *A&S versions 1.3 – 1.6* (when patch files are available) | [Universal A&S RTX Patcher](./Universial%20A&S%20RTX%20Patcher) | ✅/🟡 You need a working Patch file, you will find them in this Repo. (1.6 **Experimental** ) |
+| **Tools** | All the tools you need to make the Patcher yourself | [Tools](./tools/README.md)||
 
 
 ## Requirements
 
 - [BetterRTX](https://bedrock.graphics/) (must be installed)
-- A copy of **Actions & Stuff** from the Minecraft Marketplace or `.zip`/`.mcpack` file
+- A copy of [**Actions & Stuff**](https://www.minecraft.net/en-us/marketplace/pdp/oreville-studios/actions--stuff-1.6/61c7a786-d7ad-49e0-a710-817121cd9795) from the Minecraft Marketplace or `.zip`/`.mcpack` file
 
 ---
 
 ## How to Use
-
-1. Extract and run `AnSRTXPatcher.exe`.  
-2. Choose to either patch from the Marketplace version or patch a `.zip`/`.mcpack` file.  
-3. Wait for the compression process to finish, then click the **Patch** button.  
-4. Your patched pack will be saved as **`Actions & Stuff Enhanced RTX.mcpack`** next to the `.exe`.  
-5. Install and enable **only** the patched pack in Minecraft, placing it at the very top of your resource pack list.  
-6. Close the patcher and confirm the `.exe` process is no longer running in the background.
-
-For detailed instructions and a guide for patch creators, please see the [Universal RTX Patcher Documentation](./Universial%20A&S%20RTX%20Patcher/README.md).
+- Option 1: **Official finished Releases**
+  - Go to the [Releases](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/) and download The Exe there.
+  Some small Tutorials for the files can be found here:
+    - [A&S RTX Patcher](./A&S%20RTX%20Patcher)
+    - [Universal A&S RTX Patcher](./Universial%20A&S%20RTX%20Patcher)
+- Option 2: **DIY Patcher**
+  - To DIY a Patcher please Browse this Repo most files and scripts have Readme  
+    follow them to make your own Patcher.
 
 ---
 
 ## Downloads
 
-- Latest stable version: [**A&S RTX Patcher v1.13**](https://gofile.io/d/eXvdte)  
-- Older versions for legacy packs:  
-  - v1.07 for A&S 1.3  
-  - v1.08 for A&S 1.3.1  
-  - v1.13 for A&S 1.4.1
+### - Latest stable version's:
+- [A&S RTX Patcher v1.13](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/0.1.13)  <!---https://gofile.io/d/eXvdte Old Link -->
+---
+### - Pre Releases / Experimental Versions
+  - [U_0.1.1 Universial Patcher for A&S 1.4 to 1.6 **Experimental**](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/U_0.1.1)
+    - Read Release Notes for more info.
 
+--- 
+### - Older versions for legacy packs:  
+  - v1.07 for A&S 1.3  (Outdadted)
+  - v1.08 for A&S 1.3.1(Outdated)
 ---
 
 ## Additional Resources
@@ -94,16 +96,6 @@ If you like this work, consider supporting via Ko-fi:
 
 ---
 
-## Official Creator Contact
-
-He is the official Creator of this Projekt who made the source files available to the public this is a public fork of it posted on Github for better community Work.
-You can find him under the following socials:
-Discord ID: **498173069517651998**  
-Discord Nickname: Demente Parker
-Discord Name: demente_parker
-
-
----
 
 ## Tools Used
 
@@ -113,6 +105,15 @@ This project utilizes the following open-source tools:
 -   [**Blockbench**](https://www.blockbench.net/): For editing 3D models.
 
 ---
+## Original Creator Contact
+
+He is the official Creator of this Projekt who made the source files available to the public this is a public fork of it posted on Github for better community Work.
+You can find him under the following socials:
+Discord ID: **498173069517651998** \
+Discord Nickname: Demente Parker  \
+Discord Name: demente_parker 
+
+---
 
 ## Disclaimer
 
@@ -120,5 +121,7 @@ This patcher is provided by the community for personal use only.
 It is a work in progress with no official endorsement. Use responsibly.
 
 ---
+
+
 
 *Thank you for being part of the A&S RTX community!*
