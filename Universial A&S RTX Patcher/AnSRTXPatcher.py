@@ -25,7 +25,7 @@ CONFIG: Dict[str, Any] = {
         "xdelta_dir": "xdelta3",
     },
     "executables": {
-        "xdelta": "xdelta3_x86_64_win.exe",
+        "xdelta": os.path.abspath("xdelta3/exec/xdelta3_x86_64_win.exe")
     },
     "filenames": {
         "encrypted_zip": "Actions & Stuff encrypted.zip",

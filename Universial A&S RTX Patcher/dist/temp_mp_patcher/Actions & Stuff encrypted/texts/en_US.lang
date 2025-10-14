@@ -1,0 +1,8 @@
+pack.name=Actions & Stuff 1.6
+pack.description=By Oreville Studios
+multiplayer.player.joined=§7[§a+§7] §a%s	#
+multiplayer.player.joined.realms=§7[§a+§7] §a%s	#
+multiplayer.player.joined.realms.renamed=§7[§a+§7] §a%s	#
+multiplayer.player.joined.renamed=§7[§a+§7] §a%s	#
+multiplayer.player.left=§7[§c-§7] §c%s	#
+multiplayer.player.left.realms=§7[§c-§7] §c%s	#

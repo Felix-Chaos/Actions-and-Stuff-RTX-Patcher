@@ -1,0 +1,10 @@
+def center_window(window):
+    window.update_idletasks()
+    w = window.winfo_width()
+    h = window.winfo_height()
+    ws = window.winfo_screenwidth()
+    hs = window.winfo_screenheight()
+    x = (ws // 2) - (w // 2)
+    y = (hs // 2) - (h // 2)
+    window.geometry(f'{w}x{h}+{x}+{y}')
+    window.attributes('-topmost', True)
