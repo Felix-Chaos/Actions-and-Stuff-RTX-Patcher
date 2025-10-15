@@ -1,46 +1,16 @@
 import os
 import shutil
-import shutil
 import subprocess
-import threading
 import sys
 import zipfile
-import ctypes
 import time
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import messagebox
+from collections import defaultdict
 import ttkbootstrap as ttk
-from ttkbootstrap.constants import *
-from ttkbootstrap.themes import user
-from ttkbootstrap import Toplevel
-from ttkbootstrap import Button, Label, Frame, Toplevel
-
-from typing import Any, Callable, Dict, List, Optional, Tuple
 
 
 import default_config as config
-
-
-def center_window(window: tk.Toplevel | tk.Tk) -> None:
-    """Centers a tkinter window on the screen."""
-    window.update_idletasks()
-    width, height = window.winfo_width(), window.winfo_height()
-    ws, hs = window.winfo_screenwidth(), window.winfo_screenheight()
-    x, y = (ws // 2) - (width // 2), (hs // 2) - (height // 2)
-    window.geometry(f'{width}x{height}+{x}+{y}')
-
-
-def get_folder_stats(folder: str) -> Tuple[int, int]:
-    """Calculates the number of files and subfolders within a directory."""
-    file_count, folder_count = 0, 0
-    try:
-        for _, dirs, files in os.walk(folder):
-            folder_count += len(dirs)
-            file_count += len(files)
-    except OSError:
-        return 0, 0
-    return file_count, folder_count
-
 
 def resource_path(relative_path: str) -> str:
     """Gets the absolute path to a resource, works for dev and for PyInstaller."""
@@ -50,106 +20,154 @@ def resource_path(relative_path: str) -> str:
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 
-def marketplace_patcher_frame():
-    root = ttk.Window(themename="darkly")
-    root.title("Marketplace Patcher")
+def center_window(window):
+    """Centers a tkinter window on the screen."""
+    window.update_idletasks()
+    w = window.winfo_width()
+    h = window.winfo_height()
+    ws = window.winfo_screenwidth()
+    hs = window.winfo_screenheight()
+    x = (ws // 2) - (w // 2)
+    y = (hs // 2) - (h // 2)
+    window.geometry(f'{w}x{h}+{x}+{y}')
+    window.attributes('-topmost', True)
 
-    cancel_event = threading.Event()
-    output_dir = os.path.join(os.getcwd(), "temp_mp_patcher")
-    output_zip = os.path.join(output_dir, "encrypted_zip_placeholder.zip")
+def get_folder_stats(folder, return_files=False):
+    total_size = 0
+    file_count = 0
+    folder_count = 0
+    file_list = []
 
-    container = ttk.Frame(root, padding=30)
-    container.pack(expand=True)
+    for root, dirs, files in os.walk(folder):
+        folder_count += len(dirs)
+        file_count += len(files)
+        for f in files:
+            try:
+                fp = os.path.join(root, f)
+                if return_files:
+                    file_list.append(fp)
+                total_size += os.path.getsize(fp)
+            except:
+                pass
 
-    status_label = ttk.Label(container, text="Searching for encrypted pack folder...")
-    status_label.pack(pady=(0, 10))
+    return (total_size, file_count, folder_count, file_list) if return_files else (total_size, file_count, folder_count)
 
-    progress = ttk.Progressbar(container, mode='determinate', length=300, bootstyle=INFO)
-    progress.pack(pady=(10, 0))
+def compress_deterministic(folder_path, output_zip):
+    with zipfile.ZipFile(output_zip, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
+        for root, _, files in sorted(os.walk(folder_path)):
+            for file in sorted(files):
+                file_path = os.path.join(root, file)
+                arcname = os.path.relpath(file_path, folder_path).replace("\\\\", "/")
+                
+                # Consistent DOS-compatible timestamp: Jan 1, 1980
+                info = zipfile.ZipInfo(arcname)
+                info.date_time = (1980, 1, 1, 0, 0, 0)
+                info.compress_type = zipfile.ZIP_DEFLATED
 
-    btn_frame = ttk.Frame(container)
-    btn_frame.pack(pady=(20, 0))
+                with open(file_path, 'rb') as f:
+                    zf.writestr(info, f.read())
 
-    def run_patch():
-        print("Patch läuft...")  # Patch Logik hier
+def clean_for_update(root):
+    top = ttk.Toplevel(root)
+    top.title("Clean for Update")
+    top.geometry("550x350")
+    top.attributes("-topmost", True)
+    center_window(top)
 
-    def cancel_and_go_back():
-        print("Zurück zum Menü")
-        root.destroy()
+    frame = ttk.Frame(top, padding=20)
+    frame.pack(fill="both", expand=True)
 
-    patch_btn = ttk.Button(btn_frame, text="Patch", width=20, state="disabled", command=run_patch, bootstyle=SUCCESS)
-    patch_btn.pack(side="left", padx=5)
+    label = ttk.Label(frame, text="Looking for A&SforRTX folders...", font=("Segoe UI", 12))
+    label.pack(pady=(0, 10))
 
-    ttk.Button(btn_frame, text="Back to Menu", width=20, command=cancel_and_go_back, bootstyle=(DANGER, OUTLINE)).pack(side="left", padx=5)
+    progress = ttk.Progressbar(frame, mode='indeterminate', length=400, bootstyle=ttk.INFO)
+    progress.pack(pady=(0, 10))
+    progress.start()
 
-    def search_and_compress():
-        import time
-        for i in range(101):
-            progress['value'] = i
-            status_label.config(text=f"Fortschritt: {i}%")
-            time.sleep(0.02)
-        patch_btn.config(state="normal")
+    results_box = tk.Text(frame, height=8, width=70, state="disabled", wrap="none")
+    results_box.pack(pady=(5, 5))
 
-    threading.Thread(target=search_and_compress, daemon=True).start()
+    confirm_btn = ttk.Button(
+        frame,
+        text="Confirm Deletion",
+        width=30,
+        state="disabled",
+        command=lambda: confirm_deletion(found_folders, results_box, top),
+        bootstyle=ttk.SUCCESS
+    )
+    confirm_btn.pack(pady=(5, 10))
 
+    def log_grouped_paths(grouped):
+        results_box.configure(state="normal")
+        for parent, children in grouped.items():
+            results_box.insert("end", f"├─ {parent}\\n")
+            for i, child in enumerate(children):
+                symbol = "└─" if i == len(children) - 1 else "├─"
+                results_box.insert("end", f"    {symbol} {child}\\n")
+        results_box.configure(state="disabled")
 
-    def search_and_compress(self) -> None:
-        """Searches for the pack and compresses it in a background thread."""
-        premium_paths = [
-            os.path.join(os.path.expandvars(CONFIG["paths"]["minecraft_uwp"]), "premium_cache", "resource_packs"),
-            os.path.join(os.path.expandvars(CONFIG["paths"]["minecraft_beta"]), "premium_cache", "resource_packs")
+    def confirm_deletion(folders, results_box, top):
+        deleted = 0
+        for path in folders:
+            try:
+                shutil.rmtree(path)
+                deleted += 1
+            except Exception as e:
+                results_box.configure(state="normal")
+                results_box.insert("end", f"❌ Failed: {path} ({e})\\n")
+                results_box.configure(state="disabled")
+        if deleted > 0:
+            messagebox.showinfo("✅ Done", f"{deleted} folders deleted successfully.")
+        else:
+            messagebox.showinfo("Nothing to Clean", "No folders were deleted.")
+        top.destroy()
+
+    def scan_and_confirm():
+        nonlocal found_folders
+        found_folders = []
+
+        base_paths = [
+            config.CONFIG['paths']['minecraft_uwp'],
+            config.CONFIG['paths']['minecraft_beta']
         ]
-        pack_stats = CONFIG["marketplace_pack_stats"]["v1"]
-        found_path = None
-        for path in premium_paths:
-            if self.cancel_event.is_set(): return
-            if not os.path.exists(path): continue
-            for folder in os.listdir(path):
-                if self.cancel_event.is_set(): return
-                full_path = os.path.join(path, folder)
-                if os.path.isdir(full_path):
-                    num_files, num_dirs = get_folder_stats(full_path)
-                    if num_files == pack_stats["files"] and num_dirs == pack_stats["dirs"]:
-                        found_path = full_path; break
-            if found_path: break
 
-        if self.cancel_event.is_set(): return
-        if not found_path:
-            self.status_label.config(text="❌ No matching folder found.")
-            return
+        grouped_paths = defaultdict(list)
 
-        os.makedirs(self.output_dir, exist_ok=True)
-        self.status_label.config(text="Compressing files...")
-        success = compress_deterministic(found_path, self.output_zip, self.cancel_event, lambda c, t: self.progress.configure(value=(c/t)*100))
-        if not success:
-            robust_cleanup(self.output_dir)
-            return
+        for base_path in base_paths:
+            resource_packs = os.path.join(base_path, "resource_packs")
+            if os.path.exists(resource_packs):
+                for folder in os.listdir(resource_packs):
+                    if folder.startswith(tuple(config.CONFIG['cleanup_prefixes'])):
+                        full_path = os.path.join(resource_packs, folder)
+                        found_folders.append(full_path)
+                        grouped_paths[os.path.relpath(resource_packs)].append(folder)
 
-        self.status_label.config(text="✅ Encrypted files ready for patching.")
-        self.patch_btn.config(state="normal")
+            worlds_dir = os.path.join(base_path, "minecraftWorlds")
+            if os.path.exists(worlds_dir):
+                for world in os.listdir(worlds_dir):
+                    world_rp = os.path.join(worlds_dir, world, "resource_packs")
+                    if os.path.exists(world_rp):
+                        for folder in os.listdir(world_rp):
+                            if folder.startswith(tuple(config.CONFIG['cleanup_prefixes'])):
+                                full_path = os.path.join(world_rp, folder)
+                                found_folders.append(full_path)
+                                grouped_paths[os.path.relpath(world_rp)].append(folder)
 
-    def run_patch(self) -> None:
-        """Validates and starts the patching process."""
-        if not os.path.exists(self.output_zip):
-            self.controller.show_message("Error", "Missing encrypted source zip file.", {"OK": lambda: self.controller.show_frame("MarketplacePatcherFrame")})
-            return
-        
-        patch_name = CONFIG["patches"]["encrypted_v1"]
-        vcdiff_path = os.path.join(self.controller.patch_temp_dir, patch_name)
-        if not os.path.exists(vcdiff_path):
-            self.controller.show_message("Error", f"Patch file '{patch_name}' not found in the provided zip.", {"OK": lambda: self.controller.show_frame("MarketplacePatcherFrame")})
-            return
-            
-        patched_output = os.path.join(self.controller.output_temp_dir, CONFIG["filenames"]["final_mcpack"])
-        self.controller.create_hidden_dir(self.controller.output_temp_dir)
-        
-        self.patch_btn.config(state="disabled")
-        self.status_label.config(text="Patching...")
-        self.progress.config(value=0, mode="indeterminate"); self.progress.start()
-        self.controller.run_patch_process(self.output_zip, vcdiff_path, patched_output)
+        progress.stop()
 
-    def cancel_and_go_back(self):
-        """Signals the background thread to stop and returns to the main menu."""
-        self.cancel_event.set()
-        robust_cleanup(self.output_dir)
-        self.controller.show_frame("MainMenuFrame")
+        if found_folders:
+            label.config(text="Folders Found")
+            progress["value"] = 100
+            progress.update()
+
+            log_grouped_paths(grouped_paths)
+            confirm_btn.config(state="normal")
+        else:
+            results_box.configure(state="normal")
+            results_box.insert("end", "No matching folders found.\\n")
+            results_box.configure(state="disabled")
+            messagebox.showinfo("Nothing to Clean", "No folders were found.")
+            top.destroy()
+
+    found_folders = []
+    scan_and_confirm()

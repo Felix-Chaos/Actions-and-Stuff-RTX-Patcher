@@ -21,6 +21,11 @@ from ttkbootstrap import (
 )
 from PIL import Image, ImageTk
 
+
+import patcher_methods
+import universialPatcher.uni_patcher as uni_patcher
+import generalPatcher.gen_patcher as general_patcher
+
 base_path = os.path.abspath(".")
 
 # Lokale Datei importieren
@@ -85,11 +90,11 @@ def show_main_window():
     leave_button = ttk.Button(button_frame, text="Leave Patcher", command=root.quit, bootstyle="danger")
     leave_button.pack(side=LEFT, padx=10)
 
-    patch_button = ttk.Button(button_frame, text="Start patching", command=lambda: messagebox.showinfo("Info", "Start patching..."), bootstyle="success")
-    patch_button.pack(side=LEFT, padx=10)
+    patch_button = ttk.Button(button_frame, text="Start patching", command=lambda: general_patcher.show_gen_patcher_window(root), bootstyle="success")
+    patch_button.pack(side=LEFT, padx=10)       
 
     # Advanced setup button
-    advanced_button = ttk.Button(main_frame, text="Advanced setup", command=lambda: messagebox.showinfo("Info", "Advanced setup..."), bootstyle="link")
+    advanced_button = ttk.Button(main_frame, text="Advanced setup", command=lambda: uni_patcher.show_uni_patcher_window(root), bootstyle="link")
     advanced_button.pack(side=RIGHT, anchor=SE, padx=10, pady=10)
 
 
