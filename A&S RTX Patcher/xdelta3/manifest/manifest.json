@@ -1,1 +1,19 @@
-{"format_version":2,"header":{"description":"RTX compatibility mod","name":"A&S for RTX","uuid":"b47620d0-4e49-4e34-8175-4adfddb8a2d8","version":[1,0,20],"min_engine_version":[1,21,50]},"modules":[{"description":"By Oreville Studios","type":"resources","uuid":"aaf3eeb9-e909-4a87-aff5-2aa6b07866dc","version":[1,0,21]}],"metadata":{"authors":["Oreville"]}}
+{
+  "format_version": 2,
+  "header": {
+    "description": "RTX compatibility mod",
+    "name": "A&S for RTX by J4vI3r6003 and FelixChaos - Orignal Creator: Demente Parker",
+    "uuid": "b47620d0-4e49-4e34-8175-4adfddb8a2d8",
+    "version": [1, 0, 20],
+    "min_engine_version": [1, 21, 50]
+  },
+  "modules": [
+    {
+      "description": "By Oreville Studios Modified by J4vI3r6003 and FelixChaos",
+      "type": "resources",
+      "uuid": "aaf3eeb9-e909-4a87-aff5-2aa6b07866dc",
+      "version": [1, 0, 21]
+    }
+  ],
+  "metadata": { "authors": ["Oreville", "J4vI3r6003", "FelixChaos"] }
+}
