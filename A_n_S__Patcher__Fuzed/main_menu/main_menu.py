@@ -10,13 +10,16 @@ import subprocess
 import sys
 import time
 
+# --- Determine project base path ---
+# We are in main_menu, so we need to go up one level to the project root
+base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+# Add project root to path for imports
+sys.path.insert(0, base_path)
+
 # --- Import custom modules ---
 import patcher_methods
-import universialPatcher.uni_patcher as uni_patcher
-import generalPatcher.gen_patcher as general_patcher
-
-# --- Determine project base path ---
-base_path = os.path.dirname(os.path.abspath(__file__))
+import normal_patcher.normal_patcher as normal_patcher
+import advanced_patcher.advanced_patcher as advanced_patcher
 print(f"📂 Base path: {base_path}")
 
 # Platform-specific creation flags (Windows only)
@@ -206,14 +209,14 @@ def show_main_window():
     ttk.Button(
         button_frame,
         text="Start patching",
-        command=lambda: general_patcher.show_gen_patcher_window(root),
+        command=lambda: normal_patcher.show_normal_patcher_window(root),
         bootstyle="success",
     ).pack(side=LEFT, padx=10)
 
     ttk.Button(
         main_frame,
         text="Advanced setup",
-        command=lambda: uni_patcher.show_uni_patcher_window(root),
+        command=lambda: advanced_patcher.show_advanced_patcher_window(root),
         bootstyle="link",
     ).pack(side=RIGHT, anchor=SE, padx=10, pady=10)
 
