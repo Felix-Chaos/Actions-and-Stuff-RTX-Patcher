@@ -9,9 +9,9 @@ import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 import patcher_methods as methods
 
-def show_gen_patcher_window(parent):
+def show_normal_patcher_window(parent):
     win = ttk.Toplevel(parent)
-    win.title("General Patcher")
+    win.title("Normal Patcher")
     win.geometry("500x320")
     methods.center_window(win)
 
