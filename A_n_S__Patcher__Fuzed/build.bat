@@ -7,7 +7,7 @@ SET PYTHONHASHSEED=0
 
 :: --- Configuration ---
 SET SCRIPT_NAME=main_menu\\main_menu.py
-SET ICON_NAME=assets\\icon.ico
+SET ICON_NAME=resources\\icon.ico
 SET OUTPUT_NAME=AnS_RTX_Patcher.exe
 SET DIST_FOLDER=dist
 
@@ -26,8 +26,8 @@ IF NOT EXIST "%ICON_NAME%" (
     ECHO ERROR: Icon '%ICON_NAME%' not found!
     GOTO :error
 )
-IF NOT EXIST "PatcherTools" (
-    ECHO WARNING: 'PatcherTools' directory not found. Creator tools will be missing.
+IF NOT EXIST "tools" (
+    ECHO WARNING: 'tools' directory not found. Creator tools will be missing.
 )
 ECHO File structure looks OK.
 ECHO.
@@ -41,8 +41,8 @@ ECHO.
 ECHO Running PyInstaller...
 
 py -m PyInstaller --onefile --windowed --name "%OUTPUT_NAME%" --icon="%ICON_NAME%" ^
---add-data "assets;assets" ^
---add-data "PatcherTools;PatcherTools" ^
+--add-data "resources;resources" ^
+--add-data "tools;tools" ^
 "%SCRIPT_NAME%"
 
 :: --- Post-build Checks & Cleanup ---
