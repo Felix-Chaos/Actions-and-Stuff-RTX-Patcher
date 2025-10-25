@@ -18,9 +18,9 @@
 4. [📁 Repository Overview](#📁-repository-overview)  
 5. [⚙️ Requirements](#⚙️-requirements)  
 6. [🚀 How to Use](#🚀-how-to-use)  
-   - [🧱 Option 1 — Official Releases](#🧱-option-1-—-official-releases-recommended)  
-   - [🧩 Option 2 — Universal Patcher](#🧩-option-2-—-universal-patcher)  
-   - [🧰 Option 3 — DIY Build](#🧰-option-3-—-diy-build)  
+   - [🧱 Option 1 - Normal Patcher](#🧱-option-1-—-official-releases-recommended)  
+   - [🧩 Option 2 - Universal Patcher](#🧩-option-2-—-universal-patcher)  
+   - [🧰 Option 3 - DIY Build](#🧰-option-3-—-diy-build)  
 7. [💾 Downloads](#💾-downloads)  
 8. [📚 Additional Resources](#📚-additional-resources)  
 9. [🙌 Contributors](#🙌-contributors)  
@@ -37,7 +37,7 @@ The patcher **applies fixes and RTX enhancements to your own copy** of A&S — i
 
 We kindly ask all users **not to share their patched copies** of A&S Enhanced for RTX publicly.  
 
-You can always find the latest stable builds on the [Releases](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/) page.
+You can always find the latest stable builds on the [Releases Page](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/latest).
 
 ---
 
@@ -90,9 +90,9 @@ This ensures RTX visuals are properly integrated **without redistributing** any 
 
 ## 🚀 How to Use
 
-### 🧱 Option 1 — Patching (Recommended)
+### 🧱 Option 1 - Normal Patcher (Recommended)
 
-1. Head to the [Releases Page](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases).
+1. Head to the [Releases Page](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/latest).
 
 2. Download the Normal Patcher:
    * **A&S RTX Patcher** → for version **1.7**  
@@ -122,20 +122,22 @@ For advanced users or legacy versions (1.3–1.7):
 1. Download the **Universal A&S Patcher** and the correct **Patch File** (`.zip`).  
 2. Launch the executable and select the patch file from the menu.  
 3. Select your local A&S pack source (Marketplace, zip, or mcpack).  
-4. Confirm the patching process — it will merge your files and apply RTX features.
+4. Confirm the patching process, it will merge your files and apply RTX features.
 
 Universal mode is ideal for testing custom patch files or rebuilding older pack versions.
 
 ---
 
-### 🧰 Option 3 — DIY Build
+### 🧰 Option 3 - DIY Build
 
 Want to make your own patcher?  
-Browse this repository — every tool and script includes a short README with setup steps and required dependencies.
+Browse this repository, every tool and script includes a short README with setup steps and required dependencies.
 
 ---
 
 ## 💾 Downloads
+
+#### Always the [Latest Release](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/latest)<-- Press him Please 👈(ﾟヮﾟ👈) 
 
 ### ✅ Stable Builds
 
@@ -149,8 +151,8 @@ Browse this repository — every tool and script includes a short README with se
 
 ### 🕹️ Legacy Versions
 
-* v1.07 (A&S 1.3) — *Outdated*  
-* v1.08 (A&S 1.3.1) — *Outdated*
+* v1.07 (A&S 1.3) - *Outdated*  
+* v1.08 (A&S 1.3.1) - *Outdated*
 
 ---
 
@@ -197,8 +199,8 @@ The **original creator**, who made the source files available, is:
 
 ## 🧠 Tools Used
 
-* [**xdelta3**](https://github.com/jmacd/xdelta) — Binary patch creation and application  
-* [**Blockbench**](https://www.blockbench.net/) — Model editing & RTX material setup
+* [**xdelta3**](https://github.com/jmacd/xdelta) - Binary patch creation and application  
+* [**Blockbench**](https://www.blockbench.net/) - Model editing & RTX material setup
 
 ---
 
@@ -211,4 +213,4 @@ All original assets remain property of their respective owners.
 ---
 
 ⭐ **Thank you for being part of the A&S RTX community!**  
-Your support, testing, and feedback keep this project alive — together we make RTX shine brighter. 💎
+Your support, testing, and feedback keep this project alive, together we make RTX shine brighter. 💎
