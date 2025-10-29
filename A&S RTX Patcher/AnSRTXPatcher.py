@@ -195,10 +195,10 @@ def clean_for_update():
 
         base_paths = [
             os.path.expandvars(
-                r"%LocalAppData%\Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\LocalState\games\com.mojang"
+                r"%AppData%/Minecraft Bedrock"
             ),
             os.path.expandvars(
-                r"%LocalAppData%\Packages\Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe\LocalState\games\com.mojang"
+                r"%AppData%/Minecraft Bedrock Preview"
             )
         ]
 
@@ -258,10 +258,10 @@ def patch_from_marketplace(root):
 
     resource_paths = [
         os.path.expandvars(
-            r"%LocalAppData%\Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\LocalState\premium_cache\resource_packs"
+            r"%AppData%\Minecraft Bedrock\premium_cache\resource_packs"
         ),
         os.path.expandvars(
-            r"%LocalAppData%\Packages\Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe\LocalState\premium_cache\resource_packs"
+            r"%AppData%\Minecraft Bedrock Preview\premium_cache\resource_packs"
         )
     ]
 

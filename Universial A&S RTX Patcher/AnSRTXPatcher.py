@@ -20,8 +20,8 @@ from ttkbootstrap.constants import *
 # --- DEFAULT CONFIGURATION CONSTANTS ---
 CONFIG: Dict[str, Any] = {
     "paths": {
-        "minecraft_uwp": os.path.expandvars(r"%LocalAppData%/Packages/Microsoft.MinecraftUWP_8wekyb3d8bbwe/LocalState"),
-        "minecraft_beta": os.path.expandvars(r"%LocalAppData%/Packages/Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe/LocalState"),
+        "minecraft_uwp": os.path.expandvars(r"%AppData%\Minecraft Bedrock"),
+        "minecraft_beta": os.path.expandvars(r"%AppData%\Minecraft Bedrock Preview"),
         "xdelta_dir": "xdelta3",
     },
     "executables": {

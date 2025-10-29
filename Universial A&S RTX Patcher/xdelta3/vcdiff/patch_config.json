@@ -1,7 +1,7 @@
 {
     "paths": {
-        "minecraft_uwp": "%LocalAppData%/Packages/Microsoft.MinecraftUWP_8wekyb3d8bbwe/LocalState",
-        "minecraft_beta": "%LocalAppData%/Packages/Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe/LocalState"
+        "minecraft_uwp": "%AppData%/Minecraft Bedrock",
+        "minecraft_beta": "%AppData%/Minecraft Bedrock Preview"
     },
     "marketplace_pack_stats": {
         "v1": {
