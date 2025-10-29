@@ -197,23 +197,25 @@ def process_packs(
     with tempfile.TemporaryDirectory() as tmp_root:
         workspace = Path(tmp_root)
         update_status("Preparing input packs...")
-        encrypted_tree = prepare_pack_tree(encrypted_input, workspace / "encrypted_src")
-        decrypted_tree = prepare_pack_tree(decrypted_input, workspace / "decrypted_src")
-        rtx_tree = prepare_pack_tree(rtx_input, workspace / "rtx_target")
+        trees = {
+            "encrypted": prepare_pack_tree(encrypted_input, workspace / "encrypted_src"),
+            "decrypted": prepare_pack_tree(decrypted_input, workspace / "decrypted_src"),
+            "rtx": prepare_pack_tree(rtx_input, workspace / "rtx_target"),
+        }
 
         update_status("Sanitizing decrypted pack and copying manifest...")
-        sanitize_decrypted_pack(decrypted_tree, manifest_path)
+        sanitize_decrypted_pack(trees["decrypted"], manifest_path)
 
         target_zip = workspace / "final_target.zip"
 
         update_status("Creating deterministic ZIP for encrypted pack...")
-        write_deterministic_zip(encrypted_tree, encrypted_output)
+        write_deterministic_zip(trees["encrypted"], encrypted_output)
 
         update_status("Creating deterministic ZIP for decrypted pack...")
-        write_deterministic_zip(decrypted_tree, decrypted_output)
+        write_deterministic_zip(trees["decrypted"], decrypted_output)
 
         update_status("Creating deterministic ZIP for RTX target pack...")
-        write_deterministic_zip(rtx_tree, target_zip)
+        write_deterministic_zip(trees["rtx"], target_zip)
 
         update_status("Generating vcdiff for encrypted pack...")
         generate_vcdiff(encrypted_output, target_zip, encrypted_vcdiff, xdelta_exec)
@@ -348,19 +350,23 @@ def launch_ui() -> None:
 
     def on_run() -> None:
         try:
-            encrypted_input = resolve_user_path(encrypted_var.get())
-            decrypted_input = resolve_user_path(decrypted_var.get())
-            rtx_input = resolve_user_path(rtx_var.get())
+            inputs = {
+                "encrypted": resolve_user_path(encrypted_var.get()),
+                "decrypted": resolve_user_path(decrypted_var.get()),
+                "rtx": resolve_user_path(rtx_var.get()),
+            }
 
-            manifest_path = DEFAULT_MANIFEST
+            outputs = {
+                "encrypted": resolve_user_path(encrypted_output_var.get()) if encrypted_toggle.get() else DEFAULT_ENCRYPTED_OUTPUT,
+                "decrypted": resolve_user_path(decrypted_output_var.get()) if decrypted_toggle.get() else DEFAULT_DECRYPTED_OUTPUT,
+            }
 
-            encrypted_output = resolve_user_path(encrypted_output_var.get()) if encrypted_toggle.get() else DEFAULT_ENCRYPTED_OUTPUT
-            decrypted_output = resolve_user_path(decrypted_output_var.get()) if decrypted_toggle.get() else DEFAULT_DECRYPTED_OUTPUT
+            vcdiffs = {
+                "encrypted": resolve_user_path(encrypted_vcdiff_var.get()) if encrypted_vcdiff_toggle.get() else DEFAULT_ENCRYPTED_VCDIFF,
+                "decrypted": resolve_user_path(decrypted_vcdiff_var.get()) if decrypted_vcdiff_toggle.get() else DEFAULT_DECRYPTED_VCDIFF,
+            }
 
-            encrypted_vcdiff = resolve_user_path(encrypted_vcdiff_var.get()) if encrypted_vcdiff_toggle.get() else DEFAULT_ENCRYPTED_VCDIFF
-            decrypted_vcdiff = resolve_user_path(decrypted_vcdiff_var.get()) if decrypted_vcdiff_toggle.get() else DEFAULT_DECRYPTED_VCDIFF
-
-            for path in (encrypted_input, decrypted_input, rtx_input):
+            for path in inputs.values():
                 if not path.exists():
                     raise FileNotFoundError(f"Input path not found: {path}")
 
@@ -368,14 +374,14 @@ def launch_ui() -> None:
             root.config(cursor="watch")
             trigger_button.configure(state="disabled")
             process_packs(
-                encrypted_input,
-                decrypted_input,
-                rtx_input,
-                encrypted_output,
-                decrypted_output,
-                manifest_path,
-                encrypted_vcdiff,
-                decrypted_vcdiff,
+                inputs["encrypted"],
+                inputs["decrypted"],
+                inputs["rtx"],
+                outputs["encrypted"],
+                outputs["decrypted"],
+                DEFAULT_MANIFEST,
+                vcdiffs["encrypted"],
+                vcdiffs["decrypted"],
                 status_callback=set_status,
             )
             messagebox.showinfo("Success", "Pre-compilation tasks completed successfully.")
