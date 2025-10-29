@@ -31,4 +31,4 @@ jobs:
 
       - name: Analysing the code with pylint
         run: |
-          git ls-files '*.py' | xargs pylint
+          git ls-files -z -- '*.py' | xargs -0 -r pylint
