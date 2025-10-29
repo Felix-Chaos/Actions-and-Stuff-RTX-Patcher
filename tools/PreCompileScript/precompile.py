@@ -296,49 +296,58 @@ def launch_ui() -> None:
 
     ttk.Label(main, text="Input Packs", font=("Segoe UI", 11, "bold")).pack(anchor="w")
 
-    encrypted_var = tk.StringVar(value=DEFAULT_INPUTS["encrypted"])
-    decrypted_var = tk.StringVar(value=DEFAULT_INPUTS["decrypted"])
-    rtx_var = tk.StringVar(value=DEFAULT_INPUTS["rtx"])
-
-    create_directory_selector(main, "Encrypted pack", encrypted_var)
-    create_directory_selector(main, "Decrypted pack", decrypted_var)
-    create_directory_selector(main, "Decrypted RTX pack", rtx_var)
+    input_specs = [
+        ("encrypted", "Encrypted pack"),
+        ("decrypted", "Decrypted pack"),
+        ("rtx", "Decrypted RTX pack"),
+    ]
+    input_vars = {}
+    for key, label in input_specs:
+        variable = tk.StringVar(value=DEFAULT_INPUTS[key])
+        input_vars[key] = variable
+        create_directory_selector(main, label, variable)
 
     ttk.Separator(main).pack(fill="x", pady=8)
     ttk.Label(main, text="Output Settings", font=("Segoe UI", 11, "bold")).pack(anchor="w")
 
-    encrypted_toggle, encrypted_output_var = create_output_section(
-        main,
-        "Encrypted ZIP output",
-        DEFAULT_ENCRYPTED_OUTPUT,
-        defaultextension=".zip",
-        filetypes=[("ZIP archive", "*.zip"), ("All files", "*.*")],
-    )
-    decrypted_toggle, decrypted_output_var = create_output_section(
-        main,
-        "Decrypted ZIP output",
-        DEFAULT_DECRYPTED_OUTPUT,
-        defaultextension=".zip",
-        filetypes=[("ZIP archive", "*.zip"), ("All files", "*.*")],
-    )
+    zip_defaults = {
+        "encrypted": DEFAULT_ENCRYPTED_OUTPUT,
+        "decrypted": DEFAULT_DECRYPTED_OUTPUT,
+    }
+    zip_settings = {}
+    for key, label in (
+        ("encrypted", "Encrypted ZIP output"),
+        ("decrypted", "Decrypted ZIP output"),
+    ):
+        toggle, variable = create_output_section(
+            main,
+            label,
+            zip_defaults[key],
+            defaultextension=".zip",
+            filetypes=[("ZIP archive", "*.zip"), ("All files", "*.*")],
+        )
+        zip_settings[key] = (toggle, variable)
 
     ttk.Separator(main).pack(fill="x", pady=8)
     ttk.Label(main, text="VCDIFF Outputs", font=("Segoe UI", 11, "bold")).pack(anchor="w")
 
-    encrypted_vcdiff_toggle, encrypted_vcdiff_var = create_output_section(
-        main,
-        "Encrypted VCDIFF output",
-        DEFAULT_ENCRYPTED_VCDIFF,
-        defaultextension=".vcdiff",
-        filetypes=[("VCDIFF patch", "*.vcdiff"), ("All files", "*.*")],
-    )
-    decrypted_vcdiff_toggle, decrypted_vcdiff_var = create_output_section(
-        main,
-        "Decrypted VCDIFF output",
-        DEFAULT_DECRYPTED_VCDIFF,
-        defaultextension=".vcdiff",
-        filetypes=[("VCDIFF patch", "*.vcdiff"), ("All files", "*.*")],
-    )
+    vcdiff_defaults = {
+        "encrypted": DEFAULT_ENCRYPTED_VCDIFF,
+        "decrypted": DEFAULT_DECRYPTED_VCDIFF,
+    }
+    vcdiff_settings = {}
+    for key, label in (
+        ("encrypted", "Encrypted VCDIFF output"),
+        ("decrypted", "Decrypted VCDIFF output"),
+    ):
+        toggle, variable = create_output_section(
+            main,
+            label,
+            vcdiff_defaults[key],
+            defaultextension=".vcdiff",
+            filetypes=[("VCDIFF patch", "*.vcdiff"), ("All files", "*.*")],
+        )
+        vcdiff_settings[key] = (toggle, variable)
 
     status_var = tk.StringVar(value="Idle")
     status_label = ttk.Label(main, textvariable=status_var)
@@ -350,20 +359,16 @@ def launch_ui() -> None:
 
     def on_run() -> None:
         try:
-            inputs = {
-                "encrypted": resolve_user_path(encrypted_var.get()),
-                "decrypted": resolve_user_path(decrypted_var.get()),
-                "rtx": resolve_user_path(rtx_var.get()),
-            }
+            inputs = {key: resolve_user_path(var.get()) for key, var in input_vars.items()}
 
             outputs = {
-                "encrypted": resolve_user_path(encrypted_output_var.get()) if encrypted_toggle.get() else DEFAULT_ENCRYPTED_OUTPUT,
-                "decrypted": resolve_user_path(decrypted_output_var.get()) if decrypted_toggle.get() else DEFAULT_DECRYPTED_OUTPUT,
+                key: resolve_user_path(var.get()) if toggle.get() else zip_defaults[key]
+                for key, (toggle, var) in zip_settings.items()
             }
 
             vcdiffs = {
-                "encrypted": resolve_user_path(encrypted_vcdiff_var.get()) if encrypted_vcdiff_toggle.get() else DEFAULT_ENCRYPTED_VCDIFF,
-                "decrypted": resolve_user_path(decrypted_vcdiff_var.get()) if decrypted_vcdiff_toggle.get() else DEFAULT_DECRYPTED_VCDIFF,
+                key: resolve_user_path(var.get()) if toggle.get() else vcdiff_defaults[key]
+                for key, (toggle, var) in vcdiff_settings.items()
             }
 
             for path in inputs.values():

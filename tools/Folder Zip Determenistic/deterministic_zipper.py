@@ -57,7 +57,6 @@ def main():
     compress_button.pack(pady=20)
 
     root.mainloop()
-
 if __name__ == "__main__":
     main()
-
+# End of script
