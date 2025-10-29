@@ -35,6 +35,28 @@ DEFAULT_DECRYPTED_OUTPUT = PROJECT_ROOT / "A&S RTX Patcher" / "xdelta3" / "origi
 DEFAULT_ENCRYPTED_VCDIFF = PROJECT_ROOT / "A&S RTX Patcher" / "xdelta3" / "vcdiff" / "Actions & Stuff encrypted.zip.vcdiff"
 DEFAULT_DECRYPTED_VCDIFF = PROJECT_ROOT / "A&S RTX Patcher" / "xdelta3" / "vcdiff" / "Actions & Stuff decrypted.zip.vcdiff"
 
+ZIP_FILETYPES = (("ZIP archive", "*.zip"), ("All files", "*.*"))
+VCDIFF_FILETYPES = (("VCDIFF patch", "*.vcdiff"), ("All files", "*.*"))
+
+INPUT_FIELDS = (
+    ("encrypted", "Encrypted pack"),
+    ("decrypted", "Decrypted pack"),
+    ("rtx", "Decrypted RTX pack"),
+)
+
+ZIP_OUTPUT_FIELDS = (
+    ("encrypted", "Encrypted ZIP output", DEFAULT_ENCRYPTED_OUTPUT, ".zip", ZIP_FILETYPES),
+    ("decrypted", "Decrypted ZIP output", DEFAULT_DECRYPTED_OUTPUT, ".zip", ZIP_FILETYPES),
+)
+
+VCDIFF_OUTPUT_FIELDS = (
+    ("encrypted", "Encrypted VCDIFF output", DEFAULT_ENCRYPTED_VCDIFF, ".vcdiff", VCDIFF_FILETYPES),
+    ("decrypted", "Decrypted VCDIFF output", DEFAULT_DECRYPTED_VCDIFF, ".vcdiff", VCDIFF_FILETYPES),
+)
+
+ZIP_OUTPUT_DEFAULTS = {key: default for key, _, default, _, _ in ZIP_OUTPUT_FIELDS}
+VCDIFF_OUTPUT_DEFAULTS = {key: default for key, _, default, _, _ in VCDIFF_OUTPUT_FIELDS}
+
 MANIFEST_CANDIDATES = (
     PROJECT_ROOT / "A&S RTX Patcher" / "xdelta3" / "manifest" / "manifest.json",
     PROJECT_ROOT / "Universial A&S RTX Patcher" / "xdelta3" / "manifest" / "manifest.json",
@@ -287,6 +309,32 @@ def create_output_section(
     return toggle, var
 
 
+def build_directory_selectors(parent: tk.Widget) -> dict[str, tk.StringVar]:
+    selectors: dict[str, tk.StringVar] = {}
+    for key, label in INPUT_FIELDS:
+        variable = tk.StringVar(value=DEFAULT_INPUTS[key])
+        selectors[key] = variable
+        create_directory_selector(parent, label, variable)
+    return selectors
+
+
+def build_output_sections(
+    parent: tk.Widget,
+    field_specs: tuple[tuple[str, str, Path, str, tuple[tuple[str, str], ...]], ...],
+) -> dict[str, tuple[tk.BooleanVar, tk.StringVar]]:
+    sections: dict[str, tuple[tk.BooleanVar, tk.StringVar]] = {}
+    for key, label, default_path, extension, filetypes in field_specs:
+        toggle, variable = create_output_section(
+            parent,
+            label,
+            default_path,
+            defaultextension=extension,
+            filetypes=list(filetypes),
+        )
+        sections[key] = (toggle, variable)
+    return sections
+
+
 def launch_ui() -> None:
     root = tk.Tk()
     root.title("Pre-Compile Pack Helper")
@@ -295,59 +343,15 @@ def launch_ui() -> None:
     main.pack(fill="both", expand=True)
 
     ttk.Label(main, text="Input Packs", font=("Segoe UI", 11, "bold")).pack(anchor="w")
-
-    input_specs = [
-        ("encrypted", "Encrypted pack"),
-        ("decrypted", "Decrypted pack"),
-        ("rtx", "Decrypted RTX pack"),
-    ]
-    input_vars = {}
-    for key, label in input_specs:
-        variable = tk.StringVar(value=DEFAULT_INPUTS[key])
-        input_vars[key] = variable
-        create_directory_selector(main, label, variable)
+    input_vars = build_directory_selectors(main)
 
     ttk.Separator(main).pack(fill="x", pady=8)
     ttk.Label(main, text="Output Settings", font=("Segoe UI", 11, "bold")).pack(anchor="w")
-
-    zip_defaults = {
-        "encrypted": DEFAULT_ENCRYPTED_OUTPUT,
-        "decrypted": DEFAULT_DECRYPTED_OUTPUT,
-    }
-    zip_settings = {}
-    for key, label in (
-        ("encrypted", "Encrypted ZIP output"),
-        ("decrypted", "Decrypted ZIP output"),
-    ):
-        toggle, variable = create_output_section(
-            main,
-            label,
-            zip_defaults[key],
-            defaultextension=".zip",
-            filetypes=[("ZIP archive", "*.zip"), ("All files", "*.*")],
-        )
-        zip_settings[key] = (toggle, variable)
+    zip_settings = build_output_sections(main, ZIP_OUTPUT_FIELDS)
 
     ttk.Separator(main).pack(fill="x", pady=8)
     ttk.Label(main, text="VCDIFF Outputs", font=("Segoe UI", 11, "bold")).pack(anchor="w")
-
-    vcdiff_defaults = {
-        "encrypted": DEFAULT_ENCRYPTED_VCDIFF,
-        "decrypted": DEFAULT_DECRYPTED_VCDIFF,
-    }
-    vcdiff_settings = {}
-    for key, label in (
-        ("encrypted", "Encrypted VCDIFF output"),
-        ("decrypted", "Decrypted VCDIFF output"),
-    ):
-        toggle, variable = create_output_section(
-            main,
-            label,
-            vcdiff_defaults[key],
-            defaultextension=".vcdiff",
-            filetypes=[("VCDIFF patch", "*.vcdiff"), ("All files", "*.*")],
-        )
-        vcdiff_settings[key] = (toggle, variable)
+    vcdiff_settings = build_output_sections(main, VCDIFF_OUTPUT_FIELDS)
 
     status_var = tk.StringVar(value="Idle")
     status_label = ttk.Label(main, textvariable=status_var)
@@ -362,12 +366,12 @@ def launch_ui() -> None:
             inputs = {key: resolve_user_path(var.get()) for key, var in input_vars.items()}
 
             outputs = {
-                key: resolve_user_path(var.get()) if toggle.get() else zip_defaults[key]
+                key: resolve_user_path(var.get()) if toggle.get() else ZIP_OUTPUT_DEFAULTS[key]
                 for key, (toggle, var) in zip_settings.items()
             }
 
             vcdiffs = {
-                key: resolve_user_path(var.get()) if toggle.get() else vcdiff_defaults[key]
+                key: resolve_user_path(var.get()) if toggle.get() else VCDIFF_OUTPUT_DEFAULTS[key]
                 for key, (toggle, var) in vcdiff_settings.items()
             }
 
