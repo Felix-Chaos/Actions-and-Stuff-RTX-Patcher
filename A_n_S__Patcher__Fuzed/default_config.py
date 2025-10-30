@@ -4,8 +4,12 @@ import os
 # --- DEFAULT CONFIGURATION CONSTANTS ---
 CONFIG: Dict[str, Any] = {
     "paths": {
+        # Windows Store / Package LocalState folders (used by some installs)
         "minecraft_uwp": os.path.expandvars(r"%LocalAppData%/Packages/Microsoft.MinecraftUWP_8wekyb3d8bbwe/LocalState"),
-        "minecraft_beta": os.path.expandvars(r"%LocalAppData%/Packages/Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe/LocalState"),
+        "minecraft_uwp_preview": os.path.expandvars(r"%LocalAppData%/Packages/Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe/LocalState"),
+        # Roaming AppData locations used by some Bedrock installs
+        "minecraft_gdk": os.path.expandvars(r"%AppData%/Minecraft Bedrock"),
+        "minecraft_gdk_preview": os.path.expandvars(r"%AppData%/Minecraft Bedrock Preview"),
         "xdelta_dir": "xdelta3",
     },
     "executables": {
@@ -14,7 +18,7 @@ CONFIG: Dict[str, Any] = {
     "filenames": {
         "encrypted_zip": "Actions & Stuff encrypted.zip",
         "normalized_zip": "Actions & Stuff decrypted.zip", # --- CHANGE: Updated filename ---
-        "final_mcpack": "Actions & Stuff Enhanced RTX.mcpack",
+        "final_zip": "Actions & Stuff Enhanced RTX.zip",
         "icon": "AnSPatchericon.ico",
         "manifest": "manifest.json",
         "patch_config": "patch_config.json",
@@ -24,9 +28,9 @@ CONFIG: Dict[str, Any] = {
         "decrypted": "Actions & Stuff decrypted.zip.vcdiff",
     },
     "marketplace_pack_stats": {
-        "v1": {"files": 16661, "dirs": 301}
+        "v1.7": {"files": 16661, "dirs": 301}
     },
     "cleanup_prefixes": ["A&SforRTX", "Actions & Stuff Enhanced"],
-    "files_to_remove": ["contents.json", "signatures.json", "splashes.json", "sounds.json"],
-    "dirs_to_remove": ["texts"],
+    #"files_to_remove": ["contents.json", "signatures.json", "splashes.json", "sounds.json"],
+    #"dirs_to_remove": ["texts"],
 }

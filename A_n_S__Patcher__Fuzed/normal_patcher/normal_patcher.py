@@ -5,9 +5,12 @@ import threading
 import time
 import tkinter as tk
 from tkinter import filedialog, messagebox
+import zipfile
+import datetime
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 import patcher_methods as methods
+import default_config
 
 def create_normal_patcher_window(ui_manager):
     win = ttk.Toplevel()
@@ -53,10 +56,23 @@ def show_marketplace_patcher(parent, ui_manager):
     target_files = 12951
     target_dirs = 161
 
-    resource_paths = [
-        os.path.expandvars(r"%LocalAppData%\\Packages\\Microsoft.MinecraftUWP_8wekyb3d8bbwe\\LocalState\\premium_cache\\resource_packs"),
-        os.path.expandvars(r"%LocalAppData%\\Packages\\Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe\\LocalState\\premium_cache\\resource_packs")
-    ]
+    # Build resource_pack search paths from the default config.
+    cfg_paths = default_config.CONFIG.get("paths", {})
+    resource_paths = []
+    # Prefer user AppData Bedrock folder first, then Preview
+    uwp_app = cfg_paths.get("minecraft_gdk")
+    beta_app = cfg_paths.get("minecraft_beta_appdata")
+    if uwp_app:
+        resource_paths.append(os.path.join(uwp_app, "resource_packs"))
+    if beta_app:
+        resource_paths.append(os.path.join(beta_app, "resource_packs"))
+    # Fall back to package LocalState premium_cache locations
+    uwp_pkg = cfg_paths.get("minecraft_uwp")
+    beta_pkg = cfg_paths.get("minecraft_beta")
+    if uwp_pkg:
+        resource_paths.append(os.path.join(uwp_pkg, "premium_cache", "resource_packs"))
+    if beta_pkg:
+        resource_paths.append(os.path.join(beta_pkg, "premium_cache", "resource_packs"))
 
     output_dir = os.path.join(os.getcwd(), "xdelta3", "original")
     output_zip = os.path.join(output_dir, "Actions & Stuff encrypted.zip")
@@ -138,17 +154,54 @@ def show_zip_patcher(parent, ui_manager):
 
     def choose_and_prepare():
         file_path = filedialog.askopenfilename(
-            filetypes=[("Minecraft Packs", "*.zip *.mcpack")],
-            title="Choose an A&S zip or mcpack"
+            filetypes=[("Minecraft Packs", "*.zip" )],
+            title="Choose an A&S zip"
         )
         if not file_path:
             top.destroy()
             parent.deiconify()
             return
 
-        normalized_zip = os.path.join(os.getcwd(), "mcpack_normalized.zip")
+        # Choose resource pack location from default config (Bedrock first)
+        cfg_paths = default_config.CONFIG.get("paths", {})
+        rp_candidates = []
+        #-------- Prefer user AppData Bedrock folder first, then Preview
+        uwp_app = cfg_paths.get("minecraft_gdk")
+        uwp_preview = cfg_paths.get("minecraft_gdk_preview")
+        # -----------------------------------------------------
+        gdk_app = cfg_paths.get("minecraft_gdk")
+        gdk_preview = cfg_paths.get("minecraft_gdk_preview")
+        # -----------------------------------------------------
 
-        status_label.config(text="Ready to patch.")
+        if uwp_app:
+            rp_candidates.append(os.path.join(uwp_app, "Users","Shared","games","com.mojang","resource_packs")) 
+        elif uwp_preview:
+            rp_candidates.append(os.path.join(uwp_preview, "Users","Shared","games","com.mojang","resource_packs"))
+        elif gdk_app:
+            rp_candidates.append(os.path.join(gdk_app, "Users","Shared","games","com.mojang","resource_packs"))
+        elif gdk_preview:
+            rp_candidates.append(os.path.join(gdk_preview, "Users","Shared","games","com.mojang","resource_packs"))
+
+        
+        resource_path = next((p for p in rp_candidates if os.path.exists(p)), rp_candidates[0] if rp_candidates else os.path.join(os.getcwd(), "resource_packs"))
+    
+        base_name = os.path.splitext(os.path.basename(file_path))[0]
+        dest_dir = os.path.join(resource_path, base_name)
+        if os.path.exists(dest_dir):
+            dest_dir = f"{dest_dir}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
+
+        try:
+            with zipfile.ZipFile(file_path, 'r') as zf:
+                zf.extractall(dest_dir)
+            status_label.config(text=f"Extracted pack to: {dest_dir}")
+        except zipfile.BadZipFile:
+            messagebox.showerror("Error", "Selected file is not a valid zip/mcpack.")
+            top.destroy()
+            parent.deiconify()
+            return
+
+        # Keep the original file available for the zip-patch flow
+        normalized_zip = file_path
         patch_btn.config(state="normal")
 
         def patch_completion(success, message):
@@ -164,10 +217,11 @@ def show_zip_patcher(parent, ui_manager):
         def run_patch_command():
             patch_btn.config(state="disabled")
             vcdiff_path = methods.resource_path(os.path.join("xdelta3", "vcdiff", "Actions & Stuff decrypted.zip.vcdiff"))
-            output_file = os.path.join(os.getcwd(), "Actions & Stuff Enhanced RTX.mcpack")
+            output_file = os.path.join(os.getcwd(), "Actions & Stuff Enhanced RTX.zip")
             methods.run_patch(normalized_zip, vcdiff_path, output_file,
                               lambda msg: status_label.config(text=msg),
                               patch_completion)
+            
 
         patch_btn.config(command=run_patch_command)
 
