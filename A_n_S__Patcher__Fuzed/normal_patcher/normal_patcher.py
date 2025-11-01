@@ -162,25 +162,30 @@ def show_zip_patcher(parent, ui_manager):
             parent.deiconify()
             return
 
-        # Choose resource pack location from default config (Bedrock first)
+        # Choose resource pack location from default config (prefer AppData Bedrock first)
         cfg_paths = default_config.CONFIG.get("paths", {})
         rp_candidates = []
-        #-------- Prefer user AppData Bedrock folder first, then Preview
+        # New AppData-style keys (prefer these first)
+        appdata_bedrock = cfg_paths.get("minecraft_appdata")
+        appdata_preview = cfg_paths.get("minecraft_beta")
+        # Fall back to GDK/UWP locations
         uwp_app = cfg_paths.get("minecraft_gdk")
         uwp_preview = cfg_paths.get("minecraft_gdk_preview")
-        # -----------------------------------------------------
         gdk_app = cfg_paths.get("minecraft_gdk")
         gdk_preview = cfg_paths.get("minecraft_gdk_preview")
-        # -----------------------------------------------------
 
-        if uwp_app:
-            rp_candidates.append(os.path.join(uwp_app, "Users","Shared","games","com.mojang","resource_packs")) 
+        if appdata_bedrock:
+            rp_candidates.append(os.path.join(appdata_bedrock, "Users", "Shared", "games", "com.mojang", "resource_packs"))
+        elif appdata_preview:
+            rp_candidates.append(os.path.join(appdata_preview, "Users", "Shared", "games", "com.mojang", "resource_packs"))
+        elif uwp_app:
+            rp_candidates.append(os.path.join(uwp_app, "Users", "Shared", "games", "com.mojang", "resource_packs"))
         elif uwp_preview:
-            rp_candidates.append(os.path.join(uwp_preview, "Users","Shared","games","com.mojang","resource_packs"))
+            rp_candidates.append(os.path.join(uwp_preview, "Users", "Shared", "games", "com.mojang", "resource_packs"))
         elif gdk_app:
-            rp_candidates.append(os.path.join(gdk_app, "Users","Shared","games","com.mojang","resource_packs"))
+            rp_candidates.append(os.path.join(gdk_app, "Users", "Shared", "games", "com.mojang", "resource_packs"))
         elif gdk_preview:
-            rp_candidates.append(os.path.join(gdk_preview, "Users","Shared","games","com.mojang","resource_packs"))
+            rp_candidates.append(os.path.join(gdk_preview, "Users", "Shared", "games", "com.mojang", "resource_packs"))
 
         
         resource_path = next((p for p in rp_candidates if os.path.exists(p)), rp_candidates[0] if rp_candidates else os.path.join(os.getcwd(), "resource_packs"))
