@@ -10,6 +10,10 @@ CONFIG: Dict[str, Any] = {
         # Roaming AppData locations used by some Bedrock installs
         "minecraft_gdk": os.path.expandvars(r"%AppData%/Minecraft Bedrock"),
         "minecraft_gdk_preview": os.path.expandvars(r"%AppData%/Minecraft Bedrock Preview"),
+        # New AppData-style keys (some users expect AppData paths under these names)
+        # Prefer the Bedrock AppData location first, then the Preview one.
+        "minecraft_appdata": os.path.expandvars(r"%AppData%/Minecraft Bedrock"),
+        "minecraft_beta": os.path.expandvars(r"%AppData%/Minecraft Bedrock Preview"),
         "xdelta_dir": "xdelta3",
     },
     "executables": {
