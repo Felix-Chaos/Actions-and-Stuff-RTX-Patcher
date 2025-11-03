@@ -143,8 +143,15 @@ Browse this repository, every tool and script includes a short README with setup
 
 * [A&S RTX Patcher v0.1.13 (for A&S 1.4)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/0.1.13)  
 * [A&S RTX Patcher v1.0.1 (for A&S 1.6)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/U_N_v1.0.1)  
-* [A&S RTX Patcher v1.0.1 (for A&S 1.7)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/1.0.2)  
+* [A&S RTX Patcher v1.0.2 (for A&S 1.7)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/1.0.2)
+* ⇈Minecraft UWP (MC Version < 1.21.120)⇈
+* ⇊Minecraft GDK (MC Version 1.21.120 and above)⇊
+* [A&S RTX Patcher v1.0.3 (for A&S 1.7 MC Version 1.21.120)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/1.0.3)
 
+```
+A&S Patcher has been updated to support the new GDK-based Minecraft installation on Windows.
+All paths and patch methods have been adjusted for full compatibility with the latest Minecraft rollout (older Minecraft Versions do requiere the Patcher versions Listed as UWP).
+```
 ### ⚗️ Experimental Builds
 
 * [U_0.1.1 Universal Patcher (for 1.6 from 1.4 patch)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/U_0.1.1)
