@@ -1,4 +1,4 @@
-<img width="804" height="264" alt="Favicon" src="https://github.com/user-attachments/assets/c1d10c7b-2f6b-40f7-bb27-fc03d0007c01" />
+<img width="5975" height="5100" alt="Actions__Stuff_Logo_-_PNG" src="https://github.com/user-attachments/assets/7f2c416e-b36c-46e6-ab8f-d4b8042846f9" />
 
 ---
 
