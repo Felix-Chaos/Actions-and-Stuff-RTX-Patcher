@@ -28,11 +28,24 @@ CONFIG: Dict[str, Any] = {
         "patch_config": "patch_config.json",
     },
     "patches": {
-        "encrypted_v1": "Actions & Stuff encrypted.zip.vcdiff",
-        "decrypted": "Actions & Stuff decrypted.zip.vcdiff",
+        "marketplace_encrypted": "Patches/Marketplace/v1.7/patch.vcdiff",
+        "zip_decrypted": "Patches/Zip/v1.7/patch.vcdiff",
+    },
+    "patch_versions": {
+        "v1.7": {
+            "patch_file": "Patches/Marketplace/v1.7/patch.vcdiff",
+            "stats": {"files": 16661, "dirs": 301}
+        },
+        "v1.8": {
+            "patch_file": "Patches/Marketplace/v1.8/patch.vcdiff",
+            "stats": {"files": 17000, "dirs": 320}
+        }
     },
     "marketplace_pack_stats": {
         "v1.7": {"files": 16661, "dirs": 301}
+    },
+    "zip_pack_stats": {
+        "v1.7": {"files": 12951, "dirs": 161}
     },
     "cleanup_prefixes": ["A&SforRTX", "Actions & Stuff Enhanced"],
     #"files_to_remove": ["contents.json", "signatures.json", "splashes.json", "sounds.json"],

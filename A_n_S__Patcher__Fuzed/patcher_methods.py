@@ -12,14 +12,6 @@ import ttkbootstrap as ttk
 
 import default_config as config
 
-def resource_path(relative_path: str) -> str:
-    """Gets the absolute path to a resource, works for dev and for PyInstaller."""
-    try:
-        base_path = sys._MEIPASS
-    except AttributeError:
-        base_path = os.path.abspath(".")
-    return os.path.join(base_path, relative_path)
-
 def center_window(window):
     """Centers a tkinter window on the screen."""
     window.update_idletasks()
@@ -31,64 +23,6 @@ def center_window(window):
     y = (hs // 2) - (h // 2)
     window.geometry(f'{w}x{h}+{x}+{y}')
     window.attributes('-topmost', True)
-
-def get_folder_stats(folder, return_files=False):
-    total_size = 0
-    file_count = 0
-    folder_count = 0
-    file_list = []
-
-    for root, dirs, files in os.walk(folder):
-        folder_count += len(dirs)
-        file_count += len(files)
-        for f in files:
-            try:
-                fp = os.path.join(root, f)
-                if return_files:
-                    file_list.append(fp)
-                total_size += os.path.getsize(fp)
-            except:
-                pass
-
-    return (total_size, file_count, folder_count, file_list) if return_files else (total_size, file_count, folder_count)
-
-def compress_deterministic(folder_path, output_zip):
-    with zipfile.ZipFile(output_zip, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
-        for root, _, files in sorted(os.walk(folder_path)):
-            for file in sorted(files):
-                file_path = os.path.join(root, file)
-                arcname = os.path.relpath(file_path, folder_path).replace("\\\\", "/")
-                
-                info = zipfile.ZipInfo(arcname)
-                info.date_time = (1980, 1, 1, 0, 0, 0)
-                info.compress_type = zipfile.ZIP_DEFLATED
-
-                with open(file_path, 'rb') as f:
-                    zf.writestr(info, f.read())
-
-def run_patch(source_file, patch_file, output_file, status_callback, completion_callback):
-    """Runs the xdelta3 patch in a separate thread."""
-    def patch_thread():
-        try:
-            exe_path = resource_path(os.path.join("xdelta3", "exec", "xdelta3_x86_64_win.exe"))
-            if not os.path.exists(exe_path):
-                raise FileNotFoundError("xdelta3 executable not found.")
-
-            status_callback("Patching...")
-            cmd = f'"{exe_path}" -v -d -s "{source_file}" "{patch_file}" "{output_file}"'
-            subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
-            status_callback("Patch applied successfully!")
-            completion_callback(True, "Patch applied successfully!")
-        except subprocess.CalledProcessError as e:
-            error_message = f"Patching failed:\n{e.stderr}"
-            status_callback("Error during patching.")
-            completion_callback(False, error_message)
-        except Exception as e:
-            error_message = f"An unexpected error occurred:\n{e}"
-            status_callback("An unexpected error occurred.")
-            completion_callback(False, error_message)
-
-    threading.Thread(target=patch_thread, daemon=True).start()
 
 def clean_for_update(root):
     top = ttk.Toplevel(root)

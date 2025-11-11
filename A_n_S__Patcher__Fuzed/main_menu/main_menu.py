@@ -147,5 +147,7 @@ def create_main_window(ui_manager):
 #                            MAIN
 # -------------------------------------------------------------------
 if __name__ == "__main__":
+    # Add the parent directory to the Python path
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
     ui_manager = UIManager(create_main_window)
     ui_manager.show_main_menu()
