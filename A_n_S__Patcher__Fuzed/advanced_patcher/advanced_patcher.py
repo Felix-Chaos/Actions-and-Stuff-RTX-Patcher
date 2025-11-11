@@ -3,13 +3,14 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
-import patcher_methods as methods
+import patch
+import patcher_methods
 
 def create_advanced_patcher_window(ui_manager):
     win = ttk.Toplevel()
     win.title("Advanced Patcher")
     win.geometry("600x400")
-    methods.center_window(win)
+    patcher_methods.center_window(win)
 
     frame = ttk.Frame(win, padding=20)
     frame.pack(fill="both", expand=True)
@@ -18,7 +19,6 @@ def create_advanced_patcher_window(ui_manager):
 
     # --- File Selection ---
     source_file_var = tk.StringVar(value="path/to/source/file")
-    patch_file_var = tk.StringVar(value="path/to/patch/file")
     output_file_var = tk.StringVar(value="path/to/output/file")
 
     def create_file_input(parent, label_text, textvariable):
@@ -37,7 +37,6 @@ def create_advanced_patcher_window(ui_manager):
             textvariable.set(file_path)
 
     create_file_input(frame, "Source File", source_file_var)
-    create_file_input(frame, "Patch File", patch_file_var)
     create_file_input(frame, "Output File", output_file_var)
 
     patch_btn = ttk.Button(frame, text="Apply Patch", bootstyle=SUCCESS)
@@ -60,18 +59,17 @@ def create_advanced_patcher_window(ui_manager):
 
     def run_patch_command():
         source_file = source_file_var.get()
-        patch_file = patch_file_var.get()
         output_file = output_file_var.get()
 
-        if not all([source_file, patch_file, output_file]):
-            messagebox.showerror("Error", "Please select all three files.")
+        if not all([source_file, output_file]):
+            messagebox.showerror("Error", "Please select both files.")
             return
 
         patch_btn.config(state="disabled")
         progress.start()
-        methods.run_patch(source_file, patch_file, output_file,
-                          lambda msg: status_label.config(text=msg),
-                          patch_completion)
+        patch.patch_zip(source_file, output_file,
+                           lambda msg: status_label.config(text=msg),
+                           patch_completion)
 
     patch_btn.config(command=run_patch_command)
 
