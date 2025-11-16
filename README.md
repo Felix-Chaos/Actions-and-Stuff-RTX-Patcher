@@ -16,7 +16,6 @@
 
 1. [⚠️ Important Notice](#⚠️-important-notice)  
 2. [💡 What Is *A&S RTX Patcher*?](#💡-what-is-ans-rtx-patcher)  
-3. [🧩 Project Progress](#🧩-project-progress)  
 4. [📁 Repository Overview](#📁-repository-overview)  
 5. [⚙️ Requirements](#⚙️-requirements)  
 6. [🚀 How to Use](#🚀-how-to-use)  
@@ -54,31 +53,50 @@ It works by:
 * Supporting both **singleplayer and multiplayer (server)** environments
 
 This ensures RTX visuals are properly integrated **without redistributing** any copyrighted pack data.
+For Better support and Update notice please use following Discord Server:
+[![Join Discord](https://img.shields.io/discord/1432653252171661364?label=Join%20Discord&logo=discord&style=for-the-badge&color=7289da)](https://discord.gg/YrMMmN2kc7)
+
+
+---
+## 💾 Downloads
+
+**All future updates will target GDK-based Minecraft only.**  
+Use UWP releases **only if your Minecraft version is older than 1.21.120**.
 
 ---
 
-## 🧩 Project Progress
+### ✅ Minecraft GDK (MC 1.21.120 and above) – Recommended
 
-| Task                                 | Status        |
-| ------------------------------------ | ------------- |
-| 🚀 **Project Initialization**        | ✅ Complete    |
-| 📂 **File & Folder Update**          | ✅ Complete    |
-| 🎉 **A&S 1.6 Patcher Release**       | ✅ Released    |
-| 🔍 **Improved Search Logic for 1.7** | ✅ Complete |
-| 🧭 **Path Update & Cleanup**         | ✅ Complete |
-| 🧱 **Patch File Generation for 1.7** | ✅ Complete |
-| 📦 **Final 1.7 Release**             | ✅ Released |
-| 🔍 **Final 1.8 Release**             | ❓ Soon™ |
+**Latest Stable Release:**  
+
+[![Download Latest Release](https://img.shields.io/badge/Download%20v1.0.4%20(A&S%201.8)-blue?style=for-the-badge&logo=github)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/1.0.4)
+
+| Patcher Version | A&S Version | Status | Download |
+|-----------------|-------------|--------|----------|
+| **v1.0.4**      | 1.8         | ![Stable](https://img.shields.io/badge/Status-Stable-brightgreen) | [Download](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/1.0.4) |
+| **v1.0.3**      | 1.7         | ![Stable](https://img.shields.io/badge/Status-Stable-brightgreen) | [Download](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/1.0.3) |
+
 
 ---
 
-## 📁 Repository Overview
+<details>
+<summary>🟠 Minecraft UWP (MC < 1.21.120) – Legacy</summary>
 
-| Name                      | Description                                                        | Link                                                    | Status                |
-| ------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------- | --------------------- |
-| **A&S RTX Patcher**       | Main patcher executable for *A&S RTX 1.7*                          | [A&S RTX Patcher](./A&S%20RTX%20Patcher)                | ✅ Stable              |
-| **Universal A&S Patcher** | Advanced patcher supporting *A&S versions 1.3 – 1.7*               | [Universal Patcher](./Universial%20A&S%20RTX%20Patcher) | ✅ Requires patch file |
-| **Tools**                 | Utilities for creating custom patches or self-building the patcher | [Tools](./tools/README.md)                              | 🧰 Included           |
+| Patcher Version | A&S Version | Status | Download |
+|-----------------|-------------|--------|----------|
+| **v1.0.2**      | 1.7         | ![Legacy](https://img.shields.io/badge/Status-Legacy-orange) | [Download](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/1.0.2) |
+| **v1.0.1**      | 1.6         | ![Legacy](https://img.shields.io/badge/Status-Legacy-orange) | [Download](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/U_N_v1.0.1) |
+| **v0.1.13**     | 1.4         | ![Legacy](https://img.shields.io/badge/Status-Legacy-orange) | [Download](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/0.1.13) |
+
+</details>
+<details>
+<summary>🔴 Experimental / Preview Versions</summary>
+
+| Patcher Version | A&S Version | MC Version | Status | Download |
+|-----------------|-------------|-------------|--------|----------|
+| **U_0.1.1**     | 1.6 → 1.4   | UWP | ![Experimental](https://img.shields.io/badge/Status-Experimental-yellow) | [Download](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/U_0.1.1) |
+
+</details>
 
 ---
 
@@ -137,34 +155,25 @@ Browse this repository, every tool and script includes a short README with setup
 
 ---
 
-## 💾 Downloads
 
-#### Always the [Latest Release](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/latest)<-- Press him Please 👈(ﾟヮﾟ👈) 
 
-### ✅ Stable Builds
+**Notes:**  
 
-* [A&S RTX Patcher v0.1.13 (for A&S 1.4)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/0.1.13)  
-* [A&S RTX Patcher v1.0.1 (for A&S 1.6)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/U_N_v1.0.1)  
-* [A&S RTX Patcher v1.0.2 (for A&S 1.7)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/1.0.2)
-  
-  ### ⇈ Minecraft UWP (MC Version < 1.21.120) ⇈
-  ### ⇊ Minecraft GDK (MC Version 1.21.120 and above) ⇊
-  
-* [A&S RTX Patcher v1.0.3 (for A&S 1.7 MC Version 1.21.120)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/1.0.3)
+* **GDK versions are the only actively maintained releases**  
+* UWP releases are **legacy only** and won’t receive updates  
+* Always verify your **Minecraft version** before patching  
 
-```
-A&S Patcher has been updated to support the new GDK-based Minecraft installation on Windows.
-All paths and patch methods have been adjusted for full compatibility with the latest Minecraft rollout
-(older Minecraft Versions do requiere the Patcher versions Listed as UWP).
-```
-### ⚗️ Experimental Builds
 
-* [U_0.1.1 Universal Patcher (for 1.6 from 1.4 patch)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/U_0.1.1)
+---
 
-### 🕹️ Legacy Versions
 
-* v1.07 (A&S 1.3) - *Outdated*  
-* v1.08 (A&S 1.3.1) - *Outdated*
+## 📁 Repository Overview
+
+| Name                      | Description                                                        | Link                                                    | Status                |
+| ------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------- | --------------------- |
+| **A&S RTX Patcher**       | Main patcher executable for *A&S RTX 1.8*                          | [A&S RTX Patcher](./A&S%20RTX%20Patcher)                | ✅ Stable              |
+| **Universal A&S Patcher** | Advanced patcher supporting *A&S versions 1.3 – 1.8*               | [Universal Patcher](./Universial%20A&S%20RTX%20Patcher) | ✅ Requires patch file |
+| **Tools**                 | Utilities for creating custom patches or self-building the patcher | [Tools](./tools/README.md)                              | 🧰 Included           |
 
 ---
 
