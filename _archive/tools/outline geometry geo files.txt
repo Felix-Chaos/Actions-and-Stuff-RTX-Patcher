@@ -1,0 +1,42 @@
+"mace"
+	2d34dd2cda46c6a36752
+	c7c4d73469d4d2271504
+	ee1e5a7e675b09d9e6ef
+	
+"shears"
+	815ce284b9fa1e1a8f4f
+	acf4268522a
+
+"trident"
+	31248e
+	8b3d19b8c2
+	9340066a80a
+"bow"
+	8c928a63cd256f2d01b9.json
+	7f13c33c7e143b66ebaa.json
+	3bf5f4822997f26d9862.json
+	55c880107006f14448f1.json
+	303e1d043bf4eca45593.json
+	49414e207e1ad83bce17.json
+	9a9869394f165f560768.json
+	60806f7133ec59445bf4.json
+	a58dee2a578b4e298f35.json
+	b23b1d43156c67b49f88.json
+	b29f8460841f32aae179.json
+	b3394b5decd28c710af7.json
+	6b55ec0962719a43839c.json
+"tools"
+
+	15df4806bec20259b03e.json
+	af5eb09e1e6ada9323c3.json
+	dcc3700d2971a6ac4754.json
+
+"crossbow"
+	6e2c418a445fb2cca243.json
+	88d8fd9477fe5035e7e6.json
+	7205cbf431b917e3e4e2.json
+	070747d6dfd3eacd402c.json
+	4091975838f9a85f38d5.json
+	dad4c93ea76068f46e40.json
+	dd34a792cbdb1406c8b1.json
+	f1043df404693fb0d89d.json

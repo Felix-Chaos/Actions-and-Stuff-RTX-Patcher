@@ -1,2 +1,5 @@
-/executables/
-A&S RTX Patcher/dist
+# Ignore Python cache files
+__pycache__/
+
+# Ignore log files
+app.log
