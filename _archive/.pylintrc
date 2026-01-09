@@ -1,0 +1,45 @@
+[MASTER]
+ignore=.venv
+ignore-patterns=^build/|^dist/
+
+[MESSAGES CONTROL]
+disable=
+    missing-module-docstring,
+    missing-class-docstring,
+    missing-function-docstring,
+    invalid-name,
+    line-too-long,
+    wildcard-import,
+    unused-import,
+    unused-wildcard-import,
+    unused-variable,
+    unused-argument,
+    protected-access,
+    broad-exception-caught,
+    bare-except,
+    consider-using-f-string,
+    subprocess-run-check,
+    duplicate-code,
+    wrong-import-order,
+    too-many-arguments,
+    too-many-positional-arguments,
+    too-many-local-variables,
+    too-many-branches,
+    too-many-boolean-expressions,
+    too-many-statements,
+    too-many-instance-attributes,
+    too-many-ancestors,
+    too-many-nested-blocks,
+    redundant-u-string-prefix,
+    unsupported-binary-operation,
+    multiple-statements,
+    superfluous-parens,
+    import-outside-toplevel,
+    redefined-outer-name,
+    unspecified-encoding,
+    cyclic-import,
+    no-member,
+    unnecessary-pass
+
+[FORMAT]
+max-line-length=160

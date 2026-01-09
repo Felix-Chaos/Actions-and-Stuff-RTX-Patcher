@@ -1,11 +1,4 @@
 import locale
-
-try:
-    # This works on most English Windows systems
-    locale.setlocale(locale.LC_ALL, 'English_United States.1252')
-except locale.Error:
-    # Safe fallback if the above isn't supported
-    locale.setlocale(locale.LC_ALL, 'C')
 import os
 import shutil
 import subprocess
@@ -16,20 +9,26 @@ import ctypes
 import time
 import tkinter as tk
 from tkinter import filedialog, messagebox
+import hashlib
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
-from ttkbootstrap.themes import user
-from ttkbootstrap import Toplevel
-from ttkbootstrap import Button, Label, Frame, Toplevel
+from ttkbootstrap import Toplevel, Button, Label, Frame
+
+# Ensure locale works safely
+try:
+    locale.setlocale(locale.LC_ALL, 'English_United States.1252')
+except locale.Error:
+    locale.setlocale(locale.LC_ALL, 'C')
 
 
-
+# Utility functions
 def resource_path(relative_path):
     try:
         base_path = sys._MEIPASS
     except AttributeError:
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
+
 
 def center_window(window):
     window.update_idletasks()
@@ -41,6 +40,7 @@ def center_window(window):
     y = (hs // 2) - (h // 2)
     window.geometry(f'{w}x{h}+{x}+{y}')
     window.attributes('-topmost', True)
+
 
 def get_folder_stats(folder, return_files=False):
     total_size = 0
@@ -62,25 +62,6 @@ def get_folder_stats(folder, return_files=False):
 
     return (total_size, file_count, folder_count, file_list) if return_files else (total_size, file_count, folder_count)
 
-def compress_with_explorer(folder_path, output_path):
-    vbs_path = "zip_script.vbs"
-    with open(vbs_path, "w") as vbs:
-        vbs.write(f'''
-Set objArgs = WScript.Arguments
-Set objFSO = CreateObject("Scripting.FileSystemObject")
-Set objShell = CreateObject("Shell.Application")
-Set zipFile = objFSO.CreateTextFile("{output_path}", True)
-zipFile.Write "PK" & Chr(5) & Chr(6) & String(18, Chr(0))
-zipFile.Close
-Set zipFolder = objShell.NameSpace("{output_path}")
-Set sourceFolder = objShell.NameSpace("{folder_path}")
-zipFolder.CopyHere sourceFolder.Items, 4 + 16
-Do Until zipFolder.Items.Count = sourceFolder.Items.Count
-    WScript.Sleep 500
-Loop
-        ''')
-    subprocess.call(["wscript", vbs_path])
-    os.remove(vbs_path)
 
 def compress_deterministic(folder_path, output_zip):
     with zipfile.ZipFile(output_zip, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
@@ -88,15 +69,70 @@ def compress_deterministic(folder_path, output_zip):
             for file in sorted(files):
                 file_path = os.path.join(root, file)
                 arcname = os.path.relpath(file_path, folder_path).replace("\\", "/")
-                
-                # Consistent DOS-compatible timestamp: Jan 1, 1980
+
                 info = zipfile.ZipInfo(arcname)
                 info.date_time = (1980, 1, 1, 0, 0, 0)
                 info.compress_type = zipfile.ZIP_DEFLATED
 
                 with open(file_path, 'rb') as f:
                     zf.writestr(info, f.read())
-    
+
+
+def sha1_of_file(path):
+    """Return SHA-1 hex digest of path or a message if unavailable."""
+    if not os.path.exists(path):
+        return "(not found)"
+    h = hashlib.sha1()
+    try:
+        with open(path, "rb") as f:
+            while True:
+                chunk = f.read(1024 * 1024)
+                if not chunk:
+                    break
+                h.update(chunk)
+        return h.hexdigest()
+    except Exception as e:
+        return f"(error reading: {e})"
+
+
+def show_error_and_exit(title, summary, details, files_checksums, exit_code=1):
+    """
+    Build a friendly multi-line error message that contains:
+    - summary (short reason)
+    - details (stderr/stdout)
+    - files_checksums: dict name->path
+    Then show messagebox and exit.
+    """
+    lines = []
+    lines.append(f"{summary}\n")
+    if details:
+        lines.append("Details:\n")
+        # keep details reasonably short
+        lines.extend([details.strip(), "\n"])
+    lines.append("File checksums (SHA-1):")
+    for name, path in files_checksums.items():
+        try:
+            digest = sha1_of_file(path)
+        except Exception as e:
+            digest = f"(error computing: {e})"
+        lines.append(f"- {name}: {digest}  [{path if path else 'N/A'}]")
+
+    lines.append("\nTip: Verify the source pack matches the original/unmodified file (use sha1 or sha256).")
+    lines.append("The program will now close.")
+    message = "\n".join(lines)
+
+    # Show error dialog (OK button)
+    try:
+        messagebox.showerror(title, message)
+    except Exception:
+        # If messagebox fails for some reason, print to stderr (still exit)
+        print(message, file=sys.stderr)
+
+    # Forcefully terminate everything
+    os._exit(exit_code)
+
+
+# --- CLEAN FOR UPDATE ---
 def clean_for_update():
     top = ttk.Toplevel()
     top.title("Clean for Update")
@@ -122,7 +158,6 @@ def clean_for_update():
         text="Confirm Deletion",
         width=30,
         state="disabled",
-        command=lambda: confirm_deletion(found_folders, results_box, top),
         bootstyle=SUCCESS
     )
     confirm_btn.pack(pady=(5, 10))
@@ -152,7 +187,7 @@ def clean_for_update():
             messagebox.showinfo("✅ Done", f"{deleted} folders deleted successfully.")
         else:
             messagebox.showinfo("Nothing to Clean", "No folders were deleted.")
-        top.destroy()
+        os._exit(0)
 
     def scan_and_confirm():
         nonlocal found_folders
@@ -160,10 +195,10 @@ def clean_for_update():
 
         base_paths = [
             os.path.expandvars(
-                r"%LocalAppData%\Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\LocalState\games\com.mojang"
+                r"%AppData%/Minecraft Bedrock"
             ),
             os.path.expandvars(
-                r"%LocalAppData%\Packages\Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe\LocalState\games\com.mojang"
+                r"%AppData%/Minecraft Bedrock Preview"
             )
         ]
 
@@ -195,42 +230,38 @@ def clean_for_update():
             label.config(text="Folders Found")
             progress["value"] = 100
             progress.update()
-
             log_grouped_paths(grouped_paths)
-            confirm_btn.config(state="normal")
+            confirm_btn.config(state="normal", command=lambda: confirm_deletion(found_folders, results_box, top))
         else:
             results_box.configure(state="normal")
             results_box.insert("end", "No matching folders found.\n")
             results_box.configure(state="disabled")
             messagebox.showinfo("Nothing to Clean", "No folders starting with 'A&SforRTX' were found.")
-            top.destroy()
-
-    def delayed_scan():
-        time.sleep(3)
-        scan_and_confirm()
+            os._exit(0)
 
     found_folders = []
-    threading.Thread(target=delayed_scan, daemon=True).start()
+    threading.Thread(target=scan_and_confirm, daemon=True).start()
 
 
+# --- PATCH FROM MARKETPLACE ---
 def patch_from_marketplace(root):
     top = ttk.Toplevel(root)
     top.title("Patch from Marketplace")
-    top.geometry("500x250")
+    top.geometry("500x300")
     top.attributes('-topmost', True)
     frame = ttk.Frame(top, padding=20)
     frame.pack()
     center_window(top)
-    target_files = 12951 #! Old 1.4 Value: 16661
-    target_dirs = 161 #! Old 1.4 Value: 301
 
+    target_files = 10057
+    target_dirs = 162
 
     resource_paths = [
         os.path.expandvars(
-            r"%LocalAppData%\Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\LocalState\premium_cache\resource_packs"
+            r"%AppData%\Minecraft Bedrock\premium_cache\resource_packs"
         ),
         os.path.expandvars(
-            r"%LocalAppData%\Packages\Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe\LocalState\premium_cache\resource_packs"
+            r"%AppData%\Minecraft Bedrock Preview\premium_cache\resource_packs"
         )
     ]
 
@@ -246,12 +277,12 @@ def patch_from_marketplace(root):
     progress = ttk.Progressbar(frame, mode='determinate', length=300, bootstyle=INFO, maximum=100)
     progress.pack(pady=(10, 0))
     progress["value"] = 0
-    
+
     patch_btn = ttk.Button(frame, text="Patch", width=30, state="disabled", bootstyle=SUCCESS)
     patch_btn.pack(pady=(10, 0))
 
-
     def search_and_compress():
+        status_label.config(text="Searching resource_packs...")
         found = False
         for path in resource_paths:
             if not os.path.exists(path):
@@ -259,90 +290,145 @@ def patch_from_marketplace(root):
             for folder in os.listdir(path):
                 full_path = os.path.join(path, folder)
                 if os.path.isdir(full_path):
-                    size, files, folders, file_list = get_folder_stats(full_path, return_files=True)
+                    status_label.config(text=f"Checking folder: {folder}")
+                    try:
+                        size, files, folders, file_list = get_folder_stats(full_path, return_files=True)
+                    except Exception:
+                        size, files, folders, file_list = (0, 0, 0, [])
                     if files == target_files and folders == target_dirs:
                         os.makedirs(output_dir, exist_ok=True)
 
-                        total = len(file_list)
+                        # Provide progress while enumerating files (simulate activity)
+                        total = len(file_list) or 1
                         for idx, fp in enumerate(file_list):
                             try:
-                                os.path.getsize(fp)  # Simulate activity
+                                os.path.getsize(fp)  # simulate read/access
                             except:
                                 pass
                             progress["value"] = (idx + 1) / total * 80
+                            if (idx + 1) % max(1, total // 10) == 0 or idx == total - 1:
+                                status_label.config(text=f"Preparing files... {idx + 1}/{total}")
+                            # tiny sleep to keep UI responsive-ish
+                            time.sleep(0.001)
 
                         progress["value"] = 85
                         status_label.config(text="Compressing files... Might take a couple of minutes")
-                        compress_deterministic(full_path, output_zip)
+                        progress.update()
+
+                        # Compress deterministically
+                        try:
+                            compress_deterministic(full_path, output_zip)
+                        except Exception as e:
+                            show_error_and_exit(
+                                "Compression Error",
+                                "Failed while compressing.",
+                                str(e),
+                                {"Source (folder)": full_path, "Output (zip)": output_zip},
+                                exit_code=1
+                            )
 
                         progress["value"] = 100
+                        progress.update()
+                        status_label.config(text="Compression complete.")
                         found = True
                         break
             if found:
                 break
 
         if found:
-            if patch_btn.winfo_exists():
-                patch_btn.config(state="normal")
-                status_label.config(text="Encrypted files ready for patching.")
+            patch_btn.config(state="normal")
+            status_label.config(text="Encrypted files ready for patching.")
         else:
-            if status_label.winfo_exists():
-                status_label.config(text="No matching folder found.")
-            progress["value"] = 0
+            status_label.config(text="No matching folder found.")
+            messagebox.showinfo("Not Found", "No matching encrypted folder was found.")
+            os._exit(1)
 
     def run_patch():
         if not os.path.exists(output_zip):
             messagebox.showerror("Error", "Missing encrypted.zip in original folder.")
-            return
-        vcdiff_path_to_use = resource_path(os.path.join("xdelta3", "vcdiff", "Actions & Stuff encrypted.zip.vcdiff"))
-  
-        if not os.path.exists(vcdiff_path_to_use):
-            messagebox.showerror("Error", f"Missing patch file:\n{vcdiff_path_to_use}")
-            return
+            os._exit(1)
 
-        try:
-            progress.start()
-            patch_btn.config(state="disabled")
+        if not os.path.exists(vcdiff_path):
+            messagebox.showerror("Error", f"Missing patch file:\n{vcdiff_path}")
+            os._exit(1)
 
-            def patch_thread():
+        def patch_thread():
+            try:
+                progress.start()
+                patch_btn.config(state="disabled")
+                status_label.config(text="Applying patch...")
+
+                os.makedirs(os.path.dirname(patched_output), exist_ok=True)
+
+                result = subprocess.run([
+                    exe_path,
+                    "-v", "-d",
+                    "-s", output_zip,
+                    vcdiff_path,
+                    patched_output
+                ], capture_output=True, text=True)
+
+                progress.stop()
+
+                if result.returncode != 0:
+                    # collect checksums
+                    files_checksums = {
+                        "Source (zip)": output_zip,
+                        "Patch (.vcdiff)": vcdiff_path,
+                        "Patched output (if created)": patched_output if os.path.exists(patched_output) else ""
+                    }
+                    # choose a short reason if we can spot it in stderr
+                    stderr = (result.stderr or "").strip()
+                    reason = "Patch failed (target/source mismatch or invalid input)."
+                    if "target window checksum mismatch" in stderr.lower() or "xd3_invalid_input" in stderr.lower():
+                        reason = "Target window checksum mismatch (source seems wrong)."
+                    show_error_and_exit(
+                        "Patching failed (exit code {}).".format(result.returncode),
+                        reason,
+                        stderr or (result.stdout or ""),
+                        files_checksums,
+                        exit_code=1
+                    )
+
+                status_label.config(text="Moving final file and cleaning up...")
+                final_output = os.path.join(os.getcwd(), "Actions & Stuff Enhanced RTX.mcpack")
                 try:
-                    os.makedirs(os.path.dirname(patched_output), exist_ok=True)
-                    subprocess.run([
-                        exe_path,
-                        "-v", "-d",
-                        "-s", output_zip,
-                        vcdiff_path_to_use,
-                        patched_output
-                    ], check=True)
-
-                    final_output = os.path.join(os.getcwd(), "Actions & Stuff Enhanced RTX.mcpack")
                     shutil.move(patched_output, final_output)
+                except Exception as e:
+                    show_error_and_exit(
+                        "Finalize Error",
+                        "Failed to move/rename final patched file.",
+                        str(e),
+                        {"Patched output": patched_output, "Expected final": final_output},
+                        exit_code=1
+                    )
 
-                    messagebox.showinfo("🎉 Done!", f"Patched successfully!\nSaved as:\n{final_output}")
-                    shutil.rmtree(os.path.join(os.getcwd(), "xdelta3"), ignore_errors=True)
+                shutil.rmtree(os.path.join(os.getcwd(), "xdelta3"), ignore_errors=True)
 
-                    top.destroy()
-                    root.deiconify()
-                except subprocess.CalledProcessError as e:
-                    messagebox.showerror("Error", f"Patching failed:\n{str(e)}")
-                finally:
-                    progress.stop()
-                    patch_btn.config(state="normal")
+                messagebox.showinfo("🎉 Done!", f"Patched successfully!\nSaved as:\n{final_output}")
+                os._exit(0)
 
-            threading.Thread(target=patch_thread, daemon=True).start()
+            except Exception as e:
+                show_error_and_exit(
+                    "Unexpected Error",
+                    "An unexpected exception occurred during patching.",
+                    str(e),
+                    {"Source (zip)": output_zip, "Patch (.vcdiff)": vcdiff_path, "Patched output": patched_output},
+                    exit_code=1
+                )
 
-        except Exception as e:
-            messagebox.showerror("Error", f"Unexpected error:\n{str(e)}")
-            progress.stop()
+        threading.Thread(target=patch_thread, daemon=True).start()
 
     patch_btn.config(command=run_patch)
     threading.Thread(target=search_and_compress, daemon=True).start()
-    
+
+
+# --- PATCH DECRYPTED ZIP ---
 def patch_decrypted_zip(root):
     top = ttk.Toplevel(root)
     top.title("Patch from .zip/.mcpack")
-    top.geometry("500x250")
-    top.attributes("-topmost", True)
+    top.geometry("500x320")
+    top.attributes('-topmost', True)
     center_window(top)
 
     frame = ttk.Frame(top, padding=20)
@@ -370,28 +456,29 @@ def patch_decrypted_zip(root):
             title="Choose an A&S zip or mcpack"
         )
         if not file_path:
-            top.destroy()
-            root.deiconify()
-            return
+            os._exit(0)
 
         normalized_dir = os.path.join(os.getcwd(), "extracted_mcpack_temp")
         normalized_zip = os.path.join(os.getcwd(), "mcpack_normalized.zip")
 
         try:
-            progress["value"] = 10
             status_label.config(text="Normalizing for patching...")
+            progress["value"] = 10
+            progress.update()
 
             shutil.unpack_archive(file_path, normalized_dir, format="zip")
-            time.sleep(0.5)
+            time.sleep(0.2)
             progress["value"] = 20
+            progress.update()
 
-            # 🆕 Flatten if there's only one folder at the top level
+            # Flatten if there's only one folder at the top level
             top_items = os.listdir(normalized_dir)
             top_dirs = [d for d in top_items if os.path.isdir(os.path.join(normalized_dir, d))]
 
             if len(top_dirs) == 1:
                 only_folder = os.path.join(normalized_dir, top_dirs[0])
                 try:
+                    status_label.config(text="Flattening single-folder package...")
                     for item in os.listdir(only_folder):
                         shutil.move(os.path.join(only_folder, item), normalized_dir)
                     os.rmdir(only_folder)
@@ -399,8 +486,10 @@ def patch_decrypted_zip(root):
                     messagebox.showwarning("Warning", f"Failed to flatten single-folder structure:\n{e}")
 
             progress["value"] = 30
+            progress.update()
 
             # Remove marketplace-specific files
+            status_label.config(text="Removing marketplace-specific files...")
             for root_dir, dirs, files in os.walk(normalized_dir):
                 for f in files:
                     if f in ("contents.json", "signatures.json", "splashes.json", "sounds.json"):
@@ -415,180 +504,114 @@ def patch_decrypted_zip(root):
                     except:
                         pass
 
-            # Replace the top-level manifest.json
+            progress["value"] = 40
+            progress.update()
+
+            # Replace the top-level manifest.json if we have a custom one
             custom_manifest = resource_path(os.path.join("xdelta3", "manifest", "manifest.json"))
             target_manifest = os.path.join(normalized_dir, "manifest.json")
 
             if os.path.isfile(custom_manifest):
                 try:
+                    status_label.config(text="Replacing manifest...")
                     shutil.copy2(custom_manifest, target_manifest)
                 except Exception as e:
                     print(f"Error copying manifest: {e}")
 
             progress["value"] = 50
-            status_label.config(text="Compressing... Might take a couple of minutes")
-            compress_deterministic(normalized_dir, normalized_zip)
-            shutil.rmtree(normalized_dir)
-            progress["value"] = 100
+            progress.update()
 
+            status_label.config(text="Compressing normalized pack... Might take a couple of minutes")
+            compress_deterministic(normalized_dir, normalized_zip)
+            # cleanup
+            try:
+                shutil.rmtree(normalized_dir)
+            except:
+                pass
+
+            progress["value"] = 100
+            progress.update()
             status_label.config(text="Ready to patch.")
             patch_btn.config(state="normal")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to process the pack:\n{str(e)}")
-            top.destroy()
-            root.deiconify()
+            show_error_and_exit(
+                "Prepare Failed",
+                "Failed to process the pack for patching.",
+                str(e),
+                {"Selected pack": file_path, "Normalized zip": normalized_zip},
+                exit_code=1
+            )
 
     def run_patch():
-        vcdiff_path = resource_path(os.path.join("xdelta3", "vcdiff", "Actions & Stuff decrypted.zip.vcdiff"))  
+        vcdiff_path = resource_path(os.path.join("xdelta3", "vcdiff", "Actions & Stuff decrypted.zip.vcdiff"))
         exe_path = resource_path(os.path.join("xdelta3", "exec", "xdelta3_x86_64_win.exe"))
         output_file = os.path.join(os.getcwd(), "Actions & Stuff Enhanced RTX.mcpack")
 
         if not os.path.exists(vcdiff_path):
             messagebox.showerror("Error", "Missing decrypted vcdiff patch.")
-            return
-
-        patch_btn.config(state="disabled")
-        progress.start()
+            os._exit(1)
 
         def patch_thread():
             try:
-                os.makedirs(os.path.dirname(output_file), exist_ok=True)
+                status_label.config(text="Applying patch...")
+                progress.start()
 
-                # Properly quote paths and run using shell
-                cmd = f'"{exe_path}" -v -d -s "{os.path.join(os.getcwd(), "mcpack_normalized.zip")}" "{vcdiff_path}" "{output_file}"'
-                subprocess.run(cmd, shell=True, check=True)
+                src_zip = os.path.join(os.getcwd(), "mcpack_normalized.zip")
+                cmd = f'"{exe_path}" -v -d -s "{src_zip}" "{vcdiff_path}" "{output_file}"'
+                result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
 
-                messagebox.showinfo("🎉 Done!", f"Patched successfully!\nSaved as:\n{output_file}")
-                os.remove(os.path.join(os.getcwd(), "mcpack_normalized.zip"))
-
-                top.destroy()
-                root.deiconify()
-            except subprocess.CalledProcessError as e:
-                messagebox.showerror("Error", f"Patching failed:\n{str(e)}")
-            finally:
                 progress.stop()
-                patch_btn.config(state="normal")
+
+                if result.returncode != 0:
+                    files_checksums = {
+                        "Source (normalized zip)": src_zip,
+                        "Patch (.vcdiff)": vcdiff_path,
+                        "Patched output (if created)": output_file if os.path.exists(output_file) else ""
+                    }
+                    stderr = (result.stderr or "").strip()
+                    reason = "Patch failed (target/source mismatch or invalid input)."
+                    if "target window checksum mismatch" in stderr.lower() or "xd3_invalid_input" in stderr.lower():
+                        reason = "Target window checksum mismatch (source seems wrong)."
+                    show_error_and_exit(
+                        "Patching failed (exit code {}).".format(result.returncode),
+                        reason,
+                        stderr or (result.stdout or ""),
+                        files_checksums,
+                        exit_code=1
+                    )
+
+                status_label.config(text="Patch applied — saving output...")
+                messagebox.showinfo("🎉 Done!", f"Patched successfully!\nSaved as:\n{output_file}")
+                os._exit(0)
+
+            except Exception as e:
+                show_error_and_exit(
+                    "Unexpected Error",
+                    "An unexpected exception occurred during patching.",
+                    str(e),
+                    {"Source (normalized zip)": src_zip, "Patch (.vcdiff)": vcdiff_path, "Output": output_file},
+                    exit_code=1
+                )
 
         threading.Thread(target=patch_thread, daemon=True).start()
 
     patch_btn.config(command=run_patch)
     threading.Thread(target=choose_and_prepare, daemon=True).start()
-    
-def open_fix_window(root):
-    top = ttk.Toplevel(root)
-    top.title("Fix for 1.21.80")
-    top.geometry("480x300")
-    top.attributes('-topmost', True)
-    center_window(top)
-
-    frame = ttk.Frame(top, padding=20)
-    frame.pack(expand=True, fill="both")
-
-    ttk.Label(
-        frame,
-        text="USE ONLY IF YOU ARE USING A&S FROM THE MARKETPLACE AND AFTER PATCHING. FOR FUTURE UPDATES MAKE SURE TO USE RESTORE MARKETPLACE FOLDERS LOCATION BEFORE PATCHING SO THE PATCHER CAN FIND THE FOLDER",
-        wraplength=440,
-        font=("Segoe UI", 10, "bold")
-    ).pack(pady=(0, 20))
-    ttk.Label(
-        frame,
-        text="This fix moves ALL your marketplace texture packs from the PREMIUM_CACHE folder to the COM.MOJANG folder, this is a workaround for an issue with Minecraft 1.21.80 that prevents MER maps from any RTX resource pack to load while having a texture pack from the marketplace enabled.",
-        wraplength=440,
-        font=("Segoe UI", 10)
-    ).pack(pady=(0, 20))
-
-    button_frame = ttk.Frame(frame)
-    button_frame.pack(pady=10)
-
-    ttk.Button(
-        button_frame,
-        text="Move Marketplace Folders",
-        bootstyle=SUCCESS,
-        command=lambda: move_marketplace_folders(top)
-    ).pack(side="left", padx=10)
-
-    ttk.Button(
-        button_frame,
-        text="Restore Marketplace Folders Location",
-        bootstyle=WARNING,
-        command=lambda: revert_marketplace_folders(top)
-    ).pack(side="left", padx=10)
-def move_marketplace_folders(fix_window):
-    src_dir = os.path.expandvars(r"%LocalAppData%\Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\LocalState\premium_cache\resource_packs")
-    dst_dir = os.path.expandvars(r"%LocalAppData%\Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\LocalState\games\com.mojang\resource_packs")
-
-    if not os.path.exists(src_dir):
-        messagebox.showerror("Error", f"Source directory not found:\n{src_dir}")
-        return
-
-    os.makedirs(dst_dir, exist_ok=True)
-
-    moved = 0
-    for folder in os.listdir(src_dir):
-        full_path = os.path.join(src_dir, folder)
-        if os.path.isdir(full_path):
-            contents_path = os.path.join(full_path, "contents.json")
-            if os.path.exists(contents_path):
-                try:
-                    os.rename(contents_path, contents_path + ".bak")
-                except Exception as e:
-                    print(f"Failed to rename contents.json in {folder}: {e}")
-
-            new_name = folder + "_mp"
-            new_path = os.path.join(dst_dir, new_name)
-            shutil.move(full_path, new_path)
-            moved += 1
-
-    messagebox.showinfo("Done", f"{moved} folder(s) moved to COM.MOJANG")
-    fix_window.destroy()
-    fix_window.master.deiconify()
 
 
-def revert_marketplace_folders(fix_window):
-    src_dir = os.path.expandvars(r"%LocalAppData%\Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\LocalState\games\com.mojang\resource_packs")
-    dst_dir = os.path.expandvars(r"%LocalAppData%\Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\LocalState\premium_cache\resource_packs")
-
-    if not os.path.exists(src_dir):
-        messagebox.showerror("Error", f"Source directory not found:\n{src_dir}")
-        return
-
-    os.makedirs(dst_dir, exist_ok=True)
-
-    moved = 0
-    for folder in os.listdir(src_dir):
-        if folder.endswith("_mp"):
-            full_path = os.path.join(src_dir, folder)
-            new_name = folder[:-3]  # Remove '_mp'
-            new_path = os.path.join(dst_dir, new_name)
-            shutil.move(full_path, new_path)
-
-            contents_bak_path = os.path.join(new_path, "contents.json.bak")
-            if os.path.exists(contents_bak_path):
-                try:
-                    os.rename(contents_bak_path, os.path.join(new_path, "contents.json"))
-                except Exception as e:
-                    print(f"Failed to restore contents.json in {new_name}: {e}")
-
-            moved += 1
-
-    messagebox.showinfo("Done", f"{moved} folder(s) moved back to PREMIUM_CACHE.")
-    fix_window.destroy()
-    fix_window.master.deiconify()
-
+# --- MAIN MENU ---
 def show_main_menu():
     root = ttk.Window(themename="superhero")
     root.title("AnS RTX Patcher")
-
     root.geometry("500x320")
 
     icon_path = resource_path("AnSPatchericon.ico")
     if os.path.exists(icon_path):
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(u"AnSPatcher")
-        root.iconbitmap(icon_path)
         try:
-            root.tk.call('wm', 'iconphoto', root._w, tk.PhotoImage(file=icon_path))
-        except:
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(u"AnSPatcher")
+            root.iconbitmap(icon_path)
+        except Exception:
             pass
 
     frame = ttk.Frame(root, padding=30)
@@ -597,40 +620,41 @@ def show_main_menu():
 
     ttk.Label(frame, text="AnS RTX Patcher", font=("Segoe UI", 16, "bold")).pack(pady=(0, 20))
 
-    btn_patch_marketplace = ttk.Button(
+    ttk.Button(
         frame,
         text="Patch from marketplace",
         width=30,
         command=lambda: [root.withdraw(), patch_from_marketplace(root)],
         bootstyle=INFO
-    )
-    btn_patch_decrypted = ttk.Button(
+    ).pack(pady=10)
+
+    ttk.Button(
         frame,
         text="Patch from .zip/.mcpack",
         width=30,
         command=lambda: [root.withdraw(), patch_decrypted_zip(root)],
         bootstyle=PRIMARY
-    )
-    btn_clean = ttk.Button(
-    frame,
-    text="Clean for Update (press before installing patched mcpack)",
-    width=55,
-    command=clean_for_update,
-    bootstyle=WARNING
-    )
-    btn_exit = ttk.Button(
+    ).pack(pady=10)
+
+    ttk.Button(
+        frame,
+        text="Clean for Update (press before installing patched mcpack)",
+        width=55,
+        command=clean_for_update,
+        bootstyle=WARNING
+    ).pack(pady=10)
+
+    ttk.Button(
         frame,
         text="Exit",
         width=30,
-        command=root.destroy,
+        command=lambda: os._exit(0),
         bootstyle=(DANGER, OUTLINE)
-    )
-
-    btn_patch_marketplace.pack(pady=10)
-    btn_patch_decrypted.pack(pady=10)
-    btn_clean.pack(pady=10)
-    btn_exit.pack(pady=10)
+    ).pack(pady=10)
 
     root.mainloop()
 
-show_main_menu()
+
+# --- Run ---
+if __name__ == "__main__":
+    show_main_menu()

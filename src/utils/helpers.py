@@ -36,8 +36,19 @@ def runScriptInThread(root: tk.Widget, scriptPath: str, scriptLabel: str):
             # Creation flags for new console window on Windows
             creationFlags = subprocess.CREATE_NEW_CONSOLE if os.name == "nt" else 0
             
-            # Using sys.executable to ensure we use the same python interpreter
-            cmd = [sys.executable, scriptPath]
+            # Determine python interpreter
+            if getattr(sys, 'frozen', False):
+                # If frozen, sys.executable is the exe itself. Try using system python.
+                # Assuming 'py' launcher or 'python' is in PATH.
+                try:
+                    subprocess.run(["py", "--version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+                    python_exe = "py"
+                except Exception:
+                    python_exe = "python"
+            else:
+                python_exe = sys.executable
+
+            cmd = [python_exe, scriptPath]
             
             proc = subprocess.Popen(cmd, creationflags=creationFlags)
             exitCode = proc.wait()

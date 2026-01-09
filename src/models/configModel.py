@@ -14,35 +14,35 @@ class ConfigModel:
                 "minecraftBedrock": os.path.expandvars(r"%AppData%/Minecraft Bedrock"),
                 "minecraftBedrockPreview": os.path.expandvars(r"%AppData%/Minecraft Bedrock Preview"),
                 
-                "xdeltaDir": "xdelta3",
+                "xdeltaDir": "assets/xdelta3",
             },
             "executables": {
-                "xdelta": "xdelta3/exec/xdelta3_x86_64_win.exe"
+                "xdelta": "assets/xdelta3/exec/xdelta3_x86_64_win.exe"
             },
             "filenames": {
                 "encryptedZip": "Actions & Stuff encrypted.zip",
                 "normalizedZip": "Actions & Stuff decrypted.zip",
                 "finalMcPack": "Actions & Stuff Enhanced RTX.mcpack",
-                "icon": "AnSPatchericon.ico",
+                "icon": "assets/resources/icon.ico",
                 "manifest": "manifest.json",
                 "patchConfig": "patch_config.json",
             },
             "patches": {
-                "marketplaceEncrypted": "Patches/Marketplace/v1.7/patch.vcdiff",
-                "zipDecrypted": "Patches/Zip/v1.7/patch.vcdiff",
+                "marketplaceEncrypted": "assets/Patches/Marketplace/v1.7/patch.vcdiff",
+                "zipDecrypted": "assets/Patches/Zip/v1.7/patch.vcdiff",
             },
             "patchVersions": {
                 "v1.7": {
                     "patches": {
-                        "encrypted": "Patches/Marketplace/v1.7/patch.vcdiff",
-                        "decrypted": "Patches/Zip/v1.7/patch.vcdiff"
+                        "encrypted": "assets/Patches/Marketplace/v1.7/patch.vcdiff",
+                        "decrypted": "assets/Patches/Zip/v1.7/patch.vcdiff"
                     },
                     "stats": {"files": 16661, "dirs": 301}
                 },
                 "v1.8": {
                     "patches": {
-                        "encrypted": "Patches/v1.8/encrypted.vcdiff",
-                        "decrypted": "Patches/v1.8/decrypted.vcdiff"
+                        "encrypted": "assets/Patches/v1.8/encrypted.vcdiff",
+                        "decrypted": "assets/Patches/v1.8/decrypted.vcdiff"
                     },
                     "stats": {"files": 10057, "dirs": 162}
                 }

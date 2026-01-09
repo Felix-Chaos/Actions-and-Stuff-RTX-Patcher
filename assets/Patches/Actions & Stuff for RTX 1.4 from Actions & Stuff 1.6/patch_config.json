@@ -1,0 +1,12 @@
+{
+    "paths": {
+        "minecraft_uwp": "%LocalAppData%/Packages/Microsoft.MinecraftUWP_8wekyb3d8bbwe/LocalState",
+        "minecraft_beta": "%LocalAppData%/Packages/Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe/LocalState"
+    },
+    "marketplace_pack_stats": {
+        "v1": {
+            "files": 12951,
+            "dirs": 161
+        }
+    }
+}

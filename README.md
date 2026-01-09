@@ -1,93 +1,212 @@
----
-
-<img width="804" height="264" alt="Favicon" src="https://github.com/user-attachments/assets/c1d10c7b-2f6b-40f7-bb27-fc03d0007c01" />
+<img width="5975" height="5100" alt="Actions__Stuff_Logo_-_PNG" src="https://github.com/user-attachments/assets/7f2c416e-b36c-46e6-ab8f-d4b8042846f9" />
 
 ---
 
-# 🎮 A&S Minecraft RTX Community Patcher
+# 🎮 A&S Minecraft RTX Community Patcher V2
 
 [![GitHub release](https://img.shields.io/github/v/release/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher?style=for-the-badge&color=blue)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases)
 [![GitHub issues](https://img.shields.io/github/issues/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher?style=for-the-badge)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/issues)
 [![GitHub stars](https://img.shields.io/github/stars/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher?style=for-the-badge&color=yellow)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/stargazers)
+[![Pylint](https://img.shields.io/github/actions/workflow/status/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/pylint.yml?label=pylint&style=for-the-badge&color=blue)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/actions/workflows/pylint.yml)
+[![ChaosDev Projects](https://img.shields.io/discord/1432653252171661364?logo=discord&style=for-the-badge)](https://discord.gg/YrMMmN2kc7)
+---
+
+
+## 📑 Table of Contents
+
+1. [⚠️ Important Notice](#⚠️-important-notice)  
+2. [💡 What Is *A&S RTX Patcher*?](#💡-what-is-ans-rtx-patcher)  
+3. [🧩 Project Progress](#🧩-project-progress)  
+4. [📁 Repository Overview](#📁-repository-overview)  
+5. [⚙️ Requirements](#⚙️-requirements)  
+6. [🚀 How to Use](#🚀-how-to-use)  
+   - [🧱 Standard Usage](#🧱-standard-usage)  
+   - [�🧰 Building from Source](#🧰-building-from-source)  
+7. [💾 Downloads](#💾-downloads)  
+8. [📚 Additional Resources](#📚-additional-resources)  
+9. [🙌 Contributors](#🙌-contributors)  
+10. [👤 Creator & Support](#👤-creator--support)  
+11. [🧠 Tools Used](#🧠-tools-used)  
+12. [⚖️ Disclaimer](#⚖️-disclaimer)
 
 ---
 
 ## ⚠️ Important Notice
 
-This is the **new home** of the **Fuzed Patcher**, a community-driven RTX enhancement for *Actions & Stuff* by **Oreville Studios**.
-This repository now hosts the unified application that supports both Marketplace (Encrypted) and Zip (Decrypted) versions.
+This is a **community-driven RTX enhancement project** for *Actions & Stuff* by **Oreville Studios**.  
+The patcher **applies fixes and RTX enhancements to your own copy** of A&S — it does **not** distribute any part of the original resource pack.  
 
-**Legacy versions** have been archived.
+We kindly ask all users **not to share their patched copies** of A&S Enhanced for RTX publicly.  
+
+You can always find the latest stable builds on the [Releases Page](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/latest).
 
 ---
 
 ## 💡 What Is *A&S RTX Patcher*?
 
-**A&S RTX Patcher** is a tool that converts the original *Actions & Stuff* Minecraft Marketplace pack into an **RTX-compatible version** for Windows Bedrock Edition.
+**A&S Minecraft RTX Community Patcher V2** is a **community-built patching tool** that converts the original *Actions & Stuff* Minecraft Marketplace pack into an **RTX-compatible version** for Windows Bedrock Edition.
 
 It works by:
-* Combining your **official Marketplace copy** (or local `.zip`/`.mcpack`) with **community RTX modifications**.
-* Generating a **new patched version** with full **BetterRTX lighting** and PBR materials.
-* Supporting both **singleplayer and multiplayer** environments.
 
----
+* Combining your **official Marketplace copy** (or local `.zip`/`.mcpack`) with the **community RTX modification**
+* Generating a **new patched version** that supports full **BetterRTX lighting**, reflections, and PBR materials
+* Supporting both **singleplayer and multiplayer (server)** environments
 
-## 📁 Repository Structure
-
-We have split the project into three repositories to separate code, data, and distribution:
-
-| Repository | Purpose | Description |
-| :--- | :--- | :--- |
-| **[A-S-Minecraft-RTX-Community-Patcher](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher)** | **Main / Distribution** | Hosts the ready-to-run Fuzed Patcher application and archived legacy versions. |
-| **[A-S-Patcher-Fuzed](https://github.com/Felix-Chaos/A-S-Patcher-Fuzed)** | **App Source Code** | The active development repository for the Python application code (clean, no large assets). |
-| **[A-S-Patcher-Patches](https://github.com/Felix-Chaos/A-S-Patcher-Patches)** | **Patch Data** | Stores the heavy `.xdelta` patch files and tools to generate them. |
-
----
-
-## 🚀 How to Use
-
-### Option 1 — Run from this Repository (Recommended)
-1.  **Download** or Clone this repository.
-2.  Ensure you have **Python 3.10+**.
-3.  Install dependencies: `pip install ttkbootstrap Pillow numpy`
-4.  Run `python main.py`.
-
-### Option 2 — Developer Setup
-If you want to contribute to the code or manage patches:
-*   Work in **[A-S-Patcher-Fuzed](https://github.com/Felix-Chaos/A-S-Patcher-Fuzed)** for UI/Logic changes.
-*   Work in **[A-S-Patcher-Patches](https://github.com/Felix-Chaos/A-S-Patcher-Patches)** for version updates.
+This ensures RTX visuals are properly integrated **without redistributing** any copyrighted pack data.
 
 ---
 
 ## 🧩 Project Progress
 
-| Task | Status |
-| :--- | :--- |
-| 🚀 **Fuzed Patcher Integration** | ✅ Complete |
-| ♻️ **Repository Restructuring** | ✅ Complete |
-| 🧹 **Legacy Archival** | ✅ Complete |
-| 📦 **1.7+ Support** | ⏳ In Progress |
+| Task                                 | Status        |
+| ------------------------------------ | ------------- |
+| 🚀 **Project Initialization**        | ✅ Complete    |
+| 📂 **File & Folder Update**          | ✅ Complete    |
+| 🎉 **A&S 1.6 Patcher Release**       | ✅ Released    |
+| 🔍 **Improved Search Logic for 1.7** | ✅ Complete |
+| 🧭 **Path Update & Cleanup**         | ✅ Complete |
+| 🧱 **Patch File Generation for 1.7** | ✅ Complete |
+| 📦 **Final 1.7 Release**             | ✅ Released |
+| 🔍 **Final 1.8 Release**             | ❓ Soon™ |
+
+---
+
+## 📁 Repository Overview
+
+| Name                      | Description                                                        | Link                                                    | Status                |
+| ------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------- | --------------------- |
+| **A&S RTX Patcher V2**    | Main patcher executable (Marketplace & Zip support)                | [Source](./src)                                         | ✅ Active             |
+| **Tools**                 | Utilities for creating custom patches or self-building the patcher | [Tools](./tools)                                        | 🧰 Included           |
+
+---
+
+## ⚙️ Requirements
+
+* [**BetterRTX**](https://bedrock.graphics/) (must be installed)  
+* A valid copy of [**Actions & Stuff**](https://www.minecraft.net/en-us/marketplace/pdp/oreville-studios/actions--stuff-1.6/61c7a786-d7ad-49e0-a710-817121cd9795)  
+  *(Marketplace, .zip, or .mcpack format supported)*
+
+---
+
+## 🚀 How to Use
+
+### 🧱 Standard Usage
+
+1. Head to the [Releases Page](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/latest).
+
+2. Download **A&S RTX Patcher V2**.  
+
+3. Run the `.exe` and follow the prompts:
+
+   * Choose **Marketplace Mode** to auto-detect your installed pack  
+   * Or choose **ZIP/MCPACK Mode** and manually select your pack
+
+4. The patcher will automatically generate the RTX-enabled version. Make sure:
+
+   * BetterRTX is installed and active  
+   * The patched pack is **at the top of your resource pack list**
+
+If any issues occur:
+
+* Double-check the pack version  
+* Re-run the patcher with admin privileges  
+* Temporarily disable other texture packs
+
+---
+
+### �🧰 Building from Source
+
+Want to make your own patcher?  
+Browse this repository, every tool and script includes a short README with setup steps and required dependencies.
+
+---
+
+## 💾 Downloads
+
+#### Always the [Latest Release](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/latest)<-- Press him Please 👈(ﾟヮﾟ👈) 
+
+### ✅ Stable Builds
+
+* [A&S RTX Patcher v0.1.13 (for A&S 1.4)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/0.1.13)  
+* [A&S RTX Patcher v1.0.1 (for A&S 1.6)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/U_N_v1.0.1)  
+* [A&S RTX Patcher v1.0.2 (for A&S 1.7)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/1.0.2)
+  
+  ### ⇈ Minecraft UWP (MC Version < 1.21.120) ⇈
+  ### ⇊ Minecraft GDK (MC Version 1.21.120 and above) ⇊
+  
+* [A&S RTX Patcher v1.0.3 (for A&S 1.7 MC Version 1.21.120)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/1.0.3)
+
+```
+A&S Patcher has been updated to support the new GDK-based Minecraft installation on Windows.
+All paths and patch methods have been adjusted for full compatibility with the latest Minecraft rollout
+(older Minecraft Versions do requiere the Patcher versions Listed as UWP).
+```
+### ⚗️ Experimental Builds
+
+* [U_0.1.1 Universal Patcher (for 1.6 from 1.4 patch)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/U_0.1.1)
+
+### 🕹️ Legacy Versions
+
+* v1.07 (A&S 1.3) - *Outdated*  
+* v1.08 (A&S 1.3.1) - *Outdated*
+
+---
+
+## 📚 Additional Resources
+
+* [📖 FAQ](https://discord.com/channels/691547840463241267/1360688874388455504/1376325634246049792)  
+* [🧾 Changelog v1.13](https://discord.com/channels/691547840463241267/1360688874388455504/1384665181715566622)  
+* [💬 BetterRTX Discord](https://discord.gg/5kK4EMRbd3)  
+* [📢 Project Thread](https://discord.com/channels/691547840463241267/1360688874388455504)  
+* [📜 Original Post](https://discord.com/channels/691547840463241267/1360688874388455504/1360688874388455504)  
+
+---
+
+## 🙌 Contributors
+
+This project wouldn’t exist without the help of our amazing contributors. Huge thanks to everyone who has contributed code, patches, bug fixes, or testing support:
+
+| Name / Handle         | Role / Contribution                                      | Contact / Profile                                                    |
+| --------------------- | -------------------------------------------------------- | -------------------------------------------------------------------- |
+| **@J4vi3r6003**       | Patch development, subpack improvements, bug fixes       | Discord: `error90099900#0000`                                        |
+| **@Felix-Chaos**      | Project maintenance, patcher updates, release management | [GitHub](https://github.com/Felix-Chaos) / Discord: `felixchaos`     |
+| **Demente Parker**    | Original creator, source files provider                  | Discord: `demente_parker` / [Ko-fi](https://ko-fi.com/dementeparker) |
+| **Community Testers** | Bug reporting, patch testing, feedback                   | Various Discord contributors                                         |
+
+> Contributions are welcome! If you’d like to help with patch development, testing, or documentation, feel free to open a PR or join the [BetterRTX Discord](https://discord.gg/5kK4EMRbd3).
 
 ---
 
 ## 👤 Creator & Support
 
-This project is a **community fork** maintained for public RTX development.
+This project is a **community fork** maintained for public RTX development.  
 The **original creator**, who made the source files available, is:
 
 **Demente Parker**
-*   Discord: `demente_parker`
-*   💙 Support him: [ko-fi.com/demente_parker](https://ko-fi.com/demeneteparker)
 
-> Donations are optional and go **directly to the creator**.
+* Discord ID: `498173069517651998`  
+* Discord: `demente_parker`  
+* 💙 Support him directly on Ko-fi: [ko-fi.com/dementeparker](https://ko-fi.com/dementeparker)
+
+> Donations are optional and go **directly to the creator**.  
+> This repository itself is **non-profit** and serves only to support community collaboration.
 
 ---
 
 ## 🧠 Tools Used
-*   [**xdelta3**](https://github.com/jmacd/xdelta) — Binary patch creation
-*   [**Blockbench**](https://www.blockbench.net/) — Model editing
+
+* [**xdelta3**](https://github.com/jmacd/xdelta) - Binary patch creation and application  
+* [**Blockbench**](https://www.blockbench.net/) - Model editing & RTX material setup
 
 ---
 
 ## ⚖️ Disclaimer
-This patcher is provided by the community for **educational and personal use only**. It is **not affiliated** with Oreville Studios or Mojang/Microsoft. All original assets remain property of their respective owners.
+
+This patcher is provided by the community for **educational and personal use only**.  
+It is **not affiliated with or endorsed** by Oreville Studios or Mojang/Microsoft.  
+All original assets remain property of their respective owners.
+
+---
+
+⭐ **Thank you for being part of the A&S RTX community!**  
+Your support, testing, and feedback keep this project alive, together we make RTX shine brighter. 💎

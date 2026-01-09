@@ -6,9 +6,9 @@ SETLOCAL ENABLEDELAYEDEXPANSION
 SET PYTHONHASHSEED=0
 
 :: --- Configuration ---
-SET SCRIPT_NAME=main_menu\\main_menu.py
-SET ICON_NAME=resources\\icon.ico
-SET OUTPUT_NAME=AnS_RTX_Patcher.exe
+SET SCRIPT_NAME=main.py
+SET ICON_NAME=assets\resources\icon.ico
+SET OUTPUT_NAME=AnS_RTX_Patcher_V2.exe
 SET DIST_FOLDER=dist
 
 :: --- Pre-build Checks ---
@@ -36,12 +36,17 @@ ECHO The final executable will be in the '%DIST_FOLDER%' folder.
 PAUSE
 ECHO.
 
+:: --- Auto-Increment Version ---
+ECHO.
+ECHO Updating version...
+py tools/version_bumper.py
+
 :: --- Starting Build ---
 ECHO.
 ECHO Running PyInstaller...
 
 py -m PyInstaller --onefile --windowed --name "%OUTPUT_NAME%" --icon="%ICON_NAME%" ^
---add-data "resources;resources" ^
+--add-data "assets;assets" ^
 --add-data "tools;tools" ^
 "%SCRIPT_NAME%"
 

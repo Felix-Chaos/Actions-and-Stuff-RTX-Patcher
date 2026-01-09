@@ -23,7 +23,7 @@ class AppController:
         self.fs = FileSystemModel()
         self.patcher = PatcherModel()
         
-        self.root = MainWindow(title="AnS RTX Patcher (Fuzed)", theme="superhero", onClose=self.quit)
+        self.root = MainWindow(title="A&S Minecraft RTX Community Patcher V2", theme="superhero", onClose=self.quit)
         self.root.setIcon(resourcePath(self.config.getFilename("icon")))
         
         # Load Menus
@@ -38,9 +38,8 @@ class AppController:
         self.root.showFrame("MainMenu")
 
     def _loadToolsMenu(self):
-        # Look for tools folder relative to main.py
-        basePath = os.getcwd() # main.py running dir
-        toolsPath = os.path.join(basePath, "tools")
+        # Look for tools folder in bundled resources
+        toolsPath = resourcePath("tools")
         
         scripts = []
         if os.path.isdir(toolsPath):
@@ -55,15 +54,51 @@ class AppController:
         self.root.populateToolsMenu(scripts)
 
     def _loadDependenciesMenu(self):
-        def openUrl():
+        def openVanillaRtx():
             if messagebox.askokcancel("Visit Website", "Open Vanilla Reforged RTX page?"):
                 webbrowser.open("https://www.curseforge.com/minecraft-bedrock/texture-packs/vanilla-reforged-rtx")
-        self.root.populateDepMenu([("Install Vanilla Reforged RTX", openUrl)])
+
+        def openBetterRtx():
+            if messagebox.askokcancel("Visit Website", "Open BetterRTX (bedrock.graphics)?"):
+                webbrowser.open("https://bedrock.graphics/")
+
+        def openMarketplace():
+            if messagebox.askokcancel("Visit Website", "Open Actions & Stuff (Marketplace)?"):
+                webbrowser.open("https://www.minecraft.net/en-us/marketplace/pdp/oreville-studios/actions--stuff-1.6/61c7a786-d7ad-49e0-a710-817121cd9795")
+
+        self.root.populateDepMenu([
+            ("Install Vanilla Reforged RTX", openVanillaRtx),
+            ("BetterRTX (Required)", openBetterRtx),
+            ("Actions & Stuff (Marketplace)", openMarketplace)
+        ])
 
     def _loadHelpMenu(self):
+        def joinDiscord():
+            if messagebox.askokcancel("Join Discord", "Open A&S RTX Community Discord?"):
+                webbrowser.open("https://discord.gg/YrMMmN2kc7")
+
         def about():
-            messagebox.showinfo("About", "A.n.S Patcher Fuzed\nRefactored Edition")
-        self.root.populateHelpMenu([("About", about)])
+            try:
+                from .. import version
+                ver_str = version.VERSION
+                date_str = version.BUILD_DATE
+            except ImportError:
+                ver_str = "2.0.0 (Dev)"
+                date_str = "Unknown"
+                
+            info = (
+                f"A&S Minecraft RTX Community Patcher V2\n\n"
+                f"Version: {ver_str}\n"
+                f"Build Date: {date_str}\n\n"
+                f"Created by Felix-Chaos & Community\n"
+                f"Based on original work by Demente Parker"
+            )
+            messagebox.showinfo("About", info)
+            
+        self.root.populateHelpMenu([
+            ("Join Discord Server", joinDiscord),
+            ("About", about)
+        ])
 
     def _initFrames(self):
         # 1. Main Menu
