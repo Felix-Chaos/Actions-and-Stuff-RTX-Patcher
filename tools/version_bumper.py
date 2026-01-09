@@ -1,3 +1,10 @@
+"""
+Version Bumper Tool
+
+This script updates the version information in `src/version.py` by incrementing
+the patch version and updating the build date.
+"""
+
 import os
 import re
 import datetime
@@ -5,11 +12,15 @@ import datetime
 VERSION_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "src", "version.py")
 
 def bump_version():
+    """
+    Reads the current version, increments the patch number, and updates the file
+    with the new version and current timestamp.
+    """
     if not os.path.exists(VERSION_FILE):
         print(f"Error: {VERSION_FILE} not found.")
         return
 
-    with open(VERSION_FILE, "r") as f:
+    with open(VERSION_FILE, "r", encoding="utf-8") as f:
         content = f.read()
 
     # Extract current version
@@ -27,9 +38,9 @@ def bump_version():
 
     new_content = f'# Auto-generated version file\nVERSION = "{new_version}"\nBUILD_DATE = "{today}"\n'
 
-    with open(VERSION_FILE, "w") as f:
+    with open(VERSION_FILE, "w", encoding="utf-8") as f:
         f.write(new_content)
-    
+
     print(f"Version bumped to {new_version} (Build Date: {today})")
 
 if __name__ == "__main__":
