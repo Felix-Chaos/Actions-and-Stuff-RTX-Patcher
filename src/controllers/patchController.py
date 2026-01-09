@@ -6,168 +6,170 @@ from tkinter import messagebox, filedialog
 from ..models.configModel import ConfigModel
 from ..models.patcherModel import PatcherModel
 from ..models.fileSystemModel import FileSystemModel
-from ..models.fileSystemModel import FileSystemModel
 from ..utils.helpers import resourcePath, showErrorWithCopy
 
 class PatchController:
+    """
+    Controller handling the main patching flows: Marketplace, Zip, and Custom.
+    """
     def __init__(self, config: ConfigModel, patcher: PatcherModel, fs: FileSystemModel, view):
         self.config = config
         self.patcher = patcher
         self.fs = fs
         self.view = view # PatchProgressFrame
-        self.cancelEvent = threading.Event()
-        self.tempDir = os.path.join(tempfile.gettempdir(), "AnSPatcherFuzed")
-        self.isAdvanced = False
+        self.cancel_event = threading.Event()
+        self.temp_dir = os.path.join(tempfile.gettempdir(), "AnSPatcherFuzed")
+        self.is_advanced = False
 
     def setAdvancedMode(self, enabled: bool):
-        self.isAdvanced = enabled
+        self.is_advanced = enabled
         self.view.setAdvancedMode(enabled)
 
     def _log(self, message: str):
         """Thread-safe logging helper."""
-        if self.isAdvanced:
+        if self.is_advanced:
             # Marshal to main thread
             self.view.after(0, lambda: self.view.appendLog(message))
 
     def startMarketplacePatch(self):
         # self.view is PatchProgressFrame
-        patchFrame = self.view
-        
-        # Access MainWindow's advancedVar
-        isAdvanced = False
-        try:
-            isAdvanced = patchFrame.winfo_toplevel().advancedVar.get()
-        except AttributeError:
-             pass # Fallback
+        patch_frame = self.view
 
-        if isAdvanced:
-            patchFrame.setStatus("Ready. properties below.")
-            patchFrame.modeVar.set("marketplace")
-            patchFrame.onModeChanged()
-            patchFrame.setActionCommand(self.startAdvancedLogic, "Start Patch")
-            patchFrame.setActionState("normal")
+        # Access MainWindow's advancedVar
+        is_advanced = False
+        try:
+            is_advanced = patch_frame.winfo_toplevel().advancedVar.get()
+        except AttributeError:
+            pass # Fallback
+
+        if is_advanced:
+            patch_frame.setStatus("Ready. properties below.")
+            patch_frame.modeVar.set("marketplace")
+            patch_frame.onModeChanged()
+            patch_frame.setActionCommand(self.startAdvancedLogic, "Start Patch")
+            patch_frame.setActionState("normal")
             return
 
-        patchFrame.setStatus("Searching for Marketplace Content...")
-        patchFrame.setProgress(0, 'indeterminate')
-        patchFrame.setActionState("disabled")
-        self.cancelEvent.clear()
+        patch_frame.setStatus("Searching for Marketplace Content...")
+        patch_frame.setProgress(0, 'indeterminate')
+        patch_frame.setActionState("disabled")
+        self.cancel_event.clear()
         threading.Thread(target=self._marketplaceSearchWorker, daemon=True).start()
 
     def _marketplaceSearchWorker(self):
-        pathsToCheck = [
-             os.path.join(os.path.expandvars(self.config.getPath("minecraftUwp")), "premium_cache", "resource_packs"),
-             os.path.join(os.path.expandvars(self.config.getPath("minecraftUwpPreview")), "premium_cache", "resource_packs"),
-             os.path.join(os.path.expandvars(self.config.getPath("minecraftBedrock")), "premium_cache", "resource_packs"),
-             os.path.join(os.path.expandvars(self.config.getPath("minecraftBedrockPreview")), "premium_cache", "resource_packs")
+        paths_to_check = [
+             os.path.join(os.path.expandvars(self.config.get_path("minecraftUwp")), "premium_cache", "resource_packs"),
+             os.path.join(os.path.expandvars(self.config.get_path("minecraftUwpPreview")), "premium_cache", "resource_packs"),
+             os.path.join(os.path.expandvars(self.config.get_path("minecraftBedrock")), "premium_cache", "resource_packs"),
+             os.path.join(os.path.expandvars(self.config.get_path("minecraftBedrockPreview")), "premium_cache", "resource_packs")
         ]
-        
-        targetVersions = self.config.config["patchVersions"]
-        foundFolder = None
-        detectedVersionData = None
-        
-        for path in pathsToCheck:
-            if self.cancelEvent.is_set(): return
-            if not os.path.exists(path): continue
-            
-            for folder in os.listdir(path):
-                fullPath = os.path.join(path, folder)
-                if os.path.isdir(fullPath):
-                    fCount, dCount = self.fs.getFolderStats(fullPath)
-                    
-                    # Check against all configured versions
-                    for verKey, verData in targetVersions.items():
-                        stats = verData["stats"]
-                        if fCount == stats["files"] and dCount == stats["dirs"]:
-                            foundFolder = fullPath
-                            detectedVersionData = verData
-                            self._log(f"Detected version {verKey} at {fullPath}")
-                            break
-                    if foundFolder: break
-            if foundFolder: break
 
-        if not foundFolder:
+        target_versions = self.config.config["patchVersions"]
+        found_folder = None
+        detected_version_data = None
+
+        for path in paths_to_check:
+            if self.cancel_event.is_set(): return
+            if not os.path.exists(path): continue
+
+            try:
+                for folder in os.listdir(path):
+                    full_path = os.path.join(path, folder)
+                    if os.path.isdir(full_path):
+                        f_count, d_count = self.fs.getFolderStats(full_path)
+
+                        # Check against all configured versions
+                        for ver_key, ver_data in target_versions.items():
+                            stats = ver_data["stats"]
+                            if f_count == stats["files"] and d_count == stats["dirs"]:
+                                found_folder = full_path
+                                detected_version_data = ver_data
+                                self._log(f"Detected version {ver_key} at {full_path}")
+                                break
+                        if found_folder: break
+            except OSError:
+                continue
+            if found_folder: break
+
+        if not found_folder:
             self.view.after(0, lambda: messagebox.showerror("Error", "Could not find Actions & Stuff in premium_cache.\nMake sure you have downloaded it from the Marketplace."))
             self.view.after(0, self.view.onBack)
             return
 
         self.view.after(0, lambda: self.view.setStatus("Found pack. Preparing..."))
-        
-        # NOTE: Marketplace patching generally assumes we patch the original encrypted content or a copy.
-        # However, if the user implies custom manifest logic typically applies to getting *ready* to patch (like with zip),
-        # marketplace flow is slightly different as we typically compress the found folder directly.
-        # But if we want to add a custom manifest, we need a writable copy.
-        # Since `compressDeterministic` takes a source folder, we might need to copy/extract if we want to modify manifest.
-        # Re-reading user request: "Patcher itself patches the files with a custom manifest... add that to the deterministic zipper"
-        # Since 'Marketplace' flow compresses existing read-only (?) files, inserting a file requires a temp copy.
-        
-        # Let's create a temp copy for marketplace too if custom manifest is requested.
-        # Actually, let's ask here too for consistency, or maybe just for Zip as per "decrypted zip" logic usually.
-        # The user said "add that to the deterministic zipper".
-        # Let's assume standard Zip flow first. If marketplace flow needs it, we'd need to copy 12000 files which is slow.
-        # Given "patch_decrypted_zip" had it, I will add it to `_zipProcessWorker`.
-        
-        os.makedirs(self.tempDir, exist_ok=True)
-        tempZip = os.path.join(self.tempDir, "temp_vanilla.zip")
-        
-        self._log(f"Found Marketplace content at: {foundFolder}")
+
+        # Prepare temp directory
+        os.makedirs(self.temp_dir, exist_ok=True)
+        temp_zip = os.path.join(self.temp_dir, "temp_vanilla.zip")
+
+        self._log(f"Found Marketplace content at: {found_folder}")
         self._log("Starting compression/backup...")
-        
-        success = self.fs.compressDeterministic(foundFolder, tempZip, self.cancelEvent, logCallback=self._log)
-        if not success or self.cancelEvent.is_set():
+
+        # IMPORTANT: Use snake_case arguments for new API
+        success = self.fs.compressDeterministic(
+            folder_path=found_folder,
+            output_zip=temp_zip,
+            cancel_event=self.cancel_event,
+            log_callback=self._log
+        )
+
+        if not success or self.cancel_event.is_set():
             return
 
-        self.view.after(0, lambda: self._onReadyToPatch(tempZip, "marketplace", detectedVersionData))
+        self.view.after(0, lambda: self._onReadyToPatch(temp_zip, "marketplace", detected_version_data))
 
     def startZipPatch(self):
-        patchFrame = self.view
-        
-        isAdvanced = False
-        try:
-            isAdvanced = patchFrame.winfo_toplevel().advancedVar.get()
-        except AttributeError:
-             pass
+        patch_frame = self.view
 
-        if isAdvanced:
-            patchFrame.setStatus("Ready. Select Zip below.")
-            patchFrame.modeVar.set("zip")
-            patchFrame.onModeChanged()
-            patchFrame.setActionCommand(self.startAdvancedLogic, "Start Patch")
-            patchFrame.setActionState("normal")
+        is_advanced = False
+        try:
+            is_advanced = patch_frame.winfo_toplevel().advancedVar.get()
+        except AttributeError:
+            pass
+
+        if is_advanced:
+            patch_frame.setStatus("Ready. Select Zip below.")
+            patch_frame.modeVar.set("zip")
+            patch_frame.onModeChanged()
+            patch_frame.setActionCommand(self.startAdvancedLogic, "Start Patch")
+            patch_frame.setActionState("normal")
             return
 
         # Default Mode: Wait for user to click "Select Pack"
         def selectAndPatch():
-            filePath = filedialog.askopenfilename(filetypes=[("Minecraft Packs", "*.zip *.mcpack")], title="Select Pack")
-            if not filePath:
+            file_path = filedialog.askopenfilename(filetypes=[("Minecraft Packs", "*.zip *.mcpack")], title="Select Pack")
+            if not file_path:
                 return
-            
-            patchFrame.setStatus("Processing Zip...")
-            patchFrame.setProgress(0, 'indeterminate')
-            patchFrame.setActionState("disabled")
-            self.cancelEvent.clear()
-            threading.Thread(target=self._zipProcessWorker, args=(filePath,), daemon=True).start()
 
-        patchFrame.setStatus("Ready. Please select your A&S Zip/McPack.")
-        patchFrame.setActionCommand(selectAndPatch, "Select Pack")
-        patchFrame.setActionState("normal")
+            patch_frame.setStatus("Processing Zip...")
+            patch_frame.setProgress(0, 'indeterminate')
+            patch_frame.setActionState("disabled")
+            self.cancel_event.clear()
+            threading.Thread(target=self._zipProcessWorker, args=(file_path,), daemon=True).start()
 
-    def _zipProcessWorker(self, filePath: str):
-        extractDir = os.path.join(self.tempDir, "extracted")
-        self.fs.robustCleanup(extractDir)
-        os.makedirs(extractDir, exist_ok=True)
-        
+        patch_frame.setStatus("Ready. Please select your A&S Zip/McPack.")
+        patch_frame.setActionCommand(selectAndPatch, "Select Pack")
+        patch_frame.setActionState("normal")
+
+    def _zipProcessWorker(self, file_path: str):
+        # pylint: disable=too-many-locals
+        extract_dir = os.path.join(self.temp_dir, "extracted")
+        self.fs.robustCleanup(extract_dir)
+        os.makedirs(extract_dir, exist_ok=True)
+
         try:
-            shutil.unpack_archive(filePath, extractDir, format="zip")
-            
-            items = os.listdir(extractDir)
-            if len(items) == 1 and os.path.isdir(os.path.join(extractDir, items[0])):
-                singleDir = os.path.join(extractDir, items[0])
-                for item in os.listdir(singleDir):
-                    shutil.move(os.path.join(singleDir, item), extractDir)
-                os.rmdir(singleDir)
-            
-            for root, dirs, files in os.walk(extractDir):
+            shutil.unpack_archive(file_path, extract_dir, format="zip")
+
+            # Smart Folder Detection: If zip contains single folder, move content up
+            items = os.listdir(extract_dir)
+            if len(items) == 1 and os.path.isdir(os.path.join(extract_dir, items[0])):
+                single_dir = os.path.join(extract_dir, items[0])
+                for item in os.listdir(single_dir):
+                    shutil.move(os.path.join(single_dir, item), extract_dir)
+                os.rmdir(single_dir)
+
+            # Clean unwanted files
+            for root, dirs, files in os.walk(extract_dir):
                 for f in files:
                     if f in self.config.config["filesToRemove"]:
                         os.remove(os.path.join(root, f))
@@ -175,196 +177,207 @@ class PatchController:
                     if d in self.config.config["dirsToRemove"]:
                         shutil.rmtree(os.path.join(root, d))
                         dirs.remove(d)
-            
+
             # --- CUSTOM MANIFEST LOGIC ---
-            # Ask via main thread callback (blocking-ish) logic is tricky from thread. 
-            # We'll use a variable signal or just `after` and wait? No, messagebox can be called from thread in Tkinter (usually safe-ish in simple cases, or blocks thread).
-            # Best practice: invoke in main thread.
-            
-            shouldApplyManifest = [False]
-            manifestEvent = threading.Event()
-            
+            should_apply_manifest = [False]
+            manifest_event = threading.Event()
+
             def askManifest():
                 if messagebox.askyesno("Custom Manifest", "Do you want to use the custom A&S manifest.json?\n(Fixes some import issues)"):
-                    shouldApplyManifest[0] = True
-                manifestEvent.set()
-                
+                    should_apply_manifest[0] = True
+                manifest_event.set()
+
             self.view.after(0, askManifest)
-            manifestEvent.wait() # Block thread until user answers
-            
-            if shouldApplyManifest[0]:
-                manifestPath = resourcePath("assets/resources/manifest.json")
-                if os.path.exists(manifestPath):
-                    shutil.copyfile(manifestPath, os.path.join(extractDir, "manifest.json"))
+            manifest_event.wait() # Block thread until user answers
+
+            if should_apply_manifest[0]:
+                manifest_path = resourcePath("assets/resources/manifest.json")
+                if os.path.exists(manifest_path):
+                    shutil.copyfile(manifest_path, os.path.join(extract_dir, "manifest.json"))
             # -----------------------------
 
-            normalizedZip = os.path.join(self.tempDir, "normalized.zip")
+            normalized_zip = os.path.join(self.temp_dir, "normalized.zip")
             self._log("Starting deterministic compression (this may take a while)...")
-            self.fs.compressDeterministic(extractDir, normalizedZip, self.cancelEvent, logCallback=self._log)
-            
-            self.view.after(0, lambda: self._onReadyToPatch(normalizedZip, "zip"))
-            
-        except Exception as e:
-             self.view.after(0, lambda: messagebox.showerror("Error", f"Failed to process zip: {e}"))
-             self.view.after(0, self.view.onBack)
 
-    def _onReadyToPatch(self, sourceZip: str, mode: str, detectedVersionData: dict = None):
+            # Use new API args
+            self.fs.compressDeterministic(
+                folder_path=extract_dir,
+                output_zip=normalized_zip,
+                cancel_event=self.cancel_event,
+                log_callback=self._log
+            )
+
+            self.view.after(0, lambda: self._onReadyToPatch(normalized_zip, "zip"))
+
+        except Exception as e:
+            self.view.after(0, lambda: messagebox.showerror("Error", f"Failed to process zip: {e}"))
+            self.view.after(0, self.view.onBack)
+
+    def _onReadyToPatch(self, source_zip: str, mode: str, detected_version_data: dict = None):
         self.view.setStatus("Ready to Patch.")
         self.view.setProgress(100, 'determinate')
-        
+
         def runPatchAction():
             if messagebox.askyesno("Clean Update?", "Do you want to clean old versions of the pack before patching?\n(Recommended for updates)"):
                 self.view.setStatus("Cleaning old versions...")
-                stdRp = os.path.join(os.path.expandvars(self.config.getPath("minecraftUwp")), "games", "com.mojang", "resource_packs")
-                found = self.fs.scanDirectory(stdRp, self.config.getCleanupPrefixes())
+                std_rp = os.path.join(os.path.expandvars(self.config.get_path("minecraftUwp")), "games", "com.mojang", "resource_packs")
+                found = self.fs.scanDirectory(std_rp, self.config.get_cleanup_prefixes())
                 for f in found:
                     self.fs.robustCleanup(f)
 
-            patchType = "marketplaceEncrypted" if mode == "marketplace" else "zipDecrypted"
-            patchFileRelative = self.config.getPatchPath(patchType)
-            
-            # Use detected patch file if available (overrides default marketplace config)
-            if detectedVersionData and "patches" in detectedVersionData:
-                key = "encrypted" if mode == "marketplace" else "decrypted"
-                if key in detectedVersionData["patches"]:
-                    patchFileRelative = detectedVersionData["patches"][key]
+            patch_type = "marketplaceEncrypted" if mode == "marketplace" else "zipDecrypted"
+            patch_file_relative = self.config.get_patch_path(patch_type)
 
-            patchFile = resourcePath(patchFileRelative)
-            
-            if self.isAdvanced:
+            # Use detected patch file if available
+            if detected_version_data and "patches" in detected_version_data:
+                key = "encrypted" if mode == "marketplace" else "decrypted"
+                if key in detected_version_data["patches"]:
+                    patch_file_relative = detected_version_data["patches"][key]
+
+            patch_file = resourcePath(patch_file_relative)
+
+            if self.is_advanced:
                 custom = self.view.customPatchVar.get()
                 if custom and os.path.exists(custom):
-                    patchFile = custom
-            
+                    patch_file = custom
+
             self.view.setActionState("disabled")
             self.view.setStatus("Patching...")
             self.view.setProgress(0, 'indeterminate')
-            threading.Thread(target=self._patchWorker, args=(sourceZip, patchFile), daemon=True).start()
-            
+            threading.Thread(target=self._patchWorker, args=(source_zip, patch_file), daemon=True).start()
+
         self.view.setActionCommand(runPatchAction)
         self.view.setActionState("normal")
 
-    def _patchWorker(self, sourceZip: str, patchFile: str):
-        outputFile = os.path.join(self.tempDir, self.config.getFilename("finalMcPack"))
-        xdelta = self.config.getExecutable("xdelta")
-        xdeltaParams = resourcePath(xdelta)
-        
+    def _patchWorker(self, source_zip: str, patch_file: str):
+        output_file = os.path.join(self.temp_dir, self.config.get_filename("finalMcPack"))
+        xdelta = self.config.get_executable("xdelta")
+        xdelta_params = resourcePath(xdelta)
+
         self._log("Starting XDelta patch...")
-        success, msg = self.patcher.runPatch(xdeltaParams, sourceZip, patchFile, outputFile, logCallback=self._log)
-        
+
+        # New API Call
+        success, msg = self.patcher.runPatch(
+            xdelta_path=xdelta_params,
+            source_zip=source_zip,
+            patch_file=patch_file,
+            output_file=output_file,
+            log_callback=self._log
+        )
+
         if success:
             self.view.after(0, lambda: self.view.setStatus("Patch Successful!"))
-            
+
             def install():
                 self._log("Installing pack...")
-                success, result = self.patcher.createMcPack(outputFile)
+                success, result = self.patcher.createMcPack(output_file)
                 if success:
                     self._log(f"launched {result}")
                 else:
                     self._log(f"Install failed: {result}")
                     showErrorWithCopy("Install Failed", f"Could not launch pack:\n{result}", self.view)
-                
+
             self.view.after(0, lambda: self.view.setActionCommand(install, "Install Pack"))
             self.view.after(0, lambda: self.view.setActionState("normal"))
             self.view.after(0, lambda: messagebox.showinfo("Success", "Patch created successfully! Click Install to launch Minecraft."))
         else:
-             self.view.after(0, lambda: showErrorWithCopy("Patch Failed", msg, self.view))
-             self.view.after(0, self.view.onBack)
+            self.view.after(0, lambda: showErrorWithCopy("Patch Failed", msg, self.view))
+            self.view.after(0, self.view.onBack)
 
     def startAdvancedLogic(self):
-        patchFrame = self.view
-        mode = patchFrame.modeVar.get()
-        
-        patchFrame.setActionState("disabled")
-        self.cancelEvent.clear()
-        
+        patch_frame = self.view
+        mode = patch_frame.modeVar.get()
+
+        patch_frame.setActionState("disabled")
+        self.cancel_event.clear()
+
         if mode == "marketplace":
-            patchFrame.setStatus("Searching for Marketplace Content...")
-            patchFrame.setProgress(0, 'indeterminate')
+            patch_frame.setStatus("Searching for Marketplace Content...")
+            patch_frame.setProgress(0, 'indeterminate')
             threading.Thread(target=self._marketplaceSearchWorker, daemon=True).start()
-            
+
         elif mode == "zip":
-            # If in advanced mode, we might need to ask for file NOW if not already set?
-            # Or assume we asked? The UI doesn't have a file picker for Zip mode in the new design (it hides custom fields).
-            # So, ask dialog.
-            filePath = filedialog.askopenfilename(filetypes=[("Minecraft Packs", "*.zip *.mcpack")], title="Select Pack")
-            if not filePath:
-                patchFrame.setActionState("normal")
+            file_path = filedialog.askopenfilename(filetypes=[("Minecraft Packs", "*.zip *.mcpack")], title="Select Pack")
+            if not file_path:
+                patch_frame.setActionState("normal")
                 return
-                
-            patchFrame.setStatus("Processing Zip...")
-            patchFrame.setProgress(0, 'indeterminate')
-            threading.Thread(target=self._zipProcessWorker, args=(filePath,), daemon=True).start()
-            
+
+            patch_frame.setStatus("Processing Zip...")
+            patch_frame.setProgress(0, 'indeterminate')
+            threading.Thread(target=self._zipProcessWorker, args=(file_path,), daemon=True).start()
+
         elif mode == "custom":
-            # Read fields
-            src = patchFrame.srcVar.get()
-            tgt = patchFrame.tgtVar.get()
-            patch = patchFrame.patchVar.get()
-            
+            src = patch_frame.srcVar.get()
+            tgt = patch_frame.tgtVar.get()
+            patch = patch_frame.patchVar.get()
+
             if not src or not tgt or not patch:
                 showErrorWithCopy("Error", "Please fill all fields.", self.view)
-                patchFrame.setActionState("normal")
+                patch_frame.setActionState("normal")
                 return
-                
-            # If src is folder, compress it? If zip, use it.
-            # For simplicity, if folder -> compress to temp. if zip -> copy to temp.
-            
+
             self._log("Starting Custom Patch...")
             threading.Thread(target=self._customProcessWorker, args=(src, tgt, patch), daemon=True).start()
 
-    def _customProcessWorker(self, src, tgt, patchFile):
+    def _customProcessWorker(self, src, tgt, patch_file):
         # 1. Prepare Source
-        os.makedirs(self.tempDir, exist_ok=True)
-        tempZip = os.path.join(self.tempDir, "custom_source.zip")
-        
+        os.makedirs(self.temp_dir, exist_ok=True)
+        temp_zip = os.path.join(self.temp_dir, "custom_source.zip")
+
         if os.path.isdir(src):
             self._log(f"Compressing source: {src}")
-            self.fs.compressDeterministic(src, tempZip, self.cancelEvent, logCallback=self._log)
+            self.fs.compressDeterministic(
+                folder_path=src,
+                output_zip=temp_zip,
+                cancel_event=self.cancel_event,
+                log_callback=self._log
+            )
         else:
             self._log(f"Using source zip: {src}")
-            shutil.copyfile(src, tempZip)
-            
-        if self.cancelEvent.is_set(): return
-        
+            shutil.copyfile(src, temp_zip)
+
+        if self.cancel_event.is_set(): return
+
         # 2. Patch
-        # Need absolute path for patch file
-        patchAbs = os.path.abspath(patchFile) if not os.path.isabs(patchFile) else patchFile
-        
+        patch_abs = os.path.abspath(patch_file) if not os.path.isabs(patch_file) else patch_file
+
         # 3. Run Patch
         try:
-            xdelta = self.config.getExecutable("xdelta")
-            xdeltaParams = resourcePath(xdelta)
-            
-            # Use custom target name/path
-            # If tgt is just filename, save to doc folder? Or Desktop? Or keep typical behavior?
-            # User said "file path for everything can be edited".
-            outputAbs = os.path.abspath(tgt)
-            
-            self._log(f"Applying patch: {patchAbs}")
-            success, msg = self.patcher.runPatch(xdeltaParams, tempZip, patchAbs, outputAbs, logCallback=self._log)
-            
+            xdelta = self.config.get_executable("xdelta")
+            xdelta_params = resourcePath(xdelta)
+
+            output_abs = os.path.abspath(tgt)
+
+            self._log(f"Applying patch: {patch_abs}")
+            success, msg = self.patcher.runPatch(
+                xdelta_path=xdelta_params,
+                source_zip=temp_zip,
+                patch_file=patch_abs,
+                output_file=output_abs,
+                log_callback=self._log
+            )
+
             if success:
                 self.view.after(0, lambda: self.view.setStatus("Patch Successful!"))
-                
+
                 def install():
                     self._log("Installing pack...")
-                    success, result = self.patcher.createMcPack(outputAbs)
+                    success, result = self.patcher.createMcPack(output_abs)
                     if success:
-                         self._log(f"launched {result}")
+                        self._log(f"launched {result}")
                     else:
-                         self._log(f"Install failed: {result}")
-                         showErrorWithCopy("Install Failed", f"Could not launch pack:\n{result}", self.view)
-                
-                patchFrame = self.view
-                self.view.after(0, lambda: patchFrame.setActionCommand(install, "Install Pack"))
-                self.view.after(0, lambda: patchFrame.setActionState("normal"))
-                self.view.after(0, lambda: patchFrame.setProgress(100, 'determinate'))
+                        self._log(f"Install failed: {result}")
+                        showErrorWithCopy("Install Failed", f"Could not launch pack:\n{result}", self.view)
+
+                patch_frame = self.view
+                self.view.after(0, lambda: patch_frame.setActionCommand(install, "Install Pack"))
+                self.view.after(0, lambda: patch_frame.setActionState("normal"))
+                self.view.after(0, lambda: patch_frame.setProgress(100, 'determinate'))
                 self.view.after(0, lambda: messagebox.showinfo("Success", "Patch created successfully! Click Install to launch."))
-                
+
             else:
-                 self.view.after(0, lambda: showErrorWithCopy("Patch Failed", msg, self.view))
-                 self.view.after(0, lambda: self.view.setActionState("normal"))
+                self.view.after(0, lambda: showErrorWithCopy("Patch Failed", msg, self.view))
+                self.view.after(0, lambda: self.view.setActionState("normal"))
 
         except Exception as e:
             self.view.after(0, lambda: showErrorWithCopy("Error", str(e), self.view))
