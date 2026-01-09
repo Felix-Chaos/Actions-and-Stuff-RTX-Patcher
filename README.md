@@ -46,6 +46,12 @@ You can always find the latest stable builds on the [Releases Page](https://gith
 
 **A&S Minecraft RTX Community Patcher V2** is a **community-built patching tool** that converts the original *Actions & Stuff* Minecraft Marketplace pack into an **RTX-compatible version** for Windows Bedrock Edition.
 
+**New in V2:**
+* ⚡ **Faster Patching**: Optimized patching engine.
+* 🎨 **Refreshed UI**: Modern, clean interface with Dark Mode.
+* 🛠️ **Smart Build System**: Automated versioning and asset management.
+* 📦 **Unified Patcher**: Supports both Marketplace and Zip/McPack sources in one tool.
+
 It works by:
 
 * Combining your **official Marketplace copy** (or local `.zip`/`.mcpack`) with the **community RTX modification**
@@ -205,6 +211,8 @@ The **original creator**, who made the source files available, is:
 This patcher is provided by the community for **educational and personal use only**.  
 It is **not affiliated with or endorsed** by Oreville Studios or Mojang/Microsoft.  
 All original assets remain property of their respective owners.
+
+> 🤖 **Note**: The V2 overhaul of this project, including the code refactoring, UI improvements, and automated build system, was developed with the assistance of **Google DeepMind's AI models** to accelerate development for the community.
 
 ---
 

@@ -28,14 +28,14 @@ class ConfigModel:
                 "patchConfig": "patch_config.json",
             },
             "patches": {
-                "marketplaceEncrypted": "assets/Patches/Marketplace/v1.7/patch.vcdiff",
-                "zipDecrypted": "assets/Patches/Zip/v1.7/patch.vcdiff",
+                "marketplaceEncrypted": "assets/Patches/A&S Patch File for 1.7 (do not Unzip)/Actions & Stuff encrypted.zip.vcdiff",
+                "zipDecrypted": "assets/Patches/A&S Patch File for 1.7 (do not Unzip)/Actions & Stuff decrypted.zip.vcdiff",
             },
             "patchVersions": {
                 "v1.7": {
                     "patches": {
-                        "encrypted": "assets/Patches/Marketplace/v1.7/patch.vcdiff",
-                        "decrypted": "assets/Patches/Zip/v1.7/patch.vcdiff"
+                        "encrypted": "assets/Patches/A&S Patch File for 1.7 (do not Unzip)/Actions & Stuff encrypted.zip.vcdiff",
+                        "decrypted": "assets/Patches/A&S Patch File for 1.7 (do not Unzip)/Actions & Stuff decrypted.zip.vcdiff"
                     },
                     "stats": {"files": 16661, "dirs": 301}
                 },
