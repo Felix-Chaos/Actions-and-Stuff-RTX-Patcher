@@ -16,7 +16,7 @@ class FileSystemModel:
     """
     Handles all file system operations including scanning, compressing,
     and cleaning up directories.
-    
+
     This model abstracts the OS-level interactions to provide a clean interface
     for the controllers.
     """
@@ -45,7 +45,7 @@ class FileSystemModel:
     def robustCleanup(self, folder_path: str, retries: int = 3, delay: float = 0.5) -> bool:
         """
         Safely deletes a directory tree, handling potential file locks or permission issues.
-        
+
         Args:
             folder_path (str): The path to the directory to delete.
             retries (int): Number of times to retry deletion (default: 3).
@@ -66,9 +66,10 @@ class FileSystemModel:
         return False
 
     def compressDeterministic(self, folder_path: str, output_zip: str, cancel_event: threading.Event = None, progress_callback: Optional[Callable[[int, int], None]] = None, log_callback: Optional[Callable[[str], None]] = None) -> bool:
+        # pylint: disable=too-many-locals
         """
         Compresses a directory into a ZIP file with deterministic settings (fixed timestamps).
-        
+
         Args:
             folder_path (str): Source directory to compress.
             output_zip (str): Destination ZIP file path.
@@ -83,60 +84,65 @@ class FileSystemModel:
             # 1. Count total files for progress tracking
             total_files = sum(len(files) for _, _, files in os.walk(folder_path))
             if total_files == 0:
-                if log_callback: log_callback("Warning: Source folder is empty.")
+                if log_callback:
+                    log_callback("Warning: Source folder is empty.")
                 return True # Nothing to zip, but not technically a failure
-            
+
             processed_files = 0
-            
+
             # 2. Create the ZIP file
             # ZIP_DEFLATED provides standard compression.
             with zipfile.ZipFile(output_zip, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
-                
+
                 # Walk the directory tree (sorted for deterministic order)
                 for root, _, files in sorted(os.walk(folder_path)):
                     if cancel_event and cancel_event.is_set():
-                        if log_callback: log_callback("Compression cancelled by user.")
+                        if log_callback:
+                            log_callback("Compression cancelled by user.")
                         return False
-                    
+
                     for file in sorted(files):
-                        if cancel_event and cancel_event.is_set(): return False
-                        
+                        if cancel_event and cancel_event.is_set():
+                            return False
+
                         file_path = os.path.join(root, file)
-                        
+
                         # Normalize path separators to forward slashes for ZIP compatibility
                         arcname = os.path.relpath(file_path, folder_path).replace("\\", "/")
-                        
+
                         # Create ZipInfo with fixed timestamp (Jan 1, 1980)
                         info = zipfile.ZipInfo(arcname)
                         info.date_time = (1980, 1, 1, 0, 0, 0)
                         info.compress_type = zipfile.ZIP_DEFLATED
-                        
+
                         # Read and write file data
                         try:
                             with open(file_path, 'rb') as f:
                                 zf.writestr(info, f.read())
                         except OSError as e:
-                            if log_callback: log_callback(f"Error reading file {file}: {e}")
+                            if log_callback:
+                                log_callback(f"Error reading file {file}: {e}")
                             return False
-                        
+
                         processed_files += 1
-                        
+
                         # Update progress (less frequently to reduce UI overhead)
-                        if log_callback and processed_files % 50 == 0: 
-                             log_callback(f"Zipping: {arcname}")
+                        if log_callback and processed_files % 50 == 0:
+                            log_callback(f"Zipping: {arcname}")
                         if progress_callback:
                             progress_callback(processed_files, total_files)
-                            
+
             return True
-            
+
         except (OSError, zipfile.BadZipFile) as e:
-            if log_callback: log_callback(f"Critical Zip Error: {e}")
+            if log_callback:
+                log_callback(f"Critical Zip Error: {e}")
             return False
 
     def scanDirectory(self, path: str, prefixes: List[str], cancel_event: threading.Event = None) -> List[str]:
         """
         Scans a directory for subfolders that start with any of the provided prefixes.
-        
+
         Args:
             path (str): The root directory to scan.
             prefixes (List[str]): List of folder name prefixes to look for.
@@ -148,11 +154,12 @@ class FileSystemModel:
         found_folders = []
         if not os.path.exists(path):
             return found_folders
-        
+
         try:
             for folder in os.listdir(path):
-                if cancel_event and cancel_event.is_set(): return found_folders
-                
+                if cancel_event and cancel_event.is_set():
+                    return found_folders
+
                 # Check if folder name matches any prefix
                 if any(folder.startswith(p) for p in prefixes):
                     full_path = os.path.join(path, folder)
@@ -161,5 +168,5 @@ class FileSystemModel:
         except OSError:
             # Permission warnings or access errors
             pass
-            
+
         return found_folders

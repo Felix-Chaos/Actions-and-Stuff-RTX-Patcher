@@ -31,7 +31,7 @@ class PatcherModel:
         """
         try:
             if not os.path.exists(xdelta_path):
-                 return False, f"Patcher executable not found at: {xdelta_path}"
+                return False, f"Patcher executable not found at: {xdelta_path}"
 
             # Ensure the output directory exists preventing IO errors
             os.makedirs(os.path.dirname(output_file), exist_ok=True)
@@ -39,40 +39,41 @@ class PatcherModel:
             # Construct the command arguments for xdelta3
             # -v: verbose, -d: decompress, -s: source
             command = [xdelta_path, "-v", "-d", "-s", source_zip, patch_file, output_file]
-            
+
             # Configure subprocess to suppress the window on Windows
-            creationFlags = 0
+            creation_flags = 0
             startupinfo = None
             if os.name == 'nt':
-                creationFlags = subprocess.CREATE_NO_WINDOW
+                creation_flags = subprocess.CREATE_NO_WINDOW
                 startupinfo = subprocess.STARTUPINFO()
                 startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
 
             # Execute the process
-            process = subprocess.Popen(
-                command, 
-                stdout=subprocess.PIPE, 
+            with subprocess.Popen(
+                command,
+                stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT, # Merge stderr into stdout to capture errors
-                text=True, 
-                creationflags=creationFlags,
+                text=True,
+                creationflags=creation_flags,
                 startupinfo=startupinfo,
                 bufsize=1,            # Line buffered for real-time logging
                 universal_newlines=True
-            )
-            
-            # Read output stream line by line
-            for line in process.stdout:
-                line = line.strip()
-                if line and log_callback:
-                    log_callback(line)
-            
-            process.wait()
-            
-            if process.returncode != 0:
-                return False, f"Patching failed with exit code {process.returncode}"
-                
+            ) as process:
+
+                # Read output stream line by line
+                if process.stdout:
+                    for line in process.stdout:
+                        line = line.strip()
+                        if line and log_callback:
+                            log_callback(line)
+
+                process.wait()
+
+                if process.returncode != 0:
+                    return False, f"Patching failed with exit code {process.returncode}"
+
             return True, "Patch applied successfully."
-            
+
         except subprocess.CalledProcessError as e:
             # Captures potential failures if check=True was used (not used here, but good practice to handle)
             details = e.stderr.strip() if e.stderr else "No additional details."
@@ -83,7 +84,7 @@ class PatcherModel:
     def createMcPack(self, output_file: str) -> Tuple[bool, str]:
         """
         Finalizes the patched file by remaining it to .mcpack and launching it.
-        
+
         Args:
             output_file (str): The path to the patched output file (usually .zip or .mcpack).
 
@@ -93,7 +94,7 @@ class PatcherModel:
         try:
             # Change extension to .mcpack which Minecraft recognizes
             mcpack_file = os.path.splitext(output_file)[0] + ".mcpack"
-            
+
             # Atomic-ish rename
             if output_file != mcpack_file:
                 # Remove existing target if present to allow restart/overwrite
@@ -103,19 +104,19 @@ class PatcherModel:
             else:
                 # File already has correct name/extension
                 mcpack_file = output_file
-            
+
             # Windows Specific: Hide the file to keep the folder clean for the user
             # (Requested feature: "The zip patcher seems broken... hidden file logic")
             try:
                 if os.name == 'nt':
                     # FILE_ATTRIBUTE_HIDDEN = 2
-                    ctypes.windll.kernel32.SetFileAttributesW(mcpack_file, 2) 
+                    ctypes.windll.kernel32.SetFileAttributesW(mcpack_file, 2)
             except Exception:
                 pass # Non-critical if attribute setting fails
 
             # Launch the file with the associated program (Minecraft)
             os.startfile(mcpack_file)
             return True, mcpack_file
-            
+
         except Exception as e:
             return False, f"Failed to install/launch pack: {str(e)}"

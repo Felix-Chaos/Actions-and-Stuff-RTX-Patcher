@@ -19,15 +19,15 @@ class CleanController:
 
     def _scanWorker(self):
         pathsToScan = [
-            os.path.join(os.path.expandvars(self.config.getPath("minecraftUwp")), "games", "com.mojang"),
-            os.path.join(os.path.expandvars(self.config.getPath("minecraftUwpPreview")), "games", "com.mojang"),
+            os.path.join(os.path.expandvars(self.config.get_path("minecraftUwp")), "games", "com.mojang"),
+            os.path.join(os.path.expandvars(self.config.get_path("minecraftUwpPreview")), "games", "com.mojang"),
              # Also check basic path if vars fail or distinct logic needed
             # For now simplified to mimic original list
         ]
-        
-        prefixes = self.config.getCleanupPrefixes()
+
+        prefixes = self.config.get_cleanup_prefixes()
         resultsText = ""
-        
+
         for basePath in pathsToScan:
             if self.cancelEvent.is_set(): return
             if not os.path.exists(basePath): continue
@@ -39,7 +39,7 @@ class CleanController:
                 self.foundFolders.extend(foundInRp)
                 resultsText += f"In {os.path.basename(basePath)}/resource_packs:\n"
                 for f in foundInRp:
-                     resultsText += f"  - {os.path.basename(f)}\n"
+                    resultsText += f"  - {os.path.basename(f)}\n"
 
             # Check minecraftWorlds
             worldsPath = os.path.join(basePath, "minecraftWorlds")
@@ -52,7 +52,7 @@ class CleanController:
                         self.foundFolders.extend(foundInWorld)
                         resultsText += f"In World {world}:\n"
                         for f in foundInWorld:
-                             resultsText += f"  - {os.path.basename(f)}\n"
+                            resultsText += f"  - {os.path.basename(f)}\n"
 
         if resultsText:
             self.view.after(0, lambda: self.view.updateResults(resultsText))
@@ -66,7 +66,7 @@ class CleanController:
         for folder in self.foundFolders:
             if self.fs.robustCleanup(folder):
                 deletedCount += 1
-        
+
         messagebox.showinfo("Done", f"Deleted {deletedCount} folders.")
         self.view.onConfirm() # Usually navigate back or refresh? For now let's just stay or let user click back
 

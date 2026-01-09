@@ -3,6 +3,7 @@ import os
 import sys
 import webbrowser
 from tkinter import messagebox
+from functools import partial
 
 from ..views.mainWindow import MainWindow
 from ..views.patchFrames import MainMenuFrame, PatchProgressFrame
@@ -22,38 +23,39 @@ class AppController:
         self.config = ConfigModel()
         self.fs = FileSystemModel()
         self.patcher = PatcherModel()
-        
-        self.root = MainWindow(title="A&S Minecraft RTX Community Patcher V2", theme="superhero", onClose=self.quit)
-        self.root.setIcon(resourcePath(self.config.getFilename("icon")))
-        
-        # Load Menus
-        self._loadToolsMenu()
-        self._loadDependenciesMenu()
-        self._loadHelpMenu()
-        self.root.bindAdvancedToggle(self.onAdvancedToggle)
-        
-        self.isAdvanced = False
 
-        self._initFrames()
+        self.root = MainWindow(title="A&S Minecraft RTX Community Patcher V2", theme="superhero", onClose=self.quit)
+        # Use new snake_case method
+        self.root.setIcon(resourcePath(self.config.get_filename("icon")))
+
+        # Load Menus
+        self._load_tools_menu()
+        self._load_dependencies_menu()
+        self._load_help_menu()
+        self.root.bindAdvancedToggle(self.on_advanced_toggle)
+
+        self.is_advanced = False
+
+        self._init_frames()
         self.root.showFrame("MainMenu")
 
-    def _loadToolsMenu(self):
+    def _load_tools_menu(self):
         # Look for tools folder in bundled resources
-        toolsPath = resourcePath("tools")
-        
+        tools_path = resourcePath("tools")
+
         scripts = []
-        if os.path.isdir(toolsPath):
-            for f in sorted(os.listdir(toolsPath)):
+        if os.path.isdir(tools_path):
+            for f in sorted(os.listdir(tools_path)):
                 if f.endswith(".py") and f != "__init__.py":
                     label = os.path.splitext(f)[0]
-                    path = os.path.join(toolsPath, f)
-                    # Create command closure
-                    cmd = lambda p=path, l=label: runScriptInThread(self.root, p, l)
+                    path = os.path.join(tools_path, f)
+                    # Create command closure using partial
+                    cmd = partial(runScriptInThread, self.root, path, label)
                     scripts.append((label, path, cmd))
-        
+
         self.root.populateToolsMenu(scripts)
 
-    def _loadDependenciesMenu(self):
+    def _load_dependencies_menu(self):
         def openVanillaRtx():
             if messagebox.askokcancel("Visit Website", "Open Vanilla Reforged RTX page?"):
                 webbrowser.open("https://www.curseforge.com/minecraft-bedrock/texture-packs/vanilla-reforged-rtx")
@@ -72,7 +74,7 @@ class AppController:
             ("Actions & Stuff (Marketplace)", openMarketplace)
         ])
 
-    def _loadHelpMenu(self):
+    def _load_help_menu(self):
         def joinDiscord():
             if messagebox.askokcancel("Join Discord", "Open A&S RTX Community Discord?"):
                 webbrowser.open("https://discord.gg/YrMMmN2kc7")
@@ -85,7 +87,7 @@ class AppController:
             except ImportError:
                 ver_str = "2.0.0 (Dev)"
                 date_str = "Unknown"
-                
+
             info = (
                 f"A&S Minecraft RTX Community Patcher V2\n\n"
                 f"Version: {ver_str}\n"
@@ -94,64 +96,64 @@ class AppController:
                 f"Based on original work by Demente Parker"
             )
             messagebox.showinfo("About", info)
-            
+
         self.root.populateHelpMenu([
             ("Join Discord Server", joinDiscord),
             ("About", about)
         ])
 
-    def _initFrames(self):
+    def _init_frames(self):
         # 1. Main Menu
-        menuCallbacks = {
-            "marketplace": lambda: self.showPatchFrame("marketplace"),
-            "zip": lambda: self.showPatchFrame("zip"),
-            "clean": self.showCleanFrame,
-            "fix": self.showFixFrame,
+        menu_callbacks = {
+            "marketplace": lambda: self.show_patch_frame("marketplace"),
+            "zip": lambda: self.show_patch_frame("zip"),
+            "clean": self.show_clean_frame,
+            "fix": self.show_fix_frame,
             "exit": self.quit
         }
-        self.mainMenuFrame = MainMenuFrame(self.root.container, menuCallbacks)
-        self.root.addFrame("MainMenu", self.mainMenuFrame)
+        self.main_menu_frame = MainMenuFrame(self.root.container, menu_callbacks)
+        self.root.addFrame("MainMenu", self.main_menu_frame)
 
         # 2. Patch Frame
-        self.patchFrame = PatchProgressFrame(self.root.container, "Patching", self.showMainMenu)
-        self.root.addFrame("PatchFrame", self.patchFrame)
-        self.patchController = PatchController(self.config, self.patcher, self.fs, self.patchFrame)
+        self.patch_frame = PatchProgressFrame(self.root.container, "Patching", self.show_main_menu)
+        self.root.addFrame("PatchFrame", self.patch_frame)
+        self.patch_controller = PatchController(self.config, self.patcher, self.fs, self.patch_frame)
 
         # 3. Clean Frame
-        self.cleanFrame = CleanFrame(self.root.container, None, self.showMainMenu)
-        self.root.addFrame("CleanFrame", self.cleanFrame)
-        self.cleanController = CleanController(self.config, self.fs, self.cleanFrame)
-        self.cleanFrame.confirmBtn.config(command=self.cleanController.deleteFolders)
+        self.clean_frame = CleanFrame(self.root.container, None, self.show_main_menu)
+        self.root.addFrame("CleanFrame", self.clean_frame)
+        self.clean_controller = CleanController(self.config, self.fs, self.clean_frame)
+        self.clean_frame.confirmBtn.config(command=self.clean_controller.deleteFolders)
 
         # 4. Fix Frame
-        self.fixFrame = FixFrame(self.root.container, None, None, self.showMainMenu)
-        self.root.addFrame("FixFrame", self.fixFrame)
-        self.fixController = FixController(self.config, self.fixFrame)
-        self.fixFrame.moveBtn.config(command=self.fixController.moveMarketplaceFolders)
-        self.fixFrame.restoreBtn.config(command=self.fixController.restoreMarketplaceFolders)
+        self.fix_frame = FixFrame(self.root.container, None, None, self.show_main_menu)
+        self.root.addFrame("FixFrame", self.fix_frame)
+        self.fix_controller = FixController(self.config, self.fix_frame)
+        self.fix_frame.moveBtn.config(command=self.fix_controller.moveMarketplaceFolders)
+        self.fix_frame.restoreBtn.config(command=self.fix_controller.restoreMarketplaceFolders)
 
-    def onAdvancedToggle(self, enabled: bool):
-        self.isAdvanced = enabled
-        self.mainMenuFrame.setAdvancedMode(enabled)
-        self.patchController.setAdvancedMode(enabled)
+    def on_advanced_toggle(self, enabled: bool):
+        self.is_advanced = enabled
+        self.main_menu_frame.setAdvancedMode(enabled)
+        self.patch_controller.setAdvancedMode(enabled)
 
-    def showMainMenu(self):
+    def show_main_menu(self):
         self.root.showFrame("MainMenu")
 
-    def showPatchFrame(self, mode: str):
+    def show_patch_frame(self, mode: str):
         self.root.showFrame("PatchFrame")
         if mode == "marketplace":
-            self.patchFrame.titleLabel.config(text="Patch from Marketplace")
-            self.patchController.startMarketplacePatch()
+            self.patch_frame.titleLabel.config(text="Patch from Marketplace")
+            self.patch_controller.startMarketplacePatch()
         else:
-            self.patchFrame.titleLabel.config(text="Patch from Zip/McPack")
-            self.patchController.startZipPatch()
+            self.patch_frame.titleLabel.config(text="Patch from Zip/McPack")
+            self.patch_controller.startZipPatch()
 
-    def showCleanFrame(self):
+    def show_clean_frame(self):
         self.root.showFrame("CleanFrame")
-        self.cleanController.startScan()
+        self.clean_controller.startScan()
 
-    def showFixFrame(self):
+    def show_fix_frame(self):
         self.root.showFrame("FixFrame")
 
     def run(self):
