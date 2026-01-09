@@ -1,9 +1,24 @@
+"""
+Deterministic Zipper Tool
+
+This script provides a GUI to compress a folder into a ZIP file with
+deterministic timestamps (Jan 1, 1980), ensuring identical builds
+for identical content.
+"""
+
 import os
 import zipfile
 import tkinter as tk
 from tkinter import filedialog, messagebox
 
 def compress_deterministic(folder_path, output_zip):
+    """
+    Compresses a folder into a zip file with fixed timestamps.
+
+    Args:
+        folder_path (str): Source directory.
+        output_zip (str): Output zip file path.
+    """
     with zipfile.ZipFile(output_zip, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
         for root, _, files in sorted(os.walk(folder_path)):
             for file in sorted(files):
@@ -19,6 +34,9 @@ def compress_deterministic(folder_path, output_zip):
                     zf.writestr(info, f.read())
 
 def select_and_compress(status_label):
+    """
+    Opens file dialogs to select folder and save location, then triggers compression.
+    """
     folder_path = filedialog.askdirectory(title="Select a folder to compress")
     if not folder_path:
         return
@@ -41,6 +59,7 @@ def select_and_compress(status_label):
         status_label.config(text="Select a folder to compress.")
 
 def main():
+    """Main entry point for the GUI."""
     print("Starting Deterministic Zipper GUI...")
     root = tk.Tk()
     root.title("Deterministic Zipper")
