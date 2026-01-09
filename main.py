@@ -7,5 +7,8 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from src.controllers.appController import AppController
 
 if __name__ == "__main__":
-    app = AppController()
-    app.run()
+    try:
+        app = AppController()
+        app.run()
+    except KeyboardInterrupt:
+        pass

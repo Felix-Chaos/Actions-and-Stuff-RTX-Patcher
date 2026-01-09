@@ -19,9 +19,8 @@ class MainMenuFrame(ttk.Frame):
         headerFrame.pack(fill="x")
         
         try:
-            # Try loading logo from resources/logo.png
-            # Assuming cwd is project root or main.py dir
-            logoPath = "resources/logo.png"
+            # Try loading logo from assets/resources/icon.ico
+            logoPath = resourcePath("assets/resources/icon.ico")
             if os.path.exists(logoPath):
                 pilImg = Image.open(logoPath)
                 # Resize to something reasonable (e.g. 150x150)
@@ -33,7 +32,6 @@ class MainMenuFrame(ttk.Frame):
             print(f"Failed to load logo: {e}")
             
         ttk.Label(headerFrame, text="A&S RTX Patcher", font=("Segoe UI", 24, "bold"), bootstyle="info").pack(pady=10)
-        ttk.Label(headerFrame, text="Ultimate Edition", font=("Segoe UI", 12), bootstyle="secondary").pack()
 
         # 2. Content Area (Grid)
         contentFrame = ttk.Frame(self)

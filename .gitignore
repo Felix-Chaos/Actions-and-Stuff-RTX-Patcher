@@ -1,5 +1,30 @@
-# Ignore Python cache files
-__pycache__/
+/executables/
 
-# Ignore log files
-app.log
+# Ignore all .mcpack files everywhere
+*.mcpack
+
+# Ignore all ZIP files except those in the Patches folder
+*.zip
+!Patches/**/*.zip
+
+# Ignore everything in dist folders except .exe files
+dist/*
+!dist/**/*.exe
+
+# In case there are two dist folders at different paths, apply same rule globally
+**/dist/*
+!**/dist/**/*.exe
+
+# Standard Python ignores (optional but useful for this repo)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.spec
+build/
+venv/
+.env/
+.DS_Store
+.idea/
+.vscode/

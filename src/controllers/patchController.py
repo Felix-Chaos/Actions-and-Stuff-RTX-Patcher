@@ -136,15 +136,21 @@ class PatchController:
             patchFrame.setActionState("normal")
             return
 
-        filePath = filedialog.askopenfilename(filetypes=[("Minecraft Packs", "*.zip *.mcpack")], title="Select Pack")
-        if not filePath:
-            return
+        # Default Mode: Wait for user to click "Select Pack"
+        def selectAndPatch():
+            filePath = filedialog.askopenfilename(filetypes=[("Minecraft Packs", "*.zip *.mcpack")], title="Select Pack")
+            if not filePath:
+                return
+            
+            patchFrame.setStatus("Processing Zip...")
+            patchFrame.setProgress(0, 'indeterminate')
+            patchFrame.setActionState("disabled")
+            self.cancelEvent.clear()
+            threading.Thread(target=self._zipProcessWorker, args=(filePath,), daemon=True).start()
 
-        patchFrame.setStatus("Processing Zip...")
-        patchFrame.setProgress(0, 'indeterminate')
-        patchFrame.setActionState("disabled")
-        self.cancelEvent.clear()
-        threading.Thread(target=self._zipProcessWorker, args=(filePath,), daemon=True).start()
+        patchFrame.setStatus("Ready. Please select your A&S Zip/McPack.")
+        patchFrame.setActionCommand(selectAndPatch, "Select Pack")
+        patchFrame.setActionState("normal")
 
     def _zipProcessWorker(self, filePath: str):
         extractDir = os.path.join(self.tempDir, "extracted")
@@ -187,7 +193,7 @@ class PatchController:
             manifestEvent.wait() # Block thread until user answers
             
             if shouldApplyManifest[0]:
-                manifestPath = resourcePath("resources/manifest.json")
+                manifestPath = resourcePath("assets/resources/manifest.json")
                 if os.path.exists(manifestPath):
                     shutil.copyfile(manifestPath, os.path.join(extractDir, "manifest.json"))
             # -----------------------------
