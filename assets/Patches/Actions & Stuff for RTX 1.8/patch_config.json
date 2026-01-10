@@ -8,5 +8,7 @@
             "files": 10057,
             "dirs": 162
         }
-    }
+    },
+    "packVersion": "v1.8",
+    "patchVersion": "1.0"
 }

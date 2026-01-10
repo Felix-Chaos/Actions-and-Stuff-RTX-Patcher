@@ -8,5 +8,7 @@
             "files": 16661,
             "dirs": 301
         }
-    }
+    },
+    "packVersion": "v1.6",
+    "patchVersion": "1.0"
 }

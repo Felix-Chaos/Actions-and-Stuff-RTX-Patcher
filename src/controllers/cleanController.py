@@ -21,8 +21,11 @@ class CleanController:
         pathsToScan = [
             os.path.join(os.path.expandvars(self.config.get_path("minecraftUwp")), "games", "com.mojang"),
             os.path.join(os.path.expandvars(self.config.get_path("minecraftUwpPreview")), "games", "com.mojang"),
-             # Also check basic path if vars fail or distinct logic needed
-            # For now simplified to mimic original list
+            # Add AppData paths (Launcher versions)
+            os.path.join(os.path.expandvars(self.config.get_path("minecraftBedrock")), "games", "com.mojang"),
+            # Handle specific launcher structure (Users/Shared)
+            os.path.join(os.path.expandvars(self.config.get_path("minecraftBedrock")), "Users", "Shared", "games", "com.mojang"),
+            os.path.join(os.path.expandvars(self.config.get_path("minecraftBedrockPreview")), "games", "com.mojang"),
         ]
 
         prefixes = self.config.get_cleanup_prefixes()
@@ -68,7 +71,9 @@ class CleanController:
                 deletedCount += 1
 
         messagebox.showinfo("Done", f"Deleted {deletedCount} folders.")
-        self.view.onConfirm() # Usually navigate back or refresh? For now let's just stay or let user click back
+        messagebox.showinfo("Done", f"Deleted {deletedCount} folders.")
+        # self.view.onConfirm() was causing a crash because it's None.
+        # The user can just click Back.
 
     def cancel(self):
         self.cancelEvent.set()

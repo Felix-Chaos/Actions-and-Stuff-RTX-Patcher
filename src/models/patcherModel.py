@@ -36,9 +36,16 @@ class PatcherModel:
             # Ensure the output directory exists preventing IO errors
             os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
+            # Check if output file exists and is locked
+            if os.path.exists(output_file):
+                try:
+                    os.remove(output_file)
+                except OSError:
+                    return False, f"Output file is locked: {output_file}\nPlease close Minecraft or any program using this file and try again."
+
             # Construct the command arguments for xdelta3
-            # -v: verbose, -d: decompress, -s: source
-            command = [xdelta_path, "-v", "-d", "-s", source_zip, patch_file, output_file]
+            # -v: verbose, -d: decompress, -s: source, -f: force overwrite
+            command = [xdelta_path, "-f", "-v", "-d", "-s", source_zip, patch_file, output_file]
 
             # Configure subprocess to suppress the window on Windows
             creation_flags = 0
@@ -61,16 +68,21 @@ class PatcherModel:
             ) as process:
 
                 # Read output stream line by line
+                accumulated_logs = []
                 if process.stdout:
                     for line in process.stdout:
                         line = line.strip()
-                        if line and log_callback:
-                            log_callback(line)
+                        if line:
+                            accumulated_logs.append(line)
+                            if log_callback:
+                                log_callback(line)
 
                 process.wait()
 
                 if process.returncode != 0:
-                    return False, f"Patching failed with exit code {process.returncode}"
+                    # Include last 5 lines of log in error message for debugging
+                    error_tail = "\n".join(accumulated_logs[-5:]) if accumulated_logs else "No output."
+                    return False, f"Patching failed with exit code {process.returncode}\nDetails:\n{error_tail}"
 
             return True, "Patch applied successfully."
 

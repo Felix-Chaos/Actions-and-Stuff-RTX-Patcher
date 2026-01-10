@@ -9,11 +9,7 @@
 
 # Ignore everything in dist folders except .exe files
 dist/*
-!dist/**/*.exe
 
-# In case there are two dist folders at different paths, apply same rule globally
-**/dist/*
-!**/dist/**/*.exe
 
 # Standard Python ignores (optional but useful for this repo)
 __pycache__/

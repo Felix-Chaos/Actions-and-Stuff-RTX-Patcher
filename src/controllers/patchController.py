@@ -178,18 +178,12 @@ class PatchController:
                         shutil.rmtree(os.path.join(root, d))
                         dirs.remove(d)
 
-            # --- CUSTOM MANIFEST LOGIC ---
-            should_apply_manifest = [False]
-            manifest_event = threading.Event()
-
-            def askManifest():
-                if messagebox.askyesno("Custom Manifest", "Do you want to use the custom A&S manifest.json?\n(Fixes some import issues)"):
-                    should_apply_manifest[0] = True
-                manifest_event.set()
-
-            self.view.after(0, askManifest)
-            manifest_event.wait() # Block thread until user answers
-
+            # FORCE MANIFEST INJECTION (Standardization)
+            should_apply_manifest = [True]
+            
+            # Removed User Prompt to ensure consistency with Patcher Tool
+            # The Tool always assumes a normalized source with the standard manifest.
+            
             if should_apply_manifest[0]:
                 manifest_path = resourcePath("assets/resources/manifest.json")
                 if os.path.exists(manifest_path):
@@ -206,7 +200,7 @@ class PatchController:
                 cancel_event=self.cancel_event,
                 log_callback=self._log
             )
-
+            
             self.view.after(0, lambda: self._onReadyToPatch(normalized_zip, "zip"))
 
         except Exception as e:
@@ -237,7 +231,7 @@ class PatchController:
             patch_file = resourcePath(patch_file_relative)
 
             if self.is_advanced:
-                custom = self.view.customPatchVar.get()
+                custom = self.view.patchVar.get()
                 if custom and os.path.exists(custom):
                     patch_file = custom
 
@@ -282,7 +276,7 @@ class PatchController:
             self.view.after(0, lambda: messagebox.showinfo("Success", "Patch created successfully! Click Install to launch Minecraft."))
         else:
             self.view.after(0, lambda: showErrorWithCopy("Patch Failed", msg, self.view))
-            self.view.after(0, self.view.onBack)
+            # self.view.after(0, self.view.onBack) # DISABLED FOR DEBUGGING
 
     def startAdvancedLogic(self):
         patch_frame = self.view
