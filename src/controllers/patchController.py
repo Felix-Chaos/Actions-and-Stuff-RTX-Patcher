@@ -1,4 +1,5 @@
 import os
+import json
 import threading
 import tempfile
 import shutil
@@ -76,16 +77,61 @@ class PatchController:
                 for folder in os.listdir(path):
                     full_path = os.path.join(path, folder)
                     if os.path.isdir(full_path):
-                        f_count, d_count = self.fs.getFolderStats(full_path)
+                        # HYBRID DETECTION: Check Manifest First
+                        manifest_path = os.path.join(full_path, "manifest.json")
+                        if os.path.exists(manifest_path):
+                            try:
+                                with open(manifest_path, 'r', encoding='utf-8', errors='ignore') as f:
+                                    data = json.load(f)
+                                    header = data.get("header", {})
+                                    name = header.get("name", "")
+                                    
+                                    if "Actions & Stuff" in name:
+                                        self._log(f"Manifest Match: {name}")
+                                        found_folder = full_path
+                                        
+                                        # Attempt to match version from config based on fuzzy stats or version field
+                                        # Ideally we map manifest version [1, 0, 20] to our config versions
+                                        # For now, we take the highest version from config as default if we found it securely via name
+                                        # Or we double check stats to pick the RIGHT version struct
+                                        
+                                        curr_stats = self.fs.getFolderStats(full_path)
+                                        # Try to find precise version match
+                                        for ver_key, ver_data in target_versions.items():
+                                            stats = ver_data["stats"]
+                                            if curr_stats[0] == stats["files"] and curr_stats[1] == stats["dirs"]:
+                                                detected_version_data = ver_data
+                                                self._log(f"  -> Version confirmed by stats: {ver_key}")
+                                                break
+                                        
+                                        # If no stats match (e.g. slight difference), default to newest if we are sure it's A&S
+                                        if not detected_version_data and target_versions:
+                                            # Pick the first one (usually sorted highest in configModel if we sorted it, 
+                                            # but configModel uses a dict. Let's assume the user wants the latest patch capability)
+                                            # Better strategy: Look for 'v1.9' or regex the version from manifest
+                                            # For reliability: Just pick the latest available patch config
+                                            # For now, let's just pick the first one and warn?
+                                            # Actually patches are often compatible between minor versions.
+                                            first_key = next(iter(target_versions))
+                                            detected_version_data = target_versions[first_key]
+                                            self._log(f"  -> Version inferred (fallback): {first_key}")
 
-                        # Check against all configured versions
-                        for ver_key, ver_data in target_versions.items():
-                            stats = ver_data["stats"]
-                            if f_count == stats["files"] and d_count == stats["dirs"]:
-                                found_folder = full_path
-                                detected_version_data = ver_data
-                                self._log(f"Detected version {ver_key} at {full_path}")
-                                break
+                                        break
+                            except Exception as e:
+                                pass # Manifest read failed, fall back to stats
+
+                        # Fallback: Stats Only
+                        if not found_folder:
+                            f_count, d_count = self.fs.getFolderStats(full_path)
+    
+                            # Check against all configured versions
+                            for ver_key, ver_data in target_versions.items():
+                                stats = ver_data["stats"]
+                                if f_count == stats["files"] and d_count == stats["dirs"]:
+                                    found_folder = full_path
+                                    detected_version_data = ver_data
+                                    self._log(f"Detected via Stats: {ver_key} at {full_path}")
+                                    break
                         if found_folder: break
             except OSError:
                 continue

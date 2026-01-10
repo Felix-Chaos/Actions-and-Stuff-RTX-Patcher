@@ -62,23 +62,6 @@ This ensures RTX visuals are properly integrated **without redistributing** any 
 
 ---
 
-## 🧩 Project Progress
-
-| Task                                 | Status        |
-| ------------------------------------ | ------------- |
-| 🚀 **Project Initialization**        | ✅ Complete    |
-| 📂 **File & Folder Update**          | ✅ Complete    |
-| 🎉 **A&S 1.6 Patcher Release**       | ✅ Released    |
-| 🔍 **Improved Search Logic for 1.7** | ✅ Complete |
-| 🧭 **Path Update & Cleanup**         | ✅ Complete |
-| 🧱 **Patch File Generation for 1.7** | ✅ Complete |
-| 📦 **Final 1.7 Release**             | ✅ Released |
-| � **Final 1.8 Release**             | ✅ Released |
-| 🎉 **Unified V2 Beta (1.9 Support)** | ✅ Released |
-
-
----
-
 ## 📁 Repository Overview
 
 | Name                      | Description                                                        | Link                                                    | Status                |
@@ -131,27 +114,45 @@ Browse this repository, every tool and script includes a short README with setup
 
 ## 💾 Downloads
 
-#### Always the [Latest Release](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/latest)<-- Press him Please 👈(ﾟヮﾟ👈) 
-#### 🧪 Try the [V2 Beta Patcher](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/V2.0.1b) (Unified & 1.9 Support) 🚀 
+### 🚀 Get the Patcher
 
-### ✅ Stable Builds
+[![Latest Stable](https://img.shields.io/badge/Download-Latest_Release-2ea44f?style=for-the-badge&logo=github)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/latest)
+[![V2 Beta](https://img.shields.io/badge/Download-V2_Beta_(Unified)-orange?style=for-the-badge&logo=github)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/V2.0.1b)
 
-* [A&S RTX Patcher v0.1.13 (for A&S 1.4)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/0.1.13)  
-* [A&S RTX Patcher v1.0.1 (for A&S 1.6)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/U_N_v1.0.1)  
-* [A&S RTX Patcher v1.0.2 (for A&S 1.7)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/1.0.2)
-  
-  ### ⇈ Minecraft UWP (MC Version < 1.21.120) ⇈
-  ### ⇊ Minecraft GDK (MC Version 1.21.120 and above) ⇊
-  
-* [A&S RTX Patcher v1.0.3 (for A&S 1.7 MC Version 1.21.120)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/1.0.3)
+---
+
+<details>
+<summary><strong>📂 Older Versions & History</strong></summary>
+
+
+
+<br>
+
+<details>
+<summary><strong>⇊ Minecraft GDK (Modern - V1.21.120+) ⇊</strong></summary>
+
+> *For modern Minecraft installations (Xbox App / GDK)*
+
 * [A&S RTX Patcher v1.0.4 (for A&S 1.8)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/1.0.4)
-* [A&S RTX Patcher V2.0.1b (Beta for A&S 1.9, Unified)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/V2.0.1b)
+* [A&S RTX Patcher v1.0.3 (for A&S 1.7)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/1.0.3)
 
-```
-A&S Patcher has been updated to support the new GDK-based Minecraft installation on Windows.
-All paths and patch methods have been adjusted for full compatibility with the latest Minecraft rollout
-(older Minecraft Versions do requiere the Patcher versions Listed as UWP).
-```
+</details>
+
+<br>
+
+<details>
+<summary><strong>⇈ Minecraft UWP (Legacy - Pre-1.21.120) ⇈</strong></summary>
+
+> *For older/legacy Minecraft installations*
+
+* [A&S RTX Patcher v1.0.2 (for A&S 1.7)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/1.0.2)
+* [A&S RTX Patcher v1.0.1 (for A&S 1.6)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/U_N_v1.0.1)  
+* [A&S RTX Patcher v0.1.13 (for A&S 1.4)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/0.1.13)  
+
+</details>
+
+<br>
+
 ### ⚗️ Experimental Builds
 
 * [U_0.1.1 Universal Patcher (for 1.6 from 1.4 patch)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/U_0.1.1)
@@ -161,6 +162,8 @@ All paths and patch methods have been adjusted for full compatibility with the l
 * v1.07 (A&S 1.3) - *Outdated*  
 * v1.08 (A&S 1.3.1) - *Outdated*
 
+</details>
+
 ---
 
 ## 📚 Additional Resources
@@ -168,6 +171,7 @@ All paths and patch methods have been adjusted for full compatibility with the l
 * [📖 FAQ](https://discord.com/channels/691547840463241267/1360688874388455504/1376325634246049792)  
 * [🧾 Changelog v1.13](https://discord.com/channels/691547840463241267/1360688874388455504/1384665181715566622)  
 * [💬 BetterRTX Discord](https://discord.gg/5kK4EMRbd3)  
+* [🎮 ChaosDev Projects](https://discord.gg/YrMMmN2kc7)
 * [📢 Project Thread](https://discord.com/channels/691547840463241267/1360688874388455504)  
 * [📜 Original Post](https://discord.com/channels/691547840463241267/1360688874388455504/1360688874388455504)  
 
@@ -184,7 +188,7 @@ This project wouldn’t exist without the help of our amazing contributors. Huge
 | **Demente Parker**    | Original creator, source files provider                  | Discord: `demente_parker` / [Ko-fi](https://ko-fi.com/dementeparker) |
 | **Community Testers** | Bug reporting, patch testing, feedback                   | Various Discord contributors                                         |
 
-> Contributions are welcome! If you’d like to help with patch development, testing, or documentation, feel free to open a PR or join the [BetterRTX Discord](https://discord.gg/5kK4EMRbd3).
+> Contributions are welcome! If you’d like to help with patch development, testing, or documentation, feel free to open a PR or join the [BetterRTX Discord](https://discord.gg/5kK4EMRbd3) or [ChaosDev Projects](https://discord.gg/YrMMmN2kc7).
 
 ---
 
