@@ -6,6 +6,7 @@ import subprocess
 import tempfile
 import ttkbootstrap as tb
 from ttkbootstrap.constants import *
+import json
 from tkinter import filedialog, Listbox, END, messagebox
 
 # Import deterministic compression logic
@@ -29,8 +30,97 @@ class PatchCreatorApp:
         self.decrypted_dir = tb.StringVar()
         self.encrypted_dir = tb.StringVar()
         self.output_dir = tb.StringVar()
-        
+
+        self.check_env_and_setup_defaults()
         self.setup_ui()
+
+    def check_env_and_setup_defaults(self):
+        # Check if running as script (Dev Mode)
+        if not getattr(sys, 'frozen', False):
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            
+            # Define paths
+            input_root = os.path.join(base_dir, "_input")
+            p_dir = os.path.join(input_root, "patched")
+            d_dir = os.path.join(input_root, "decrypted")
+            e_dir = os.path.join(input_root, "encrypted")
+            
+            # Output to ../assets/Patches/Current so App picks it up as default
+            o_dir = os.path.abspath(os.path.join(base_dir, "..", "assets", "Patches", "Current"))
+            
+            # Create input dirs
+            for path in [p_dir, d_dir]:
+                os.makedirs(path, exist_ok=True)
+
+            # Try to find Minecraft Encrypted pack
+            # Prioritize "Minecraft Bedrock" (AppData) as UWP is becoming outdated
+            candidates = [
+                os.path.expandvars(r"%AppData%/Minecraft Bedrock/premium_cache/resource_packs"),
+                os.path.expandvars(r"%LocalAppData%/Packages/Microsoft.MinecraftUWP_8wekyb3d8bbwe/LocalState/premium_cache/resource_packs")
+            ]
+            
+            mc_uuid = "7U5jWx4F4vc="
+            found_mc = False
+            for c in candidates:
+                if os.path.exists(c):
+                    # Check for specific UUID folder
+                    uuid_path = os.path.join(c, mc_uuid)
+                    if os.path.exists(uuid_path):
+                         e_dir = uuid_path
+                    else:
+                         e_dir = c
+                    found_mc = True
+                    break
+            
+            if not found_mc:
+                os.makedirs(e_dir, exist_ok=True)
+            
+            if not os.path.exists(o_dir):
+                try:
+                    os.makedirs(o_dir, exist_ok=True)
+                except OSError:
+                    pass # Output might be custom, but try to create default
+
+            # Load persistent settings if available
+            self.load_settings()
+
+            # Set vars (only if not set by load_settings or if we want defaults to be fallbacks)
+            # Actually, let's set defaults then override with settings
+            if not self.patched_dir.get(): self.patched_dir.set(p_dir)
+            if not self.decrypted_dir.get(): self.decrypted_dir.set(d_dir)
+            if not self.encrypted_dir.get(): self.encrypted_dir.set(e_dir)
+            if not self.output_dir.get(): self.output_dir.set(o_dir)
+
+    def get_settings_path(self):
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), "tool_config.json")
+
+    def load_settings(self):
+        try:
+            path = self.get_settings_path()
+            if os.path.exists(path):
+                with open(path, "r") as f:
+                    data = json.load(f)
+                    if "patched_dir" in data: self.patched_dir.set(data["patched_dir"])
+                    if "decrypted_dir" in data: self.decrypted_dir.set(data["decrypted_dir"])
+                    if "encrypted_dir" in data: self.encrypted_dir.set(data["encrypted_dir"])
+                    # if "output_dir" in data: self.output_dir.set(data["output_dir"]) # Force default to ensure updates
+                    if "inject_manifest" in data: self.inject_manifest.set(data["inject_manifest"])
+        except Exception:
+            pass
+
+    def save_settings(self):
+        try:
+            data = {
+                "patched_dir": self.patched_dir.get(),
+                "decrypted_dir": self.decrypted_dir.get(),
+                "encrypted_dir": self.encrypted_dir.get(),
+                "output_dir": self.output_dir.get(),
+                "inject_manifest": self.inject_manifest.get()
+            }
+            with open(self.get_settings_path(), "w") as f:
+                json.dump(data, f, indent=4)
+        except Exception:
+            pass
         
     def setup_ui(self):
         # Header
@@ -43,8 +133,8 @@ class PatchCreatorApp:
         # 2. Decrypted (Original Reference)
         self.create_folder_input("2. Original Decrypted (Vanilla Reference):", self.decrypted_dir)
         
-        # 3. Encrypted (Original Reference)
-        self.create_folder_input("3. Original Encrypted (Vanilla Reference):", self.encrypted_dir)
+        # 3. Encrypted (Original Reference) + Stats
+        self.create_folder_input("3. Original Encrypted (Vanilla Reference):", self.encrypted_dir, show_stats=True)
 
         # 4. Output Directory
         self.create_folder_input("Output Directory (For .xdelta files):", self.output_dir)
@@ -68,7 +158,7 @@ class PatchCreatorApp:
         self.log_box = Listbox(self.root, height=12, bg="#1e1e1e", fg="white", selectbackground="#444", highlightthickness=0)
         self.log_box.pack(fill=BOTH, expand=True, padx=10, pady=(0, 10))
 
-    def create_folder_input(self, label_text, variable):
+    def create_folder_input(self, label_text, variable, show_stats=False):
         frame = tb.Frame(self.root)
         frame.pack(fill=X, padx=10, pady=5)
         
@@ -79,6 +169,31 @@ class PatchCreatorApp:
         
         tb.Entry(entry_frame, textvariable=variable).pack(side=LEFT, fill=X, expand=True)
         tb.Button(entry_frame, text="Browse", command=lambda: self.browse_folder(variable)).pack(side=RIGHT, padx=5)
+
+        if show_stats:
+             tb.Button(entry_frame, text="Get Stats", bootstyle=INFO, 
+                       command=lambda: self.show_stats(variable.get())).pack(side=RIGHT, padx=5)
+
+    def show_stats(self, folder_path):
+        if not folder_path or not os.path.exists(folder_path):
+             messagebox.showerror("Error", "Folder does not exist.")
+             return
+
+        file_count = 0
+        folder_count = 0
+        try:
+            for _, dirs, files in os.walk(folder_path):
+                folder_count += len(dirs)
+                file_count += len(files)
+            
+            msg = f"Stats for '{os.path.basename(folder_path)}':\n\nFiles: {file_count}\nFolders: {folder_count}"
+            # Also print to log
+            self.log_box.insert(END, f"Stats: Files={file_count}, Dirs={folder_count} ({folder_path})")
+            self.log_box.yview_moveto(1.0)
+            
+            messagebox.showinfo("Folder Stats", msg)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to scan: {e}")
 
     def browse_folder(self, variable):
         path = filedialog.askdirectory()
@@ -108,14 +223,33 @@ class PatchCreatorApp:
             messagebox.showerror("Error", "All folder paths are required.")
             return
 
-        if not all([os.path.exists(p) for p in [p_dir, d_dir, e_dir, o_dir]]):
-             messagebox.showerror("Error", "One or more paths do not exist.")
+        if not all([os.path.exists(p) for p in [p_dir, d_dir, e_dir]]):
+             messagebox.showerror("Error", "One or more input paths do not exist.")
              return
+        
+        # Create output dir if it doesn't exist
+        if not os.path.exists(o_dir):
+            try:
+                os.makedirs(o_dir, exist_ok=True)
+            except OSError:
+                messagebox.showerror("Error", f"Could not create output directory: {o_dir}")
+                return
+
+        self.save_settings()
+
+        # Ask for version upfront
+        from tkinter import simpledialog
+        pack_ver = simpledialog.askstring("Version Info", "Enter Actions & Stuff Version (e.g. 1.8):", parent=self.root)
+        if not pack_ver:
+             pack_ver = "Unknown"
+        else:
+             if not pack_ver.startswith("v") and pack_ver[0].isdigit():
+                  pack_ver = "v" + pack_ver
 
         self.toggle_inputs(False)
-        threading.Thread(target=self.process_worker, args=(p_dir, d_dir, e_dir, o_dir), daemon=True).start()
+        threading.Thread(target=self.process_worker, args=(p_dir, d_dir, e_dir, o_dir, pack_ver), daemon=True).start()
 
-    def process_worker(self, patched_dir, decrypted_dir, encrypted_dir, output_dir):
+    def process_worker(self, patched_dir, decrypted_dir, encrypted_dir, output_dir, pack_ver):
         try:
             temp_dir = os.path.join(tempfile.gettempdir(), "AnSPatcherTool")
             if os.path.exists(temp_dir):
@@ -134,28 +268,72 @@ class PatchCreatorApp:
             compress_deterministic(patched_dir, target_zip)
             
             # 2. Compress Decrypted Directory (Source 1)
-            # Logic: If injecting manifest, copy decrypted_dir to temp, add manifest, then compress.
-            dir_to_compress_dec = decrypted_dir
+            # Logic: Match patchController.py exactly (Cleanup + Manifest)
+            
+            # COPY to temp first so we can clean it without touching original
+            self.root.after(0, lambda: self.log("Preparing Decrypted Source (Cleaning & Injecting)..."))
+            temp_dec_source = os.path.join(temp_dir, "decrypted_source_files")
+            if os.path.exists(temp_dec_source):
+                shutil.rmtree(temp_dec_source)
+            shutil.copytree(decrypted_dir, temp_dec_source)
+
+            # CLEANUP: Must match ConfigModel.filesToRemove / dirsToRemove
+            files_to_remove = ["contents.json", "signatures.json", "splashes.json", "sounds.json"]
+            dirs_to_remove = ["texts"]
+
+            for root, dirs, files in os.walk(temp_dec_source):
+                for f in files:
+                    if f in files_to_remove:
+                        try:
+                            os.remove(os.path.join(root, f))
+                            # self.root.after(0, lambda: self.log(f"  - Removed {f}"))
+                        except OSError: pass
+                for d in list(dirs):
+                    if d in dirs_to_remove:
+                        try:
+                            shutil.rmtree(os.path.join(root, d))
+                            dirs.remove(d)
+                            # self.root.after(0, lambda: self.log(f"  - Removed {d}/"))
+                        except OSError: pass
+
+            dir_to_compress_dec = temp_dec_source
+
             if self.inject_manifest.get():
-                self.root.after(0, lambda: self.log("Injecting manifest.json into Decrypted Source copy..."))
-                temp_dec_source = os.path.join(temp_dir, "decrypted_source_files")
-                shutil.copytree(decrypted_dir, temp_dec_source)
-                
-                # Find manifest in resources
+                self.root.after(0, lambda: self.log("Injecting manifest.json (Baseline)..."))
                 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                manifest_path = os.path.join(project_root, "resources", "manifest.json")
+                # CRITICAL: Must use the SAME manifest as the App uses for normalization
+                # App uses: assets/resources/manifest.json (Verified in patchController.py)
+                manifest_path = os.path.join(project_root, "assets", "resources", "manifest.json")
                 
                 if os.path.exists(manifest_path):
                     shutil.copyfile(manifest_path, os.path.join(temp_dec_source, "manifest.json"))
-                    self.root.after(0, lambda: self.log("  ✓ Manifest injected."))
+                    self.root.after(0, lambda: self.log("  ✓ Baseline Manifest injected."))
                 else:
-                    self.root.after(0, lambda: self.log("  ⚠️ Warning: resources/manifest.json not found."))
+                    self.root.after(0, lambda: self.log(f"  ⚠️ Warning: {manifest_path} not found."))
                 
                 dir_to_compress_dec = temp_dec_source
 
+                # Dynamically update manifest if found (to match the Target if we want source to be versioned?)
+                # WAIT. The App OVERWRITES the manifest with the generic one before patching.
+                # So the Source used for patching MUST have the GENERIC manifest, unmodified.
+                # If we modify it here with version numbers, it will MISMATCH the App which uses the static generic one.
+                
+                # So: We inject the manifest, but we do NOT modify it for the SOURCE.
+                # The version info should be in the TARGET (Patched Directory).
+                
+                # ...Wait, if I don't modify it, how does the version get into the final pack?
+                # The final pack comes from applying the patch to the source.
+                # xdelta transforms Source -> Target.
+                # If Target has version numbers, xdelta handles that diff.
+                # Source MUST be the generic baseline.
+                
+                pass # removed the modification logic for SOURCE manifest to ensure hash match
+
+                pass # removed the modification logic for SOURCE manifest to ensure hash match
+
             self.root.after(0, lambda: self.log(f"Compressing Source Decrypted: {os.path.basename(decrypted_dir)}..."))
             compress_deterministic(dir_to_compress_dec, source_dec_zip)
-
+            
             # 3. Compress Encrypted Directory (Source 2)
             self.root.after(0, lambda: self.log(f"Compressing Source Encrypted: {os.path.basename(encrypted_dir)}..."))
             compress_deterministic(encrypted_dir, source_enc_zip)
@@ -166,26 +344,66 @@ class PatchCreatorApp:
                  self.root.after(0, lambda: self.log("❌ xdelta3.exe not found in tools folder!"))
                  return
 
-            # Patch 1: Decrypted -> Patched
-            out_patch_dec = os.path.join(output_dir, "patch_decrypted.xdelta")
+            # Use fixed filenames to match ConfigModel
+            out_patch_dec = os.path.join(output_dir, "decrypted.vcdiff")
+            out_patch_enc = os.path.join(output_dir, "encrypted.vcdiff")
+
+             # Patch 1: Decrypted -> Patched
             self.root.after(0, lambda: self.log("Generating Patch: Decrypted -> Patched..."))
             self.run_xdelta(xdelta_path, source_dec_zip, target_zip, out_patch_dec)
 
             # Patch 2: Encrypted -> Patched
-            out_patch_enc = os.path.join(output_dir, "patch_encrypted.xdelta")
+
             self.root.after(0, lambda: self.log("Generating Patch: Encrypted -> Patched..."))
             self.run_xdelta(xdelta_path, source_enc_zip, target_zip, out_patch_enc)
+
+            # 5. Generate patch_config.json with Stats
+            self.root.after(0, lambda: self.log("Generating patch_config.json..."))
+            self.generate_patch_config(encrypted_dir, output_dir, pack_ver)
 
             self.root.after(0, lambda: self.log("✅ All operations completed successfully!"))
             self.root.after(0, lambda: messagebox.showinfo("Done", "Patches created successfully."))
 
         except Exception as e:
-            self.root.after(0, lambda: self.log(f"❌ Error: {str(e)}"))
-            self.root.after(0, lambda: messagebox.showerror("Error", str(e)))
+            import traceback
+            traceback.print_exc()
+            self.root.after(0, lambda err=e: self.log(f"❌ Error: {str(err)}"))
+            self.root.after(0, lambda err=e: messagebox.showerror("Error", str(err)))
         finally:
             self.root.after(0, lambda: self.toggle_inputs(True))
             # Optional: cleanup temp_dir
             # shutil.rmtree(temp_dir, ignore_errors=True)
+
+    def generate_patch_config(self, encrypted_dir, output_dir, pack_ver):
+        try:
+            # Calculate stats
+            file_count = 0
+            folder_count = 0
+            for _, dirs, files in os.walk(encrypted_dir):
+                folder_count += len(dirs)
+                file_count += len(files)
+
+            patch_ver = "1.0" # Default
+
+            config_data = {
+                "packVersion": pack_ver,
+                "patchVersion": patch_ver,
+                "marketplace_pack_stats": {
+                    "v1": {
+                        "files": file_count,
+                        "dirs": folder_count
+                    }
+                }
+            }
+
+            config_path = os.path.join(output_dir, "patch_config.json")
+            with open(config_path, "w") as f:
+                json.dump(config_data, f, indent=4)
+            
+            self.root.after(0, lambda: self.log(f"  ✓ Saved stats to {os.path.basename(config_path)}"))
+        
+        except Exception as e:
+             self.root.after(0, lambda: self.log(f"  ⚠️ Failed to save patch_config.json: {e}"))
 
     def run_xdelta(self, exe, source, target, output):
         # xdelta3 -e -s <source> <target> <output>
