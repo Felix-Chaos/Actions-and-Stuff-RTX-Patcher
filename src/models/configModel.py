@@ -107,9 +107,25 @@ class ConfigModel:
                                 # Construct standard paths
                                 # Path relative to project root: assets/Patches/<folder_name>/...
                                 relative_base = f"assets/Patches/{item}"
+                                # Check for new simplified filenames first (Current standard)
+                                enc_new = "encrypted.vcdiff"
+                                dec_new = "decrypted.vcdiff"
+                                
+                                # Legacy filenames
+                                enc_old = "Actions & Stuff encrypted.zip.vcdiff"
+                                dec_old = "Actions & Stuff decrypted.zip.vcdiff"
+                                
+                                enc_path = enc_old
+                                if os.path.exists(os.path.join(full_path, enc_new)):
+                                    enc_path = enc_new
+                                    
+                                dec_path = dec_old
+                                if os.path.exists(os.path.join(full_path, dec_new)):
+                                    dec_path = dec_new
+
                                 patch_entry["patches"] = {
-                                    "encrypted": f"{relative_base}/Actions & Stuff encrypted.zip.vcdiff",
-                                    "decrypted": f"{relative_base}/Actions & Stuff decrypted.zip.vcdiff"
+                                    "encrypted": f"{relative_base}/{enc_path}",
+                                    "decrypted": f"{relative_base}/{dec_path}"
                                 }
                             
                             patch_entry["patchVersion"] = data.get("patchVersion", "1.0")

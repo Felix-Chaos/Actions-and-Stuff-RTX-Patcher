@@ -214,10 +214,27 @@ class PatchController:
         def runPatchAction():
             if messagebox.askyesno("Clean Update?", "Do you want to clean old versions of the pack before patching?\n(Recommended for updates)"):
                 self.view.setStatus("Cleaning old versions...")
-                std_rp = os.path.join(os.path.expandvars(self.config.get_path("minecraftUwp")), "games", "com.mojang", "resource_packs")
-                found = self.fs.scanDirectory(std_rp, self.config.get_cleanup_prefixes())
-                for f in found:
-                    self.fs.robustCleanup(f)
+                self.view.setStatus("Cleaning old versions...")
+                
+                # Scan ALL possible paths (Mirrors CleanController logic)
+                pathsToScan = [
+                    os.path.join(os.path.expandvars(self.config.get_path("minecraftUwp")), "games", "com.mojang"),
+                    os.path.join(os.path.expandvars(self.config.get_path("minecraftUwpPreview")), "games", "com.mojang"),
+                    os.path.join(os.path.expandvars(self.config.get_path("minecraftBedrock")), "games", "com.mojang"),
+                    os.path.join(os.path.expandvars(self.config.get_path("minecraftBedrock")), "Users", "Shared", "games", "com.mojang"),
+                    os.path.join(os.path.expandvars(self.config.get_path("minecraftBedrockPreview")), "games", "com.mojang"),
+                ]
+                
+                prefixes = self.config.get_cleanup_prefixes()
+                
+                for basePath in pathsToScan:
+                    if not os.path.exists(basePath): continue
+                    
+                    rpPath = os.path.join(basePath, "resource_packs")
+                    found = self.fs.scanDirectory(rpPath, prefixes)
+                    for f in found:
+                        self.fs.robustCleanup(f)
+                        self._log(f"Cleaned: {os.path.basename(f)}")
 
             patch_type = "marketplaceEncrypted" if mode == "marketplace" else "zipDecrypted"
             patch_file_relative = self.config.get_patch_path(patch_type)
