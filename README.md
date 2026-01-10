@@ -73,7 +73,9 @@ This ensures RTX visuals are properly integrated **without redistributing** any 
 | 🧭 **Path Update & Cleanup**         | ✅ Complete |
 | 🧱 **Patch File Generation for 1.7** | ✅ Complete |
 | 📦 **Final 1.7 Release**             | ✅ Released |
-| 🔍 **Final 1.8 Release**             | ❓ Soon™ |
+| � **Final 1.8 Release**             | ✅ Released |
+| 🎉 **Unified V2 Beta (1.9 Support)** | ✅ Released |
+
 
 ---
 
@@ -130,6 +132,7 @@ Browse this repository, every tool and script includes a short README with setup
 ## 💾 Downloads
 
 #### Always the [Latest Release](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/latest)<-- Press him Please 👈(ﾟヮﾟ👈) 
+#### 🧪 Try the [V2 Beta Patcher](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/V2.0.1b) (Unified & 1.9 Support) 🚀 
 
 ### ✅ Stable Builds
 
@@ -141,6 +144,8 @@ Browse this repository, every tool and script includes a short README with setup
   ### ⇊ Minecraft GDK (MC Version 1.21.120 and above) ⇊
   
 * [A&S RTX Patcher v1.0.3 (for A&S 1.7 MC Version 1.21.120)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/1.0.3)
+* [A&S RTX Patcher v1.0.4 (for A&S 1.8)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/1.0.4)
+* [A&S RTX Patcher V2.0.1b (Beta for A&S 1.9, Unified)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/V2.0.1b)
 
 ```
 A&S Patcher has been updated to support the new GDK-based Minecraft installation on Windows.
