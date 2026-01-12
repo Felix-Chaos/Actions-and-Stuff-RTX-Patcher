@@ -1,7 +1,7 @@
 {
-    "patched_dir": "B:/Download/A&SforRTX (3)/A&SforRTX",
-    "decrypted_dir": "B:/Download/Tools.and.stuff/output/Actions & Stuff 1.9 (resources)",
-    "encrypted_dir": "C:/Users/felix/AppData/Roaming/Minecraft Bedrock/premium_cache/resource_packs/7U5jWx4F4vc=",
-    "output_dir": "b:\\Dokumente\\GitHub\\A-S-Minecraft-RTX-Community-PatcherV2\\assets\\Patches\\Current",
+    "patched_dir": "C:/Users/felix/Downloads/A&SforRTXklklkl/A&SforRTX",
+    "decrypted_dir": "C:/Users/felix/Downloads/Tools.and.stuff/output/Actions & Stuff 1.9 (resources)",
+    "encrypted_dir": "C:/Users/felix/AppData/Roaming/Minecraft Bedrock/premium_cache/resource_packs/vkdsVDSQQUM=",
+    "output_dir": "c:\\Users\\felix\\Documents\\GitHub\\A-S-Minecraft-RTX-Community-Patcher\\assets\\Patches\\Current",
     "inject_manifest": true
 }

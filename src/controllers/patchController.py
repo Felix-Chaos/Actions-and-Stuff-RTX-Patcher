@@ -3,6 +3,8 @@ import json
 import threading
 import tempfile
 import shutil
+import tkinter as tk
+import ttkbootstrap as ttk
 from tkinter import messagebox, filedialog
 from ..models.configModel import ConfigModel
 from ..models.patcherModel import PatcherModel
@@ -35,21 +37,9 @@ class PatchController:
     def startMarketplacePatch(self):
         # self.view is PatchProgressFrame
         patch_frame = self.view
-
-        # Access MainWindow's advancedVar
-        is_advanced = False
-        try:
-            is_advanced = patch_frame.winfo_toplevel().advancedVar.get()
-        except AttributeError:
-            pass # Fallback
-
-        if is_advanced:
-            patch_frame.setStatus("Ready. properties below.")
-            patch_frame.modeVar.set("marketplace")
-            patch_frame.onModeChanged()
-            patch_frame.setActionCommand(self.startAdvancedLogic, "Start Patch")
-            patch_frame.setActionState("normal")
-            return
+        
+        # Legacy: We rely on AppController calling configureView BEFORE this.
+        # We just reset status and start.
 
         patch_frame.setStatus("Searching for Marketplace Content...")
         patch_frame.setProgress(0, 'indeterminate')
@@ -65,9 +55,11 @@ class PatchController:
              os.path.join(os.path.expandvars(self.config.get_path("minecraftBedrockPreview")), "premium_cache", "resource_packs")
         ]
 
-        target_versions = self.config.config["patchVersions"]
+        # Target Versions is now Dict[str, List[dict]]
+        target_versions = self.config.config["patchVersions"] 
         found_folder = None
-        detected_version_data = None
+        detected_version_key = None
+        detection_method = None # 'stats' or 'lang'
 
         for path in paths_to_check:
             if self.cancel_event.is_set(): return
@@ -77,61 +69,56 @@ class PatchController:
                 for folder in os.listdir(path):
                     full_path = os.path.join(path, folder)
                     if os.path.isdir(full_path):
-                        # HYBRID DETECTION: Check Manifest First
-                        manifest_path = os.path.join(full_path, "manifest.json")
-                        if os.path.exists(manifest_path):
-                            try:
-                                with open(manifest_path, 'r', encoding='utf-8', errors='ignore') as f:
-                                    data = json.load(f)
-                                    header = data.get("header", {})
-                                    name = header.get("name", "")
-                                    
-                                    if "Actions & Stuff" in name:
-                                        self._log(f"Manifest Match: {name}")
-                                        found_folder = full_path
-                                        
-                                        # Attempt to match version from config based on fuzzy stats or version field
-                                        # Ideally we map manifest version [1, 0, 20] to our config versions
-                                        # For now, we take the highest version from config as default if we found it securely via name
-                                        # Or we double check stats to pick the RIGHT version struct
-                                        
-                                        curr_stats = self.fs.getFolderStats(full_path)
-                                        # Try to find precise version match
-                                        for ver_key, ver_data in target_versions.items():
-                                            stats = ver_data["stats"]
-                                            if curr_stats[0] == stats["files"] and curr_stats[1] == stats["dirs"]:
-                                                detected_version_data = ver_data
-                                                self._log(f"  -> Version confirmed by stats: {ver_key}")
-                                                break
-                                        
-                                        # If no stats match (e.g. slight difference), default to newest if we are sure it's A&S
-                                        if not detected_version_data and target_versions:
-                                            # Pick the first one (usually sorted highest in configModel if we sorted it, 
-                                            # but configModel uses a dict. Let's assume the user wants the latest patch capability)
-                                            # Better strategy: Look for 'v1.9' or regex the version from manifest
-                                            # For reliability: Just pick the latest available patch config
-                                            # For now, let's just pick the first one and warn?
-                                            # Actually patches are often compatible between minor versions.
-                                            first_key = next(iter(target_versions))
-                                            detected_version_data = target_versions[first_key]
-                                            self._log(f"  -> Version inferred (fallback): {first_key}")
-
-                                        break
-                            except Exception as e:
-                                pass # Manifest read failed, fall back to stats
-
-                        # Fallback: Stats Only
-                        if not found_folder:
-                            f_count, d_count = self.fs.getFolderStats(full_path)
-    
-                            # Check against all configured versions
-                            for ver_key, ver_data in target_versions.items():
+                        # 1. Check Stats (Primary)
+                        f_count, d_count = self.fs.getFolderStats(full_path)
+                        
+                        for ver_key, patch_list in target_versions.items():
+                            # Check against the LATEST patch config for stats (usually most reliable)
+                            # Or check all? Let's check all in the list
+                            for ver_data in patch_list:
                                 stats = ver_data["stats"]
                                 if f_count == stats["files"] and d_count == stats["dirs"]:
                                     found_folder = full_path
-                                    detected_version_data = ver_data
+                                    detected_version_key = ver_key
+                                    detection_method = 'stats'
                                     self._log(f"Detected via Stats: {ver_key} at {full_path}")
                                     break
+                            if found_folder: break
+                        
+                        if found_folder: break
+
+                        # 2. Fallback: Check en_US.lang (Secondary)
+                        lang_path = os.path.join(full_path, "texts", "en_US.lang")
+                        if os.path.exists(lang_path):
+                            try:
+                                with open(lang_path, 'r', encoding='utf-8', errors='ignore') as f:
+                                    for line in f:
+                                        if "pack.name=Actions & Stuff" in line:
+                                            # Try to extract version
+                                            # Expecting: pack.name=Actions & Stuff 1.9
+                                            # Or just grab the version part
+                                            parts = line.strip().split("Actions & Stuff")
+                                            if len(parts) > 1:
+                                                ver_str = parts[1].strip() # e.g. "1.9" or "1.9 beta"
+                                                # Normalize: "1.9" -> "v1.9"
+                                                clean_ver = ver_str.split()[0] if ver_str else ""
+                                                ver_key = f"v{clean_ver}" if not clean_ver.startswith("v") else clean_ver
+                                                
+                                                # Check if this key exists in our config
+                                                if ver_key in target_versions:
+                                                    found_folder = full_path
+                                                    detected_version_key = ver_key
+                                                    detection_method = 'lang'
+                                                    self._log(f"Detected via Language File: {ver_key} (Stats mismatch)")
+                                                else:
+                                                    self._log(f"Found A&S (Lang) but version {ver_key} not in config.")
+                                                    found_folder = full_path
+                                                    detected_version_key = ver_key 
+                                                    detection_method = 'unknown' # Version unknown but it IS A&S
+                                            break
+                            except Exception as e:
+                                pass # Lang read failed
+
                         if found_folder: break
             except OSError:
                 continue
@@ -142,13 +129,105 @@ class PatchController:
             self.view.after(0, self.view.onBack)
             return
 
-        self.view.after(0, lambda: self.view.setStatus("Found pack. Preparing..."))
+        self.view.after(0, lambda: self.view.setStatus("Found pack."))
 
+        # INTERACTIVE SELECTION LOGIC
+        def confirmVersionAndProceed():
+            # 1. Determine "Latest" available version key
+            # Assuming keys are like "v1.9", "v1.8": sort descending
+            available_keys = sorted(target_versions.keys(), reverse=True)
+            latest_key = available_keys[0] if available_keys else None
+            
+            target_key = detected_version_key
+
+            # Warn about stats mismatch if applicable
+            if detection_method == 'lang':
+                messagebox.showinfo("Warning", "Folder statistics did not match known configurations.\nHowever, the Language file confirmed this is Actions & Stuff.\nProceeding with detected version logic.")
+
+            # STEP A: Version Selection (Detailed vs Latest)
+            if detected_version_key != latest_key:
+                msg = f"Version Mismatch Detected.\n\nDetected Installed: {detected_version_key}\nLatest Supported: {latest_key}\n\n"
+                msg += "You are not on the latest version supported by this patcher.\n"
+                msg += "Do you want to FORCE the LATEST patch?"
+                
+                # Ask: Yes = Force Latest, No = Use Detected
+                if messagebox.askyesno("Version Selection", msg):
+                     messagebox.showinfo("Notice", "You have chosen to force the Latest Patch on an older Pack version.\nThis is allowed but may have unexpected results.")
+                     target_key = latest_key
+                     self._log(f"User forced latest version: {target_key}")
+                else:
+                     self._log(f"User kept detected version: {target_key}")
+
+            # Handle unknown version (detected but not in config)
+            if target_key not in target_versions:
+                 if messagebox.askyesno("Unknown Version", f"Detected version '{target_key}' has no known patches.\nTry using the latest patch ({latest_key})?"):
+                     target_key = latest_key
+                 else:
+                     self.view.onBack()
+                     return
+
+            # STEP B: Patch Selection for Target Version
+            # target_versions[target_key] is a LIST of patch dicts
+            patch_options = target_versions[target_key]
+            final_patch_data = patch_options[0] # Default to first (latest due to sort)
+
+            if len(patch_options) > 1:
+                # Create a selection list
+                # Format: "v1.1" 
+                options_map = {f"v{p.get('patchVersion', '?')}": p for p in patch_options}
+                options_labels = list(options_map.keys())
+
+                def ask_user_choice():
+                    choice = tk.StringVar(value=options_labels[0])
+                    dialog = tk.Toplevel(self.view)
+                    dialog.title("Select Patch Version")
+                    dialog.geometry("300x180")
+                    dialog.resizable(False, False)
+                    try:
+                        dialog.update_idletasks()
+                        x = self.view.winfo_rootx() + 50
+                        y = self.view.winfo_rooty() + 50
+                        dialog.geometry(f"+{x}+{y}")
+                    except: pass
+
+                    ttk.Label(dialog, text=f"Multiple patches found for {target_key}.\nPlease select a version:", justify="center").pack(pady=15)
+                    
+                    cbo = ttk.Combobox(dialog, values=options_labels, textvariable=choice, state="readonly")
+                    cbo.pack(pady=5, padx=20, fill="x")
+                    cbo.current(0)
+
+                    result = {"value": None}
+
+                    def on_ok():
+                        result["value"] = choice.get()
+                        dialog.destroy()
+                    
+                    ttk.Button(dialog, text="Select", command=on_ok, bootstyle="success").pack(pady=20)
+                    
+                    dialog.transient(self.view)
+                    dialog.grab_set()
+                    self.view.wait_window(dialog)
+                    return result["value"]
+
+                selected_label = ask_user_choice()
+                if selected_label and selected_label in options_map:
+                    final_patch_data = options_map[selected_label]
+                    self._log(f"User selected patch: {selected_label}")
+
+            # Proceed
+            self._prepareAndPatch(found_folder, final_patch_data)
+
+        # Marshal to main thread
+        self.view.after(0, confirmVersionAndProceed)
+
+    def _prepareAndPatch(self, found_folder, version_data):
+        self._log(f"Preparing to patch using Patch Version: {version_data.get('patchVersion', 'Unknown')}")
+        
         # Prepare temp directory
         os.makedirs(self.temp_dir, exist_ok=True)
         temp_zip = os.path.join(self.temp_dir, "temp_vanilla.zip")
 
-        self._log(f"Found Marketplace content at: {found_folder}")
+        self.view.after(0, lambda: self.view.setStatus("Backing up Pack..."))
         self._log("Starting compression/backup...")
 
         # IMPORTANT: Use snake_case arguments for new API
@@ -162,40 +241,22 @@ class PatchController:
         if not success or self.cancel_event.is_set():
             return
 
-        self.view.after(0, lambda: self._onReadyToPatch(temp_zip, "marketplace", detected_version_data))
+        self.view.after(0, lambda: self._onReadyToPatch(temp_zip, "marketplace", version_data))
 
     def startZipPatch(self):
         patch_frame = self.view
-
-        is_advanced = False
-        try:
-            is_advanced = patch_frame.winfo_toplevel().advancedVar.get()
-        except AttributeError:
-            pass
-
-        if is_advanced:
-            patch_frame.setStatus("Ready. Select Zip below.")
-            patch_frame.modeVar.set("zip")
-            patch_frame.onModeChanged()
-            patch_frame.setActionCommand(self.startAdvancedLogic, "Start Patch")
-            patch_frame.setActionState("normal")
-            return
-
-        # Default Mode: Wait for user to click "Select Pack"
-        def selectAndPatch():
-            file_path = filedialog.askopenfilename(filetypes=[("Minecraft Packs", "*.zip *.mcpack")], title="Select Pack")
-            if not file_path:
-                return
-
-            patch_frame.setStatus("Processing Zip...")
-            patch_frame.setProgress(0, 'indeterminate')
-            patch_frame.setActionState("disabled")
-            self.cancel_event.clear()
-            threading.Thread(target=self._zipProcessWorker, args=(file_path,), daemon=True).start()
-
-        patch_frame.setStatus("Ready. Please select your A&S Zip/McPack.")
-        patch_frame.setActionCommand(selectAndPatch, "Select Pack")
+        
+        # Mode is already set to 'zip' or 'custom' by configureView if manual.
+        # But if we want to allow switching, we should just let UI be.
+        
+        # If manual mode, user might want to choose "Zip" or "Custom" via radio.
+        # If current mode selected is 'zip', and no file selected, we just wait?
+        # Actually in 'manual' view, we have a "Start" button which triggers 'startAdvancedLogic'.
+        
+        # We need to wire the "Start" button for Manual Mode.
+        patch_frame.setActionCommand(self.startAdvancedLogic, "Start Patch")
         patch_frame.setActionState("normal")
+        patch_frame.setStatus("Ready. Select options above.")
 
     def _zipProcessWorker(self, file_path: str):
         # pylint: disable=too-many-locals
@@ -312,6 +373,12 @@ class PatchController:
         xdelta_params = resourcePath(xdelta)
 
         self._log("Starting XDelta patch...")
+
+        # Explicitly log the patch file as requested
+        self._log("-" * 40)
+        self._log(f"APPLYING PATCH FILE: {os.path.basename(patch_file)}")
+        self._log(f"Path: {patch_file}")
+        self._log("-" * 40)
 
         # New API Call
         success, msg = self.patcher.runPatch(

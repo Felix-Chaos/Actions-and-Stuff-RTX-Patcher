@@ -1,3 +1,3 @@
 # Auto-generated version file
-VERSION = "2.0.7"
-BUILD_DATE = "2026-01-11 00:45:33"
+VERSION = "2.0.8"
+BUILD_DATE = "2026-01-12 12:21:49"

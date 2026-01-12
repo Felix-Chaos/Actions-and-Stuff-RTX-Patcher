@@ -130,14 +130,18 @@ class ConfigModel:
                             
                             patch_entry["patchVersion"] = data.get("patchVersion", "1.0")
                             
-                            loaded_versions[ver_key] = patch_entry
+                            if ver_key not in loaded_versions:
+                                loaded_versions[ver_key] = []
+                            loaded_versions[ver_key].append(patch_entry)
                             
                     except Exception as e:
                         print(f"Failed to load patch config from {item}: {e}")
 
         # If we found versions, update config. 
-        # (Could also merge with hardcoded if we wanted fail-safes)
+        # Sort patches by patchVersion descending for each version
         if loaded_versions:
+            for ver_key in loaded_versions:
+                loaded_versions[ver_key].sort(key=lambda x: x.get("patchVersion", "0"), reverse=True)
             self.config["patchVersions"] = loaded_versions
 
     def get_path(self, key: str) -> Optional[str]:

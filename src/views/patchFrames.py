@@ -45,10 +45,12 @@ class MainMenuFrame(ttk.Frame):
         primaryFrame = ttk.Labelframe(contentFrame, text="Patching", padding=15, bootstyle="primary")
         primaryFrame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
 
+        # 1. Normal Patcher (Marketplace)
         ttk.Button(primaryFrame, text="⚡ Patch from Marketplace", command=self.callbacks.get("marketplace"),
                    bootstyle="info-outline", width=25).pack(pady=10, fill="x")
 
-        self.zipBtn = ttk.Button(primaryFrame, text="📦 Advanced / Zip Patcher", command=self.callbacks.get("zip"),
+        # 2. Zip/Custom Patcher (Hidden by default)
+        self.zipBtn = ttk.Button(primaryFrame, text="📦 Zip / Custom Patcher", command=self.callbacks.get("manual"),
                    bootstyle="primary-outline", width=25)
         # self.zipBtn.pack(pady=10, fill="x") # Hidden by default
 
@@ -76,31 +78,25 @@ class PatchProgressFrame(ttk.Frame):
         self.onBack = onBack
 
         container = ttk.Frame(self, padding=30)
-        container.pack(expand=True)
+        container.pack(expand=True, fill="both") # Fill both to allow log expansion
 
         self.titleLabel = ttk.Label(container, text=title, font=("Segoe UI", 12, "bold"))
         self.titleLabel.pack(pady=(0, 20))
 
-        # --- Advanced: Mode Selection ---
+        # --- Advanced: Mode Selection (Hidden in Normal/Debug) ---
         self.advFrame = ttk.Frame(container)
-
         self.modeVar = tk.StringVar(value="marketplace")
-
+        
+        # (We keep the advFrame structure but only show it in 'manual' mode or full advanced)
         modeRow = ttk.Frame(self.advFrame)
         modeRow.pack(fill="x", pady=(0, 10))
-
         ttk.Label(modeRow, text="Patch Method:", font=("Segoe UI", 9, "bold")).pack(side="left", padx=(0, 10))
-
-        ttk.Radiobutton(modeRow, text="Marketplace (Auto)", variable=self.modeVar, value="marketplace",
-                        command=self.onModeChanged).pack(side="left", padx=5)
-        ttk.Radiobutton(modeRow, text="Zip (Manual)", variable=self.modeVar, value="zip",
-                        command=self.onModeChanged).pack(side="left", padx=5)
-        ttk.Radiobutton(modeRow, text="Custom", variable=self.modeVar, value="custom",
-                        command=self.onModeChanged).pack(side="left", padx=5)
+        ttk.Radiobutton(modeRow, text="Zip (Manual)", variable=self.modeVar, value="zip", command=self.onModeChanged).pack(side="left", padx=5)
+        ttk.Radiobutton(modeRow, text="Custom", variable=self.modeVar, value="custom", command=self.onModeChanged).pack(side="left", padx=5)
 
         # --- Advanced: Custom Fields ---
         self.customFieldsFrame = ttk.Frame(self.advFrame)
-
+        # ... (Fields setup same as before, simplified for brevity in this replace) ...
         # Source
         ttk.Label(self.customFieldsFrame, text="Source (Folder/Zip):").pack(anchor="w")
         srcRow = ttk.Frame(self.customFieldsFrame)
@@ -125,20 +121,20 @@ class PatchProgressFrame(ttk.Frame):
         ttk.Button(patchRow, text="...", width=3, command=lambda: self.browsePatchFile(self.patchVar), bootstyle="secondary-outline").pack(side="left")
 
 
-        # Advanced: Log Area (Hidden by default)
+        # --- Log Area ---
         self.logFrame = ttk.Frame(container)
         ttk.Label(self.logFrame, text="Process Log:", font=("Segoe UI", 9, "bold")).pack(anchor="w")
-        self.logArea = ScrolledText(self.logFrame, height=8, width=60, state='disabled', font=("Consolas", 8))
+        self.logArea = ScrolledText(self.logFrame, height=12, width=70, state='disabled', font=("Consolas", 8))
         self.logArea.pack(fill="both", expand=True)
 
         self.statusLabel = ttk.Label(container, text="Ready...")
-        self.statusLabel.pack(pady=(0, 10))
+        self.statusLabel.pack(pady=(10, 10))
 
-        self.progressBar = ttk.Progressbar(container, mode='determinate', length=300, bootstyle=INFO)
-        self.progressBar.pack(pady=(10, 0))
+        self.progressBar = ttk.Progressbar(container, mode='determinate', length=400, bootstyle=INFO)
+        self.progressBar.pack(pady=(0, 20))
 
         self.btnFrame = ttk.Frame(container)
-        self.btnFrame.pack(pady=(20, 0))
+        self.btnFrame.pack(pady=(0, 0))
 
         self.actionBtn = ttk.Button(self.btnFrame, text="Start", width=20, state="disabled", bootstyle=SUCCESS)
         self.actionBtn.pack(side="left", padx=5)
