@@ -106,7 +106,7 @@ class AppController:
         # 1. Main Menu
         menu_callbacks = {
             "marketplace": lambda: self.show_patch_frame("marketplace"),
-            "zip": lambda: self.show_patch_frame("zip"),
+            "manual": lambda: self.show_patch_frame("manual"),
             "clean": self.show_clean_frame,
             "fix": self.show_fix_frame,
             "exit": self.quit
