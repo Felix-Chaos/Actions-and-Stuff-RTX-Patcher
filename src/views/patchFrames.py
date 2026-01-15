@@ -94,6 +94,15 @@ class PatchProgressFrame(ttk.Frame):
         ttk.Radiobutton(modeRow, text="Zip (Manual)", variable=self.modeVar, value="zip", command=self.onModeChanged).pack(side="left", padx=5)
         ttk.Radiobutton(modeRow, text="Custom", variable=self.modeVar, value="custom", command=self.onModeChanged).pack(side="left", padx=5)
 
+        # --- Advanced: Version Selection ---
+        self.versionVar = tk.StringVar()
+        verRow = ttk.Frame(self.advFrame)
+        verRow.pack(fill="x", pady=(5, 10))
+        ttk.Label(verRow, text="Target Version:", font=("Segoe UI", 9, "bold")).pack(side="left", padx=(0, 10))
+        self.versionCombo = ttk.Combobox(verRow, textvariable=self.versionVar, state="readonly", width=15)
+        self.versionCombo.pack(side="left", padx=5)
+        ttk.Label(verRow, text="(Leave empty for Auto)", font=("Segoe UI", 8, "italic")).pack(side="left", padx=5)
+
         # --- Advanced: Custom Fields ---
         self.customFieldsFrame = ttk.Frame(self.advFrame)
         # ... (Fields setup same as before, simplified for brevity in this replace) ...
@@ -190,3 +199,9 @@ class PatchProgressFrame(ttk.Frame):
 
     def setActionState(self, state: str):
         self.actionBtn.config(state=state)
+
+    def setVersions(self, versions: list):
+        self.versionCombo['values'] = versions
+        if versions:
+            self.versionCombo.current(0)
+
