@@ -23,10 +23,37 @@ class PatchController:
         self.cancel_event = threading.Event()
         self.temp_dir = os.path.join(tempfile.gettempdir(), "AnSPatcherFuzed")
         self.is_advanced = False
+        self.version_map = {} # Display String -> (ver_key, patch_data_dict)
 
     def setAdvancedMode(self, enabled: bool):
         self.is_advanced = enabled
         self.view.setAdvancedMode(enabled)
+        if enabled:
+            # Populate versions
+            raw_versions = self.config.config.get("patchVersions", {})
+            sorted_keys = sorted(list(raw_versions.keys()), reverse=True)
+            
+            display_list = ["Auto (Default)"]
+            self.version_map = {}
+
+            for ver_key in sorted_keys:
+                patches = raw_versions[ver_key]
+                # If only one patch version, just show "v1.9"
+                # If multiple, show "v1.9 (Patch 1.0)", "v1.9 (Patch 1.1)" etc.
+                if len(patches) == 1:
+                    lbl = ver_key
+                    display_list.append(lbl)
+                    self.version_map[lbl] = (ver_key, patches[0])
+                else:
+                    for p in patches:
+                        p_ver = p.get("patchVersion", "?")
+                        lbl = f"{ver_key} (Patch {p_ver})"
+                        display_list.append(lbl)
+                        self.version_map[lbl] = (ver_key, p)
+            
+            self.view.setVersions(display_list)
+            # Default to Auto
+            self.view.versionCombo.current(0)
 
     def _log(self, message: str):
         """Thread-safe logging helper."""
@@ -47,7 +74,7 @@ class PatchController:
         self.cancel_event.clear()
         threading.Thread(target=self._marketplaceSearchWorker, daemon=True).start()
 
-    def _marketplaceSearchWorker(self):
+    def _marketplaceSearchWorker(self, target_patch_data: dict = None, target_ver_key: str = None):
         paths_to_check = [
              os.path.join(os.path.expandvars(self.config.get_path("minecraftUwp")), "premium_cache", "resource_packs"),
              os.path.join(os.path.expandvars(self.config.get_path("minecraftUwpPreview")), "premium_cache", "resource_packs"),
@@ -55,12 +82,12 @@ class PatchController:
              os.path.join(os.path.expandvars(self.config.get_path("minecraftBedrockPreview")), "premium_cache", "resource_packs")
         ]
 
-        # Target Versions is now Dict[str, List[dict]]
-        target_versions = self.config.config["patchVersions"] 
+        target_versions = self.config.config["patchVersions"]
         found_folder = None
+        detected_version_data = None
         detected_version_key = None
-        detection_method = None # 'stats' or 'lang'
-
+        detection_method = 'unknown'
+        
         for path in paths_to_check:
             if self.cancel_event.is_set(): return
             if not os.path.exists(path): continue
@@ -69,56 +96,82 @@ class PatchController:
                 for folder in os.listdir(path):
                     full_path = os.path.join(path, folder)
                     if os.path.isdir(full_path):
-                        # 1. Check Stats (Primary)
-                        f_count, d_count = self.fs.getFolderStats(full_path)
-                        
-                        for ver_key, patch_list in target_versions.items():
-                            # Check against the LATEST patch config for stats (usually most reliable)
-                            # Or check all? Let's check all in the list
-                            for ver_data in patch_list:
-                                stats = ver_data["stats"]
+                        # 0. Check Manifest (Primary)
+                        manifest_path = os.path.join(full_path, "manifest.json")
+                        if os.path.exists(manifest_path):
+                            try:
+                                with open(manifest_path, 'r', encoding='utf-8', errors='ignore') as f:
+                                    data = json.load(f)
+                                    header = data.get("header", {})
+                                    name = header.get("name", "")
+                                    
+                                    if "Actions & Stuff" in name:
+                                        self._log(f"Manifest Match: {name}")
+                                        found_folder = full_path
+                                        
+                                        # Strategy A: Target Version explicitly selected
+                                        if target_patch_data:
+                                            detected_version_data = target_patch_data
+                                            detected_version_key = target_ver_key
+                                            detection_method = 'forced'
+                                            self._log(f"  -> Using selected version configuration.")
+                                        else:
+                                            # Strategy B: Auto-detect based on stats
+                                            curr_stats = self.fs.getFolderStats(full_path)
+                                            # Check all versions
+                                            for ver_key, patch_list in target_versions.items():
+                                                for ver_data in patch_list:
+                                                    stats = ver_data["stats"]
+                                                    if curr_stats[0] == stats["files"] and curr_stats[1] == stats["dirs"]:
+                                                        detected_version_data = ver_data
+                                                        detected_version_key = ver_key
+                                                        detection_method = 'stats_manifest'
+                                                        self._log(f"  -> Version confirmed by stats: {ver_key}")
+                                                        break
+                                                if detected_version_data: break
+                                            
+                                            # Strategy C: Fallback to latest if not found by stats
+                                            if not detected_version_data and target_versions:
+                                                first_key = next(iter(target_versions))
+                                                detected_version_data = target_versions[first_key][0]
+                                                detected_version_key = first_key
+                                                detection_method = 'fallback'
+                                                self._log(f"  -> Version inferred (fallback): {first_key}")
+
+                                        break
+                            except Exception as e:
+                                pass # Manifest read failed, fall back to stats
+
+                        # Fallback: Stats Only (if Manifest missing or failed)
+                        if not found_folder:
+                            f_count, d_count = self.fs.getFolderStats(full_path)
+    
+                            # Check against configured versions
+                            
+                            if target_patch_data:
+                                # Check if stats match the selected version
+                                stats = target_patch_data["stats"]
                                 if f_count == stats["files"] and d_count == stats["dirs"]:
                                     found_folder = full_path
-                                    detected_version_key = ver_key
-                                    detection_method = 'stats'
-                                    self._log(f"Detected via Stats: {ver_key} at {full_path}")
+                                    detected_version_data = target_patch_data
+                                    detected_version_key = target_ver_key
+                                    detection_method = 'forced_stats'
+                                    self._log(f"Detected via Stats (Selected): {path}")
                                     break
-                            if found_folder: break
-                        
-                        if found_folder: break
-
-                        # 2. Fallback: Check en_US.lang (Secondary)
-                        lang_path = os.path.join(full_path, "texts", "en_US.lang")
-                        if os.path.exists(lang_path):
-                            try:
-                                with open(lang_path, 'r', encoding='utf-8', errors='ignore') as f:
-                                    for line in f:
-                                        if "pack.name=Actions & Stuff" in line:
-                                            # Try to extract version
-                                            # Expecting: pack.name=Actions & Stuff 1.9
-                                            # Or just grab the version part
-                                            parts = line.strip().split("Actions & Stuff")
-                                            if len(parts) > 1:
-                                                ver_str = parts[1].strip() # e.g. "1.9" or "1.9 beta"
-                                                # Normalize: "1.9" -> "v1.9"
-                                                clean_ver = ver_str.split()[0] if ver_str else ""
-                                                ver_key = f"v{clean_ver}" if not clean_ver.startswith("v") else clean_ver
-                                                
-                                                # Check if this key exists in our config
-                                                if ver_key in target_versions:
-                                                    found_folder = full_path
-                                                    detected_version_key = ver_key
-                                                    detection_method = 'lang'
-                                                    self._log(f"Detected via Language File: {ver_key} (Stats mismatch)")
-                                                else:
-                                                    self._log(f"Found A&S (Lang) but version {ver_key} not in config.")
-                                                    found_folder = full_path
-                                                    detected_version_key = ver_key 
-                                                    detection_method = 'unknown' # Version unknown but it IS A&S
+                            else:
+                                # Auto Scan
+                                for ver_key, patch_list in target_versions.items():
+                                    for ver_data in patch_list:
+                                        stats = ver_data["stats"]
+                                        if f_count == stats["files"] and d_count == stats["dirs"]:
+                                            found_folder = full_path
+                                            detected_version_data = ver_data
+                                            detected_version_key = ver_key
+                                            detection_method = 'stats'
+                                            self._log(f"Detected via Stats: {ver_key} at {full_path}")
                                             break
-                            except Exception as e:
-                                pass # Lang read failed
-
+                                    if found_folder: break
+                        
                         if found_folder: break
             except OSError:
                 continue
@@ -258,7 +311,7 @@ class PatchController:
         patch_frame.setActionState("normal")
         patch_frame.setStatus("Ready. Select options above.")
 
-    def _zipProcessWorker(self, file_path: str):
+    def _zipProcessWorker(self, file_path: str, target_patch_data: dict = None):
         # pylint: disable=too-many-locals
         extract_dir = os.path.join(self.temp_dir, "extracted")
         self.fs.robustCleanup(extract_dir)
@@ -288,9 +341,6 @@ class PatchController:
             # FORCE MANIFEST INJECTION (Standardization)
             should_apply_manifest = [True]
             
-            # Removed User Prompt to ensure consistency with Patcher Tool
-            # The Tool always assumes a normalized source with the standard manifest.
-            
             if should_apply_manifest[0]:
                 manifest_path = resourcePath("assets/resources/manifest.json")
                 if os.path.exists(manifest_path):
@@ -308,7 +358,11 @@ class PatchController:
                 log_callback=self._log
             )
             
-            self.view.after(0, lambda: self._onReadyToPatch(normalized_zip, "zip"))
+            detected_version_data = target_patch_data
+            if detected_version_data:
+                self._log(f"Using selected version configuration.")
+
+            self.view.after(0, lambda: self._onReadyToPatch(normalized_zip, "zip", detected_version_data))
 
         except Exception as e:
             self.view.after(0, lambda: messagebox.showerror("Error", f"Failed to process zip: {e}"))
@@ -411,14 +465,23 @@ class PatchController:
     def startAdvancedLogic(self):
         patch_frame = self.view
         mode = patch_frame.modeVar.get()
+        
+        # Get selected version
+        selection = patch_frame.versionVar.get()
+        target_patch_data = None
+        target_ver_key = None
+        
+        if selection and selection in self.version_map:
+            target_ver_key, target_patch_data = self.version_map[selection]
 
         patch_frame.setActionState("disabled")
         self.cancel_event.clear()
 
         if mode == "marketplace":
-            patch_frame.setStatus("Searching for Marketplace Content...")
+            lbl = target_ver_key if target_ver_key else 'Auto'
+            patch_frame.setStatus(f"Searching for Marketplace Content ({lbl})...")
             patch_frame.setProgress(0, 'indeterminate')
-            threading.Thread(target=self._marketplaceSearchWorker, daemon=True).start()
+            threading.Thread(target=self._marketplaceSearchWorker, args=(target_patch_data, target_ver_key), daemon=True).start()
 
         elif mode == "zip":
             file_path = filedialog.askopenfilename(filetypes=[("Minecraft Packs", "*.zip *.mcpack")], title="Select Pack")
@@ -426,9 +489,10 @@ class PatchController:
                 patch_frame.setActionState("normal")
                 return
 
-            patch_frame.setStatus("Processing Zip...")
+            lbl = target_ver_key if target_ver_key else 'Auto'
+            patch_frame.setStatus(f"Processing Zip ({lbl})...")
             patch_frame.setProgress(0, 'indeterminate')
-            threading.Thread(target=self._zipProcessWorker, args=(file_path,), daemon=True).start()
+            threading.Thread(target=self._zipProcessWorker, args=(file_path, target_patch_data), daemon=True).start()
 
         elif mode == "custom":
             src = patch_frame.srcVar.get()
