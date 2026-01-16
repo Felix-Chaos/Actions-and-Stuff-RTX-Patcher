@@ -164,6 +164,28 @@ class ConfigModel:
         """Retrieves the list of folder prefixes to clean up."""
         return self.config["cleanupPrefixes"]
 
+    def get_latest_version_data(self) -> Optional[Dict[str, Any]]:
+        """
+        Retrieves the configuration for the latest available patch version.
+        Useful for fallback when auto-detection fails or is skipped.
+        """
+        versions = self.config.get("patchVersions", {})
+        if not versions:
+            return None
+        
+        # Sort version keys (e.g. "v1.9", "v1.8") descending
+        sorted_keys = sorted(versions.keys(), reverse=True)
+        latest_key = sorted_keys[0]
+        
+        # Get the list of patches for this version
+        patches_list = versions[latest_key]
+        
+        # The list is already sorted by patchVersion descending in load_patch_versions
+        if patches_list:
+            return patches_list[0]
+            
+        return None
+
     def load_external_config(self, config_path: str) -> bool:
         """
         Loads and updates config from an external JSON file.

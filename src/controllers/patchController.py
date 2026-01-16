@@ -400,11 +400,19 @@ class PatchController:
             patch_type = "marketplaceEncrypted" if mode == "marketplace" else "zipDecrypted"
             patch_file_relative = self.config.get_patch_path(patch_type)
 
-            # Use detected patch file if available
-            if detected_version_data and "patches" in detected_version_data:
+            # Fallback: If no version detected/selected, use the LATEST available version
+            current_version_data = detected_version_data
+            if not current_version_data:
+                self._log("No specific version detected. Defaulting to latest version.")
+                current_version_data = self.config.get_latest_version_data()
+                if current_version_data:
+                     self._log(f"Fallback Version Config: Patch {current_version_data.get('patchVersion', '?')}")
+
+            # Use detected/fallback patch file if available
+            if current_version_data and "patches" in current_version_data:
                 key = "encrypted" if mode == "marketplace" else "decrypted"
-                if key in detected_version_data["patches"]:
-                    patch_file_relative = detected_version_data["patches"][key]
+                if key in current_version_data["patches"]:
+                    patch_file_relative = current_version_data["patches"][key]
 
             patch_file = resourcePath(patch_file_relative)
 
