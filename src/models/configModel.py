@@ -130,6 +130,10 @@ class ConfigModel:
                             
                             patch_entry["patchVersion"] = data.get("patchVersion", "1.0")
                             
+                            # Load validation data if present
+                            if "validation" in data:
+                                patch_entry["validation"] = data["validation"]
+                            
                             if ver_key not in loaded_versions:
                                 loaded_versions[ver_key] = []
                             loaded_versions[ver_key].append(patch_entry)

@@ -148,7 +148,18 @@ class PatchProgressFrame(ttk.Frame):
         self.actionBtn = ttk.Button(self.btnFrame, text="Start", width=20, state="disabled", bootstyle=SUCCESS)
         self.actionBtn.pack(side="left", padx=5)
 
+        self.secondaryBtn = ttk.Button(self.btnFrame, text="Open Folder", width=20, bootstyle="info-outline")
+        # Hidden by default
+
         ttk.Button(self.btnFrame, text="Back", width=20, command=self.onBack, bootstyle=(DANGER, OUTLINE)).pack(side="left", padx=5)
+
+    def setSecondaryAction(self, command: callable, text: str = "Open Folder"):
+        self.secondaryBtn.config(command=command, text=text)
+        if not self.secondaryBtn.winfo_ismapped():
+            self.secondaryBtn.pack(side="left", padx=5, before=self.btnFrame.winfo_children()[-1]) # Pack before Back button
+
+    def hideSecondaryAction(self):
+        self.secondaryBtn.pack_forget()
 
     def browsePatchFile(self, var):
         f = filedialog.askopenfilename(filetypes=[("VCDIFF Patch", "*.vcdiff"), ("All Files", "*.*")])

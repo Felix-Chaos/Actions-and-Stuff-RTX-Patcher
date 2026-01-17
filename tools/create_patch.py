@@ -7,7 +7,8 @@ import tempfile
 import ttkbootstrap as tb
 from ttkbootstrap.constants import *
 import json
-from tkinter import filedialog, Listbox, END, messagebox
+import hashlib
+from tkinter import filedialog, Listbox, END, messagebox, ttk
 
 # Import deterministic compression logic
 # Ensure the script directory is in path
@@ -237,19 +238,99 @@ class PatchCreatorApp:
 
         self.save_settings()
 
-        # Ask for version upfront
+        # Version Selection UI
+        # Scan available versions in ../assets/Patches
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        patches_root = os.path.join(project_root, "assets", "Patches")
+        existing_versions = []
+        if os.path.exists(patches_root):
+             existing_versions = sorted([d for d in os.listdir(patches_root) if os.path.isdir(os.path.join(patches_root, d))], reverse=True)
+        
         from tkinter import simpledialog
-        pack_ver = simpledialog.askstring("Version Info", "Enter Actions & Stuff Version (e.g. 1.8):", parent=self.root)
-        if not pack_ver:
-             pack_ver = "Unknown"
-        else:
-             if not pack_ver.startswith("v") and pack_ver[0].isdigit():
-                  pack_ver = "v" + pack_ver
+        
+        # New Custom Dialog for Version Selection
+        ver_dialog = tb.Toplevel(self.root)
+        ver_dialog.title("Version Configuration")
+        ver_dialog.geometry("400x300")
+        
+        tb.Label(ver_dialog, text="Select Pack Version:", font=("Helvetica", 12)).pack(pady=10)
+        
+        ver_var = tb.StringVar()
+        cbo_ver = tb.Combobox(ver_dialog, textvariable=ver_var, values=existing_versions)
+        cbo_ver.pack(pady=5, padx=20, fill=X)
+        if existing_versions: cbo_ver.current(0)
+        
+        lbl_info = tb.Label(ver_dialog, text="Select existing to increment patch,\nor type new (e.g. v1.9).", bootstyle="info")
+        lbl_info.pack(pady=5)
+        
+        self.selected_pack_ver = None
+        self.selected_patch_ver = "1.0"
+        
+        def on_ver_confirm():
+             raw_ver = ver_var.get().strip()
+             if not raw_ver:
+                 messagebox.showerror("Error", "Version is required.")
+                 return
+             
+             # Format check
+             if not raw_ver.startswith("v") and raw_ver[0].isdigit():
+                  raw_ver = "v" + raw_ver
+             
+             self.selected_pack_ver = raw_ver
+             
+             # Auto-increment logic
+             ver_path = os.path.join(patches_root, raw_ver)
+             next_patch = "1.0"
+             
+             if os.path.exists(ver_path):
+                 # Scan for existing patch_config.json files or subfolders? 
+                 # The current structure seems to be: assets/Patches/<Version>/patch_config.json (Single?)
+                 # OR assets/Patches/<Version>/<PatchVer>/? 
+                 # Based on configModel, it scans directories in assets/Patches.
+                 # Let's assume standard structure: One folder per "Pack Version" (v1.9).
+                 # Inside, we might have multiple patch files?
+                 # Actually ConfigModel loads ONE config per folder.
+                 # So if we want multiple patches for v1.9, do we use v1.9_p1, v1.9_p2 folders?
+                 # NO, ConfigModel says: `loaded_versions[ver_key].append(patch_entry)`
+                 # So multiple folders can map to the same `ver_key`.
+                 
+                 # So if I choose "v1.9", I should probably create a NEW folder like "v1.9_patch_1.1" if I want to keep history?
+                 # OR typically we just overwrite "Current" for dev?
+                 # The user asked for "auto version increment".
+                 # This implies we are creating a NEW release.
+                 
+                 # Let's verify existing patches for this version key
+                 existing_patches = []
+                 for item in os.listdir(patches_root):
+                     p_config = os.path.join(patches_root, item, "patch_config.json")
+                     if os.path.exists(p_config):
+                         try:
+                             with open(p_config) as f:
+                                 d = json.load(f)
+                                 if d.get("packVersion") == raw_ver:
+                                     existing_patches.append(float(d.get("patchVersion", "0.0")))
+                         except: pass
+                 
+                 if existing_patches:
+                     max_ver = max(existing_patches)
+                     # Increment by 0.1
+                     next_patch = f"{max_ver + 0.1:.1f}"
+             
+             self.selected_patch_ver = next_patch
+             ver_dialog.destroy()
+
+        tb.Button(ver_dialog, text="Confirm", command=on_ver_confirm, bootstyle="success").pack(pady=20)
+        
+        self.root.wait_window(ver_dialog)
+        
+        if not self.selected_pack_ver:
+             self.toggle_inputs(True)
+             return
 
         self.toggle_inputs(False)
-        threading.Thread(target=self.process_worker, args=(p_dir, d_dir, e_dir, o_dir, pack_ver), daemon=True).start()
+        threading.Thread(target=self.process_worker, args=(p_dir, d_dir, e_dir, o_dir, self.selected_pack_ver, self.selected_patch_ver), daemon=True).start()
 
-    def process_worker(self, patched_dir, decrypted_dir, encrypted_dir, output_dir, pack_ver):
+    def process_worker(self, patched_dir, decrypted_dir, encrypted_dir, output_dir, pack_ver, patch_ver):
         try:
             temp_dir = os.path.join(tempfile.gettempdir(), "AnSPatcherTool")
             if os.path.exists(temp_dir):
@@ -357,9 +438,9 @@ class PatchCreatorApp:
             self.root.after(0, lambda: self.log("Generating Patch: Encrypted -> Patched..."))
             self.run_xdelta(xdelta_path, source_enc_zip, target_zip, out_patch_enc)
 
-            # 5. Generate patch_config.json with Stats
+            # 5. Generate patch_config.json with Stats & Validation
             self.root.after(0, lambda: self.log("Generating patch_config.json..."))
-            self.generate_patch_config(encrypted_dir, output_dir, pack_ver)
+            self.generate_patch_config(encrypted_dir, output_dir, pack_ver, patch_ver)
 
             self.root.after(0, lambda: self.log("✅ All operations completed successfully!"))
             self.root.after(0, lambda: messagebox.showinfo("Done", "Patches created successfully."))
@@ -374,7 +455,7 @@ class PatchCreatorApp:
             # Optional: cleanup temp_dir
             # shutil.rmtree(temp_dir, ignore_errors=True)
 
-    def generate_patch_config(self, encrypted_dir, output_dir, pack_ver):
+    def generate_patch_config(self, encrypted_dir, output_dir, pack_ver, patch_ver):
         try:
             # Calculate stats
             file_count = 0
@@ -383,8 +464,21 @@ class PatchCreatorApp:
                 folder_count += len(dirs)
                 file_count += len(files)
 
-            patch_ver = "1.0" # Default
+            # Calculate Validation Data (Logo Hash)
+            logo_path = os.path.join(encrypted_dir, "pack_icon.png")
+            logo_hash = None
+            if os.path.exists(logo_path):
+                 sha256 = hashlib.sha256()
+                 with open(logo_path, "rb") as f:
+                     for block in iter(lambda: f.read(4096), b""):
+                         sha256.update(block)
+                 logo_hash = sha256.hexdigest().lower()
+                 self.root.after(0, lambda: self.log(f"  ✓ Calculated Logo Hash: {logo_hash[:8]}..."))
 
+            # Check for Language File
+            lang_path = os.path.join(encrypted_dir, "texts", "en_US.lang")
+            has_lang = os.path.exists(lang_path)
+            
             config_data = {
                 "packVersion": pack_ver,
                 "patchVersion": patch_ver,
@@ -393,6 +487,10 @@ class PatchCreatorApp:
                         "files": file_count,
                         "dirs": folder_count
                     }
+                },
+                "validation": {
+                    "logo_hash": logo_hash,
+                    "has_lang_file": has_lang
                 }
             }
 
