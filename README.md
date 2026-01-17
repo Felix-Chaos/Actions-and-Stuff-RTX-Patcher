@@ -1,4 +1,4 @@
-<img width="5975" height="5100" alt="Actions__Stuff_Logo_-_PNG" src="https://github.com/user-attachments/assets/7f2c416e-b36c-46e6-ab8f-d4b8042846f9" />
+<img width="800" alt="Actions & Stuff RTX Patcher Logo" src="./assets/resources/as_rtx_simple_logo.png" />
 
 ---
 
