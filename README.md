@@ -92,10 +92,15 @@ This ensures RTX visuals are properly integrated **without redistributing** any 
    * Choose **Marketplace Mode** to auto-detect your installed pack  
    * Or choose **ZIP/MCPACK Mode** and manually select your pack
 
-4. The patcher will automatically generate the RTX-enabled version. Make sure:
-
-   * BetterRTX is installed and active  
-   * The patched pack is **at the top of your resource pack list**
+4. The patcher will automatically generate the RTX-enabled version.
+5. **Configuration Required:**
+   * **Disable "Mob Dithering"** in Video Settings. This fixes visual glitches.
+   * **Load Order**: Ensure your packs are sorted Top to Bottom:
+     1. **A&S RTX** (Use this!)
+     2. **RTX Pack** (Kelly's / Vanilla RTX / etc.)
+     3. *(BetterRTX - Optional)*
+     4. *Other Resource Packs*
+     5. **Actions & Stuff** (Original)
 
 If any issues occur:
 
@@ -117,7 +122,7 @@ Browse this repository, every tool and script includes a short README with setup
 ### 🚀 Get the Patcher
 
 [![Latest Stable](https://img.shields.io/badge/Download-Latest_Release-2ea44f?style=for-the-badge&logo=github)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/latest)
-[![V2 Beta](https://img.shields.io/badge/Download-V2_Beta_(Unified)-orange?style=for-the-badge&logo=github)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/V2.0.2b)
+[![V2 Beta](https://img.shields.io/badge/Download-V2_Beta_(Unified)-orange?style=for-the-badge&logo=github)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/V2.0.3b)
 
 ---
 
@@ -132,6 +137,7 @@ Browse this repository, every tool and script includes a short README with setup
 <summary><strong>⇊ Minecraft GDK (Modern - V1.21.120+) ⇊</strong></summary>
 
 > *For modern Minecraft installations (Xbox App / GDK)*
+* [Beta A&S RTX Patcher v2.0.3b (for A&S 1.9)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/V2.0.3b)
 * [Beta A&S RTX Patcher v2.0.2b (for A&S 1.9)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/V2.0.2b)
 * [Beta A&S RTX Patcher v2.0.1b (for A&S 1.9)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/V2.0.1b)
 * [A&S RTX Patcher v1.0.4 (for A&S 1.8)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/1.0.4)
