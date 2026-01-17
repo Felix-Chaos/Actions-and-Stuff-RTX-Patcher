@@ -46,17 +46,17 @@ You can always find the latest stable builds on the [Releases Page](https://gith
 
 **A&S Minecraft RTX Community Patcher V2** is a **community-built patching tool** that converts the original *Actions & Stuff* Minecraft Marketplace pack into an **RTX-compatible version** for Windows Bedrock Edition.
 
-**New in V2:**
-* ⚡ **Faster Patching**: Optimized patching engine.
+### ✨ New in V2
+* 🚀 **Faster Patching**: Optimized patching engine with background processing.
 * 🎨 **Refreshed UI**: Modern, clean interface with Dark Mode.
-* 🛠️ **Smart Build System**: Automated versioning and asset management.
-* 📦 **Unified Patcher**: Supports both Marketplace and Zip/McPack sources in one tool.
+* 🛠️ **Smart Detection**: Multi-factor scoring system to find your pack.
+* 📦 **Unified Patcher**: Supports both Marketplace and Zip/McPack sources.
+* 🔧 **Advanced Mode**: Manual inputs, version override, and direct folder access.
+* 🧹 **Auto-Cleanup**: Automatically keeps your disk clean after patching.
 
 It works by:
-
 * Combining your **official Marketplace copy** (or local `.zip`/`.mcpack`) with the **community RTX modification**
 * Generating a **new patched version** that supports full **BetterRTX lighting**, reflections, and PBR materials
-* Supporting both **singleplayer and multiplayer (server)** environments
 
 This ensures RTX visuals are properly integrated **without redistributing** any copyrighted pack data.
 
@@ -82,18 +82,12 @@ This ensures RTX visuals are properly integrated **without redistributing** any 
 ## 🚀 How to Use
 
 ### 🧱 Standard Usage
-
-1. Head to the [Releases Page](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/latest).
-
-2. Download **A&S RTX Patcher V2**.  
-
-3. Run the `.exe` and follow the prompts:
-
-   * Choose **Marketplace Mode** to auto-detect your installed pack  
-   * Or choose **ZIP/MCPACK Mode** and manually select your pack
-
-4. The patcher will automatically generate the RTX-enabled version.
-5. **Configuration Required:**
+1. Download **A&S RTX Patcher V2** from the [Releases Page](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/latest).
+2. Run the `.exe` and choose:
+   * **Marketplace Mode**: Auto-detects your installed pack.
+   * **ZIP/MCPACK Mode**: Manually select your pack file.
+3. Click **Start** to begin patching.
+4. **Configuration Required:**
    * **Disable "Mob Dithering"** in Video Settings. This fixes visual glitches.
    * **Load Order**: Ensure your packs are sorted Top to Bottom:
      1. **A&S RTX** (Use this!)
@@ -102,11 +96,11 @@ This ensures RTX visuals are properly integrated **without redistributing** any 
      4. *Other Resource Packs*
      5. **Actions & Stuff** (Original)
 
-If any issues occur:
-
-* Double-check the pack version  
-* Re-run the patcher with admin privileges  
-* Temporarily disable other texture packs
+### 🛠️ Advanced Mode
+Toggle **Advanced Mode** (bottom switch) to unlock:
+* **Manual Inputs**: Override source or patch files.
+* **Version Selection**: Force a specific patch version.
+* **Open Folder**: Quickly access the generated `.mcpack` after patching.
 
 ---
 
@@ -134,7 +128,7 @@ Browse this repository, every tool and script includes a short README with setup
 <br>
 
 <details>
-<summary><strong>⇊ Minecraft GDK (Modern - V1.21.120+) ⇊</strong></summary>
+<summary><strong>↳ Minecraft GDK (Modern - V1.21.120+) </strong></summary>
 
 > *For modern Minecraft installations (Xbox App / GDK)*
 * [Beta A&S RTX Patcher v2.0.3b (for A&S 1.9)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/V2.0.3b)
@@ -148,7 +142,7 @@ Browse this repository, every tool and script includes a short README with setup
 <br>
 
 <details>
-<summary><strong>⇈ Minecraft UWP (Legacy - Pre-1.21.120) ⇈</strong></summary>
+<summary><strong>↳ Minecraft UWP (Legacy - Pre-1.21.120) </strong></summary>
 
 > *For older/legacy Minecraft installations*
 
