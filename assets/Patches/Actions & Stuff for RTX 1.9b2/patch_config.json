@@ -2,7 +2,7 @@
     "packVersion": "v1.9",
     "patchVersion": "1.1-beta2",
     "marketplace_pack_stats": {
-        "v1": {
+        "stats": {
             "files": 10705,
             "dirs": 166
         }

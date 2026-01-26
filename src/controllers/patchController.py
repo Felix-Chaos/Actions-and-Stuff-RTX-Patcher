@@ -32,7 +32,16 @@ class PatchController:
         if enabled:
             # Populate versions
             raw_versions = self.config.config.get("patchVersions", {})
-            sorted_keys = sorted(list(raw_versions.keys()), reverse=True)
+            
+            # Helper for SemVer sorting
+            def parse_ver(v_str):
+                try:
+                    clean = v_str.lstrip('v')
+                    return tuple(map(int, clean.split('.')))
+                except:
+                    return (0,)
+
+            sorted_keys = sorted(list(raw_versions.keys()), key=parse_ver, reverse=True)
             
             display_list = ["Auto (Default)"]
             self.version_map = {}
@@ -56,6 +65,150 @@ class PatchController:
             # Default to Auto
             self.view.versionCombo.current(0)
 
+
+
+    def _showVersionMismatchDialog(self, detected_ver, target_ver, path, is_manual=False, allow_force=True):
+        """
+        Shows a custom dialog for resolving version mismatch.
+        Returns: 'detected', 'latest', or None (cancel).
+        """
+        dialog = tk.Toplevel(self.view)
+        
+        # Context-Aware Text
+        title_text = "Selection Mismatch" if is_manual else "Version Mismatch"
+        header_text = "Selection Not Found" if is_manual else "Older Version Detected"
+        target_label = "Selected:" if is_manual else "Latest:"
+        target_btn_text = f"Force Selected ({target_ver})" if is_manual else f"Force Latest ({target_ver})"
+        
+        dialog.title(title_text)
+        dialog.geometry("450x400")
+        dialog.resizable(False, False)
+        
+        # Center Logic
+        try:
+            dialog.update_idletasks()
+            x = self.view.winfo_rootx() + (self.view.winfo_width() // 2) - (450 // 2)
+            y = self.view.winfo_rooty() + (self.view.winfo_height() // 2) - (400 // 2)
+            dialog.geometry(f"+{x}+{y}")
+        except: pass
+
+        container = ttk.Frame(dialog, padding=20)
+        container.pack(fill="both", expand=True)
+
+        ttk.Label(container, text=header_text, font=("Segoe UI", 12, "bold"), bootstyle="warning").pack(pady=(0, 15))
+        
+        info_frame = ttk.Labelframe(container, text="Details", padding=10)
+        info_frame.pack(fill="x", pady=5)
+        
+        grid_opts = {'padx': 5, 'pady': 2, 'sticky': 'w'}
+        
+        ttk.Label(info_frame, text="Detected:", font=("Segoe UI", 9, "bold")).grid(row=0, column=0, **grid_opts)
+        ttk.Label(info_frame, text=f"{detected_ver}", bootstyle="warning").grid(row=0, column=1, **grid_opts)
+        
+        ttk.Label(info_frame, text=target_label, font=("Segoe UI", 9, "bold")).grid(row=1, column=0, **grid_opts)
+        ttk.Label(info_frame, text=f"{target_ver}", bootstyle="success").grid(row=1, column=1, **grid_opts)
+
+        ttk.Label(info_frame, text="Location:", font=("Segoe UI", 9, "bold")).grid(row=2, column=0, **grid_opts)
+        
+        # Truncate path if too long
+        display_path = path
+        if len(display_path) > 40:
+            display_path = "..." + display_path[-37:]
+        ttk.Label(info_frame, text=display_path, font=("Consolas", 8)).grid(row=2, column=1, **grid_opts)
+
+        if is_manual:
+            if allow_force:
+                msg_text = "The selected version is not installed.\nYou can use the detected version or force your selection."
+            else:
+                msg_text = "The selected version is not installed.\nPlease use the detected version or browse for the correct folder."
+        else:
+            msg_text = "It is recommended to update to the latest version.\nHowever, you can choose to proceed with the detected version."
+
+        ttk.Label(container, text=msg_text, justify="center", wraplength=400).pack(pady=15)
+
+        btn_frame = ttk.Frame(container)
+        btn_frame.pack(fill="x", pady=10)
+
+        result = {"value": None}
+
+        def on_detected():
+            result["value"] = "detected"
+            dialog.destroy()
+            
+        def on_latest():
+            result["value"] = "latest"
+            dialog.destroy()
+
+        def on_browse():
+            result["value"] = "browse"
+            dialog.destroy()
+            
+        def on_cancel():
+            result["value"] = None
+            dialog.destroy()
+
+        # Buttons
+        # Use fill='x' to ensure they have width, and ipady for height
+        ttk.Button(btn_frame, text=f"Use Detected ({detected_ver})", command=on_detected, bootstyle="secondary").pack(side="left", expand=True, fill="x", padx=5, ipady=5)
+        if allow_force:
+            ttk.Button(btn_frame, text=target_btn_text, command=on_latest, bootstyle="success").pack(side="left", expand=True, fill="x", padx=5, ipady=5)
+        ttk.Button(btn_frame, text="Browse Folder...", command=on_browse, bootstyle="info").pack(side="left", expand=True, fill="x", padx=5, ipady=5)
+        
+        dialog.protocol("WM_DELETE_WINDOW", on_cancel)
+        dialog.transient(self.view)
+        dialog.grab_set()
+        self.view.wait_window(dialog)
+        
+        return result["value"]
+
+    def _showNotFoundDialog(self):
+        """
+        Shows a dialog when the pack is not found, offering to Browse.
+        Returns: 'browse' or None.
+        """
+        dialog = tk.Toplevel(self.view)
+        dialog.title("Pack Not Found")
+        dialog.geometry("400x250")
+        dialog.resizable(False, False)
+        
+        # Center Logic
+        try:
+            dialog.update_idletasks()
+            x = self.view.winfo_rootx() + (self.view.winfo_width() // 2) - (400 // 2)
+            y = self.view.winfo_rooty() + (self.view.winfo_height() // 2) - (250 // 2)
+            dialog.geometry(f"+{x}+{y}")
+        except: pass
+
+        container = ttk.Frame(dialog, padding=20)
+        container.pack(fill="both", expand=True)
+
+        ttk.Label(container, text="Pack Not Found", font=("Segoe UI", 12, "bold"), bootstyle="danger").pack(pady=(0, 15))
+        
+        msg = "Could not automatically find 'Actions & Stuff' in the standard location.\n\nWould you like to browse for the folder manually?"
+        ttk.Label(container, text=msg, justify="center", wraplength=350).pack(pady=10)
+
+        btn_frame = ttk.Frame(container)
+        btn_frame.pack(fill="x", pady=20)
+
+        result = {"value": None}
+
+        def on_browse():
+            result["value"] = "browse"
+            dialog.destroy()
+            
+        def on_cancel():
+            result["value"] = None
+            dialog.destroy()
+            
+        ttk.Button(btn_frame, text="Browse Folder...", command=on_browse, bootstyle="info").pack(side="left", expand=True, fill="x", padx=5, ipady=5)
+        ttk.Button(btn_frame, text="Cancel", command=on_cancel, bootstyle="secondary").pack(side="left", expand=True, fill="x", padx=5, ipady=5)
+        
+        dialog.protocol("WM_DELETE_WINDOW", on_cancel)
+        dialog.transient(self.view)
+        dialog.grab_set()
+        self.view.wait_window(dialog)
+        return result["value"]
+
     def _log(self, message: str):
         """Thread-safe logging helper."""
         if self.is_advanced:
@@ -78,10 +231,10 @@ class PatchController:
 
     def _marketplaceSearchWorker(self, target_patch_data: dict = None, target_ver_key: str = None):
         paths_to_check = [
-             os.path.join(os.path.expandvars(self.config.get_path("minecraftUwp")), "premium_cache", "resource_packs"),
-             os.path.join(os.path.expandvars(self.config.get_path("minecraftUwpPreview")), "premium_cache", "resource_packs"),
              os.path.join(os.path.expandvars(self.config.get_path("minecraftBedrock")), "premium_cache", "resource_packs"),
-             os.path.join(os.path.expandvars(self.config.get_path("minecraftBedrockPreview")), "premium_cache", "resource_packs")
+             os.path.join(os.path.expandvars(self.config.get_path("minecraftBedrockPreview")), "premium_cache", "resource_packs"),
+             os.path.join(os.path.expandvars(self.config.get_path("minecraftUwp")), "premium_cache", "resource_packs"),
+             os.path.join(os.path.expandvars(self.config.get_path("minecraftUwpPreview")), "premium_cache", "resource_packs")
         ]
 
         target_versions = self.config.config["patchVersions"]
@@ -90,6 +243,8 @@ class PatchController:
         detected_version_key = None
         detection_method = 'unknown'
         
+        candidates = []
+
         # Helper: Calculate SHA256 of a file
         def calculate_file_hash(filepath):
             sha256_hash = hashlib.sha256()
@@ -142,8 +297,9 @@ class PatchController:
             
             extracted_version = None
             try:
+                # Limit read size to avoid memory issues with huge files (100KB is plenty for lang file)
                 with open(lang_path, 'r', encoding='utf-8', errors='ignore') as f:
-                    content = f.read()
+                    content = f.read(102400) 
                     if "pack.name=Actions & Stuff" in content:
                         # Try to extract version: "pack.name=Actions & Stuff 1.9"
                         for line in content.splitlines():
@@ -156,121 +312,212 @@ class PatchController:
                 pass
             return False, None
 
+        self._log("Starting Marketplace Search...")
+        
         for path in paths_to_check:
             if self.cancel_event.is_set(): return
-            if not os.path.exists(path): continue
+            
+            self._log(f"Checking root path: {path}")
+            if not os.path.exists(path): 
+                self._log("  -> Path does not exist. Skipping.")
+                continue
 
             try:
-                for folder in os.listdir(path):
+                folders = os.listdir(path)
+                self._log(f"  -> Found {len(folders)} subfolders.")
+                
+                for folder in folders:
                     full_path = os.path.join(path, folder)
                     if not os.path.isdir(full_path): continue
+
+                    self._log(f"    Scanning subfolder: {folder}")
 
                     # --- Multi-Level Verification ---
                     score = 0
                     
                     # 1. Manifest Check
                     is_manifest_match = check_manifest(full_path)
+                    self._log(f"      [Manifest Check]: {'PASS' if is_manifest_match else 'FAIL'}")
                     if is_manifest_match: score += 1
                     
                     # 2. Logo Check (SHA256)
-                    # We need a reference hash. We can get it from the latest version config or use a hardcoded fallback.
-                    # Ideally, validation data is in the config.
-                    
-                    # Get latest verification data for reference
                     latest_ver_data = self.config.get_latest_version_data()
                     target_logo_hash = "d4d088d108cd635116215134ad40e97272f9fbe17ead8a03ba4155b1f58fecd4" # Default fallback (v1.9)
                     
                     if latest_ver_data and "validation" in latest_ver_data:
                         target_logo_hash = latest_ver_data["validation"].get("logo_hash", target_logo_hash)
+                        
+                    # OVERRIDE: If manual selection passed, use ITS logo hash
+                    if target_patch_data and "validation" in target_patch_data:
+                        target_logo_hash = target_patch_data["validation"].get("logo_hash", target_logo_hash)
 
                     logo_path = os.path.join(full_path, "pack_icon.png")
                     is_logo_match = False
                     if os.path.exists(logo_path):
                         current_hash = calculate_file_hash(logo_path)
-                        if current_hash == target_logo_hash:
+                        match = current_hash == target_logo_hash
+                        self._log(f"      [Logo Check]: {'Match' if match else 'Mismatch'} (Hash: {current_hash[:8]}...)")
+                        if match:
                             is_logo_match = True
                             score += 1
+                    else:
+                         self._log("      [Logo Check]: No pack_icon.png found.")
                         
                     # 3. Lang Check
                     is_lang_match, lang_version_str = check_lang_file(full_path)
+                    self._log(f"      [Lang Check]: {'PASS' if is_lang_match else 'FAIL'} (Detected: {lang_version_str})")
                     if is_lang_match: score += 1
 
                     # 4. Stats Check (Version Specific)
                     curr_stats = self.fs.getFolderStats(full_path)
+                    self._log(f"      [Stats Check]: Found Files={curr_stats[0]}, Dirs={curr_stats[1]}")
+                    
                     stats_match_version_key = None
                     stats_match_data = None
                     
-                    # Iterate Latest -> Oldest
-                    for ver_key, patch_list in target_versions.items():
+                    # Iterate Latest -> Oldest (STRICT SEMVER SORT)
+                    def parse_ver_local(v_str):
+                        try:
+                            clean = v_str.lstrip('v')
+                            return tuple(map(int, clean.split('.')))
+                        except:
+                            return (0,)
+                            
+                    sorted_ver_keys = sorted(list(target_versions.keys()), key=parse_ver_local, reverse=True)
+                    
+                    # LOGIC CHANGE: If user selected a specific version manually, check THAT version first!
+                    if target_ver_key and target_ver_key in sorted_ver_keys:
+                        # Move to front
+                        sorted_ver_keys.remove(target_ver_key)
+                        sorted_ver_keys.insert(0, target_ver_key)
+                        self._log(f"      [Stats Check] Prioritizing manual selection: {target_ver_key}")
+
+                    for ver_key in sorted_ver_keys:
+                        patch_list = target_versions[ver_key]
                         for ver_data in patch_list:
                              stats = ver_data.get("stats")
                              if stats and curr_stats[0] == stats["files"] and curr_stats[1] == stats["dirs"]:
                                  stats_match_version_key = ver_key
                                  stats_match_data = ver_data
+                                 self._log(f"      [Stats Check] Matched version: {ver_key}")
                                  break
+                        
                         if stats_match_version_key: break
                     
                     if stats_match_version_key:
                         score += 1
+                    else:
+                        self._log("      [Stats Check] No version configuration matched folder stats.")
 
                     # FINAL DECISION LOGIC
                     # We need at least 2 indicators to confirm it is A&S
                     if score >= 2:
-                        self._log(f"Pack Detected! Score: {score}/4 (Manifest={is_manifest_match}, Logo={is_logo_match}, Lang={is_lang_match}, Stats={bool(stats_match_version_key)})")
-                        found_folder = full_path
+                        self._log(f"Pack Candidate Found! Score: {score}/4")
                         
-                        # Determine Version
-                        
-                        # Case A: User selected specific version in Manual Mode
-                        if target_patch_data:
-                            detected_version_data = target_patch_data
-                            detected_version_key = target_ver_key
-                            detection_method = 'forced'
-                            self._log(f"  -> Using selected version configuration.")
-                        
-                        # Case B: Stats matched a known version
-                        elif stats_match_version_key:
-                            detected_version_data = stats_match_data
-                            detected_version_key = stats_match_version_key
-                            detection_method = 'stats'
-                            self._log(f"  -> Identified Version: {detected_version_key} (via Stats)")
-                            
+                        # Determine Version for this candidate
+                        c_version_key = None
+                        c_version_data = None
+                        c_method = 'unknown'
+
                         # Case C: Lang file provided a version string (e.g. "1.9")
-                        elif lang_version_str:
-                             # Try to map "1.9" to "v1.9" key
+                        if lang_version_str:
                              potential_key = f"v{lang_version_str}"
                              if potential_key in target_versions:
-                                 detected_version_key = potential_key
-                                 detected_version_data = target_versions[potential_key][0] # use latest patch for that version
-                                 detection_method = 'lang_string'
-                                 self._log(f"  -> Identified Version: {detected_version_key} (via Language File)")
+                                 c_version_key = potential_key
+                                 c_version_data = target_versions[potential_key][0]
+                                 c_method = 'lang_string'
                              else:
-                                 # Version string found but not in config -> Unknown new version?
-                                 self._log(f"  -> Version string found '{lang_version_str}' but no config match.")
+                                 self._log(f"  -> Candidate Version string '{lang_version_str}' unknown.")
+
+                        # Case B: Stats matched a known version
+                        elif stats_match_version_key:
+                            c_version_data = stats_match_data
+                            c_version_key = stats_match_version_key
+                            c_method = 'stats'
                         
                         # Case D: Fallback to Latest
-                        if not detected_version_data and target_versions:
+                        if not c_version_data and target_versions:
                              first_key = next(iter(target_versions))
-                             detected_version_data = target_versions[first_key][0]
-                             detected_version_key = first_key
-                             detection_method = 'fallback_latest'
-                             self._log(f"  -> Version inferred (Fallback to Latest): {first_key}")
+                             c_version_data = target_versions[first_key][0]
+                             c_version_key = first_key
+                             c_method = 'fallback_latest'
+                        
+                        candidates.append({
+                            'path': full_path,
+                            'version_key': c_version_key,
+                            'version_data': c_version_data,
+                            'method': c_method,
+                            'score': score
+                        })
+                        self._log(f"  -> Helper: Candidate added. Version: {c_version_key}")
 
-                        break # Stop searching candidate folders
+                    else:
+                         self._log(f"    -> Verification Failed. Score: {score}")
             
-            except OSError:
+            except OSError as e:
+                self._log(f"Error scanning path: {e}")
                 continue
-            if found_folder: break
+
+        # SELECT BEST CANDIDATE
+        if candidates:
+            self._log(f"Found {len(candidates)} candidates. Selecting best...")
+            
+            # Sort candidates by Version (Hightest First)
+            # Re-use parse_ver_local
+            def candidate_sort_key(c):
+                v_key = c['version_key']
+                return parse_ver_local(v_key)
+
+            candidates.sort(key=candidate_sort_key, reverse=True)
+            
+            best = candidates[0]
+            found_folder = best['path']
+            detected_version_key = best['version_key']
+            detected_version_data = best['version_data']
+            detection_method = best['method']
+            
+            self._log(f"Selected Candidate: {found_folder}")
+            self._log(f"Detected Version: {detected_version_key} (Method: {detection_method})")
+            
+        else:
+            self._log("No valid Actions & Stuff pack found.")
 
         if not found_folder:
-            self.view.after(0, lambda: messagebox.showerror("Error", "Could not find Actions & Stuff in premium_cache.\nMake sure you have downloaded it from the Marketplace."))
-            self.view.after(0, self.view.onBack)
+            # New Logic: Prompt to Browse
+            def prompt_not_found():
+                choice = self._showNotFoundDialog()
+                if choice == 'browse':
+                    new_path = filedialog.askdirectory(title="Select Actions & Stuff Folder")
+                    if new_path:
+                        return new_path
+                return None
+            
+            # Need to run dialog on main thread and get result?
+            # actually we are in a worker thread. We can't block main thread easily from here without queue.
+            # But we are using .transient() .wait_window() which REQUIRES main thread execution.
+            # We must schedule it.
+            
+            # Solution: We can't easily wait for result in this worker thread structure without refactoring to passing callback.
+            # BUT, we can schedule a specific "Retry/Manual" handler.
+            
+            # Simplified approach: Marshal the check to main thread, AND the subsequent logic.
+            # Or just update UI to show "Not Found" with a Browse button?
+            
+            # Let's try to keeping it linear by using a shared mutable, but locking UI is tricky.
+            # Better: Launch a separate "Ask User" procedure on main thread that *calls back* into the workflow.
+            
+            # Actually, `confirmVersionAndProceed` IS the next step. If we don't have a folder, we can't call it.
+            # So we should call a "HandleNotFound" method on main thread.
+            
+            self.view.after(0, self._handleNotFoundOnMain)
             return
-
+            
         self.view.after(0, lambda: self.view.setStatus("Found pack."))
 
         # INTERACTIVE SELECTION LOGIC
         def confirmVersionAndProceed():
+            nonlocal found_folder # Fix for UnboundLocalError
+            
             # 1. Determine "Latest" available version key
             # Assuming keys are like "v1.9", "v1.8": sort descending
             available_keys = sorted(target_versions.keys(), reverse=True)
@@ -283,18 +530,66 @@ class PatchController:
                 messagebox.showinfo("Warning", "Folder statistics did not match known configurations.\nHowever, the Language file confirmed this is Actions & Stuff.\nProceeding with detected version logic.")
 
             # STEP A: Version Selection (Detailed vs Latest)
-            if detected_version_key != latest_key:
-                msg = f"Version Mismatch Detected.\n\nDetected Installed: {detected_version_key}\nLatest Supported: {latest_key}\n\n"
-                msg += "You are not on the latest version supported by this patcher.\n"
-                msg += "Do you want to FORCE the LATEST patch?"
-                
-                # Ask: Yes = Force Latest, No = Use Detected
-                if messagebox.askyesno("Version Selection", msg):
-                     messagebox.showinfo("Notice", "You have chosen to force the Latest Patch on an older Pack version.\nThis is allowed but may have unexpected results.")
-                     target_key = latest_key
-                     self._log(f"User forced latest version: {target_key}")
+            
+            # Logic Update: If user Manually Selected a version, compare it with DETECTED version.
+            # If they differ, trigger the mismatch dialog to ask: "Use Detected (1.9)" or "Force Selected (1.7)"?
+            
+            if target_ver_key:
+                 # Manual Mode Check
+                 if detected_version_key != target_ver_key:
+                     self._log(f"DEBUG: Manual Selection Mismatch. Detected: {detected_version_key}, Selected: {target_ver_key}")
+                     # Pass is_manual=True
+                     choice = self._showVersionMismatchDialog(detected_version_key, target_ver_key, found_folder, is_manual=True, allow_force=False)
+                     
+                     if choice == 'latest': 
+                         target_key = target_ver_key
+                         self._log(f"User forced selected version: {target_key}")
+                     elif choice == 'detected':
+                         target_key = detected_version_key
+                         self._log(f"User switched to detected version: {target_key}")
+                     elif choice == 'browse':
+                         new_path = filedialog.askdirectory(title="Select Actions & Stuff Folder")
+                         if new_path:
+                             found_folder = new_path
+                             target_key = target_ver_key
+                             self._log(f"User manually selected folder: {found_folder}")
+                         else:
+                             self.view.onBack()
+                             return
+                     else: # Cancel
+                         self.view.onBack()
+                         return
+                 else:
+                     # Match!
+                     self._log(f"Manual selection verified matches stats/lang.")
+            
+            elif detected_version_key != latest_key:
+                # Normal Auto logic (Older detected)
+                # Pass is_manual=False (default)
+                choice = self._showVersionMismatchDialog(detected_version_key, latest_key, found_folder, is_manual=False)
+
+                if choice == 'latest':
+                    messagebox.showinfo("Notice", "You have chosen to force the Latest Patch on an older Pack version.\nThis is allowed but may have unexpected results.")
+                    target_key = latest_key
+                    self._log(f"User forced latest version: {target_key}")
+                elif choice == 'detected':
+                    self._log(f"User kept detected version: {target_key}")
+                elif choice == 'browse':
+                     new_path = filedialog.askdirectory(title="Select Actions & Stuff Folder")
+                     if new_path:
+                         found_folder = new_path
+                         # If browsing in auto mode, what version do we target? 
+                         # Prob safe to stick to 'latest' or re-detect? 
+                         # Let's assume they want the latest patch if they browse manually in auto mode.
+                         target_key = latest_key
+                         self._log(f"User manually selected folder (Auto Mode): {found_folder}")
+                     else:
+                         self.view.onBack()
+                         return
                 else:
-                     self._log(f"User kept detected version: {target_key}")
+                    # Cancel
+                    self.view.onBack()
+                    return
 
             # Handle unknown version (detected but not in config)
             if target_key not in target_versions:
@@ -453,6 +748,11 @@ class PatchController:
             detected_version_data = target_patch_data
             if detected_version_data:
                 self._log(f"Using selected version configuration.")
+                # Verify content
+                p_ver = detected_version_data.get('patchVersion', 'Unknown')
+                self._log(f"DEBUG: ZipWorker using patch version: {p_ver}")
+            else:
+                 self._log("DEBUG: ZipWorker received NO target data.")
 
             self.view.after(0, lambda: self._onReadyToPatch(normalized_zip, "zip", detected_version_data))
 
@@ -499,6 +799,8 @@ class PatchController:
                 current_version_data = self.config.get_latest_version_data()
                 if current_version_data:
                      self._log(f"Fallback Version Config: Patch {current_version_data.get('patchVersion', '?')}")
+            else:
+                self._log(f"DEBUG: Ready to patch with provided version data: {current_version_data.get('patchVersion', '?')}")
 
             # Use detected/fallback patch file if available
             if current_version_data and "patches" in current_version_data:
@@ -592,6 +894,13 @@ class PatchController:
         
         if selection and selection in self.version_map:
             target_ver_key, target_patch_data = self.version_map[selection]
+
+        self._log(f"DEBUG: Advanced Selection: '{selection}'")
+        self._log(f"DEBUG: Target Key: {target_ver_key}")
+        if target_patch_data:
+            self._log(f"DEBUG: Target Data found for {target_ver_key}")
+        else:
+            self._log(f"DEBUG: No Target Data found (Auto/None)")
 
         patch_frame.setActionState("disabled")
         patch_frame.hideSecondaryAction()
