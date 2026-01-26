@@ -91,6 +91,9 @@ class ConfigModel:
                                 # Check formats:
                                 if "v1" in data["marketplace_pack_stats"]:
                                     patch_entry["stats"] = data["marketplace_pack_stats"]["v1"]
+                                elif "stats" in data["marketplace_pack_stats"]:
+                                     # Handle case where "stats" is nested inside "marketplace_pack_stats" (Seen in 1.9b2)
+                                    patch_entry["stats"] = data["marketplace_pack_stats"]["stats"]
                                 else:
                                     patch_entry["stats"] = data["marketplace_pack_stats"] # Fallback
                                     
