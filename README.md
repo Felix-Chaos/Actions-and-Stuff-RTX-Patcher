@@ -94,7 +94,7 @@ This ensures RTX visuals are properly integrated **without redistributing** any 
      2. **RTX Pack** (Kelly's / Vanilla RTX / etc.)
      3. *(BetterRTX - Optional)*
      4. *Other Resource Packs*
-     5. **Actions & Stuff** (Original)
+     5. **Actions & Stuff** (Original)**[Optional]**
 
 ### 🛠️ Advanced Mode
 Toggle **Advanced Mode** (bottom switch) to unlock:
@@ -116,7 +116,7 @@ Browse this repository, every tool and script includes a short README with setup
 ### 🚀 Get the Patcher
 
 [![Latest Stable](https://img.shields.io/badge/Download-Latest_Release-2ea44f?style=for-the-badge&logo=github)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/latest)
-[![V2 Beta](https://img.shields.io/badge/Download-V2_Beta_(Unified)-orange?style=for-the-badge&logo=github)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/V2.0.3b)
+[![V2 Beta](https://img.shields.io/badge/Download-V2_Beta-orange?style=for-the-badge&logo=github)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/V2.0.4b)
 
 ---
 
@@ -131,9 +131,6 @@ Browse this repository, every tool and script includes a short README with setup
 <summary><strong>↳ Minecraft GDK (Modern - V1.21.120+) </strong></summary>
 
 > *For modern Minecraft installations (Xbox App / GDK)*
-* [Beta A&S RTX Patcher v2.0.3b (for A&S 1.9)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/V2.0.3b)
-* [Beta A&S RTX Patcher v2.0.2b (for A&S 1.9)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/V2.0.2b)
-* [Beta A&S RTX Patcher v2.0.1b (for A&S 1.9)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/V2.0.1b)
 * [A&S RTX Patcher v1.0.4 (for A&S 1.8)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/1.0.4)
 * [A&S RTX Patcher v1.0.3 (for A&S 1.7)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/1.0.3)
 
@@ -155,7 +152,10 @@ Browse this repository, every tool and script includes a short README with setup
 <br>
 
 ### ⚗️ Experimental Builds
-
+* [Beta A&S RTX Patcher v2.0.4b (for A&S 1.9)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/V2.0.4b)
+* [Beta A&S RTX Patcher v2.0.3b (for A&S 1.9)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/V2.0.3b)
+* [Beta A&S RTX Patcher v2.0.2b (for A&S 1.9)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/V2.0.2b)
+* [Beta A&S RTX Patcher v2.0.1b (for A&S 1.9)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/V2.0.1b)
 * [U_0.1.1 Universal Patcher (for 1.6 from 1.4 patch)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/U_0.1.1)
 
 ### 🕹️ Legacy Versions
