@@ -1,162 +1,210 @@
 import os
 import tkinter as tk
 from tkinter import filedialog
-from tkinter.scrolledtext import ScrolledText
-import ttkbootstrap as ttk
-from ttkbootstrap.constants import *
+import customtkinter as ctk
 from PIL import Image, ImageTk
+from src.gui.theme import *
 from ..utils.helpers import resourcePath
 
-class MainMenuFrame(ttk.Frame):
+class MainMenuFrame(ctk.CTkFrame):
     def __init__(self, parent, callbacks: dict):
-        super().__init__(parent)
+        super().__init__(parent, fg_color="transparent")
         self.callbacks = callbacks
 
         # Main Layout: Top (Logo) -> Middle (Action Cards) -> Bottom (Buttons)
 
         # 1. Header (Logo)
-        headerFrame = ttk.Frame(self, padding=20)
-        headerFrame.pack(fill="x")
+        headerFrame = ctk.CTkFrame(self, fg_color="transparent")
+        headerFrame.pack(fill="x", pady=20)
 
         try:
             # Try loading logo from assets/resources/icon.ico
             logoPath = resourcePath("assets/resources/icon.ico")
             if os.path.exists(logoPath):
                 pilImg = Image.open(logoPath)
-                # Resize to something reasonable (e.g. 150x150)
                 pilImg = pilImg.resize((120, 120), Image.Resampling.LANCZOS)
-                self.logoImg = ImageTk.PhotoImage(pilImg)
-                logoLabel = ttk.Label(headerFrame, image=self.logoImg)
+                self.logoImg = ctk.CTkImage(light_image=pilImg, dark_image=pilImg, size=(120, 120))
+                logoLabel = ctk.CTkLabel(headerFrame, image=self.logoImg, text="")
                 logoLabel.pack()
         except Exception as e:
             print(f"Failed to load logo: {e}")
 
-        ttk.Label(headerFrame, text="A&S RTX Patcher", font=("Segoe UI", 24, "bold"), bootstyle="info").pack(pady=10)
+        ctk.CTkLabel(headerFrame, text="A&S RTX Patcher", font=(FONT_FAMILY, 28, "bold"), text_color=COLOR_ACCENT_2).pack(pady=10)
 
         # 2. Content Area (Grid)
-        contentFrame = ttk.Frame(self)
-        contentFrame.pack(expand=True, fill="both", padx=40, pady=20)
+        contentFrame = ctk.CTkFrame(self, fg_color="transparent")
+        contentFrame.pack(expand=True, fill="both", padx=40, pady=0)
 
-        # Grid Configuration
         contentFrame.columnconfigure(0, weight=1)
         contentFrame.columnconfigure(1, weight=1)
 
         # --- Primary Actions (Left Column) ---
-        primaryFrame = ttk.Labelframe(contentFrame, text="Patching", padding=15, bootstyle="primary")
+        # Clean dark card with subtle border
+        primaryFrame = ctk.CTkFrame(contentFrame, fg_color="#1a1a1a", border_width=1, border_color="#333333", corner_radius=12)
         primaryFrame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
+        
+        ctk.CTkLabel(primaryFrame, text="Patching", font=(FONT_FAMILY, 18, "bold"), text_color="#FFFFFF").pack(pady=(20, 15))
 
-        # 1. Normal Patcher (Marketplace)
-        ttk.Button(primaryFrame, text="⚡ Patch from Marketplace", command=self.callbacks.get("marketplace"),
-                   bootstyle="info-outline", width=25).pack(pady=10, fill="x")
+        # 1. Normal Patcher (Marketplace) - FILLED GREEN BUTTON
+        ctk.CTkButton(primaryFrame, text="⚡ Patch from Marketplace", command=self.callbacks.get("marketplace"),
+                      fg_color=COLOR_ACCENT_1, text_color="#000000", hover_color="#32cc12",
+                      height=45, font=(FONT_FAMILY, 14, "bold"), corner_radius=8).pack(pady=10, padx=25, fill="x")
 
-        # 2. Zip/Custom Patcher (Hidden by default)
-        self.zipBtn = ttk.Button(primaryFrame, text="📦 Zip / Custom Patcher", command=self.callbacks.get("manual"),
-                   bootstyle="primary-outline", width=25)
-        # self.zipBtn.pack(pady=10, fill="x") # Hidden by default
+        # 2. Zip/Custom Patcher (Hidden by default) - FILLED CYAN BUTTON
+        self.zipBtn = ctk.CTkButton(primaryFrame, text="📦 Zip / Custom Patcher", command=self.callbacks.get("manual"),
+                      fg_color=COLOR_ACCENT_2, text_color="#000000", hover_color="#00c4d4",
+                      height=45, font=(FONT_FAMILY, 14, "bold"), corner_radius=8)
+        # self.zipBtn.pack(pady=10, padx=25, fill="x") # Hidden by default
 
         # --- Maintenance Actions (Right Column) ---
-        maintFrame = ttk.Labelframe(contentFrame, text="Maintenance", padding=15, bootstyle="secondary")
+        maintFrame = ctk.CTkFrame(contentFrame, fg_color="#1a1a1a", border_width=1, border_color="#333333", corner_radius=12)
         maintFrame.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
 
-        ttk.Button(maintFrame, text="🧹 Clean Old Versions", command=self.callbacks.get("clean"),
-                   bootstyle="warning-outline", width=25).pack(pady=10, fill="x")
+        ctk.CTkLabel(maintFrame, text="Maintenance", font=(FONT_FAMILY, 18, "bold"), text_color="#FFFFFF").pack(pady=(20, 15))
 
-        # 3. Exit Button (Bottom)
-        ttk.Button(self, text="Exit Application", command=self.callbacks.get("exit"),
-                   bootstyle="danger-link").pack(pady=20)
+        # Clean Old Versions - FILLED RED/ORANGE BUTTON
+        ctk.CTkButton(maintFrame, text="🧹 Clean Old Versions", command=self.callbacks.get("clean"),
+                   fg_color="#FF4444", text_color="#FFFFFF", hover_color="#cc3333",
+                   height=45, font=(FONT_FAMILY, 14, "bold"), corner_radius=8).pack(pady=10, padx=25, fill="x")
+                   
+
+        # New: Adjust RTX Settings - FILLED CYAN BUTTON
+        self.rtxBtn = ctk.CTkButton(maintFrame, text="🎮 Adjust Settings for RTX", command=self.callbacks.get("rtx_settings"),
+                      fg_color=COLOR_ACCENT_2, text_color="#000000", hover_color="#00c4d4",
+                      height=45, font=(FONT_FAMILY, 14, "bold"), corner_radius=8)
+        self.rtxBtn.pack(pady=10, padx=25, fill="x")
+
+        # New: Adjust All Settings (Advanced only) - OUTLINED GRAY
+        self.allSettingsBtn = ctk.CTkButton(maintFrame, text="⚙️ Adjust All Settings", command=self.callbacks.get("all_settings"),
+                                            fg_color="transparent", border_width=2, border_color="#666666", 
+                                            text_color="#AAAAAA", hover_color="#2a2a2a",
+                                            height=40, font=(FONT_FAMILY, 13), corner_radius=8)
+        # Hidden by default
+
+        # 3. Exit Button (Bottom) - Subtle text button
+        ctk.CTkButton(self, text="Exit Application", command=self.callbacks.get("exit"),
+                      fg_color="transparent", text_color="#888888", hover_color="#1a1a1a", 
+                      font=(FONT_FAMILY, 12)).pack(pady=20)
 
     def setAdvancedMode(self, enabled: bool):
         if enabled:
             if not self.zipBtn.winfo_ismapped():
-                self.zipBtn.pack(pady=10, fill="x", after=self.zipBtn.master.winfo_children()[0])
+                self.zipBtn.pack(pady=10, padx=20, fill="x", after=self.zipBtn.master.winfo_children()[1])
+            if not self.allSettingsBtn.winfo_ismapped():
+                self.allSettingsBtn.pack(pady=10, padx=20, fill="x")
         else:
             self.zipBtn.pack_forget()
+            self.allSettingsBtn.pack_forget()
 
-class PatchProgressFrame(ttk.Frame):
+
+class PatchProgressFrame(ctk.CTkFrame):
     def __init__(self, parent, title: str, onBack: callable):
-        super().__init__(parent)
+        super().__init__(parent, fg_color="transparent")
         self.onBack = onBack
+        self.is_patching = False  # Track if patching is in progress
 
-        container = ttk.Frame(self, padding=30)
-        container.pack(expand=True, fill="both") # Fill both to allow log expansion
+        container = ctk.CTkFrame(self, fg_color=COLOR_SURFACE, corner_radius=15)
+        container.pack(expand=True, fill="both", padx=40, pady=40) 
 
-        self.titleLabel = ttk.Label(container, text=title, font=("Segoe UI", 12, "bold"))
-        self.titleLabel.pack(pady=(0, 20))
+        self.titleLabel = ctk.CTkLabel(container, text=title, font=(FONT_FAMILY, 20, "bold"), text_color=COLOR_TEXT)
+        self.titleLabel.pack(pady=(20, 20))
 
-        # --- Advanced: Mode Selection (Hidden in Normal/Debug) ---
-        self.advFrame = ttk.Frame(container)
-        self.modeVar = tk.StringVar(value="marketplace")
+        # --- Advanced: Mode Selection ---
+        self.advFrame = ctk.CTkFrame(container, fg_color="transparent")
+        self.modeVar = ctk.StringVar(value="marketplace")
         
-        # (We keep the advFrame structure but only show it in 'manual' mode or full advanced)
-        modeRow = ttk.Frame(self.advFrame)
+        modeRow = ctk.CTkFrame(self.advFrame, fg_color="transparent")
         modeRow.pack(fill="x", pady=(0, 10))
-        ttk.Label(modeRow, text="Patch Method:", font=("Segoe UI", 9, "bold")).pack(side="left", padx=(0, 10))
-        ttk.Radiobutton(modeRow, text="Zip (Manual)", variable=self.modeVar, value="zip", command=self.onModeChanged).pack(side="left", padx=5)
-        ttk.Radiobutton(modeRow, text="Custom", variable=self.modeVar, value="custom", command=self.onModeChanged).pack(side="left", padx=5)
+        ctk.CTkLabel(modeRow, text="Patch Method:", font=(FONT_FAMILY, 12, "bold")).pack(side="left", padx=(0, 10))
+        ctk.CTkRadioButton(modeRow, text="Zip (Manual)", variable=self.modeVar, value="zip", command=self.onModeChanged,
+                           fg_color=COLOR_ACCENT_1, hover_color=COLOR_ACCENT_1).pack(side="left", padx=5)
+        ctk.CTkRadioButton(modeRow, text="Custom", variable=self.modeVar, value="custom", command=self.onModeChanged,
+                           fg_color=COLOR_ACCENT_1, hover_color=COLOR_ACCENT_1).pack(side="left", padx=5)
 
         # --- Advanced: Version Selection ---
-        self.versionVar = tk.StringVar()
-        verRow = ttk.Frame(self.advFrame)
+        self.versionVar = ctk.StringVar()
+        verRow = ctk.CTkFrame(self.advFrame, fg_color="transparent")
         verRow.pack(fill="x", pady=(5, 10))
-        ttk.Label(verRow, text="Target Version:", font=("Segoe UI", 9, "bold")).pack(side="left", padx=(0, 10))
-        self.versionCombo = ttk.Combobox(verRow, textvariable=self.versionVar, state="readonly", width=15)
+        ctk.CTkLabel(verRow, text="Target Version:", font=(FONT_FAMILY, 12, "bold")).pack(side="left", padx=(0, 10))
+        self.versionCombo = ctk.CTkComboBox(verRow, variable=self.versionVar, values=[], state="readonly", width=200,
+                                            button_color=COLOR_ACCENT_1, border_color=COLOR_ACCENT_1)
         self.versionCombo.pack(side="left", padx=5)
-        ttk.Label(verRow, text="(Leave empty for Auto)", font=("Segoe UI", 8, "italic")).pack(side="left", padx=5)
+        # Note: ComboBox values need to be string list
 
         # --- Advanced: Custom Fields ---
-        self.customFieldsFrame = ttk.Frame(self.advFrame)
-        # ... (Fields setup same as before, simplified for brevity in this replace) ...
+        self.customFieldsFrame = ctk.CTkFrame(self.advFrame, fg_color="transparent")
+        
         # Source
-        ttk.Label(self.customFieldsFrame, text="Source (Folder/Zip):").pack(anchor="w")
-        srcRow = ttk.Frame(self.customFieldsFrame)
+        ctk.CTkLabel(self.customFieldsFrame, text="Source (Folder/Zip):", anchor="w").pack(fill="x")
+        srcRow = ctk.CTkFrame(self.customFieldsFrame, fg_color="transparent")
         srcRow.pack(fill="x", pady=(0, 5))
-        self.srcVar = tk.StringVar()
-        ttk.Entry(srcRow, textvariable=self.srcVar).pack(side="left", fill="x", expand=True, padx=(0, 5))
-        ttk.Button(srcRow, text="...", width=3, command=lambda: self.browsePath(self.srcVar), bootstyle="secondary-outline").pack(side="left")
+        self.srcVar = ctk.StringVar()
+        ctk.CTkEntry(srcRow, textvariable=self.srcVar).pack(side="left", fill="x", expand=True, padx=(0, 5))
+        ctk.CTkButton(srcRow, text="...", width=40, command=lambda: self.browsePath(self.srcVar), **get_button_style("secondary")).pack(side="left")
 
-        # Target (Output Name)
-        ttk.Label(self.customFieldsFrame, text="Output Filename (.mcpack):").pack(anchor="w")
-        tgtRow = ttk.Frame(self.customFieldsFrame)
+        # Target 
+        ctk.CTkLabel(self.customFieldsFrame, text="Output Filename (.mcpack):", anchor="w").pack(fill="x")
+        tgtRow = ctk.CTkFrame(self.customFieldsFrame, fg_color="transparent")
         tgtRow.pack(fill="x", pady=(0, 5))
-        self.tgtVar = tk.StringVar()
-        ttk.Entry(tgtRow, textvariable=self.tgtVar).pack(side="left", fill="x", expand=True)
+        self.tgtVar = ctk.StringVar()
+        ctk.CTkEntry(tgtRow, textvariable=self.tgtVar).pack(side="left", fill="x", expand=True)
 
         # Patch File
-        ttk.Label(self.customFieldsFrame, text="Patch File (.vcdiff):").pack(anchor="w")
-        patchRow = ttk.Frame(self.customFieldsFrame)
+        ctk.CTkLabel(self.customFieldsFrame, text="Patch File (.vcdiff):", anchor="w").pack(fill="x")
+        patchRow = ctk.CTkFrame(self.customFieldsFrame, fg_color="transparent")
         patchRow.pack(fill="x", pady=(0, 5))
-        self.patchVar = tk.StringVar()
-        ttk.Entry(patchRow, textvariable=self.patchVar).pack(side="left", fill="x", expand=True, padx=(0, 5))
-        ttk.Button(patchRow, text="...", width=3, command=lambda: self.browsePatchFile(self.patchVar), bootstyle="secondary-outline").pack(side="left")
-
+        self.patchVar = ctk.StringVar()
+        ctk.CTkEntry(patchRow, textvariable=self.patchVar).pack(side="left", fill="x", expand=True, padx=(0, 5))
+        ctk.CTkButton(patchRow, text="...", width=40, command=lambda: self.browsePatchFile(self.patchVar), **get_button_style("secondary")).pack(side="left")
 
         # --- Log Area ---
-        self.logFrame = ttk.Frame(container)
-        ttk.Label(self.logFrame, text="Process Log:", font=("Segoe UI", 9, "bold")).pack(anchor="w")
-        self.logArea = ScrolledText(self.logFrame, height=12, width=70, state='disabled', font=("Consolas", 8))
+        self.logFrame = ctk.CTkFrame(container, fg_color="transparent")
+        ctk.CTkLabel(self.logFrame, text="Process Log:", font=(FONT_FAMILY, 12, "bold"), anchor="w").pack(fill="x")
+        self.logArea = ctk.CTkTextbox(self.logFrame, height=150, font=("Consolas", 10), text_color="#dddddd", fg_color="#111111")
         self.logArea.pack(fill="both", expand=True)
+        self.logArea.configure(state='disabled')
 
-        self.statusLabel = ttk.Label(container, text="Ready...")
-        self.statusLabel.pack(pady=(10, 10))
+        self.statusLabel = ctk.CTkLabel(container, text="Ready...", text_color=COLOR_ACCENT_1)
+        self.statusLabel.pack(pady=(10, 5))
 
-        self.progressBar = ttk.Progressbar(container, mode='determinate', length=400, bootstyle=INFO)
-        self.progressBar.pack(pady=(0, 20))
+        self.progressBar = ctk.CTkProgressBar(container, orientation="horizontal", progress_color=COLOR_ACCENT_1)
+        self.progressBar.set(0)
+        self.progressBar.pack(pady=(0, 20), fill="x", padx=40)
 
-        self.btnFrame = ttk.Frame(container)
-        self.btnFrame.pack(pady=(0, 0))
+        self.btnFrame = ctk.CTkFrame(container, fg_color="transparent")
+        self.btnFrame.pack(pady=(0, 20))
 
-        self.actionBtn = ttk.Button(self.btnFrame, text="Start", width=20, state="disabled", bootstyle=SUCCESS)
+        self.actionBtn = ctk.CTkButton(self.btnFrame, text="Start", width=120, state="disabled", **get_button_style("filled-primary"))
         self.actionBtn.pack(side="left", padx=5)
 
-        self.secondaryBtn = ttk.Button(self.btnFrame, text="Open Folder", width=20, bootstyle="info-outline")
+        self.secondaryBtn = ctk.CTkButton(self.btnFrame, text="Open Folder", width=120, **get_button_style("secondary"))
         # Hidden by default
 
-        ttk.Button(self.btnFrame, text="Back", width=20, command=self.onBack, bootstyle=(DANGER, OUTLINE)).pack(side="left", padx=5)
+        ctk.CTkButton(self.btnFrame, text="Back", width=120, command=self._handleBack, **get_button_style("danger")).pack(side="left", padx=5)
+
+    def _handleBack(self):
+        """Handle back button click with warning if patching is in progress."""
+        if self.is_patching:
+            from tkinter import messagebox
+            result = messagebox.askyesno(
+                "Cancel Patching?",
+                "Patching is currently in progress.\n\n"
+                "Going back will stop the patching process and clean up temporary files.\n\n"
+                "Are you sure you want to cancel?",
+                icon='warning'
+            )
+            if result:
+                # User confirmed - call the back callback which should handle cleanup
+                self.onBack()
+        else:
+            # Not patching, safe to go back
+            self.onBack()
+
 
     def setSecondaryAction(self, command: callable, text: str = "Open Folder"):
-        self.secondaryBtn.config(command=command, text=text)
+        self.secondaryBtn.configure(command=command, text=text)
         if not self.secondaryBtn.winfo_ismapped():
-            self.secondaryBtn.pack(side="left", padx=5, before=self.btnFrame.winfo_children()[-1]) # Pack before Back button
+            self.secondaryBtn.pack(side="left", padx=5, before=self.btnFrame.winfo_children()[-1])
 
     def hideSecondaryAction(self):
         self.secondaryBtn.pack_forget()
@@ -166,8 +214,6 @@ class PatchProgressFrame(ttk.Frame):
         if f: var.set(f)
 
     def browsePath(self, var):
-        # Determine if folder or file based on mode? Simplification: Ask for file or directory
-        # For now generic "Open"
         f = filedialog.askopenfilename()
         if not f:
             f = filedialog.askdirectory()
@@ -184,35 +230,37 @@ class PatchProgressFrame(ttk.Frame):
         if enabled:
             self.advFrame.pack(after=self.titleLabel, pady=(0, 20), fill="x")
             self.logFrame.pack(before=self.btnFrame, pady=(10, 20), fill="both", expand=True)
-            self.onModeChanged() # Refresh custom fields visibility
+            self.onModeChanged()
         else:
             self.advFrame.pack_forget()
             self.logFrame.pack_forget()
 
     def appendLog(self, text: str):
-        self.logArea.config(state='normal')
+        self.logArea.configure(state='normal')
         self.logArea.insert(tk.END, text + "\n")
         self.logArea.see(tk.END)
-        self.logArea.config(state='disabled')
+        self.logArea.configure(state='disabled')
 
     def setStatus(self, text: str):
-        self.statusLabel.config(text=text)
+        self.statusLabel.configure(text=text)
 
     def setProgress(self, value: float, mode: str = 'determinate'):
-        self.progressBar.config(mode=mode, value=value)
+        # value 0-100 -> 0.0-1.0
         if mode == 'indeterminate':
-            self.progressBar.start()
+             self.progressBar.configure(mode='indeterminate')
+             self.progressBar.start()
         else:
-            self.progressBar.stop()
+             self.progressBar.configure(mode='determinate')
+             self.progressBar.stop()
+             self.progressBar.set(value / 100.0)
 
     def setActionCommand(self, command: callable, text: str = "Patch"):
-        self.actionBtn.config(command=command, text=text)
+        self.actionBtn.configure(command=command, text=text)
 
     def setActionState(self, state: str):
-        self.actionBtn.config(state=state)
+        self.actionBtn.configure(state=state)
 
     def setVersions(self, versions: list):
-        self.versionCombo['values'] = versions
+        self.versionCombo.configure(values=versions)
         if versions:
-            self.versionCombo.current(0)
-
+            self.versionCombo.set(versions[0])

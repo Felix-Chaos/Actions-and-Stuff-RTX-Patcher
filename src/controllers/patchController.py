@@ -5,8 +5,9 @@ import hashlib
 import tempfile
 import shutil
 import tkinter as tk
-import ttkbootstrap as ttk
+import customtkinter as ctk
 from tkinter import messagebox, filedialog
+from src.gui.theme import *
 from ..models.configModel import ConfigModel
 from ..models.patcherModel import PatcherModel
 from ..models.fileSystemModel import FileSystemModel
@@ -63,23 +64,39 @@ class PatchController:
             
             self.view.setVersions(display_list)
             # Default to Auto
-            self.view.versionCombo.current(0)
+            self.view.versionCombo.set("Auto (Default)")
 
+    def cleanup(self):
+        """Clean up temporary files and cancel any ongoing operations."""
+        # Set cancel event to stop any running threads
+        self.cancel_event.set()
+        
+        # Clean up temp directory
+        if os.path.exists(self.temp_dir):
+            try:
+                shutil.rmtree(self.temp_dir)
+            except Exception as e:
+                print(f"Failed to clean up temp directory: {e}")
+        
+        # Reset patching state
+        if hasattr(self, 'view') and hasattr(self.view, 'is_patching'):
+            self.view.is_patching = False
+        
+        # Reset cancel event for next operation
+        self.cancel_event.clear()
 
-
-    def _showVersionMismatchDialog(self, detected_ver, target_ver, path, is_manual=False, allow_force=True):
+    def _showVersionMismatchDialog(self, detected_ver: str, target_ver: str, is_manual: bool = False):
         """
         Shows a custom dialog for resolving version mismatch.
         Returns: 'detected', 'latest', or None (cancel).
         """
-        dialog = tk.Toplevel(self.view)
-        
         # Context-Aware Text
         title_text = "Selection Mismatch" if is_manual else "Version Mismatch"
         header_text = "Selection Not Found" if is_manual else "Older Version Detected"
         target_label = "Selected:" if is_manual else "Latest:"
         target_btn_text = f"Force Selected ({target_ver})" if is_manual else f"Force Latest ({target_ver})"
-        
+
+        dialog = ctk.CTkToplevel(self.view)
         dialog.title(title_text)
         dialog.geometry("450x400")
         dialog.resizable(False, False)
@@ -92,29 +109,30 @@ class PatchController:
             dialog.geometry(f"+{x}+{y}")
         except: pass
 
-        container = ttk.Frame(dialog, padding=20)
-        container.pack(fill="both", expand=True)
+        container = ctk.CTkFrame(dialog, corner_radius=10)
+        container.pack(fill="both", expand=True, padx=20, pady=20)
 
-        ttk.Label(container, text=header_text, font=("Segoe UI", 12, "bold"), bootstyle="warning").pack(pady=(0, 15))
+        ctk.CTkLabel(container, text=header_text, font=(FONT_FAMILY, 20, "bold"), text_color="#FFCC00").pack(pady=(0, 15))
         
-        info_frame = ttk.Labelframe(container, text="Details", padding=10)
+        info_frame = ctk.CTkFrame(container, border_width=1, border_color="gray")
         info_frame.pack(fill="x", pady=5)
+        
         
         grid_opts = {'padx': 5, 'pady': 2, 'sticky': 'w'}
         
-        ttk.Label(info_frame, text="Detected:", font=("Segoe UI", 9, "bold")).grid(row=0, column=0, **grid_opts)
-        ttk.Label(info_frame, text=f"{detected_ver}", bootstyle="warning").grid(row=0, column=1, **grid_opts)
+        ctk.CTkLabel(info_frame, text="Detected:", font=(FONT_FAMILY, 12, "bold")).grid(row=0, column=0, **grid_opts)
+        ctk.CTkLabel(info_frame, text=f"{detected_ver}", text_color="#FFCC00").grid(row=0, column=1, **grid_opts)
         
-        ttk.Label(info_frame, text=target_label, font=("Segoe UI", 9, "bold")).grid(row=1, column=0, **grid_opts)
-        ttk.Label(info_frame, text=f"{target_ver}", bootstyle="success").grid(row=1, column=1, **grid_opts)
+        ctk.CTkLabel(info_frame, text=target_label, font=(FONT_FAMILY, 12, "bold")).grid(row=1, column=0, **grid_opts)
+        ctk.CTkLabel(info_frame, text=f"{target_ver}", text_color=COLOR_ACCENT_1).grid(row=1, column=1, **grid_opts)
 
-        ttk.Label(info_frame, text="Location:", font=("Segoe UI", 9, "bold")).grid(row=2, column=0, **grid_opts)
+        ctk.CTkLabel(info_frame, text="Location:", font=(FONT_FAMILY, 12, "bold")).grid(row=2, column=0, **grid_opts)
         
         # Truncate path if too long
         display_path = path
         if len(display_path) > 40:
             display_path = "..." + display_path[-37:]
-        ttk.Label(info_frame, text=display_path, font=("Consolas", 8)).grid(row=2, column=1, **grid_opts)
+        ctk.CTkLabel(info_frame, text=display_path, font=("Consolas", 10)).grid(row=2, column=1, **grid_opts)
 
         if is_manual:
             if allow_force:
@@ -124,9 +142,9 @@ class PatchController:
         else:
             msg_text = "It is recommended to update to the latest version.\nHowever, you can choose to proceed with the detected version."
 
-        ttk.Label(container, text=msg_text, justify="center", wraplength=400).pack(pady=15)
+        ctk.CTkLabel(container, text=msg_text, justify="center", wraplength=400).pack(pady=15)
 
-        btn_frame = ttk.Frame(container)
+        btn_frame = ctk.CTkFrame(container, fg_color="transparent")
         btn_frame.pack(fill="x", pady=10)
 
         result = {"value": None}
@@ -148,11 +166,10 @@ class PatchController:
             dialog.destroy()
 
         # Buttons
-        # Use fill='x' to ensure they have width, and ipady for height
-        ttk.Button(btn_frame, text=f"Use Detected ({detected_ver})", command=on_detected, bootstyle="secondary").pack(side="left", expand=True, fill="x", padx=5, ipady=5)
+        ctk.CTkButton(btn_frame, text=f"Use Detected ({detected_ver})", command=on_detected, **get_button_style("secondary")).pack(side="left", expand=True, fill="x", padx=5)
         if allow_force:
-            ttk.Button(btn_frame, text=target_btn_text, command=on_latest, bootstyle="success").pack(side="left", expand=True, fill="x", padx=5, ipady=5)
-        ttk.Button(btn_frame, text="Browse Folder...", command=on_browse, bootstyle="info").pack(side="left", expand=True, fill="x", padx=5, ipady=5)
+            ctk.CTkButton(btn_frame, text=target_btn_text, command=on_latest, **get_button_style("filled-primary")).pack(side="left", expand=True, fill="x", padx=5)
+        ctk.CTkButton(btn_frame, text="Browse Folder...", command=on_browse, fg_color="transparent", border_width=1, border_color="gray").pack(side="left", expand=True, fill="x", padx=5)
         
         dialog.protocol("WM_DELETE_WINDOW", on_cancel)
         dialog.transient(self.view)
@@ -166,7 +183,7 @@ class PatchController:
         Shows a dialog when the pack is not found, offering to Browse.
         Returns: 'browse' or None.
         """
-        dialog = tk.Toplevel(self.view)
+        dialog = ctk.CTkToplevel(self.view)
         dialog.title("Pack Not Found")
         dialog.geometry("400x250")
         dialog.resizable(False, False)
@@ -179,15 +196,15 @@ class PatchController:
             dialog.geometry(f"+{x}+{y}")
         except: pass
 
-        container = ttk.Frame(dialog, padding=20)
-        container.pack(fill="both", expand=True)
+        container = ctk.CTkFrame(dialog, corner_radius=10)
+        container.pack(fill="both", expand=True, padx=20, pady=20)
 
-        ttk.Label(container, text="Pack Not Found", font=("Segoe UI", 12, "bold"), bootstyle="danger").pack(pady=(0, 15))
+        ctk.CTkLabel(container, text="Pack Not Found", font=(FONT_FAMILY, 20, "bold"), text_color="#FF3333").pack(pady=(0, 15))
         
-        msg = "Could not automatically find 'Actions & Stuff' in the standard location.\n\nWould you like to browse for the folder manually?"
-        ttk.Label(container, text=msg, justify="center", wraplength=350).pack(pady=10)
+        msg = "Could not find a supported version of 'Actions & Stuff'.\n\nEither the pack is not installed, or the installed version does not have a matching patch available.\n\nWould you like to browse for the folder manually?"
+        ctk.CTkLabel(container, text=msg, justify="center", wraplength=350).pack(pady=10)
 
-        btn_frame = ttk.Frame(container)
+        btn_frame = ctk.CTkFrame(container, fg_color="transparent")
         btn_frame.pack(fill="x", pady=20)
 
         result = {"value": None}
@@ -200,8 +217,8 @@ class PatchController:
             result["value"] = None
             dialog.destroy()
             
-        ttk.Button(btn_frame, text="Browse Folder...", command=on_browse, bootstyle="info").pack(side="left", expand=True, fill="x", padx=5, ipady=5)
-        ttk.Button(btn_frame, text="Cancel", command=on_cancel, bootstyle="secondary").pack(side="left", expand=True, fill="x", padx=5, ipady=5)
+        ctk.CTkButton(btn_frame, text="Browse Folder...", command=on_browse, **get_button_style("filled-primary")).pack(side="left", expand=True, fill="x", padx=5)
+        ctk.CTkButton(btn_frame, text="Cancel", command=on_cancel, fg_color="transparent", border_width=1, border_color="gray").pack(side="left", expand=True, fill="x", padx=5)
         
         dialog.protocol("WM_DELETE_WINDOW", on_cancel)
         dialog.transient(self.view)
@@ -435,12 +452,10 @@ class PatchController:
                             c_version_key = stats_match_version_key
                             c_method = 'stats'
                         
-                        # Case D: Fallback to Latest
-                        if not c_version_data and target_versions:
-                             first_key = next(iter(target_versions))
-                             c_version_data = target_versions[first_key][0]
-                             c_version_key = first_key
-                             c_method = 'fallback_latest'
+                        # No matching version config — skip this candidate
+                        if not c_version_data:
+                            self._log(f"  -> No suitable patch version found for this pack. Skipping candidate.")
+                            continue
                         
                         candidates.append({
                             'path': full_path,
@@ -480,36 +495,23 @@ class PatchController:
             self._log(f"Detected Version: {detected_version_key} (Method: {detection_method})")
             
         else:
-            self._log("No valid Actions & Stuff pack found.")
+            self._log("No valid Actions & Stuff pack found (or no supported version installed).")
 
         if not found_folder:
-            # New Logic: Prompt to Browse
-            def prompt_not_found():
+            def handle_not_found():
                 choice = self._showNotFoundDialog()
                 if choice == 'browse':
                     new_path = filedialog.askdirectory(title="Select Actions & Stuff Folder")
                     if new_path:
-                        return new_path
-                return None
-            
-            # Need to run dialog on main thread and get result?
-            # actually we are in a worker thread. We can't block main thread easily from here without queue.
-            # But we are using .transient() .wait_window() which REQUIRES main thread execution.
-            # We must schedule it.
-            
-            # Solution: We can't easily wait for result in this worker thread structure without refactoring to passing callback.
-            # BUT, we can schedule a specific "Retry/Manual" handler.
-            
-            # Simplified approach: Marshal the check to main thread, AND the subsequent logic.
-            # Or just update UI to show "Not Found" with a Browse button?
-            
-            # Let's try to keeping it linear by using a shared mutable, but locking UI is tricky.
-            # Better: Launch a separate "Ask User" procedure on main thread that *calls back* into the workflow.
-            
-            # Actually, `confirmVersionAndProceed` IS the next step. If we don't have a folder, we can't call it.
-            # So we should call a "HandleNotFound" method on main thread.
-            
-            self.view.after(0, self._handleNotFoundOnMain)
+                        # Use latest version data as fallback for manual browse
+                        latest_data = self.config.get_latest_version_data()
+                        self._prepareAndPatch(new_path, latest_data)
+                        return
+                # User cancelled
+                self.view.setStatus("Cancelled.")
+                self.view.setProgress(0, 'determinate')
+
+            self.view.after(0, handle_not_found)
             return
             
         self.view.after(0, lambda: self.view.setStatus("Found pack."))
@@ -612,9 +614,9 @@ class PatchController:
 
                 def ask_user_choice():
                     choice = tk.StringVar(value=options_labels[0])
-                    dialog = tk.Toplevel(self.view)
+                    dialog = ctk.CTkToplevel(self.view)
                     dialog.title("Select Patch Version")
-                    dialog.geometry("300x180")
+                    dialog.geometry("300x250")
                     dialog.resizable(False, False)
                     try:
                         dialog.update_idletasks()
@@ -623,11 +625,12 @@ class PatchController:
                         dialog.geometry(f"+{x}+{y}")
                     except: pass
 
-                    ttk.Label(dialog, text=f"Multiple patches found for {target_key}.\nPlease select a version:", justify="center").pack(pady=15)
+                    ctk.CTkLabel(dialog, text=f"Multiple patches found for {target_key}.\nPlease select a version:", justify="center").pack(pady=15)
                     
-                    cbo = ttk.Combobox(dialog, values=options_labels, textvariable=choice, state="readonly")
+                    cbo = ctk.CTkComboBox(dialog, values=options_labels, variable=choice, state="readonly", 
+                                          button_color=COLOR_ACCENT_1, border_color=COLOR_ACCENT_1)
                     cbo.pack(pady=5, padx=20, fill="x")
-                    cbo.current(0)
+                    cbo.set(options_labels[0])
 
                     result = {"value": None}
 
@@ -635,7 +638,7 @@ class PatchController:
                         result["value"] = choice.get()
                         dialog.destroy()
                     
-                    ttk.Button(dialog, text="Select", command=on_ok, bootstyle="success").pack(pady=20)
+                    ctk.CTkButton(dialog, text="Select", command=on_ok, **get_button_style("filled-primary")).pack(pady=20)
                     
                     dialog.transient(self.view)
                     dialog.grab_set()

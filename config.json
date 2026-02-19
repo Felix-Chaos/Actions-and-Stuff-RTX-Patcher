@@ -1,0 +1,41 @@
+{
+    "paths": {
+        "minecraftBedrock": "C:\\Users\\felix\\AppData\\Roaming/Minecraft Bedrock",
+        "minecraftBedrockPreview": "C:\\Users\\felix\\AppData\\Roaming/Minecraft Bedrock Preview",
+        "minecraftUwp": "C:\\Users\\felix\\AppData\\Local/Packages/Microsoft.MinecraftUWP_8wekyb3d8bbwe/LocalState",
+        "minecraftUwpPreview": "C:\\Users\\felix\\AppData\\Local/Packages/Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe/LocalState",
+        "xdeltaDir": "assets/xdelta3"
+    },
+    "executables": {
+        "xdelta": "assets/xdelta3/exec/xdelta3_x86_64_win.exe"
+    },
+    "filenames": {
+        "encryptedZip": "Actions & Stuff encrypted.zip",
+        "normalizedZip": "Actions & Stuff decrypted.zip",
+        "finalMcPack": "Actions & Stuff Enhanced RTX.mcpack",
+        "icon": "assets/resources/icon.ico",
+        "manifest": "manifest.json",
+        "patchConfig": "patch_config.json"
+    },
+    "patches": {
+        "marketplaceEncrypted": "assets/Patches/Current/encrypted.vcdiff",
+        "zipDecrypted": "assets/Patches/Current/decrypted.vcdiff"
+    },
+    "cleanupPrefixes": [
+        "A&SforRTX",
+        "Actions & Stuff Enhanced"
+    ],
+    "filesToRemove": [
+        "contents.json",
+        "signatures.json",
+        "splashes.json",
+        "sounds.json"
+    ],
+    "dirsToRemove": [
+        "texts"
+    ],
+    "enable_dithering_blocks": 0,
+    "enable_dithering_mobs": 0,
+    "graphics_mode": 3,
+    "graphics_mode_switch": 1
+}
