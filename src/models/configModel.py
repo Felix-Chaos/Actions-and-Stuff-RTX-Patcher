@@ -49,6 +49,9 @@ class ConfigModel:
         
         # Load dynamic patches after init
         self.load_patch_versions()
+
+        # Load local config overrides if present
+        self.load_external_config("config.json")
         
     def load_patch_versions(self):
         """
@@ -214,6 +217,148 @@ class ConfigModel:
                 for k, v in loaded_config["paths"].items():
                     if k in self.config["paths"]:
                         self.config["paths"][k] = v
+            
+            # Merge other keys
+            for k, v in loaded_config.items():
+                if k != "paths":
+                     self.config[k] = v
+
             return True
         except Exception:
+            return False
+
+    def save_config(self, config_path: str = "config.json") -> bool:
+        """
+        Saves the current configuration to a JSON file.
+        """
+        try:
+             # We might want to filter out some runtime-only keys if any, but for now dump all
+             # Except maybe 'patchVersions' which is huge and dynamic? 
+             # No, if we want to allow editing everything, we should dump everything.
+             # However, 'patchVersions' is re-loaded from disk on init. 
+             # If we save it, we might duplicate or freeze it.
+             # Let's exclude 'patchVersions' from the saved file to keep it clean, 
+             # unless the user explicitly wants to override it?
+             # For now, let's exclude 'patchVersions' to avoid massive file bloat with redundant data.
+             
+             data_to_save = self.config.copy()
+             if "patchVersions" in data_to_save:
+                 del data_to_save["patchVersions"]
+                 
+             with open(config_path, 'w') as f:
+                 json.dump(data_to_save, f, indent=4)
+             return True
+        except Exception as e:
+            print(f"Failed to save config: {e}")
+            return False
+
+    def find_options_txt(self) -> str:
+        """
+        Attempts to locate options.txt in standard Minecraft Bedrock paths.
+        Returns absolute path or None.
+        """
+        # Common locations
+        user_home = os.path.expanduser("~")
+        base_paths = [
+            os.path.join(user_home, "AppData", "Roaming", "Minecraft Bedrock", "Users"),
+            os.path.join(user_home, "AppData", "Local", "Packages", "Microsoft.MinecraftUWP_8wekyb3d8bbwe", "LocalState", "games", "com.mojang", "minecraftpe")
+        ]
+        
+        # Check specific known path for this user first
+        # Check Roaming/Minecraft Bedrock/Users/*
+        roaming_users = base_paths[0]
+        if os.path.exists(roaming_users):
+            for userid in os.listdir(roaming_users):
+                candidate = os.path.join(roaming_users, userid, "games", "com.mojang", "minecraftpe", "options.txt")
+                if os.path.exists(candidate):
+                    return candidate
+
+        # Check LocalState (UWP)
+        uwp_options = os.path.join(base_paths[1], "options.txt")
+        if os.path.exists(uwp_options):
+            return uwp_options
+
+        return None
+
+    def find_all_options_txt(self) -> list:
+        """
+        Finds ALL options.txt files across known Minecraft Bedrock paths.
+        Returns a list of (label, absolute_path) tuples.
+        """
+        results = []
+        user_home = os.path.expanduser("~")
+
+        # 1. GDK / Roaming path — each subfolder under Users/ is a profile
+        roaming_users = os.path.join(
+            user_home, "AppData", "Roaming", "Minecraft Bedrock", "Users"
+        )
+        if os.path.isdir(roaming_users):
+            for userid in os.listdir(roaming_users):
+                candidate = os.path.join(
+                    roaming_users, userid, "games",
+                    "com.mojang", "minecraftpe", "options.txt"
+                )
+                if os.path.isfile(candidate):
+                    results.append((f"GDK — {userid}", candidate))
+
+        # 2. UWP (Microsoft Store) path — single profile
+        uwp_path = os.path.join(
+            user_home, "AppData", "Local", "Packages",
+            "Microsoft.MinecraftUWP_8wekyb3d8bbwe",
+            "LocalState", "games", "com.mojang",
+            "minecraftpe", "options.txt"
+        )
+        if os.path.isfile(uwp_path):
+            results.append(("UWP (Microsoft Store)", uwp_path))
+
+        return results
+
+    def read_options_txt(self, path: str) -> dict:
+        """
+        Reads options.txt and returns a dictionary of key-value pairs.
+        """
+        data = {}
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or ":" not in line:
+                        continue
+                    
+                    key, value = line.split(":", 1)
+                    
+                    if value.lower() in ["true"]:
+                        data[key] = 1
+                    elif value.lower() in ["false"]:
+                         data[key] = 0
+                    else:
+                        try:
+                            data[key] = int(value)
+                            continue
+                        except ValueError:
+                            pass
+                        try:
+                            data[key] = float(value)
+                            continue
+                        except ValueError:
+                            pass
+                        data[key] = value
+        except Exception as e:
+            print(f"Error reading options.txt: {e}")
+        return data
+
+    def write_options_txt(self, path: str, data: dict) -> bool:
+        """
+        Writes data back to options.txt.
+        """
+        try:
+            lines = []
+            for k, v in data.items():
+                lines.append(f"{k}:{v}")
+            
+            with open(path, 'w', encoding='utf-8') as f:
+                f.write("\\n".join(lines))
+            return True
+        except Exception as e:
+            print(f"Error writing options.txt: {e}")
             return False

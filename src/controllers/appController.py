@@ -8,6 +8,7 @@ from functools import partial
 from ..views.mainWindow import MainWindow
 from ..views.patchFrames import MainMenuFrame, PatchProgressFrame
 from ..views.otherFrames import CleanFrame, FixFrame
+from ..views.modals import RTXSettingsModal, AllSettingsWindow, OptionsFilePickerModal
 
 from ..models.configModel import ConfigModel
 from ..models.fileSystemModel import FileSystemModel
@@ -24,7 +25,7 @@ class AppController:
         self.fs = FileSystemModel()
         self.patcher = PatcherModel()
 
-        self.root = MainWindow(title="A&S Minecraft RTX Community Patcher V2", theme="superhero", onClose=self.quit)
+        self.root = MainWindow(title="A&S Minecraft RTX Community Patcher V2", theme="dark", onClose=self.quit)
         # Use new snake_case method
         self.root.setIcon(resourcePath(self.config.get_filename("icon")))
 
@@ -109,28 +110,30 @@ class AppController:
             "manual": lambda: self.show_patch_frame("manual"),
             "clean": self.show_clean_frame,
             "fix": self.show_fix_frame,
-            "exit": self.quit
+            "exit": self.quit,
+            "rtx_settings": self.show_rtx_settings,
+            "all_settings": self.show_all_settings
         }
         self.main_menu_frame = MainMenuFrame(self.root.container, menu_callbacks)
         self.root.addFrame("MainMenu", self.main_menu_frame)
 
         # 2. Patch Frame
-        self.patch_frame = PatchProgressFrame(self.root.container, "Patching", self.show_main_menu)
+        self.patch_frame = PatchProgressFrame(self.root.container, "Patching", self.back_to_main)
         self.root.addFrame("PatchFrame", self.patch_frame)
         self.patch_controller = PatchController(self.config, self.patcher, self.fs, self.patch_frame)
 
         # 3. Clean Frame
-        self.clean_frame = CleanFrame(self.root.container, None, self.show_main_menu)
+        self.clean_frame = CleanFrame(self.root.container, None, self.back_to_main)
         self.root.addFrame("CleanFrame", self.clean_frame)
         self.clean_controller = CleanController(self.config, self.fs, self.clean_frame)
-        self.clean_frame.confirmBtn.config(command=self.clean_controller.deleteFolders)
+        self.clean_frame.confirmBtn.configure(command=self.clean_controller.deleteFolders)
 
         # 4. Fix Frame
-        self.fix_frame = FixFrame(self.root.container, None, None, self.show_main_menu)
+        self.fix_frame = FixFrame(self.root.container, None, None, self.back_to_main)
         self.root.addFrame("FixFrame", self.fix_frame)
         self.fix_controller = FixController(self.config, self.fix_frame)
-        self.fix_frame.moveBtn.config(command=self.fix_controller.moveMarketplaceFolders)
-        self.fix_frame.restoreBtn.config(command=self.fix_controller.restoreMarketplaceFolders)
+        self.fix_frame.moveBtn.configure(command=self.fix_controller.moveMarketplaceFolders)
+        self.fix_frame.restoreBtn.configure(command=self.fix_controller.restoreMarketplaceFolders)
 
     def on_advanced_toggle(self, enabled: bool):
         self.is_advanced = enabled
@@ -141,20 +144,104 @@ class AppController:
         self.root.showFrame("MainMenu")
 
     def show_patch_frame(self, mode: str):
+        # Disable advanced mode switch when leaving main menu
+        self.root.setAdvancedSwitchEnabled(False)
+        
         self.root.showFrame("PatchFrame")
         if mode == "marketplace":
-            self.patch_frame.titleLabel.config(text="Patch from Marketplace")
+            self.patch_frame.titleLabel.configure(text="Patch from Marketplace")
             self.patch_controller.startMarketplacePatch()
         else:
-            self.patch_frame.titleLabel.config(text="Patch from Zip/McPack")
+            self.patch_frame.titleLabel.configure(text="Patch from Zip/McPack")
             self.patch_controller.startZipPatch()
 
     def show_clean_frame(self):
+        # Disable advanced mode switch when leaving main menu
+        self.root.setAdvancedSwitchEnabled(False)
+        
+        self.clean_controller.start_scan()
         self.root.showFrame("CleanFrame")
-        self.clean_controller.startScan()
 
     def show_fix_frame(self):
+        # Disable advanced mode switch when leaving main menu
+        self.root.setAdvancedSwitchEnabled(False)
+        
         self.root.showFrame("FixFrame")
+
+    def back_to_main(self):
+        # Re-enable advanced mode switch when returning to main menu
+        self.root.setAdvancedSwitchEnabled(True)
+        
+        # If patching was in progress, clean up
+        if hasattr(self, 'patch_controller') and self.patch_frame.is_patching:
+            self.patch_controller.cleanup()
+            self.patch_frame.is_patching = False
+        
+        self.root.showFrame("MainMenu")
+
+    def _get_options_files_then(self, callback):
+        """
+        Resolves which options.txt file(s) to work with, then calls
+        callback(selected_paths).  Shows a picker when multiple files exist.
+        """
+        all_files = self.config.find_all_options_txt()
+
+        if not all_files:
+            # Fallback: try legacy single-file lookup
+            single = self.config.find_options_txt()
+            if single:
+                all_files = [("options.txt", single)]
+            else:
+                messagebox.showerror("Error", "Could not find any Minecraft options.txt.")
+                return
+
+        # Always show picker so the user can browse for additional files
+        OptionsFilePickerModal(self.root, all_files, callback)
+
+    def show_rtx_settings(self):
+        def on_files_selected(paths):
+            # Define callback to apply changes to every selected file
+            def on_apply(changes):
+                success_count = 0
+                for path in paths:
+                    current_options = self.config.read_options_txt(path)
+                    for k, v in changes.items():
+                        current_options[k] = v
+                    if self.config.write_options_txt(path, current_options):
+                        success_count += 1
+
+                if success_count == len(paths):
+                    messagebox.showinfo("Settings",
+                        f"RTX Settings applied to {success_count} file(s).")
+                else:
+                    messagebox.showwarning("Settings",
+                        f"Applied to {success_count}/{len(paths)} file(s). Some failed.")
+
+            RTXSettingsModal(self.root, on_apply)
+
+        self._get_options_files_then(on_files_selected)
+
+    def show_all_settings(self):
+        def on_files_selected(paths):
+            # Read from first file for editing UI
+            current_options = self.config.read_options_txt(paths[0])
+
+            def on_save(new_config):
+                success_count = 0
+                for path in paths:
+                    if self.config.write_options_txt(path, new_config):
+                        success_count += 1
+
+                if success_count == len(paths):
+                    messagebox.showinfo("Settings",
+                        f"Configuration saved to {success_count} file(s).")
+                else:
+                    messagebox.showwarning("Settings",
+                        f"Saved to {success_count}/{len(paths)} file(s). Some failed.")
+
+            AllSettingsWindow(self.root, current_options, on_save)
+
+        self._get_options_files_then(on_files_selected)
 
     def run(self):
         self.root.mainloop()

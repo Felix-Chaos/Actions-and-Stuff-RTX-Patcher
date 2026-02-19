@@ -1,68 +1,69 @@
 import tkinter as tk
-import ttkbootstrap as ttk
-from ttkbootstrap.constants import *
+import customtkinter as ctk
+from src.gui.theme import *
 
-class CleanFrame(ttk.Frame):
+class CleanFrame(ctk.CTkFrame):
     def __init__(self, parent, onConfirm: callable, onBack: callable):
-        super().__init__(parent)
+        super().__init__(parent, fg_color="transparent")
         self.onConfirm = onConfirm
 
-        container = ttk.Frame(self, padding=30)
-        container.pack(expand=True, fill="both")
+        container = ctk.CTkFrame(self, fg_color=COLOR_SURFACE, corner_radius=15, border_width=2, border_color=COLOR_ACCENT_1)
+        container.pack(expand=True, fill="both", padx=40, pady=40)
 
-        self.label = ttk.Label(container, text="Searching for old packs...", font=("Segoe UI", 12))
-        self.label.pack(pady=(0, 10))
+        self.label = ctk.CTkLabel(container, text="Searching for old packs...", font=(FONT_FAMILY, 20), text_color=COLOR_TEXT)
+        self.label.pack(pady=(20, 10))
 
-        self.progressBar = ttk.Progressbar(container, mode='indeterminate', length=400, bootstyle=INFO)
-        self.progressBar.pack(pady=(0, 10))
+        self.progressBar = ctk.CTkProgressBar(container, orientation="horizontal", progress_color=COLOR_ACCENT_1, mode='indeterminate')
+        self.progressBar.pack(pady=(0, 20), fill="x", padx=40)
         self.progressBar.start()
 
-        self.resultsBox = tk.Text(container, height=10, width=70, state="disabled", wrap="none")
-        self.resultsBox.pack(pady=(5, 5))
+        self.resultsBox = ctk.CTkTextbox(container, height=200, font=("Consolas", 10), text_color="#dddddd", fg_color="#111111")
+        self.resultsBox.pack(pady=(5, 20), fill="both", expand=True, padx=20)
+        self.resultsBox.configure(state="disabled")
 
-        btnFrame = ttk.Frame(container)
-        btnFrame.pack(pady=(10, 0))
+        btnFrame = ctk.CTkFrame(container, fg_color="transparent")
+        btnFrame.pack(pady=(0, 20))
 
-        self.confirmBtn = ttk.Button(btnFrame, text="Confirm Deletion", width=20, state="disabled",
-                                     command=self.onConfirm, bootstyle=SUCCESS)
-        self.confirmBtn.pack(side="left", padx=5)
+        self.confirmBtn = ctk.CTkButton(btnFrame, text="Confirm Deletion", width=150, state="disabled",
+                                     command=self.onConfirm, **get_button_style("filled-primary"))
+        self.confirmBtn.pack(side="left", padx=10)
 
-        ttk.Button(btnFrame, text="Back", width=20, command=onBack, bootstyle=(DANGER, OUTLINE)).pack(side="left", padx=5)
+        ctk.CTkButton(btnFrame, text="Back", width=150, command=onBack, **get_button_style("danger")).pack(side="left", padx=10)
 
     def updateResults(self, text: str):
-        self.resultsBox.config(state="normal")
+        self.resultsBox.configure(state="normal")
         self.resultsBox.delete("1.0", "end")
         self.resultsBox.insert("end", text)
-        self.resultsBox.config(state="disabled")
+        self.resultsBox.configure(state="disabled")
 
     def enableConfirm(self):
-        self.confirmBtn.config(state="normal")
+        self.confirmBtn.configure(state="normal")
         self.progressBar.stop()
         self.progressBar.pack_forget()
 
-class FixFrame(ttk.Frame):
+class FixFrame(ctk.CTkFrame):
     def __init__(self, parent, onMove: callable, onRestore: callable, onBack: callable):
-        super().__init__(parent)
+        super().__init__(parent, fg_color="transparent")
 
-        container = ttk.Frame(self, padding=30)
-        container.pack(expand=True)
+        container = ctk.CTkFrame(self, fg_color=COLOR_SURFACE, corner_radius=15, border_width=2, border_color="#FF8800")
+        container.pack(expand=True, padx=40, pady=40)
 
-        ttk.Label(container, text="Fix for 1.21.80 Issues", font=("Segoe UI", 16, "bold")).pack(pady=(0, 20))
+        ctk.CTkLabel(container, text="Fix for 1.21.80 Issues", font=(FONT_FAMILY, 24, "bold"), text_color="#FF8800").pack(pady=(30, 20))
 
         infoText = (
-            "This fix moves your Marketplace texture packs from the 'premium_cache' folder to 'com.mojang'. "
+            "This fix moves your Marketplace texture packs from the 'premium_cache' folder to 'com.mojang'.\n\n"
             "This is a workaround for Minecraft 1.21.80 preventing MER maps from loading when Marketplace packs are active."
         )
-        ttk.Label(container, text=infoText, wraplength=450, justify="center").pack(pady=(0, 20))
+        ctk.CTkLabel(container, text=infoText, wraplength=450, justify="center", font=(FONT_FAMILY, 14)).pack(pady=(0, 30), padx=20)
 
-        ttk.Label(container, text="⚠️ Use Restore BEFORE patching new updates!", bootstyle=DANGER).pack(pady=(0, 20))
+        ctk.CTkLabel(container, text="⚠️ Use Restore BEFORE patching new updates!", text_color="#FF5555", font=(FONT_FAMILY, 14, "bold")).pack(pady=(0, 20))
 
-        self.moveBtn = ttk.Button(container, text="Move Marketplace Folders", width=30,
-                                  command=onMove, bootstyle=SUCCESS)
-        self.moveBtn.pack(pady=5)
+        self.moveBtn = ctk.CTkButton(container, text="Move Marketplace Folders", width=250, height=40,
+                                  command=onMove, **get_button_style("filled-primary"))
+        self.moveBtn.pack(pady=10)
 
-        self.restoreBtn = ttk.Button(container, text="Restore Marketplace Folders", width=30,
-                                     command=onRestore, bootstyle=WARNING)
-        self.restoreBtn.pack(pady=5)
+        self.restoreBtn = ctk.CTkButton(container, text="Restore Marketplace Folders", width=250, height=40,
+                                      command=onRestore, fg_color="#FF8800", text_color="black", hover_color="#CC6600")
+        self.restoreBtn.pack(pady=10)
 
-        ttk.Button(container, text="Back", width=30, command=onBack, bootstyle=(SECONDARY, OUTLINE)).pack(pady=20)
+        ctk.CTkButton(container, text="Back", width=250, height=40, command=onBack, **get_button_style("secondary")).pack(pady=30)
