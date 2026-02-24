@@ -7,8 +7,7 @@ import tempfile
 import ttkbootstrap as tb
 from ttkbootstrap.constants import *
 import json
-import hashlib
-from tkinter import filedialog, Listbox, END, messagebox, ttk
+from tkinter import filedialog, Listbox, END, messagebox
 
 # Import deterministic compression logic
 # Ensure the script directory is in path
@@ -154,7 +153,7 @@ class PatchCreatorApp:
         tb.Entry(input_frame, textvariable=self.patch_version_var, width=15).pack(side=LEFT, padx=5)
 
         self.inject_manifest = tb.BooleanVar(value=True)
-        tb.Checkbutton(input_frame, text="Inject Custom Manifest/texts", 
+        tb.Checkbutton(input_frame, text="Inject Custom Manifest", 
                        variable=self.inject_manifest, bootstyle="round-toggle").pack(side=LEFT, padx=20)
 
         # Action Buttons
@@ -271,16 +270,22 @@ class PatchCreatorApp:
             source_enc_zip = os.path.join(temp_dir, "source_encrypted.zip")
 
             # 1. Compress Patched Directory (Target)
-            dir_to_compress_target = patched_dir
+            self.root.after(0, lambda: self.log("Preparing Patched Target (Copying)..."))
+            temp_patched_target = os.path.join(temp_dir, "patched_target_files")
+            if os.path.exists(temp_patched_target):
+                shutil.rmtree(temp_patched_target)
+            shutil.copytree(patched_dir, temp_patched_target)
+            
+            dir_to_compress_target = temp_patched_target
 
             if self.inject_manifest.get():
                 self.root.after(0, lambda: self.log("Injecting manifest.json (Baseline) into Patched Target..."))
                 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
                 manifest_path = os.path.join(project_root, "assets", "resources", "manifest.json")
                 if os.path.exists(manifest_path):
-                    shutil.copyfile(manifest_path, os.path.join(patched_dir, "manifest.json"))
+                    shutil.copyfile(manifest_path, os.path.join(dir_to_compress_target, "manifest.json"))
                     self.root.after(0, lambda: self.log("  ✓ Baseline Manifest injected into Patched Target."))
-                
+            
             self.root.after(0, lambda: self.log(f"Compressing Target: {os.path.basename(patched_dir)}..."))
             compress_deterministic(dir_to_compress_target, target_zip)
             
@@ -316,15 +321,12 @@ class PatchCreatorApp:
             dir_to_compress_dec = temp_dec_source
 
             if self.inject_manifest.get():
-                self.root.after(0, lambda: self.log("Injecting manifest.json (Baseline) into Decrypted Source..."))
+                self.root.after(0, lambda: self.log("Injecting manifest.json (Baseline)..."))
                 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
                 # CRITICAL: Must use the SAME manifest as the App uses for normalization
                 # App uses: assets/resources/manifest.json (Verified in patchController.py)
                 manifest_path = os.path.join(project_root, "assets", "resources", "manifest.json")
                 
-                # App ONLY normalizes the zip/mcpack source in _zipProcessWorker. 
-                # The marketplace source (_compressionWorker) is zipped AS-IS, raw.
-                # Therefore, we ONLY inject into the decrypted source!
                 if os.path.exists(manifest_path):
                     shutil.copyfile(manifest_path, os.path.join(temp_dec_source, "manifest.json"))
                     self.root.after(0, lambda: self.log("  ✓ Baseline Manifest injected."))
@@ -332,6 +334,24 @@ class PatchCreatorApp:
                     self.root.after(0, lambda: self.log(f"  ⚠️ Warning: {manifest_path} not found."))
                 
                 dir_to_compress_dec = temp_dec_source
+
+                # Dynamically update manifest if found (to match the Target if we want source to be versioned?)
+                # WAIT. The App OVERWRITES the manifest with the generic one before patching.
+                # So the Source used for patching MUST have the GENERIC manifest, unmodified.
+                # If we modify it here with version numbers, it will MISMATCH the App which uses the static generic one.
+                
+                # So: We inject the manifest, but we do NOT modify it for the SOURCE.
+                # The version info should be in the TARGET (Patched Directory).
+                
+                # ...Wait, if I don't modify it, how does the version get into the final pack?
+                # The final pack comes from applying the patch to the source.
+                # xdelta transforms Source -> Target.
+                # If Target has version numbers, xdelta handles that diff.
+                # Source MUST be the generic baseline.
+                
+                pass # removed the modification logic for SOURCE manifest to ensure hash match
+
+                pass # removed the modification logic for SOURCE manifest to ensure hash match
 
             self.root.after(0, lambda: self.log(f"Compressing Source Decrypted: {os.path.basename(decrypted_dir)}..."))
             compress_deterministic(dir_to_compress_dec, source_dec_zip)
@@ -368,7 +388,7 @@ class PatchCreatorApp:
             
             self.root.after(0, lambda: self.log(f"Calculated Patched Stats: {file_count} files, {folder_count} dirs"))
 
-            # 5. Generate patch_config.json with Stats & Validation
+            # 5. Generate patch_config.json with Stats
             self.root.after(0, lambda: self.log("Generating patch_config.json..."))
             self.generate_patch_config(encrypted_dir, output_dir, pack_ver, patch_ver, file_count, folder_count)
 
@@ -387,6 +407,7 @@ class PatchCreatorApp:
 
     def generate_patch_config(self, encrypted_dir, output_dir, pack_ver, patch_ver, patched_file_count, patched_folder_count):
         try:
+            import hashlib
             # Calculate Validation Data (Logo Hash)
             logo_path = os.path.join(encrypted_dir, "pack_icon.png")
             logo_hash = None
@@ -401,7 +422,7 @@ class PatchCreatorApp:
             # Check for Language File
             lang_path = os.path.join(encrypted_dir, "texts", "en_US.lang")
             has_lang = os.path.exists(lang_path)
-            
+
             config_data = {
                 "packVersion": pack_ver,
                 "patchVersion": patch_ver,
@@ -440,7 +461,7 @@ class PatchCreatorApp:
         else:
              self.root.after(0, lambda: self.log(f"  ❌ Failed to create {os.path.basename(output)}"))
              self.root.after(0, lambda: self.log(f"     Stderr: {result.stderr}"))
-             raise Exception(f"XDelta failed for {os.path.basename(output)}\nStdout: {result.stdout}\nStderr: {result.stderr}")
+             raise Exception(f"XDelta failed for {os.path.basename(output)}")
 
 if __name__ == "__main__":
     app = tb.Window(themename="darkly")

@@ -4,15 +4,15 @@
     "description": "§eRTX compatibility texture pack §c[Not Official]\n§eMade by Javlier and Felix Chaos",
     "name": "§eA&S for RTX §71.9.1",
     "uuid": "b47620d0-4e49-4e34-8175-4adfddb8a2d8",
-    "version": [1, 1, 26],
-    "min_engine_version": [1, 21, 120]
+    "version": [1, 0, 20],
+    "min_engine_version": [1, 21, 50]
   },
   "modules": [
     {
       "description": "By Oreville Studios",
       "type": "resources",
       "uuid": "aaf3eeb9-e909-4a87-aff5-2aa6b07866dc",
-      "version": [1, 1, 26]
+      "version": [1, 0, 21]
     }
   ],
   "metadata": {
