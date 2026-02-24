@@ -159,7 +159,7 @@ class AppController:
         # Disable advanced mode switch when leaving main menu
         self.root.setAdvancedSwitchEnabled(False)
         
-        self.clean_controller.start_scan()
+        self.clean_controller.startScan()
         self.root.showFrame("CleanFrame")
 
     def show_fix_frame(self):
