@@ -1,11 +1,11 @@
-import customtkinter as ctk
 import tkinter as tk
 from typing import Callable, List, Tuple
+import customtkinter as ctk
 from src.gui.theme import *
 
 
 class MainWindow(ctk.CTk):
-    def __init__(self, title: str, theme: str = "dark", onClose: Callable = None):
+    def __init__(self, title: str, _theme: str = "dark", onClose: Callable = None):
         super().__init__()
 
         # Apply Theme
@@ -95,9 +95,6 @@ class MainWindow(ctk.CTk):
 
     def toggleAdvanced(self):
         """Called when the advanced mode switch is toggled."""
-        # This is a placeholder - the actual callback is set via bindAdvancedToggle
-        pass
-
     def setAdvancedSwitchEnabled(self, enabled: bool):
         """Enable or disable the advanced mode switch."""
         if enabled:

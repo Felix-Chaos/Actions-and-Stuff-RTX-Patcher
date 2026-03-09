@@ -43,7 +43,7 @@ class PatchController:
                 try:
                     clean = v_str.lstrip('v')
                     return tuple(map(int, clean.split('.')))
-                except:
+                except Exception:
                     return (0,)
 
             sorted_keys = sorted(list(raw_versions.keys()),
@@ -112,7 +112,7 @@ class PatchController:
             x = self.view.winfo_rootx() + (self.view.winfo_width() // 2) - (450 // 2)
             y = self.view.winfo_rooty() + (self.view.winfo_height() // 2) - (400 // 2)
             dialog.geometry(f"+{x}+{y}")
-        except:
+        except Exception:
             pass
 
         container = ctk.CTkFrame(dialog, corner_radius=10)
@@ -211,7 +211,7 @@ class PatchController:
             x = self.view.winfo_rootx() + (self.view.winfo_width() // 2) - (400 // 2)
             y = self.view.winfo_rooty() + (self.view.winfo_height() // 2) - (250 // 2)
             dialog.geometry(f"+{x}+{y}")
-        except:
+        except Exception:
             pass
 
         container = ctk.CTkFrame(dialog, corner_radius=10)
@@ -297,7 +297,7 @@ class PatchController:
                     for byte_block in iter(lambda: f.read(4096), b""):
                         sha256_hash.update(byte_block)
                 return sha256_hash.hexdigest().lower()
-            except:
+            except Exception:
                 return None
 
         # Helper: Check Manifest for Indicators
@@ -331,7 +331,7 @@ class PatchController:
                         if "Oreville Studios" in author:
                             return True
 
-            except:
+            except Exception:
                 pass
             return False
 
@@ -358,7 +358,7 @@ class PatchController:
                                     if extracted_version:
                                         break
                         return True, extracted_version
-            except:
+            except Exception:
                 pass
             return False, None
 
@@ -443,7 +443,7 @@ class PatchController:
                         try:
                             clean = v_str.lstrip('v')
                             return tuple(map(int, clean.split('.')))
-                        except:
+                        except Exception:
                             return (0,)
 
                     sorted_ver_keys = sorted(
@@ -700,7 +700,7 @@ class PatchController:
                         x = self.view.winfo_rootx() + 50
                         y = self.view.winfo_rooty() + 50
                         dialog.geometry(f"+{x}+{y}")
-                    except:
+                    except Exception:
                         pass
 
                     ctk.CTkLabel(
@@ -978,7 +978,7 @@ class PatchController:
                     try:
                         folder = os.path.dirname(output_file)
                         os.startfile(folder)
-                    except:
+                    except Exception:
                         pass
                 self.view.after(0, lambda: self.view.setSecondaryAction(
                     openFolder, "Open Folder"))

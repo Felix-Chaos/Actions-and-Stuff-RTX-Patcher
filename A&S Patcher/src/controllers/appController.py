@@ -1,6 +1,4 @@
-import tkinter as tk
 import os
-import sys
 import webbrowser
 from tkinter import messagebox
 from functools import partial

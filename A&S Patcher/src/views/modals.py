@@ -32,7 +32,7 @@ class SelectionModal(ctk.CTkToplevel):
                 # We can't easily access the icon path of parent unless stored.
                 # But we can try to re-apply if we know the path or just ignore.
                 pass
-        except:
+        except Exception:
             pass
 
         self.on_apply = on_apply
@@ -261,7 +261,7 @@ class AllSettingsWindow(ctk.CTkToplevel):
             x = parent.winfo_x() + (parent.winfo_width() // 2) - 300
             y = parent.winfo_y() + (parent.winfo_height() // 2) - 350
             self.geometry(f"+{x}+{y}")
-        except:
+        except Exception:
             pass
 
         self.config_data = config_data  # Reference to config dict
@@ -362,7 +362,7 @@ class AllSettingsWindow(ctk.CTkToplevel):
                     elif isinstance(val, int):
                         try:
                             target_dict[key] = int(raw_val)
-                        except:
+                        except Exception:
                             pass
                     elif isinstance(val, str):
                         target_dict[key] = str(raw_val)
