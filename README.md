@@ -1,4 +1,4 @@
-<img width="800" alt="Actions & Stuff RTX Patcher Logo" src="./assets/resources/as_rtx_simple_logo_.png" />
+<img width="800" alt="Actions & Stuff RTX Patcher Logo" src="./A&S Patcher/assets/resources/as_rtx_simple_logo_.png" />
 
 ---
 
