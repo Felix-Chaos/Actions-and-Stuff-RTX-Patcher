@@ -66,12 +66,12 @@ This ensures RTX visuals are properly integrated **without redistributing** any 
 
 ## 📁 Repository Overview
 
-| Name                    | Description                                                        | Link                              | Status      |
-| ----------------------- | ------------------------------------------------------------------ | --------------------------------- | ----------- |
-| **A&S RTX Patcher V2**  | Main patcher executable (Marketplace & Zip support)                | [Source](./src)                   | ✅ Active   |
-| **Brarchive Extractor** | Tool to extract, modify, and repack `.brarchive` assets            | [Source](./brarchive%20Extractor) | ✅ Active   |
-| **Documentation**       | How-to guides and setup instructions for our tools                 | [Docs](./docs)                    | 📚 Updated  |
-| **Tools**               | Utilities for creating custom patches or self-building the patcher | [Tools](./tools)                  | 🧰 Included |
+| Name                    | Description                                                        | Link                             | Status      |
+| ----------------------- | ------------------------------------------------------------------ | -------------------------------- | ----------- |
+| **A&S RTX Patcher V2**  | Main patcher executable (Marketplace & Zip support)                | [Source](./A%26S%20Patcher)      | ✅ Active   |
+| **Brarchive Extractor** | Tool to extract, modify, and repack `.brarchive` assets            | [Source](./brachiveextractor)    | ✅ Active   |
+| **Documentation**       | How-to guides and setup instructions for our tools                 | [Docs](./docs)                   | 📚 Updated  |
+| **Tools**               | Utilities for creating custom patches or self-building the patcher | [Tools](./A%26S%20Patcher/tools) | 🧰 Included |
 
 ---
 
