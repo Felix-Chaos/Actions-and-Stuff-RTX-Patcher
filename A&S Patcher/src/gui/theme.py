@@ -27,13 +27,12 @@ FONT_FAMILY = "Segoe UI"
 def create_gradient_image(width, height, color1, color2):
     """Generates a vertical gradient image."""
     base = Image.new('RGB', (width, height), color1)
-    top = Image.new('RGB', (width, height), color1)
     bottom = Image.new('RGB', (width, height), color2)
 
     mask = Image.new('L', (width, height))
     mask_data = []
     for y in range(height):
-        for x in range(width):
+        for _ in range(width):
             mask_data.append(int(255 * (y / height)))
     mask.putdata(mask_data)
 

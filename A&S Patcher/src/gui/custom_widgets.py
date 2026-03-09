@@ -26,9 +26,9 @@ class GradientFrame(ctk.CTkFrame):
         return tuple(int(hex_col[i:i+2], 16) for i in (0, 2, 4))
 
     def _rgb_to_hex(self, rgb):
-        return '#%02x%02x%02x' % rgb
+        return f'#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}'
 
-    def _draw_gradient(self, event=None):
+    def _draw_gradient(self, _event=None):
         """Draws the gradient on the canvas."""
         width = self.winfo_width()
         height = self.winfo_height()

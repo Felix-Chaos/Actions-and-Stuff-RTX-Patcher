@@ -74,7 +74,7 @@ class ConfigModel:
                 config_file = os.path.join(full_path, "patch_config.json")
                 if os.path.exists(config_file):
                     try:
-                        with open(config_file, "r") as f:
+                        with open(config_file, "r", encoding="utf-8") as f:
                             data = json.load(f)
 
                         # We need packVersion to be the key
@@ -215,7 +215,7 @@ class ConfigModel:
         if not os.path.exists(config_path):
             return False
         try:
-            with open(config_path, 'r') as f:
+            with open(config_path, 'r', encoding="utf-8") as f:
                 loaded_config = json.load(f)
 
             # Deep merge logic could go here, but for now we basically override paths
@@ -251,7 +251,7 @@ class ConfigModel:
             if "patchVersions" in data_to_save:
                 del data_to_save["patchVersions"]
 
-            with open(config_path, 'w') as f:
+            with open(config_path, 'w', encoding="utf-8") as f:
                 json.dump(data_to_save, f, indent=4)
             return True
         except Exception as e:
@@ -392,7 +392,7 @@ class ConfigModel:
                     continue
 
                 # Exact split
-                key, val = original_line.split(":", 1)
+                key, _ = original_line.split(":", 1)
 
                 # If this key is in our new data, update it
                 if key in data:
