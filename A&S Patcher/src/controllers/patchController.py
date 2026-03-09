@@ -1,4 +1,6 @@
+# pylint: disable=too-many-lines
 import os
+import re
 import json
 import threading
 import hashlib
@@ -344,13 +346,17 @@ class PatchController:
                 # Limit read size to avoid memory issues with huge files (100KB is plenty for lang file)
                 with open(lang_path, 'r', encoding='utf-8', errors='ignore') as f:
                     content = f.read(102400)
-                    if "pack.name=Actions & Stuf" in content:
+                    if "pack.name=" in content and "Actions & Stuf" in content:
                         # Try to extract version: "pack.name=Actions & Stuff 1.9"
                         for line in content.splitlines():
                             if line.startswith("pack.name="):
                                 parts = line.split("Actions & Stuf")
                                 if len(parts) > 1:
-                                    extracted_version = parts[1].strip()
+                                    raw_str = parts[1]
+                                    # Strip color codes and extract pure numeric semantic versioning
+                                    extracted_version = re.sub(r'[^0-9.]', '', raw_str).strip('.')
+                                    if extracted_version:
+                                        break
                         return True, extracted_version
             except:
                 pass
@@ -491,9 +497,15 @@ class PatchController:
                             else:
                                 self._log(
                                     f"  -> Candidate Version string '{lang_version_str}' unknown.")
+                                # Fallback to stats if text version is unknown
+                                if stats_match_version_key:
+                                    c_version_data = stats_match_data
+                                    c_version_key = stats_match_version_key
+                                    c_method = 'stats_fallback'
+                                    self._log(f"  -> Falling back to stats match: {c_version_key}")
 
                         # Case B: Stats matched a known version
-                        elif stats_match_version_key:
+                        if not c_version_data and stats_match_version_key:
                             c_version_data = stats_match_data
                             c_version_key = stats_match_version_key
                             c_method = 'stats'

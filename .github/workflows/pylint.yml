@@ -28,6 +28,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install pylint
 
-      - name: Analysing the code with pylint
+      - name: Run Pylint on Patcher
         run: |
-          pylint $(git ls-files '*.py')
+          cd "A&S Patcher"
+          pylint src/ main.py
+
+      - name: Run Pylint on Extractor
+        run: |
+          cd brachiveextractor
+          pylint main.py extractor_core.py brarchive_format.py

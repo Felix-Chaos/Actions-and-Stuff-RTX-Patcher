@@ -26,13 +26,18 @@ venv/
 .vscode/
 node_modules
 
+# A&S Patcher files
+A&S Patcher/app.log
+A&S Patcher/build/
+A&S Patcher/dist/
+A&S Patcher/*.spec
+A&S Patcher/temp_rs/
+
 # Brarchive Extractor files
-db.json
-brarchive Extractor/build/
-brarchive Extractor/dist/
-brarchive Extractor/*.spec
-brarchive Extractor/test_output/
-brarchive Extractor/db.json
-brarchive Extractor/__pycache__/
-temp_rs/
+brachiveextractor/build/
+brachiveextractor/dist/
+brachiveextractor/*.spec
+brachiveextractor/test_output/
+brachiveextractor/db.json
+brachiveextractor/__pycache__/
 temp_test_pack/
