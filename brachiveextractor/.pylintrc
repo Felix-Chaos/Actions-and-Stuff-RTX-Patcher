@@ -24,6 +24,8 @@ disable=
     too-many-instance-attributes,
     too-many-ancestors,
     too-many-nested-blocks,
-    no-member
+    no-member,
+    too-few-public-methods,
+    import-error
 [FORMAT]
 max-line-length=160

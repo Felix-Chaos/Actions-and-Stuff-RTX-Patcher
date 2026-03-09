@@ -2,7 +2,7 @@ import os
 import tkinter as tk
 from tkinter import filedialog
 import customtkinter as ctk
-from PIL import Image, ImageTk
+from PIL import Image
 from src.gui.theme import *
 from ..utils.helpers import resourcePath
 
