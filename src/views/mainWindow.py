@@ -3,13 +3,14 @@ import tkinter as tk
 from typing import Callable, List, Tuple
 from src.gui.theme import *
 
+
 class MainWindow(ctk.CTk):
     def __init__(self, title: str, theme: str = "dark", onClose: Callable = None):
         super().__init__()
-        
+
         # Apply Theme
         apply_theme()
-        
+
         self.title(title)
         self.geometry("900x700")
         self.configure(fg_color=COLOR_BG_BOTTOM)
@@ -37,16 +38,18 @@ class MainWindow(ctk.CTk):
         self.container.pack(fill="both", expand=True)
 
         # Footer (Minimalist/Transparent)
-        self.footer = ctk.CTkFrame(self, height=30, fg_color="#111111", corner_radius=0) # Dark bar at bottom
+        self.footer = ctk.CTkFrame(
+            self, height=30, fg_color="#111111", corner_radius=0)  # Dark bar at bottom
         self.footer.pack(fill="x", side="bottom")
 
-        self.versionLabel = ctk.CTkLabel(self.footer, text="v2.0.0", text_color="gray", font=(FONT_FAMILY, 10))
+        self.versionLabel = ctk.CTkLabel(
+            self.footer, text="v2.0.0", text_color="gray", font=(FONT_FAMILY, 10))
         self.versionLabel.pack(side="left", padx=10)
 
         self.advancedVar = ctk.BooleanVar(value=False)
         self.advancedSwitch = ctk.CTkSwitch(self.footer, text="Advanced Mode", command=self.toggleAdvanced,
-                                       progress_color=COLOR_ACCENT_1, fg_color="#333333", button_color="white",
-                                       font=(FONT_FAMILY, 11), text_color="gray", variable=self.advancedVar)
+                                            progress_color=COLOR_ACCENT_1, fg_color="#333333", button_color="white",
+                                            font=(FONT_FAMILY, 11), text_color="gray", variable=self.advancedVar)
         self.advancedSwitch.pack(side="right", padx=10, pady=5)
 
         # The original advancedSwitch and version label were replaced/modified by the snippet.
@@ -67,7 +70,8 @@ class MainWindow(ctk.CTk):
             self.currentFrame = frame
 
     def setIcon(self, iconPath: str):
-        if not iconPath: return
+        if not iconPath:
+            return
         try:
             self.iconbitmap(iconPath)
         except Exception:
@@ -75,7 +79,8 @@ class MainWindow(ctk.CTk):
 
     def populateToolsMenu(self, scripts: List[Tuple[str, str, Callable]]):
         if not scripts:
-            self.toolsMenu.add_command(label="No scripts found", state="disabled")
+            self.toolsMenu.add_command(
+                label="No scripts found", state="disabled")
             return
         for label, _, command in scripts:
             self.toolsMenu.add_command(label=label, command=command)
@@ -99,13 +104,13 @@ class MainWindow(ctk.CTk):
             self.advancedSwitch.configure(state="normal")
         else:
             self.advancedSwitch.configure(state="disabled")
-    
+
     def showAdvancedModeInfo(self):
         """Show info message when trying to toggle advanced mode outside main menu."""
         from tkinter import messagebox
-        messagebox.showinfo("Advanced Mode", 
-                          "Advanced Mode can only be changed from the Main Menu.\n\n"
-                          "Please return to the Main Menu to toggle this setting.")
+        messagebox.showinfo("Advanced Mode",
+                            "Advanced Mode can only be changed from the Main Menu.\n\n"
+                            "Please return to the Main Menu to toggle this setting.")
 
     def bindAdvancedToggle(self, callback: Callable):
         def wrapped_callback():
@@ -114,5 +119,5 @@ class MainWindow(ctk.CTk):
                 callback(self.advancedVar.get())
             else:
                 self.showAdvancedModeInfo()
-        
+
         self.advancedSwitch.configure(command=wrapped_callback)

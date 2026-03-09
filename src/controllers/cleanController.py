@@ -4,11 +4,12 @@ from tkinter import messagebox
 from ..models.configModel import ConfigModel
 from ..models.fileSystemModel import FileSystemModel
 
+
 class CleanController:
     def __init__(self, config: ConfigModel, fs: FileSystemModel, view):
         self.config = config
         self.fs = fs
-        self.view = view # CleanFrame
+        self.view = view  # CleanFrame
         self.foundFolders = []
         self.cancelEvent = threading.Event()
 
@@ -19,25 +20,33 @@ class CleanController:
 
     def _scanWorker(self):
         pathsToScan = [
-            os.path.join(os.path.expandvars(self.config.get_path("minecraftUwp")), "games", "com.mojang"),
-            os.path.join(os.path.expandvars(self.config.get_path("minecraftUwpPreview")), "games", "com.mojang"),
+            os.path.join(os.path.expandvars(self.config.get_path(
+                "minecraftUwp")), "games", "com.mojang"),
+            os.path.join(os.path.expandvars(self.config.get_path(
+                "minecraftUwpPreview")), "games", "com.mojang"),
             # Add AppData paths (Launcher versions)
-            os.path.join(os.path.expandvars(self.config.get_path("minecraftBedrock")), "games", "com.mojang"),
+            os.path.join(os.path.expandvars(self.config.get_path(
+                "minecraftBedrock")), "games", "com.mojang"),
             # Handle specific launcher structure (Users/Shared)
-            os.path.join(os.path.expandvars(self.config.get_path("minecraftBedrock")), "Users", "Shared", "games", "com.mojang"),
-            os.path.join(os.path.expandvars(self.config.get_path("minecraftBedrockPreview")), "games", "com.mojang"),
+            os.path.join(os.path.expandvars(self.config.get_path(
+                "minecraftBedrock")), "Users", "Shared", "games", "com.mojang"),
+            os.path.join(os.path.expandvars(self.config.get_path(
+                "minecraftBedrockPreview")), "games", "com.mojang"),
         ]
 
         prefixes = self.config.get_cleanup_prefixes()
         resultsText = ""
 
         for basePath in pathsToScan:
-            if self.cancelEvent.is_set(): return
-            if not os.path.exists(basePath): continue
+            if self.cancelEvent.is_set():
+                return
+            if not os.path.exists(basePath):
+                continue
 
             # Check resource_packs
             rpPath = os.path.join(basePath, "resource_packs")
-            foundInRp = self.fs.scanDirectory(rpPath, prefixes, self.cancelEvent)
+            foundInRp = self.fs.scanDirectory(
+                rpPath, prefixes, self.cancelEvent)
             if foundInRp:
                 self.foundFolders.extend(foundInRp)
                 resultsText += f"In {os.path.basename(basePath)}/resource_packs:\n"
@@ -48,9 +57,12 @@ class CleanController:
             worldsPath = os.path.join(basePath, "minecraftWorlds")
             if os.path.exists(worldsPath):
                 for world in os.listdir(worldsPath):
-                    if self.cancelEvent.is_set(): return
-                    worldRpPath = os.path.join(worldsPath, world, "resource_packs")
-                    foundInWorld = self.fs.scanDirectory(worldRpPath, prefixes, self.cancelEvent)
+                    if self.cancelEvent.is_set():
+                        return
+                    worldRpPath = os.path.join(
+                        worldsPath, world, "resource_packs")
+                    foundInWorld = self.fs.scanDirectory(
+                        worldRpPath, prefixes, self.cancelEvent)
                     if foundInWorld:
                         self.foundFolders.extend(foundInWorld)
                         resultsText += f"In World {world}:\n"
@@ -61,8 +73,10 @@ class CleanController:
             self.view.after(0, lambda: self.view.updateResults(resultsText))
             self.view.after(0, self.view.enableConfirm)
         else:
-            self.view.after(0, lambda: self.view.updateResults("No old packs found."))
-            self.view.after(0, lambda: messagebox.showinfo("Clean", "No old packs found."))
+            self.view.after(0, lambda: self.view.updateResults(
+                "No old packs found."))
+            self.view.after(0, lambda: messagebox.showinfo(
+                "Clean", "No old packs found."))
 
     def deleteFolders(self):
         deletedCount = 0

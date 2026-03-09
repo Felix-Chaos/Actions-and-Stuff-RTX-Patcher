@@ -12,6 +12,7 @@ import zipfile
 import threading
 from typing import Tuple, List, Callable, Optional
 
+
 class FileSystemModel:
     """
     Handles all file system operations including scanning, compressing,
@@ -82,11 +83,12 @@ class FileSystemModel:
         """
         try:
             # 1. Count total files for progress tracking
-            total_files = sum(len(files) for _, _, files in os.walk(folder_path))
+            total_files = sum(len(files)
+                              for _, _, files in os.walk(folder_path))
             if total_files == 0:
                 if log_callback:
                     log_callback("Warning: Source folder is empty.")
-                return True # Nothing to zip, but not technically a failure
+                return True  # Nothing to zip, but not technically a failure
 
             processed_files = 0
 
@@ -108,7 +110,8 @@ class FileSystemModel:
                         file_path = os.path.join(root, file)
 
                         # Normalize path separators to forward slashes for ZIP compatibility
-                        arcname = os.path.relpath(file_path, folder_path).replace("\\", "/")
+                        arcname = os.path.relpath(
+                            file_path, folder_path).replace("\\", "/")
 
                         # Create ZipInfo with fixed timestamp (Jan 1, 1980)
                         info = zipfile.ZipInfo(arcname)
