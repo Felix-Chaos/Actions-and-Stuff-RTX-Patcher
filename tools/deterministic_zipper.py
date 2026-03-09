@@ -19,7 +19,7 @@ def compress_deterministic(folder_path, output_zip):
         folder_path (str): Source directory.
         output_zip (str): Output zip file path.
     """
-    with zipfile.ZipFile(output_zip, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
+    with zipfile.ZipFile(output_zip, 'w', compression=zipfile.ZIP_STORED) as zf:
         for root, _, files in sorted(os.walk(folder_path)):
             for file in sorted(files):
                 file_path = os.path.join(root, file)
@@ -28,7 +28,7 @@ def compress_deterministic(folder_path, output_zip):
                 # Consistent DOS-compatible timestamp: Jan 1, 1980
                 info = zipfile.ZipInfo(arcname)
                 info.date_time = (1980, 1, 1, 0, 0, 0)
-                info.compress_type = zipfile.ZIP_DEFLATED
+                info.compress_type = zipfile.ZIP_STORED
 
                 with open(file_path, 'rb') as f:
                     zf.writestr(info, f.read())
@@ -62,8 +62,14 @@ def main():
     """Main entry point for the GUI."""
     print("Starting Deterministic Zipper GUI...")
     root = tk.Tk()
-    root.title("Deterministic Zipper")
+    root.title("A&S RTX Deterministic Zipper")
     root.geometry("400x150")
+
+    try:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        icon_path = os.path.abspath(os.path.join(base_dir, "..", "assets", "resources", "icon.ico"))
+        root.iconbitmap(icon_path)
+    except: pass
 
     status_label = tk.Label(root, text="Select a folder to compress.", padx=10, pady=10)
     status_label.pack()

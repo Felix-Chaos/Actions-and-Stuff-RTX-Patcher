@@ -91,8 +91,8 @@ class FileSystemModel:
             processed_files = 0
 
             # 2. Create the ZIP file
-            # ZIP_DEFLATED provides standard compression.
-            with zipfile.ZipFile(output_zip, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
+            # ZIP_STORED ensures no compression for bit-perfect output matching across OS/Python versions.
+            with zipfile.ZipFile(output_zip, 'w', compression=zipfile.ZIP_STORED) as zf:
 
                 # Walk the directory tree (sorted for deterministic order)
                 for root, _, files in sorted(os.walk(folder_path)):
@@ -113,7 +113,7 @@ class FileSystemModel:
                         # Create ZipInfo with fixed timestamp (Jan 1, 1980)
                         info = zipfile.ZipInfo(arcname)
                         info.date_time = (1980, 1, 1, 0, 0, 0)
-                        info.compress_type = zipfile.ZIP_DEFLATED
+                        info.compress_type = zipfile.ZIP_STORED
 
                         # Read and write file data
                         try:

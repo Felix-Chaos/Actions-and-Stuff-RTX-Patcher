@@ -760,7 +760,7 @@ class PatchController:
             self.view.after(0, lambda: self._onReadyToPatch(normalized_zip, "zip", detected_version_data))
 
         except Exception as e:
-            self.view.after(0, lambda: messagebox.showerror("Error", f"Failed to process zip: {e}"))
+            self.view.after(0, lambda e=e: showErrorWithCopy("Error", f"Failed to process zip:\n{e}", self.view))
             self.view.after(0, self.view.onBack)
 
     def _onReadyToPatch(self, source_zip: str, mode: str, detected_version_data: dict = None):
@@ -768,8 +768,7 @@ class PatchController:
         self.view.setProgress(100, 'determinate')
 
         def runPatchAction():
-            if messagebox.askyesno("Clean Update?", "Do you want to clean old versions of the pack before patching?\n(Recommended for updates)"):
-                self.view.setStatus("Cleaning old versions...")
+            if self.view.cleanOldVersionsVar.get():
                 self.view.setStatus("Cleaning old versions...")
                 
                 # Scan ALL possible paths (Mirrors CleanController logic)
@@ -868,7 +867,7 @@ class PatchController:
                     self._log(f"launched {result}")
                 else:
                     self._log(f"Install failed: {result}")
-                    showErrorWithCopy("Install Failed", f"Could not launch pack:\n{result}", self.view)
+                    self.view.after(0, lambda: showErrorWithCopy("Install Failed", f"Could not launch pack:\n{result}", self.view))
 
             self.view.after(0, lambda: self.view.setActionCommand(install, "Install Pack"))
             self.view.after(0, lambda: self.view.setActionState("normal"))
@@ -881,7 +880,7 @@ class PatchController:
                      except: pass
                  self.view.after(0, lambda: self.view.setSecondaryAction(openFolder, "Open Folder"))
 
-            self.view.after(0, lambda: messagebox.showinfo("Success", "Patch created successfully! Click Install to launch Minecraft."))
+            self.view.after(0, lambda: self.view.setStatus("✅ Patch created successfully! Click Install to launch."))
         else:
             self.view.after(0, lambda: showErrorWithCopy("Patch Failed", msg, self.view))
             # self.view.after(0, self.view.onBack) # DISABLED FOR DEBUGGING
@@ -993,7 +992,7 @@ class PatchController:
                 self.view.after(0, lambda: patch_frame.setActionCommand(install, "Install Pack"))
                 self.view.after(0, lambda: patch_frame.setActionState("normal"))
                 self.view.after(0, lambda: patch_frame.setProgress(100, 'determinate'))
-                self.view.after(0, lambda: messagebox.showinfo("Success", "Patch created successfully! Click Install to launch."))
+                self.view.after(0, lambda: patch_frame.setStatus("✅ Patch created successfully! Click Install to launch."))
 
             else:
                 self.view.after(0, lambda: showErrorWithCopy("Patch Failed", msg, self.view))
