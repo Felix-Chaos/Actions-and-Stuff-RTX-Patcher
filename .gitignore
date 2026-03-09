@@ -24,3 +24,15 @@ venv/
 .DS_Store
 .idea/
 .vscode/
+node_modules
+
+# Brarchive Extractor files
+db.json
+brarchive Extractor/build/
+brarchive Extractor/dist/
+brarchive Extractor/*.spec
+brarchive Extractor/test_output/
+brarchive Extractor/db.json
+brarchive Extractor/__pycache__/
+temp_rs/
+temp_test_pack/

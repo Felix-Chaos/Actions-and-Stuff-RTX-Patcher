@@ -51,7 +51,7 @@ class MainMenuFrame(ctk.CTkFrame):
                       height=45, font=(FONT_FAMILY, 14, "bold"), corner_radius=8).pack(pady=10, padx=25, fill="x")
 
         # 2. Zip/Custom Patcher (Hidden by default) - FILLED CYAN BUTTON
-        self.zipBtn = ctk.CTkButton(primaryFrame, text="📦 Zip / Custom Patcher", command=self.callbacks.get("manual"),
+        self.zipBtn = ctk.CTkButton(primaryFrame, text="📦 Patch from Local File (Zip/Folder)", command=self.callbacks.get("manual"),
                       fg_color=COLOR_ACCENT_2, text_color="#000000", hover_color="#00c4d4",
                       height=45, font=(FONT_FAMILY, 14, "bold"), corner_radius=8)
         # self.zipBtn.pack(pady=10, padx=25, fill="x") # Hidden by default
@@ -163,13 +163,21 @@ class PatchProgressFrame(ctk.CTkFrame):
         self.logArea = ctk.CTkTextbox(self.logFrame, height=150, font=("Consolas", 10), text_color="#dddddd", fg_color="#111111")
         self.logArea.pack(fill="both", expand=True)
         self.logArea.configure(state='disabled')
+        
+        self.logBtnRow = ctk.CTkFrame(self.logFrame, fg_color="transparent")
+        self.logBtnRow.pack(fill="x", pady=(5,0))
+        ctk.CTkButton(self.logBtnRow, text="📋 Copy Log", width=100, command=self.copyLog, **get_button_style("secondary")).pack(side="right")
 
         self.statusLabel = ctk.CTkLabel(container, text="Ready...", text_color=COLOR_ACCENT_1)
         self.statusLabel.pack(pady=(10, 5))
 
         self.progressBar = ctk.CTkProgressBar(container, orientation="horizontal", progress_color=COLOR_ACCENT_1)
         self.progressBar.set(0)
-        self.progressBar.pack(pady=(0, 20), fill="x", padx=40)
+        self.progressBar.pack(pady=(0, 10), fill="x", padx=40)
+
+        self.cleanOldVersionsVar = ctk.BooleanVar(value=True)
+        self.cleanCheck = ctk.CTkCheckBox(container, text="Clean old versions before patching", variable=self.cleanOldVersionsVar, fg_color=COLOR_ACCENT_1, hover_color=COLOR_ACCENT_1)
+        self.cleanCheck.pack(pady=(0, 20))
 
         self.btnFrame = ctk.CTkFrame(container, fg_color="transparent")
         self.btnFrame.pack(pady=(0, 20))
@@ -240,6 +248,12 @@ class PatchProgressFrame(ctk.CTkFrame):
         self.logArea.insert(tk.END, text + "\n")
         self.logArea.see(tk.END)
         self.logArea.configure(state='disabled')
+
+    def copyLog(self):
+        text = self.logArea.get("1.0", tk.END)
+        self.clipboard_clear()
+        self.clipboard_append(text)
+        self.update()
 
     def setStatus(self, text: str):
         self.statusLabel.configure(text=text)

@@ -21,9 +21,15 @@ except ImportError:
 class PatchCreatorApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Patch Creator Tool")
+        self.root.title("A&S RTX Patch Creator")
         self.root.geometry("700x650")
         self.root.resizable(False, False)
+        
+        try:
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            icon_path = os.path.abspath(os.path.join(base_dir, "..", "assets", "resources", "icon.ico"))
+            self.root.iconbitmap(icon_path)
+        except: pass
         
         # Variables
         self.patched_dir = tb.StringVar()
@@ -128,16 +134,16 @@ class PatchCreatorApp:
         lbl.pack(pady=10)
         
         # 1. Patched Decrypted (Contains the changes - The "Goal" state)
-        self.create_folder_input("1. Modified/Patched Folder (The result you want):", self.patched_dir)
+        self.create_folder_input("1. Target Folder (Your modified, patched version):", self.patched_dir)
         
         # 2. Decrypted (Original Reference)
-        self.create_folder_input("2. Original Decrypted (Vanilla Reference):", self.decrypted_dir)
+        self.create_folder_input("2. Source Decrypted Folder (Vanilla baseline):", self.decrypted_dir)
         
         # 3. Encrypted (Original Reference) + Stats
-        self.create_folder_input("3. Original Encrypted (Vanilla Reference):", self.encrypted_dir, show_stats=True)
+        self.create_folder_input("3. Source Encrypted Folder (Vanilla baseline):", self.encrypted_dir, show_stats=True)
 
         # 4. Output Directory
-        self.create_folder_input("Output Directory (For .xdelta files):", self.output_dir)
+        self.create_folder_input("Output Directory (Where .vcdiff patches are saved):", self.output_dir)
 
         # Options
         self.pack_version_var = tb.StringVar(value="v1.9.1")
@@ -163,6 +169,7 @@ class PatchCreatorApp:
         self.start_btn = tb.Button(btn_frame, text="Create Patches", bootstyle=SUCCESS, command=self.start_process)
         self.start_btn.pack(side=LEFT, padx=10)
         
+        tb.Button(btn_frame, text="Copy Logs", bootstyle=INFO, command=self.copy_logs).pack(side=LEFT, padx=10)
         tb.Button(btn_frame, text="Clear Logs", bootstyle=SECONDARY, command=self.clear_logs).pack(side=LEFT, padx=10)
         
         # Log Box
@@ -218,6 +225,12 @@ class PatchCreatorApp:
         
     def clear_logs(self):
         self.log_box.delete(0, END)
+
+    def copy_logs(self):
+        self.root.clipboard_clear()
+        logs = self.log_box.get(0, END)
+        self.root.clipboard_append("\n".join(logs))
+        self.root.update()
 
     def toggle_inputs(self, state):
         # Helper to disable buttons during processing
@@ -283,8 +296,41 @@ class PatchCreatorApp:
                 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
                 manifest_path = os.path.join(project_root, "assets", "resources", "manifest.json")
                 if os.path.exists(manifest_path):
-                    shutil.copyfile(manifest_path, os.path.join(dir_to_compress_target, "manifest.json"))
-                    self.root.after(0, lambda: self.log("  ✓ Baseline Manifest injected into Patched Target."))
+                    target_manifest_path = os.path.join(dir_to_compress_target, "manifest.json")
+                    shutil.copyfile(manifest_path, target_manifest_path)
+                    
+                    # Dynamically inject the version strings into the Target manifest!
+                    try:
+                        with open(target_manifest_path, 'r', encoding='utf-8') as f:
+                            manifest_data = json.load(f)
+                            
+                        # Format versions into arrays
+                        # Assuming versions like "1.9.1" or "v1.9.1" - strip non digits and split
+                        clean_pack_ver = ''.join(c if c.isdigit() or c == '.' else '' for c in pack_ver).strip('.')
+                        if not clean_pack_ver: clean_pack_ver = "1.0.0"
+                        ver_parts = [int(p) for p in clean_pack_ver.split('.') if p.isdigit()]
+                        while len(ver_parts) < 3: ver_parts.append(0)
+                        
+                        if "header" in manifest_data:
+                            manifest_data["header"]["version"] = ver_parts[:3]
+                            if "name" in manifest_data["header"]:
+                                manifest_data["header"]["name"] = f"{manifest_data['header']['name']} ({pack_ver} - Patch {patch_ver})"
+                            if "description" in manifest_data["header"]:
+                                manifest_data["header"]["description"] += f" | {pack_ver} Patch {patch_ver}"
+
+                        if "modules" in manifest_data and isinstance(manifest_data["modules"], list):
+                            for mod in manifest_data["modules"]:
+                                if "version" in mod:
+                                    mod["version"] = ver_parts[:3]
+
+                        with open(target_manifest_path, 'w', encoding='utf-8') as f:
+                            json.dump(manifest_data, f, indent=4)
+                            
+                        self.root.after(0, lambda: self.log(f"  ✓ Modified Target Manifest injected (Pack {pack_ver} | Patch {patch_ver})."))
+                    except Exception as e:
+                        self.root.after(0, lambda: self.log(f"  ⚠️ Warning: Failed to modify manifest JSON: {e}"))
+                else:
+                    self.root.after(0, lambda: self.log(f"  ⚠️ Warning: {manifest_path} not found."))
             
             self.root.after(0, lambda: self.log(f"Compressing Target: {os.path.basename(patched_dir)}..."))
             compress_deterministic(dir_to_compress_target, target_zip)
@@ -379,14 +425,14 @@ class PatchCreatorApp:
             self.root.after(0, lambda: self.log("Generating Patch: Encrypted -> Patched..."))
             self.run_xdelta(xdelta_path, source_enc_zip, target_zip, out_patch_enc)
 
-            # Calculate stats for patched directory to put in config
+            # Calculate stats for the ORIGINAL ENCRYPTED DIRECTORY to match the vanilla check
             file_count = 0
             folder_count = 0
-            for _, dirs, files in os.walk(patched_dir):
+            for _, dirs, files in os.walk(encrypted_dir):
                 folder_count += len(dirs)
                 file_count += len(files)
             
-            self.root.after(0, lambda: self.log(f"Calculated Patched Stats: {file_count} files, {folder_count} dirs"))
+            self.root.after(0, lambda: self.log(f"Calculated Encrypted Base Stats: {file_count} files, {folder_count} dirs"))
 
             # 5. Generate patch_config.json with Stats
             self.root.after(0, lambda: self.log("Generating patch_config.json..."))

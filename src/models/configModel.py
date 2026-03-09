@@ -316,48 +316,94 @@ class ConfigModel:
     def read_options_txt(self, path: str) -> dict:
         """
         Reads options.txt and returns a dictionary of key-value pairs.
+        Handles both actual newlines and literal '\\n' sequences.
         """
         data = {}
         try:
             with open(path, 'r', encoding='utf-8') as f:
-                for line in f:
-                    line = line.strip()
-                    if not line or ":" not in line:
+                content = f.read()
+                
+            # Some options.txt variants are entirely on one line with literal \n
+            if "\\n" in content and "\n" not in content:
+                lines = content.split("\\n")
+            else:
+                lines = content.splitlines()
+
+            for line in lines:
+                line = line.strip()
+                if not line or ":" not in line:
+                    continue
+                
+                key, value = line.split(":", 1)
+                
+                if value.lower() in ["true"]:
+                    data[key] = 1
+                elif value.lower() in ["false"]:
+                     data[key] = 0
+                else:
+                    try:
+                        data[key] = int(value)
                         continue
-                    
-                    key, value = line.split(":", 1)
-                    
-                    if value.lower() in ["true"]:
-                        data[key] = 1
-                    elif value.lower() in ["false"]:
-                         data[key] = 0
-                    else:
-                        try:
-                            data[key] = int(value)
-                            continue
-                        except ValueError:
-                            pass
-                        try:
-                            data[key] = float(value)
-                            continue
-                        except ValueError:
-                            pass
-                        data[key] = value
+                    except ValueError:
+                        pass
+                    try:
+                        data[key] = float(value)
+                        continue
+                    except ValueError:
+                        pass
+                    data[key] = value
         except Exception as e:
             print(f"Error reading options.txt: {e}")
+            
         return data
 
     def write_options_txt(self, path: str, data: dict) -> bool:
         """
-        Writes data back to options.txt.
+        Writes data back to options.txt, preserving existing lines and formatting where possible.
         """
         try:
-            lines = []
+            # First read all original lines
+            with open(path, 'r', encoding='utf-8') as f:
+                content = f.read()
+                
+            is_literal_newline = ("\\n" in content and "\n" not in content)
+            
+            if is_literal_newline:
+                lines = content.split("\\n")
+            else:
+                lines = content.splitlines()
+                
+            new_lines = []
+            keys_written = set()
+            
+            for line in lines:
+                original_line = line.rstrip('\n')
+                if not original_line or ":" not in original_line:
+                    new_lines.append(original_line)
+                    continue
+                    
+                # Exact split
+                key, val = original_line.split(":", 1)
+                
+                # If this key is in our new data, update it
+                if key in data:
+                    new_val = data[key]
+                    new_lines.append(f"{key}:{new_val}")
+                    keys_written.add(key)
+                else:
+                    new_lines.append(original_line)
+                    
+            # Append any keys that were in data but not in original file
             for k, v in data.items():
-                lines.append(f"{k}:{v}")
+                if k not in keys_written:
+                    new_lines.append(f"{k}:{v}")
+
+            # Re-join with the same method it was split
+            join_char = "\\n" if is_literal_newline else "\n"
             
             with open(path, 'w', encoding='utf-8') as f:
-                f.write("\\n".join(lines))
+                f.write(join_char.join(new_lines))
+                
             return True
         except Exception as e:
             print(f"Error writing options.txt: {e}")

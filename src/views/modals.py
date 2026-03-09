@@ -224,9 +224,10 @@ class OptionsFilePickerModal(ctk.CTkToplevel):
 
     def _apply(self):
         selected = [p for p, v in self.vars.items() if v.get()]
-        if selected:
-            self.on_select(selected)
         self.destroy()
+        if selected:
+            # Call after window is fully destroyed to prevent grab_set conflicts
+            self.master.after(10, lambda: self.on_select(selected))
 
 
 class AllSettingsWindow(ctk.CTkToplevel):
