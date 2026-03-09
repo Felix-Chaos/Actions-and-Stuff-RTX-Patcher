@@ -9,10 +9,12 @@ from typing import Dict, Any, Optional
 import os
 import json
 
+
 class ConfigModel:
     """
     Manages application configuration and resource paths.
     """
+
     def __init__(self):
         self.config: Dict[str, Any] = {
             "paths": {
@@ -46,18 +48,19 @@ class ConfigModel:
             "filesToRemove": ["contents.json", "signatures.json", "splashes.json", "sounds.json"],
             "dirsToRemove": ["texts"],
         }
-        
+
         # Load dynamic patches after init
         self.load_patch_versions()
 
         # Load local config overrides if present
         self.load_external_config("config.json")
-        
+
     def load_patch_versions(self):
         """
         Scans 'assets/Patches' for patch_config.json files and builds the patchVersions dict.
         """
-        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        base_dir = os.path.dirname(os.path.dirname(
+            os.path.dirname(os.path.abspath(__file__))))
         patches_root = os.path.join(base_dir, "assets", "Patches")
 
         if not os.path.exists(patches_root):
@@ -73,38 +76,39 @@ class ConfigModel:
                     try:
                         with open(config_file, "r") as f:
                             data = json.load(f)
-                        
+
                         # We need packVersion to be the key
                         if "packVersion" in data:
                             ver_key = data["packVersion"]
-                            
+
                             # Construct paths relative to assets if they aren't absolute or fully defined in JSON
                             # The previous format had explicit paths in config. Now we might infer them?
                             # Actually, let's keep it simple: we expect the JSON to contain the 'stats' and maybe 'patches'
                             # If 'patches' is missing, we infer it from the folder structure standard.
-                            
+
                             patch_entry = {}
-                            
+
                             # Stats are required
                             if "marketplace_pack_stats" in data:
                                 # The current schema (from create_patch) puts stats under "marketplace_pack_stats" -> "v1"
                                 # But main app expects "stats": {files, dirs} at root of version object
                                 # We need to adapt.
-                                
+
                                 # Check formats:
                                 if "v1" in data["marketplace_pack_stats"]:
                                     patch_entry["stats"] = data["marketplace_pack_stats"]["v1"]
                                 elif "stats" in data["marketplace_pack_stats"]:
-                                     # Handle case where "stats" is nested inside "marketplace_pack_stats" (Seen in 1.9b2)
+                                    # Handle case where "stats" is nested inside "marketplace_pack_stats" (Seen in 1.9b2)
                                     patch_entry["stats"] = data["marketplace_pack_stats"]["stats"]
                                 else:
-                                    patch_entry["stats"] = data["marketplace_pack_stats"] # Fallback
-                                    
+                                    # Fallback
+                                    patch_entry["stats"] = data["marketplace_pack_stats"]
+
                             elif "stats" in data:
                                 patch_entry["stats"] = data["stats"]
                             else:
-                                continue # No stats, useless for detection
-                            
+                                continue  # No stats, useless for detection
+
                             # Patches
                             # If defined in JSON, use them. Else construct.
                             if "patches" in data:
@@ -116,15 +120,15 @@ class ConfigModel:
                                 # Check for new simplified filenames first (Current standard)
                                 enc_new = "encrypted.vcdiff"
                                 dec_new = "decrypted.vcdiff"
-                                
+
                                 # Legacy filenames
                                 enc_old = "Actions & Stuff encrypted.zip.vcdiff"
                                 dec_old = "Actions & Stuff decrypted.zip.vcdiff"
-                                
+
                                 enc_path = enc_old
                                 if os.path.exists(os.path.join(full_path, enc_new)):
                                     enc_path = enc_new
-                                    
+
                                 dec_path = dec_old
                                 if os.path.exists(os.path.join(full_path, dec_new)):
                                     dec_path = dec_new
@@ -133,25 +137,27 @@ class ConfigModel:
                                     "encrypted": f"{relative_base}/{enc_path}",
                                     "decrypted": f"{relative_base}/{dec_path}"
                                 }
-                            
-                            patch_entry["patchVersion"] = data.get("patchVersion", "1.0")
-                            
+
+                            patch_entry["patchVersion"] = data.get(
+                                "patchVersion", "1.0")
+
                             # Load validation data if present
                             if "validation" in data:
                                 patch_entry["validation"] = data["validation"]
-                            
+
                             if ver_key not in loaded_versions:
                                 loaded_versions[ver_key] = []
                             loaded_versions[ver_key].append(patch_entry)
-                            
+
                     except Exception as e:
                         print(f"Failed to load patch config from {item}: {e}")
 
-        # If we found versions, update config. 
+        # If we found versions, update config.
         # Sort patches by patchVersion descending for each version
         if loaded_versions:
             for ver_key in loaded_versions:
-                loaded_versions[ver_key].sort(key=lambda x: x.get("patchVersion", "0"), reverse=True)
+                loaded_versions[ver_key].sort(
+                    key=lambda x: x.get("patchVersion", "0"), reverse=True)
             self.config["patchVersions"] = loaded_versions
 
     def get_path(self, key: str) -> Optional[str]:
@@ -182,18 +188,18 @@ class ConfigModel:
         versions = self.config.get("patchVersions", {})
         if not versions:
             return None
-        
+
         # Sort version keys (e.g. "v1.9", "v1.8") descending
         sorted_keys = sorted(versions.keys(), reverse=True)
         latest_key = sorted_keys[0]
-        
+
         # Get the list of patches for this version
         patches_list = versions[latest_key]
-        
+
         # The list is already sorted by patchVersion descending in load_patch_versions
         if patches_list:
             return patches_list[0]
-            
+
         return None
 
     def load_external_config(self, config_path: str) -> bool:
@@ -217,11 +223,11 @@ class ConfigModel:
                 for k, v in loaded_config["paths"].items():
                     if k in self.config["paths"]:
                         self.config["paths"][k] = v
-            
+
             # Merge other keys
             for k, v in loaded_config.items():
                 if k != "paths":
-                     self.config[k] = v
+                    self.config[k] = v
 
             return True
         except Exception:
@@ -232,22 +238,22 @@ class ConfigModel:
         Saves the current configuration to a JSON file.
         """
         try:
-             # We might want to filter out some runtime-only keys if any, but for now dump all
-             # Except maybe 'patchVersions' which is huge and dynamic? 
-             # No, if we want to allow editing everything, we should dump everything.
-             # However, 'patchVersions' is re-loaded from disk on init. 
-             # If we save it, we might duplicate or freeze it.
-             # Let's exclude 'patchVersions' from the saved file to keep it clean, 
-             # unless the user explicitly wants to override it?
-             # For now, let's exclude 'patchVersions' to avoid massive file bloat with redundant data.
-             
-             data_to_save = self.config.copy()
-             if "patchVersions" in data_to_save:
-                 del data_to_save["patchVersions"]
-                 
-             with open(config_path, 'w') as f:
-                 json.dump(data_to_save, f, indent=4)
-             return True
+            # We might want to filter out some runtime-only keys if any, but for now dump all
+            # Except maybe 'patchVersions' which is huge and dynamic?
+            # No, if we want to allow editing everything, we should dump everything.
+            # However, 'patchVersions' is re-loaded from disk on init.
+            # If we save it, we might duplicate or freeze it.
+            # Let's exclude 'patchVersions' from the saved file to keep it clean,
+            # unless the user explicitly wants to override it?
+            # For now, let's exclude 'patchVersions' to avoid massive file bloat with redundant data.
+
+            data_to_save = self.config.copy()
+            if "patchVersions" in data_to_save:
+                del data_to_save["patchVersions"]
+
+            with open(config_path, 'w') as f:
+                json.dump(data_to_save, f, indent=4)
+            return True
         except Exception as e:
             print(f"Failed to save config: {e}")
             return False
@@ -260,16 +266,19 @@ class ConfigModel:
         # Common locations
         user_home = os.path.expanduser("~")
         base_paths = [
-            os.path.join(user_home, "AppData", "Roaming", "Minecraft Bedrock", "Users"),
-            os.path.join(user_home, "AppData", "Local", "Packages", "Microsoft.MinecraftUWP_8wekyb3d8bbwe", "LocalState", "games", "com.mojang", "minecraftpe")
+            os.path.join(user_home, "AppData", "Roaming",
+                         "Minecraft Bedrock", "Users"),
+            os.path.join(user_home, "AppData", "Local", "Packages", "Microsoft.MinecraftUWP_8wekyb3d8bbwe",
+                         "LocalState", "games", "com.mojang", "minecraftpe")
         ]
-        
+
         # Check specific known path for this user first
         # Check Roaming/Minecraft Bedrock/Users/*
         roaming_users = base_paths[0]
         if os.path.exists(roaming_users):
             for userid in os.listdir(roaming_users):
-                candidate = os.path.join(roaming_users, userid, "games", "com.mojang", "minecraftpe", "options.txt")
+                candidate = os.path.join(
+                    roaming_users, userid, "games", "com.mojang", "minecraftpe", "options.txt")
                 if os.path.exists(candidate):
                     return candidate
 
@@ -322,7 +331,7 @@ class ConfigModel:
         try:
             with open(path, 'r', encoding='utf-8') as f:
                 content = f.read()
-                
+
             # Some options.txt variants are entirely on one line with literal \n
             if "\\n" in content and "\n" not in content:
                 lines = content.split("\\n")
@@ -333,13 +342,13 @@ class ConfigModel:
                 line = line.strip()
                 if not line or ":" not in line:
                     continue
-                
+
                 key, value = line.split(":", 1)
-                
+
                 if value.lower() in ["true"]:
                     data[key] = 1
                 elif value.lower() in ["false"]:
-                     data[key] = 0
+                    data[key] = 0
                 else:
                     try:
                         data[key] = int(value)
@@ -354,7 +363,7 @@ class ConfigModel:
                     data[key] = value
         except Exception as e:
             print(f"Error reading options.txt: {e}")
-            
+
         return data
 
     def write_options_txt(self, path: str, data: dict) -> bool:
@@ -365,26 +374,26 @@ class ConfigModel:
             # First read all original lines
             with open(path, 'r', encoding='utf-8') as f:
                 content = f.read()
-                
+
             is_literal_newline = ("\\n" in content and "\n" not in content)
-            
+
             if is_literal_newline:
                 lines = content.split("\\n")
             else:
                 lines = content.splitlines()
-                
+
             new_lines = []
             keys_written = set()
-            
+
             for line in lines:
                 original_line = line.rstrip('\n')
                 if not original_line or ":" not in original_line:
                     new_lines.append(original_line)
                     continue
-                    
+
                 # Exact split
                 key, val = original_line.split(":", 1)
-                
+
                 # If this key is in our new data, update it
                 if key in data:
                     new_val = data[key]
@@ -392,7 +401,7 @@ class ConfigModel:
                     keys_written.add(key)
                 else:
                     new_lines.append(original_line)
-                    
+
             # Append any keys that were in data but not in original file
             for k, v in data.items():
                 if k not in keys_written:
@@ -400,10 +409,10 @@ class ConfigModel:
 
             # Re-join with the same method it was split
             join_char = "\\n" if is_literal_newline else "\n"
-            
+
             with open(path, 'w', encoding='utf-8') as f:
                 f.write(join_char.join(new_lines))
-                
+
             return True
         except Exception as e:
             print(f"Error writing options.txt: {e}")

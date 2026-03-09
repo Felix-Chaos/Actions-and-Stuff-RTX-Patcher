@@ -10,6 +10,7 @@ import os
 import ctypes
 from typing import Tuple, Optional, Callable
 
+
 class PatcherModel:
     """
     Handles the interaction with external patching tools (xdelta3) and Minecraft packaging.
@@ -45,7 +46,8 @@ class PatcherModel:
 
             # Construct the command arguments for xdelta3
             # -v: verbose, -d: decompress, -s: source, -f: force overwrite
-            command = [xdelta_path, "-f", "-v", "-d", "-s", source_zip, patch_file, output_file]
+            command = [xdelta_path, "-f", "-v", "-d",
+                       "-s", source_zip, patch_file, output_file]
 
             # Configure subprocess to suppress the window on Windows
             creation_flags = 0
@@ -59,7 +61,7 @@ class PatcherModel:
             with subprocess.Popen(
                 command,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT, # Merge stderr into stdout to capture errors
+                stderr=subprocess.STDOUT,  # Merge stderr into stdout to capture errors
                 text=True,
                 creationflags=creation_flags,
                 startupinfo=startupinfo,
@@ -81,7 +83,8 @@ class PatcherModel:
 
                 if process.returncode != 0:
                     # Include last 5 lines of log in error message for debugging
-                    error_tail = "\n".join(accumulated_logs[-5:]) if accumulated_logs else "No output."
+                    error_tail = "\n".join(
+                        accumulated_logs[-5:]) if accumulated_logs else "No output."
                     return False, f"Patching failed with exit code {process.returncode}\nDetails:\n{error_tail}"
 
             return True, "Patch applied successfully."
@@ -124,7 +127,7 @@ class PatcherModel:
                     # FILE_ATTRIBUTE_HIDDEN = 2
                     ctypes.windll.kernel32.SetFileAttributesW(mcpack_file, 2)
             except Exception:
-                pass # Non-critical if attribute setting fails
+                pass  # Non-critical if attribute setting fails
 
             # Launch the file with the associated program (Minecraft)
             os.startfile(mcpack_file)

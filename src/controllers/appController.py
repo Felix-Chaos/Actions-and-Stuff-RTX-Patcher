@@ -19,13 +19,15 @@ from .cleanController import CleanController
 from .fixController import FixController
 from ..utils.helpers import resourcePath, runScriptInThread
 
+
 class AppController:
     def __init__(self):
         self.config = ConfigModel()
         self.fs = FileSystemModel()
         self.patcher = PatcherModel()
 
-        self.root = MainWindow(title="A&S Minecraft RTX Community Patcher V2", theme="dark", onClose=self.quit)
+        self.root = MainWindow(
+            title="A&S Minecraft RTX Community Patcher V2", theme="dark", onClose=self.quit)
         # Use new snake_case method
         self.root.setIcon(resourcePath(self.config.get_filename("icon")))
 
@@ -59,7 +61,8 @@ class AppController:
     def _load_dependencies_menu(self):
         def openVanillaRtx():
             if messagebox.askokcancel("Visit Website", "Open Vanilla Reforged RTX page?"):
-                webbrowser.open("https://www.curseforge.com/minecraft-bedrock/texture-packs/vanilla-reforged-rtx")
+                webbrowser.open(
+                    "https://www.curseforge.com/minecraft-bedrock/texture-packs/vanilla-reforged-rtx")
 
         def openBetterRtx():
             if messagebox.askokcancel("Visit Website", "Open BetterRTX (bedrock.graphics)?"):
@@ -67,7 +70,8 @@ class AppController:
 
         def openMarketplace():
             if messagebox.askokcancel("Visit Website", "Open Actions & Stuff (Marketplace)?"):
-                webbrowser.open("https://www.minecraft.net/en-us/marketplace/pdp/oreville-studios/actions--stuff-1.6/61c7a786-d7ad-49e0-a710-817121cd9795")
+                webbrowser.open(
+                    "https://www.minecraft.net/en-us/marketplace/pdp/oreville-studios/actions--stuff-1.6/61c7a786-d7ad-49e0-a710-817121cd9795")
 
         self.root.populateDepMenu([
             ("Install Vanilla Reforged RTX", openVanillaRtx),
@@ -114,26 +118,35 @@ class AppController:
             "rtx_settings": self.show_rtx_settings,
             "all_settings": self.show_all_settings
         }
-        self.main_menu_frame = MainMenuFrame(self.root.container, menu_callbacks)
+        self.main_menu_frame = MainMenuFrame(
+            self.root.container, menu_callbacks)
         self.root.addFrame("MainMenu", self.main_menu_frame)
 
         # 2. Patch Frame
-        self.patch_frame = PatchProgressFrame(self.root.container, "Patching", self.back_to_main)
+        self.patch_frame = PatchProgressFrame(
+            self.root.container, "Patching", self.back_to_main)
         self.root.addFrame("PatchFrame", self.patch_frame)
-        self.patch_controller = PatchController(self.config, self.patcher, self.fs, self.patch_frame)
+        self.patch_controller = PatchController(
+            self.config, self.patcher, self.fs, self.patch_frame)
 
         # 3. Clean Frame
-        self.clean_frame = CleanFrame(self.root.container, None, self.back_to_main)
+        self.clean_frame = CleanFrame(
+            self.root.container, None, self.back_to_main)
         self.root.addFrame("CleanFrame", self.clean_frame)
-        self.clean_controller = CleanController(self.config, self.fs, self.clean_frame)
-        self.clean_frame.confirmBtn.configure(command=self.clean_controller.deleteFolders)
+        self.clean_controller = CleanController(
+            self.config, self.fs, self.clean_frame)
+        self.clean_frame.confirmBtn.configure(
+            command=self.clean_controller.deleteFolders)
 
         # 4. Fix Frame
-        self.fix_frame = FixFrame(self.root.container, None, None, self.back_to_main)
+        self.fix_frame = FixFrame(
+            self.root.container, None, None, self.back_to_main)
         self.root.addFrame("FixFrame", self.fix_frame)
         self.fix_controller = FixController(self.config, self.fix_frame)
-        self.fix_frame.moveBtn.configure(command=self.fix_controller.moveMarketplaceFolders)
-        self.fix_frame.restoreBtn.configure(command=self.fix_controller.restoreMarketplaceFolders)
+        self.fix_frame.moveBtn.configure(
+            command=self.fix_controller.moveMarketplaceFolders)
+        self.fix_frame.restoreBtn.configure(
+            command=self.fix_controller.restoreMarketplaceFolders)
 
     def on_advanced_toggle(self, enabled: bool):
         self.is_advanced = enabled
@@ -146,10 +159,11 @@ class AppController:
     def show_patch_frame(self, mode: str):
         # Disable advanced mode switch when leaving main menu
         self.root.setAdvancedSwitchEnabled(False)
-        
+
         self.root.showFrame("PatchFrame")
         if mode == "marketplace":
-            self.patch_frame.titleLabel.configure(text="Patch from Marketplace")
+            self.patch_frame.titleLabel.configure(
+                text="Patch from Marketplace")
             self.patch_controller.startMarketplacePatch()
         else:
             self.patch_frame.titleLabel.configure(text="Patch from Zip/McPack")
@@ -158,25 +172,25 @@ class AppController:
     def show_clean_frame(self):
         # Disable advanced mode switch when leaving main menu
         self.root.setAdvancedSwitchEnabled(False)
-        
+
         self.clean_controller.startScan()
         self.root.showFrame("CleanFrame")
 
     def show_fix_frame(self):
         # Disable advanced mode switch when leaving main menu
         self.root.setAdvancedSwitchEnabled(False)
-        
+
         self.root.showFrame("FixFrame")
 
     def back_to_main(self):
         # Re-enable advanced mode switch when returning to main menu
         self.root.setAdvancedSwitchEnabled(True)
-        
+
         # If patching was in progress, clean up
         if hasattr(self, 'patch_controller') and self.patch_frame.is_patching:
             self.patch_controller.cleanup()
             self.patch_frame.is_patching = False
-        
+
         self.root.showFrame("MainMenu")
 
     def _get_options_files_then(self, callback):
@@ -192,7 +206,8 @@ class AppController:
             if single:
                 all_files = [("options.txt", single)]
             else:
-                messagebox.showerror("Error", "Could not find any Minecraft options.txt.")
+                messagebox.showerror(
+                    "Error", "Could not find any Minecraft options.txt.")
                 return
 
         # Always show picker so the user can browse for additional files
@@ -212,10 +227,10 @@ class AppController:
 
                 if success_count == len(paths):
                     messagebox.showinfo("Settings",
-                        f"RTX Settings applied to {success_count} file(s).")
+                                        f"RTX Settings applied to {success_count} file(s).")
                 else:
                     messagebox.showwarning("Settings",
-                        f"Applied to {success_count}/{len(paths)} file(s). Some failed.")
+                                           f"Applied to {success_count}/{len(paths)} file(s). Some failed.")
 
             RTXSettingsModal(self.root, on_apply)
 
@@ -234,10 +249,10 @@ class AppController:
 
                 if success_count == len(paths):
                     messagebox.showinfo("Settings",
-                        f"Configuration saved to {success_count} file(s).")
+                                        f"Configuration saved to {success_count} file(s).")
                 else:
                     messagebox.showwarning("Settings",
-                        f"Saved to {success_count}/{len(paths)} file(s). Some failed.")
+                                           f"Saved to {success_count}/{len(paths)} file(s). Some failed.")
 
             AllSettingsWindow(self.root, current_options, on_save)
 
