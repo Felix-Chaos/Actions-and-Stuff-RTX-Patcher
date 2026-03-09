@@ -155,8 +155,8 @@ class ConfigModel:
         # If we found versions, update config.
         # Sort patches by patchVersion descending for each version
         if loaded_versions:
-            for ver_key in loaded_versions:
-                loaded_versions[ver_key].sort(
+            for _, versions_list in loaded_versions.items():
+                versions_list.sort(
                     key=lambda x: x.get("patchVersion", "0"), reverse=True)
             self.config["patchVersions"] = loaded_versions
 

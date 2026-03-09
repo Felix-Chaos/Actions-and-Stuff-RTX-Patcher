@@ -7,8 +7,8 @@ import hashlib
 import tempfile
 import shutil
 import tkinter as tk
-import customtkinter as ctk
 from tkinter import messagebox, filedialog
+import customtkinter as ctk
 from src.gui.theme import *
 from ..models.configModel import ConfigModel
 from ..models.patcherModel import PatcherModel
@@ -283,7 +283,7 @@ class PatchController:
 
         target_versions = self.config.config["patchVersions"]
         found_folder = None
-        detected_version_data = None
+        _detected_version_data = None
         detected_version_key = None
         detection_method = 'unknown'
 
@@ -409,14 +409,13 @@ class PatchController:
                             "logo_hash", target_logo_hash)
 
                     logo_path = os.path.join(full_path, "pack_icon.png")
-                    is_logo_match = False
+                    _is_logo_match = False
                     if os.path.exists(logo_path):
                         current_hash = calculate_file_hash(logo_path)
                         match = current_hash == target_logo_hash
-                        self._log(
-                            f"      [Logo Check]: {'Match' if match else 'Mismatch'} (Hash: {current_hash[:8]}...)")
+                        self._log(f"      [Logo Check]: {'Match' if match else 'Mismatch'} (Hash: {current_hash[:8]}...)")
                         if match:
-                            is_logo_match = True
+                            _is_logo_match = True
                             score += 1
                     else:
                         self._log(
@@ -549,7 +548,7 @@ class PatchController:
             best = candidates[0]
             found_folder = best['path']
             detected_version_key = best['version_key']
-            detected_version_data = best['version_data']
+            _detected_version_data = best['version_data']
             detection_method = best['method']
 
             self._log(f"Selected Candidate: {found_folder}")

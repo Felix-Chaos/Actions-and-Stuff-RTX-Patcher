@@ -18,7 +18,7 @@ def resourcePath(relativePath: str) -> str:
     return os.path.join(basePath, relativePath)
 
 
-def centerWindow(window: tk.Toplevel | tk.Tk) -> None:
+def centerWindow(window) -> None:
     """Centers a tkinter window on the screen."""
     window.update_idletasks()
     width = window.winfo_width()

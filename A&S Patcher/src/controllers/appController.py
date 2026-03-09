@@ -25,7 +25,7 @@ class AppController:
         self.patcher = PatcherModel()
 
         self.root = MainWindow(
-            title="A&S Minecraft RTX Community Patcher V2", theme="dark", onClose=self.quit)
+            title="A&S Minecraft RTX Community Patcher V2", onClose=self.quit)
         # Use new snake_case method
         self.root.setIcon(resourcePath(self.config.get_filename("icon")))
 
