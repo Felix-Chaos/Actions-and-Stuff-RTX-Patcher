@@ -1,5 +1,7 @@
 # pylint: disable=missing-docstring, line-too-long, broad-exception-caught, too-many-locals, too-many-branches, too-many-statements, bare-except, too-few-public-methods, too-many-instance-attributes
 import threading
+import os
+import re
 from tkinter import filedialog, messagebox
 
 import customtkinter as ctk
@@ -133,6 +135,12 @@ class App(ctk.CTk):
         if not in_path or not out_path or not name:
             messagebox.showerror("Error", "Please fill all fields.")
             return
+
+        clean_name = re.sub(r'[\\/:*?"<>|]', '_', name)
+        workspace = os.path.join(out_path, clean_name)
+        if os.path.exists(workspace):
+            if not messagebox.askyesno("Confirm Overwrite", f"The folder '{clean_name}' already exists.\n\nExtracting will overwrite and DELETE any existing modifications inside this folder. Continue?"):
+                return
 
         self.extract_btn.configure(state="disabled")
         self.log(f"--- Starting Extraction: {name} ---")
