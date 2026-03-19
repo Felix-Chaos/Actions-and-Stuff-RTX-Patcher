@@ -15,8 +15,9 @@
       "version": [1, 0, 21]
     }
   ],
+  "capabilities": ["raytraced"],
   "metadata": {
-    "authors": ["Oreville", "J4vI3r6003", "FelixChaos"]
+    "authors": ["Oreville", "J4vI3r6003", "FelixChaos", "PapaBeans"]
   },
   "subpacks": [
     { "folder_name": "Vanilla", "name": "Vanilla", "memory_tier": 0 },
