@@ -1,0 +1,6 @@
+sounds.json
+materials\entity.material
+materials\particles.material
+subpacks\Default\textures\textures_list.json
+subpacks\Vanilla\textures\textures_list.json
+textures\textures_list.json
