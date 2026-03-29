@@ -14,12 +14,14 @@ else:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DB_FILE = os.path.join(BASE_DIR, "db.json")
+VERSIONS_FILE = os.path.join(BASE_DIR, "versions.json")
 TEMP_WORKSPACE = "temp_workspace"
 
 
 class ExtractorCore:
     def __init__(self):
         self.db = self._load_db()
+        self.versions_db = self._load_versions()
 
     def _load_db(self):
         if os.path.exists(DB_FILE):
@@ -33,6 +35,112 @@ class ExtractorCore:
     def _save_db(self):
         with open(DB_FILE, "w", encoding="utf-8") as f:
             json.dump(self.db, f, indent=4)
+
+    def _load_versions(self):
+        if os.path.exists(VERSIONS_FILE):
+            try:
+                with open(VERSIONS_FILE, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception:
+                return {}
+        return {}
+
+    def _save_versions(self):
+        with open(VERSIONS_FILE, "w", encoding="utf-8") as f:
+            json.dump(self.versions_db, f, indent=4)
+
+    def get_folder_stats(self, folder: str):
+        if os.path.isfile(folder) and folder.endswith((".zip", ".mcpack")):
+            return self.get_stats_from_zip(folder)
+        file_count, folder_count = 0, 0
+        try:
+            for _, dirs, files in os.walk(folder):
+                folder_count += len(dirs)
+                file_count += len(files)
+        except Exception:
+            pass
+        return file_count, folder_count
+
+    def get_stats_from_zip(self, zip_path: str):
+        file_count, folder_count = 0, 0
+        try:
+            with zipfile.ZipFile(zip_path, "r") as z:
+                # To accurately count folders that might not have explicit entries
+                dirs_set = set()
+                for info in z.infolist():
+                    if info.is_dir():
+                        dirs_set.add(info.filename.rstrip("/"))
+                    else:
+                        file_count += 1
+                        # Infer directories from file path
+                        parts = info.filename.split("/")[:-1]
+                        current = ""
+                        for part in parts:
+                            if current:
+                                current += "/" + part
+                            else:
+                                current = part
+                            dirs_set.add(current)
+                folder_count = len(dirs_set)
+        except Exception:
+            pass
+        return file_count, folder_count
+
+    def detect_version(self, folder_path: str, logger_callback=print):
+        # Calculate stats for the folder (this is the "before" state)
+        f_count, d_count = self.get_folder_stats(folder_path)
+        logger_callback(f"Scanning pack... Files: {f_count}, Dirs: {d_count}")
+
+        # We need to sort versions descending (v1.9 before v1.8, etc.)
+        def parse_ver_local(v_str):
+            try:
+                clean = v_str.lstrip("v")
+                return tuple(map(int, clean.split(".")))
+            except Exception:
+                return (0,)
+
+        sorted_ver_keys = sorted(
+            list(self.versions_db.keys()), key=parse_ver_local, reverse=True
+        )
+
+        for ver_key in sorted_ver_keys:
+            ver_data = self.versions_db[ver_key]
+            stats_before = ver_data.get("stats_before", {})
+            if stats_before:
+                if f_count == stats_before.get("files") and d_count == stats_before.get(
+                    "dirs"
+                ):
+                    return ver_key
+
+        return None
+
+    def save_new_version(self, version_key: str, stats_before: dict, stats_after: dict):
+        # Use subversion logic if the version string already exists but stats differ
+        final_key = version_key
+
+        if final_key in self.versions_db:
+            existing = self.versions_db[final_key]
+            e_before = existing.get("stats_before", {})
+
+            # If stats match, we just overwrite/update
+            if e_before.get("files") == stats_before.get("files") and e_before.get(
+                "dirs"
+            ) == stats_before.get("dirs"):
+                final_key = version_key
+            else:
+                # Stats differ, need a subversion
+                sub_index = 1
+                while f"{version_key}_sub{sub_index}" in self.versions_db:
+                    sub_index += 1
+                final_key = f"{version_key}_sub{sub_index}"
+
+        self.versions_db[final_key] = {
+            "stats_before": stats_before,
+            "stats_after": stats_after,
+            "timestamp": datetime.now().isoformat(),
+        }
+        self._save_versions()
+        return final_key
 
     def process_pack(
         self,
@@ -161,9 +269,69 @@ class ExtractorCore:
         )
         return True
 
+    def reverse_folder(self, workspace: str, custom_name: str, logger_callback=print):
+        """
+        Scans an arbitrary folder for loosely extracted brarchive contents + .bak files,
+        rebuilds the mapping, and repacks them into an .mcpack.
+        """
+        if not os.path.exists(workspace):
+            logger_callback("Folder does not exist.")
+            return False
+
+        logger_callback(
+            f"Scanning '{custom_name}' for .bak files to rebuild DB mapping..."
+        )
+        mapping = {}
+
+        for root, _, files in os.walk(workspace):
+            for file in files:
+                if file.endswith(".brarchive.bak"):
+                    bak_path = os.path.join(root, file)
+                    brarchive_path = bak_path[:-4]  # remove .bak
+                    rel_path = os.path.relpath(brarchive_path, workspace)
+
+                    try:
+                        with open(bak_path, "rb") as f:
+                            data = f.read()
+                        entry_map = deserialize(data)
+
+                        mapping[rel_path] = []
+                        base_name = os.path.splitext(os.path.basename(brarchive_path))[
+                            0
+                        ]
+                        extract_dir = os.path.join(
+                            os.path.dirname(brarchive_path), base_name
+                        )
+                        if os.path.isfile(extract_dir):
+                            extract_dir += "_extracted"
+
+                        for entry_name in entry_map.keys():
+                            out_file = os.path.join(extract_dir, entry_name)
+                            mapping[rel_path].append(
+                                {
+                                    "entry_name": entry_name,
+                                    "extracted_path": os.path.relpath(
+                                        out_file, workspace
+                                    ).replace("\\", "/"),  # normalize
+                                }
+                            )
+                    except Exception as e:
+                        logger_callback(f"Failed to read backup {file}: {e}")
+
+        if not mapping:
+            logger_callback(
+                "No .brarchive.bak files found in the folder. Action aborted."
+            )
+            return False
+
+        logger_callback(f"Successfully rebuilt mapping for {len(mapping)} brarchives.")
+
+        job = {"workspace": workspace, "mapping": mapping, "custom_name": custom_name}
+        return self._reverse_core(job, logger_callback)
+
     def reverse_process(self, job_id: str, logger_callback=print):
         """
-        Reads modified files and repacks them into the workspace's .brarchives.
+        Reads modified files from a saved DB job and repacks them into the workspace's .brarchives.
         Then zips the workspace into a new .mcpack.
         """
         if job_id not in self.db:
@@ -171,18 +339,29 @@ class ExtractorCore:
             return False
 
         job = self.db[job_id]
-        workspace = job["workspace"]
-        mapping = job["mapping"]
-
-        if not os.path.exists(workspace):
+        if not os.path.exists(job["workspace"]):
             logger_callback("Workspace no longer exists. Cannot reverse.")
             return False
 
-        logger_callback("Re-packing modified files into .brarchives...")
+        return self._reverse_core(job, logger_callback)
+
+    def _reverse_core(self, job: dict, logger_callback=print):
+        workspace = job["workspace"]
+        mapping = job["mapping"]
+
+        total_brarchives = len(mapping)
+        logger_callback(f"Re-packing {total_brarchives} .brarchives...")
 
         success_count = 0
-        for rel_path, entries in mapping.items():
+        failed_count = 0
+        warning_count = 0
+        dirs_to_clean = set()
+
+        for idx, (rel_path, entries) in enumerate(mapping.items(), 1):
             brarchive_path = os.path.join(workspace, rel_path)
+
+            if idx % 10 == 0 or idx == total_brarchives:
+                logger_callback(f"Processing progress: {idx}/{total_brarchives}...")
 
             # Read all files
             data_dict = {}
@@ -201,6 +380,7 @@ class ExtractorCore:
                     with open(extracted_path, "rb") as f:
                         data_dict[entry_name] = f.read()
                 else:
+                    warning_count += 1
                     logger_callback(
                         f"Warning: File missing {extracted_path}, skipping packing this file."
                     )
@@ -237,12 +417,33 @@ class ExtractorCore:
                     if os.path.exists(bak_path):
                         os.remove(bak_path)
 
-                    # Delete all files in extract_dirs to clean up, including new ones
                     if os.path.isdir(extract_dir):
-                        shutil.rmtree(extract_dir)
+                        dirs_to_clean.add(extract_dir)
 
                 except Exception as e:
+                    failed_count += 1
                     logger_callback(f"Failed to serialize {rel_path}: {e}")
+            else:
+                failed_count += 1
+                logger_callback(f"Failed to serialize {rel_path}: No files found.")
+
+        # --- Dashboard ---
+        logger_callback("")
+        logger_callback("--- Repacking Dashboard ---")
+        logger_callback(f"Total Brarchives: {total_brarchives}")
+        logger_callback(f"Successfully Packed: {success_count}")
+        logger_callback(f"Failed to Pack:    {failed_count}")
+        logger_callback(f"Missing File Warnings: {warning_count}")
+        logger_callback("---------------------------")
+        logger_callback("")
+
+        # Clean up directories after all brarchives have been serialized
+        for d in sorted(dirs_to_clean, reverse=True):
+            if os.path.isdir(d):
+                try:
+                    shutil.rmtree(d)
+                except Exception as e:
+                    logger_callback(f"Failed to clean up {d}: {e}")
 
         # Zip workspace to .mcpack
         out_mcpack = os.path.join(

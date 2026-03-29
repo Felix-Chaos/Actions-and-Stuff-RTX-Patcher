@@ -15,6 +15,7 @@
       "version": [1, 0, 21]
     }
   ],
+  "capabilities": ["raytraced"],
   "metadata": {
     "authors": ["Oreville", "J4vI3r6003", "FelixChaos"]
   },
