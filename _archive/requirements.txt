@@ -1,3 +1,0 @@
-ttkbootstrap
-numpy
-Pillow
