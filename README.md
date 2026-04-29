@@ -2,7 +2,7 @@
 
 ---
 
-# 🎮 A&S Minecraft RTX Community Patcher V2
+# 🎮 A&S Minecraft RTX Community Patcher
 
 [![GitHub release](https://img.shields.io/github/v/release/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher?style=for-the-badge&color=blue)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases)
 [![GitHub issues](https://img.shields.io/github/issues/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher?style=for-the-badge)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/issues)
@@ -46,14 +46,6 @@ You can always find the latest stable builds on the [Releases Page](https://gith
 
 **A&S Minecraft RTX Community Patcher V2** is a **community-built patching tool** that converts the original _Actions & Stuff_ Minecraft Marketplace pack into an **RTX-compatible version** for Windows Bedrock Edition.
 
-### ✨ New in V2
-
-- 🚀 **Faster Patching**: Optimized patching engine with background processing.
-- 🎨 **Refreshed UI**: Modern, clean interface with Dark Mode.
-- 🛠️ **Smart Detection**: Multi-factor scoring system to find your pack.
-- 📦 **Unified Patcher**: Supports both Marketplace and Zip/McPack sources.
-- 🔧 **Advanced Mode**: Manual inputs, version override, and direct folder access.
-- 🧹 **Auto-Cleanup**: Automatically keeps your disk clean after patching.
 
 It works by:
 
@@ -64,7 +56,8 @@ This ensures RTX visuals are properly integrated **without redistributing** any 
 
 ---
 
-## 📁 Repository Overview
+## 📁 Repository Overview [Outdated]
+-> Moved Brachive extractor and patches to seperate repos. A update to this Readme Will follow soon.
 
 | Name                    | Description                                                        | Link                             | Status      |
 | ----------------------- | ------------------------------------------------------------------ | -------------------------------- | ----------- |
@@ -90,16 +83,15 @@ This ensures RTX visuals are properly integrated **without redistributing** any 
 1. Download **A&S RTX Patcher V2** from the [Releases Page](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/latest).
 2. Run the `.exe` and choose:
    - **Marketplace Mode**: Auto-detects your installed pack.
-   - **ZIP/MCPACK Mode**: Manually select your pack file.
+   - **ZIP/MCPACK Mode**: Manually select your pack file [Activate Advanced mode in Bottom right corner to see the option].
 3. Click **Start** to begin patching.
 4. **Configuration Required:**
    - **Disable "Mob Dithering"** in Video Settings. This fixes visual glitches.
    - **Load Order**: Ensure your packs are sorted Top to Bottom:
      1. **A&S RTX** (Use this!)
      2. **RTX Pack** (Kelly's / Vanilla RTX / etc.)
-     3. _(BetterRTX - Optional)_
-     4. _Other Resource Packs_
-     5. **Actions & Stuff** (Original)**[Optional]**
+     3. _Other Resource Packs_
+     4. **Actions & Stuff** (Original)**[Optional-Not Recommendet]**
 
 ### 🛠️ Advanced Mode
 
@@ -128,7 +120,7 @@ Browse this repository, every tool and script includes a short README with setup
 ---
 
 <details>
-<summary><strong>📂 Older Versions & History</strong></summary>
+<summary><strong>📂 Older Versions & History [Outdated]</strong></summary>
 
 <br>
 
@@ -177,7 +169,6 @@ Browse this repository, every tool and script includes a short README with setup
 ## 📚 Additional Resources
 
 - [📖 FAQ](https://discord.com/channels/691547840463241267/1360688874388455504/1376325634246049792)
-- [🧾 Changelog v1.13](https://discord.com/channels/691547840463241267/1360688874388455504/1384665181715566622)
 - [💬 BetterRTX Discord](https://discord.gg/5kK4EMRbd3)
 - [🎮 ChaosDev Projects](https://discord.gg/YrMMmN2kc7)
 - [📢 Project Thread](https://discord.com/channels/691547840463241267/1360688874388455504)
@@ -202,7 +193,7 @@ This project wouldn’t exist without the help of our amazing contributors. Huge
 
 ## 👤 Creator & Support
 
-This project is a **community fork** maintained for public RTX development.  
+This project is a **community fork** maintained for public development.  
 The **original creator**, who made the source files available, is:
 
 **Demente Parker**
@@ -211,7 +202,7 @@ The **original creator**, who made the source files available, is:
 - Discord: `demente_parker`
 - 💙 Support him directly on Ko-fi: [ko-fi.com/dementeparker](https://ko-fi.com/dementeparker)
 
-> Donations are optional and go **directly to the creator**.  
+> Donations are optional and go **directly to the original creator**.  
 > This repository itself is **non-profit** and serves only to support community collaboration.
 
 ---
