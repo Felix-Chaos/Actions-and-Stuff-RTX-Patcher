@@ -9,16 +9,16 @@
 
 *Community-built patching tool for RTX-compatible Actions & Stuff on Bedrock Edition*
 
-[![Release](https://img.shields.io/github/v/release/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher?style=flat-square&color=blue&label=Release)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases)
-[![Stars](https://img.shields.io/github/stars/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher?style=flat-square&color=yellow)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/stargazers)
-[![Issues](https://img.shields.io/github/issues/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher?style=flat-square)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/issues)
-[![Pylint](https://img.shields.io/github/actions/workflow/status/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/pylint.yml?label=Pylint&style=flat-square&color=blue)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/actions/workflows/pylint.yml)
+[![Release](https://img.shields.io/github/v/release/Felix-Chaos/Actions-and-Stuff-RTX-Patcher?style=flat-square&color=blue&label=Release)](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases)
+[![Stars](https://img.shields.io/github/stars/Felix-Chaos/Actions-and-Stuff-RTX-Patcher?style=flat-square&color=yellow)](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/stargazers)
+[![Issues](https://img.shields.io/github/issues/Felix-Chaos/Actions-and-Stuff-RTX-Patcher?style=flat-square)](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/issues)
+[![Pylint](https://img.shields.io/github/actions/workflow/status/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/pylint.yml?label=Pylint&style=flat-square&color=blue)](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/actions/workflows/pylint.yml)
 [![Discord](https://img.shields.io/discord/1432653252171661364?logo=discord&style=flat-square&label=Discord)](https://discord.gg/YrMMmN2kc7)
 [![FAQ](https://img.shields.io/badge/📖_FAQ-5865F2?style=flat-square)](https://discord.com/channels/691547840463241267/1360688874388455504/1376325634246049792)
 [![BetterRTX](https://img.shields.io/badge/💬_BetterRTX-5865F2?style=flat-square)](https://discord.gg/5kK4EMRbd3)
 [![Discord Thread](https://img.shields.io/badge/📢_Discord_Thread-5865F2?style=flat-square)](https://discord.com/channels/691547840463241267/1360688874388455504)
 
-[![Download Latest](https://img.shields.io/badge/Download-Latest_Release-2ea44f?style=for-the-badge&logo=github)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/latest)
+[![Download Latest](https://img.shields.io/badge/Download-Latest_Release-2ea44f?style=for-the-badge&logo=github)](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/latest)
 
 </td>
 </tr>
@@ -35,7 +35,7 @@
 
 > [!WARNING]
 > This is a **community-driven RTX enhancement project** for _Actions & Stuff_ by **Oreville Studios**.
-> The patcher **applies fixes and RTX enhancements to your own copy** of A&S — it does **not** distribute any part of the original resource pack.
+> The patcher **applies fixes and RTX enhancements to your own copy** of A&S, it does **not** distribute any part of the original resource pack.
 >
 > We kindly ask all users **not to share their patched copies** of A&S Enhanced for RTX publicly.
 
@@ -55,131 +55,26 @@
 
 <div align="center">
 
-[![Latest Stable](https://img.shields.io/badge/Download-Latest_Release-2ea44f?style=for-the-badge&logo=github)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/latest)
-[![Beta](https://img.shields.io/badge/Download-Beta-orange?style=for-the-badge&logo=github)](https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher/releases/tag/V2.0.4b)
+[![Latest Stable](https://img.shields.io/badge/Download-Latest_Release-2ea44f?style=for-the-badge&logo=github)](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/latest)
+[![Beta](https://img.shields.io/badge/Download-Beta-orange?style=for-the-badge&logo=github)](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/tag/V2.0.4b)
 
 </div>
 
 ---
 
-## ⚙️ Requirements
+## 🚀 Getting Started
 
 | Requirement | Details |
 | :--- | :--- |
 | [**BetterRTX**](https://bedrock.graphics/) | Must be installed |
 | [**Actions & Stuff**](https://www.minecraft.net/en-us/marketplace/pdp/oreville-studios/actions--stuff-1.6/61c7a786-d7ad-49e0-a710-817121cd9795) | Marketplace, `.zip`, or `.mcpack` format |
 
----
+<div align="center">
 
-## 🚀 How to Use
+[![📖 Full Tutorial & Reference](https://img.shields.io/badge/📖_Full_Tutorial_&_Reference-blue?style=for-the-badge)](./docs/TUTORIAL.md)
 
-### Main Menu
+</div>
 
-When you launch the patcher, you'll see two cards:
-
-**Patching**
-
-| Button | Description |
-| :--- | :--- |
-| ⚡ **Patch from Marketplace** | Auto-detects your installed A&S Marketplace copy and patches it for RTX |
-| 📦 **Patch from Local File** | Select a `.zip` or `.mcpack` manually *(Advanced Mode only)* |
-
-**Maintenance**
-
-| Button | Description |
-| :--- | :--- |
-| 🧹 **Clean Old Versions** | Scans for and removes previously patched packs to free space |
-| 🎮 **Adjust Settings for RTX** | Applies recommended video settings for RTX (disables mob dithering, etc.) |
-| ⚙️ **Adjust All Settings** | Full settings editor *(Advanced Mode only)* |
-
-> The **Advanced Mode** switch in the bottom-right corner reveals hidden options: _Patch from Local File_ and _Adjust All Settings_.
-
----
-
-### Patching Screen
-
-After selecting a patching mode, you'll see the patching screen:
-
-| Element | Description |
-| :--- | :--- |
-| **Start** | Begins the patching process |
-| **Back** | Returns to the main menu (warns you if patching is in progress) |
-| **Open Folder** | Opens the output folder containing the generated `.mcpack` *(appears after patching)* |
-| ☑️ **Clean old versions before patching** | Automatically removes previous patches before creating a new one |
-| **Process Log** | Live output of the patching process *(Advanced Mode only)* |
-| 📋 **Copy Log** | Copies the process log to clipboard *(Advanced Mode only)* |
-
-**Advanced Mode** adds these extra controls to the patching screen:
-
-| Control | Description |
-| :--- | :--- |
-| **Patch Method** | Choose between `Zip (Manual)` or `Custom` mode |
-| **Target Version** | Select a specific patch version from the dropdown instead of latest |
-| **Source (Folder/Zip)** | Override the source pack path *(Custom mode only)* |
-| **Output Filename** | Set a custom `.mcpack` output filename *(Custom mode only)* |
-| **Patch File (.vcdiff)** | Use a specific `.vcdiff` patch file *(Custom mode only)* |
-
----
-
-### Menu Bar
-
-| Menu | Options |
-| :--- | :--- |
-| **Creator Tools** | Run bundled scripts for patch development |
-| **Dependencies** | Manage and install required dependencies |
-| **Help** | Links to documentation and support |
-
----
-
-### 🎮 After Patching — In-Game Setup
-
-> **⚠️ Important:** Disable **"Mob Dithering"** in Video Settings to avoid visual glitches, or use the **Adjust Settings for RTX** button in the patcher.
-
-Set your **Resource Pack load order** (Top → Bottom):
-
-| # | Pack | |
-| :---: | :--- | :--- |
-| 1 | **A&S for RTX** | ✅ Always on top |
-| 2 | **RTX Pack** | Kelly's / Vanilla RTX / etc. |
-| 3 | *Other Resource Packs* | Optional |
-| 4 | *Actions & Stuff (Original)* | ⚠️ Optional — not recommended |
-
-
----
-
-### 🧰 Building from Source
-
-**Prerequisites:** Python 3.10+, `pip`
-
-**1.** Clone and navigate to the patcher directory:
-
-```bash
-git clone https://github.com/Felix-Chaos/A-S-Minecraft-RTX-Community-Patcher.git
-cd "A-S-Minecraft-RTX-Community-Patcher/A&S Patcher"
-```
-
-**2.** Run the build script:
-
-```bash
-build.bat
-```
-
-The build manager will check for missing dependencies (`PyInstaller`, `Pillow`, `ttkbootstrap`) and offer to install them automatically.
-
-**3.** Choose from the build menu:
-
-| Option | Description |
-| :--- | :--- |
-| **Build — Release** | Builds a windowed `.exe` (no console) |
-| **Build — Debug** | Builds with console output for debugging |
-| **Version Editor** | Update version numbers across the project |
-| **Clean Artifacts** | Remove `build/`, `dist/`, and `.spec` files |
-
-The output executable will be in `dist/AnS_RTX_Patcher_V2.exe`.
-
-> You can also run the patcher directly without building: `python main.py`
-
----
 
 ## 🙌 Contributors
 
