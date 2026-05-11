@@ -41,39 +41,40 @@
 
 ---
 
-## 📁 Repository Overview
+## 📁 Project Ecosystem
 
-| Repository | Description | Link |
-| :--- | :--- | :---: |
-| **A&S RTX Patcher** | Main patcher — Marketplace & Zip support, GUI, automated patching | [This Repo](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher) |
-| **Archive** | All binary patch files (`.xdelta` / `.vcdiff`) and the legacy V1 patcher source | [Repo](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher-Archive) |
-| **External Tools** | Brarchive extractor, and other tools for the patcher! | [Repo](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher-External_Tools) |
-
----
-
-## 💾 Downloads
-
-<div align="center">
-
-[![Latest Stable](https://img.shields.io/badge/Download-Latest_Release-2ea44f?style=for-the-badge&logo=github)](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/latest)
-[![Beta](https://img.shields.io/badge/Download-Beta-orange?style=for-the-badge&logo=github)](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/tag/V2.0.4b)
-
-</div>
+| | Repository | Description | Link |
+| :---: | :--- | :--- | :---: |
+| ⚡ | **A&S RTX Patcher** | Main patcher — Marketplace & Zip support, GUI, automated patching | [This Repo](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher) |
+| 📦 | **Archive** | All binary patch files (`.xdelta` / `.vcdiff`) and the legacy V1 patcher source | [Repo →](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher-Archive) |
+| 🧰 | **External Tools** | Brarchive extractor and other tools for the patcher | [Repo →](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher-External_Tools) |
 
 ---
 
 ## 🚀 Getting Started
 
-| Requirement | Details |
-| :--- | :--- |
-| [**BetterRTX**](https://bedrock.graphics/) | Must be installed |
-| [**Actions & Stuff**](https://www.minecraft.net/en-us/marketplace/pdp/oreville-studios/actions--stuff-1.6/61c7a786-d7ad-49e0-a710-817121cd9795) | Marketplace, `.zip`, or `.mcpack` format |
+<table>
+<tr>
+<td>
 
-<div align="center">
+| | Requirement | Details |
+| :---: | :--- | :--- |
+| 🎮 | [**BetterRTX**](https://bedrock.graphics/) | Must be installed |
+| 📦 | [**Actions & Stuff**](https://www.minecraft.net/en-us/marketplace/pdp/oreville-studios/actions--stuff-1.6/61c7a786-d7ad-49e0-a710-817121cd9795) | Marketplace, `.zip`, or `.mcpack` |
 
-[![📖 Full Tutorial & Reference](https://img.shields.io/badge/📖_Full_Tutorial_&_Reference-blue?style=for-the-badge)](./docs/TUTORIAL.md)
+</td>
+<td width="260" align="center">
 
-</div>
+[![⬇ Download](https://img.shields.io/badge/⬇_Download_Latest-2ea44f?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/latest)
+
+[![⬇ Beta](https://img.shields.io/badge/⬇_Beta-f58220?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/tag/V2.0.4b)
+
+[![📖 Tutorial](https://img.shields.io/badge/📖_Tutorial_&_Docs-0969da?style=for-the-badge)](./docs/TUTORIAL.md)
+
+</td>
+</tr>
+</table>
+
 
 ---
 
