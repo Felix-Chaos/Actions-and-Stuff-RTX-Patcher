@@ -37,4 +37,4 @@ for r, d, files in os.walk(patched_dir):
                 print(f"  -> MATCH FOUND! It perfectly matches Vanilla file: {dec_hashes[h]}")
                 print(f"  -> Because of this match, create_patch_v2.py will REPLACE this file with the ENCRYPTED version of '{dec_hashes[h]}'.")
             else:
-                print(f"  -> NO MATCH. This file should remain UNENCRYPTED in the mix.")
+                print("  -> NO MATCH. This file should remain UNENCRYPTED in the mix.")

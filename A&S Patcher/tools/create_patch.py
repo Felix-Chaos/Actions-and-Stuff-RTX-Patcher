@@ -318,7 +318,7 @@ class PatchCreatorApp:
             messagebox.showerror("Error", "All folder paths are required.")
             return
 
-        if not all([os.path.exists(p) for p in [p_dir, d_dir, e_dir]]):
+        if not all(os.path.exists(p) for p in [p_dir, d_dir, e_dir]):
             messagebox.showerror("Error", "One or more input paths do not exist.")
             return
 
@@ -586,6 +586,10 @@ class PatchCreatorApp:
             self.root.after(
                 0, lambda: messagebox.showinfo("Done", "Patches created successfully.")
             )
+            # Open File Explorer to the output directory
+            self.root.after(
+                0, lambda: os.startfile(output_dir)
+            )
 
         except Exception as e:
             import traceback
@@ -668,7 +672,7 @@ class PatchCreatorApp:
                 0, lambda: self.log(f"  ❌ Failed to create {os.path.basename(output)}")
             )
             self.root.after(0, lambda: self.log(f"     Stderr: {result.stderr}"))
-            raise Exception(f"XDelta failed for {os.path.basename(output)}")
+            raise RuntimeError(f"XDelta failed for {os.path.basename(output)}")
 
 
 if __name__ == "__main__":

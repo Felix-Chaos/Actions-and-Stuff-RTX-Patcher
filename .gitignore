@@ -41,3 +41,4 @@ brachiveextractor/test_output/
 brachiveextractor/db.json
 brachiveextractor/__pycache__/
 temp_test_pack/
+pylint_report.txt

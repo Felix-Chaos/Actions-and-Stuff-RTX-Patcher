@@ -14,9 +14,9 @@ import shutil
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 try:
-    import tools.logger as logger
+    from tools import logger
     from tools.logger import Colors
-    import tools.version_editor as version_editor
+    from tools import version_editor
 except ImportError:
     # Fallback if running from tools/ dir directly
     import logger
@@ -158,7 +158,7 @@ def run_build(console_mode=False):
     logger.log("INFO", f"Executing: {' '.join(cmd)}")
     print("-" * 50)
 
-    process = subprocess.Popen(
+    with subprocess.Popen(
         cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,  # Merge stderr into stdout for single stream
@@ -166,12 +166,10 @@ def run_build(console_mode=False):
         bufsize=1,
         encoding="utf-8",
         errors="replace",
-    )
-
-    # Process output in real-time
-    process_stream(process.stdout)
-
-    return_code = process.wait()
+    ) as process:
+        # Process output in real-time
+        process_stream(process.stdout)
+        return_code = process.wait()
     print("-" * 50)
 
     if return_code == 0:
