@@ -11,7 +11,7 @@ import os
 # Enable ANSI colors in Windows cmd
 os.system("")
 
-class Colors:
+class Colors:  # pylint: disable=too-few-public-methods
     HEADER = '\033[95m'
     BLUE = '\033[94m'
     CYAN = '\033[96m'
@@ -23,9 +23,9 @@ class Colors:
 
 def log(level, message):
     timestamp = datetime.datetime.now().strftime("%H:%M:%S")
-    
+
     level = level.upper()
-    
+
     if level == "INFO":
         color = Colors.CYAN
         icon = "[i]"
