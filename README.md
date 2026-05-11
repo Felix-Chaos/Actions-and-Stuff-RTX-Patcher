@@ -75,6 +75,37 @@
 
 </div>
 
+---
+
+## 🔍 How It Works
+
+The patcher uses **binary diffing** to transform your own copy of Actions & Stuff into an RTX-compatible version — no original assets are ever distributed.
+
+```
+Your A&S Copy ──→ xdelta3 + .vcdiff patch ──→ A&S Enhanced for RTX (.mcpack)
+```
+
+1. **Detect** — Locates your installed A&S pack (Marketplace auto-detect or manual selection)
+2. **Extract** — Unpacks the source files from `.brarchive`, `.zip`, or `.mcpack`
+3. **Patch** — Applies binary diffs (`.vcdiff`) via [xdelta3](https://github.com/jmacd/xdelta) to add RTX materials, PBR textures, and lighting fixes
+4. **Package** — Bundles everything into a ready-to-install `.mcpack` with an updated manifest
+
+> [!TIP]
+> The patcher can also auto-adjust your Minecraft video settings for optimal RTX performance — no manual config needed.
+
+---
+
+## 🛠️ Tech Stack
+
+| Technology | Purpose |
+| :--- | :--- |
+| **Python** | Core patching logic, GUI, and build system |
+| **CustomTkinter** | Modern dark-themed desktop UI |
+| **xdelta3** | Binary patch creation & application |
+| **PyInstaller** | Packaging into a standalone `.exe` |
+| **Blockbench** | Model editing & RTX material authoring |
+
+---
 
 ## 🙌 Contributors
 
