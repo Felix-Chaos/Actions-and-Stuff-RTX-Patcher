@@ -63,13 +63,19 @@ jobs:
           PACK_VER="${{ github.event.inputs.pack_version }}"
           PATCH_VER="${{ github.event.inputs.patch_version }}"
 
+          if [ "$REL_TYPE" = "Both" ]; then
+            DISPLAY_TYPE="Patcher and Patch Update"
+          else
+            DISPLAY_TYPE="$REL_TYPE"
+          fi
+
           if [ "$IS_BETA" = "beta" ]; then
             TAG="V${VERSION}b"
-            TITLE="V${VERSION}b Release of: ${REL_TYPE} | A&S for RTX ${PACK_VER} | Patch ${PATCH_VER}"
+            TITLE="V${VERSION}b Release of: ${DISPLAY_TYPE} | A&S for RTX ${PACK_VER} | Patch ${PATCH_VER}"
             BADGE="🧪 **Beta Release** — may contain bugs. Please report issues on Discord!"
           else
             TAG="V${VERSION}"
-            TITLE="V${VERSION} Release of: ${REL_TYPE} | A&S for RTX ${PACK_VER} | Patch ${PATCH_VER}"
+            TITLE="V${VERSION} Release of: ${DISPLAY_TYPE} | A&S for RTX ${PACK_VER} | Patch ${PATCH_VER}"
             BADGE="✅ **Stable Release**"
           fi
 
