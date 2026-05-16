@@ -118,7 +118,6 @@ jobs:
         uses: actions/github-script@v7
         env:
           RELEASE_ID: ${{ steps.find_exe.outputs.release_id }}
-          EXISTING_BODY: ${{ steps.find_exe.outputs.release_body }}
           RELEASE_TAG: ${{ steps.find_exe.outputs.release_tag }}
           VT_LINK: ${{ steps.vt_result.outputs.permalink }}
           SHA256: ${{ steps.vt_result.outputs.sha256 }}
@@ -126,11 +125,19 @@ jobs:
         with:
           script: |
             const releaseId = parseInt(process.env.RELEASE_ID);
-            const existingBody = process.env.EXISTING_BODY || "";
             const vtLink = process.env.VT_LINK;
             const sha256 = process.env.SHA256;
             const assetName = process.env.ASSET_NAME;
             const tag = process.env.RELEASE_TAG;
+
+            // Fetch the current release body fresh to avoid multiline corruption
+            const { data: release } = await github.rest.repos.getRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: releaseId,
+            });
+
+            const existingBody = release.body || '';
 
             const vtSection = '\n\n---\n\n### 🛡️ VirusTotal Scan\n| | |\n|---|---|\n' +
               '| **Release** | `' + tag + '` |\n' +
