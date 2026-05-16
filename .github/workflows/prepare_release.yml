@@ -1,0 +1,97 @@
+name: Prepare Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g. V2.1.0)'
+        required: true
+        type: string
+      prerelease:
+        description: 'Is this a pre-release / beta?'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          IS_BETA="${{ github.event.inputs.prerelease }}"
+
+          if [ "$IS_BETA" = "true" ]; then
+            TITLE="A&S RTX Patcher ${VERSION} (Beta)"
+            BADGE="🧪 **Beta Release** — may contain bugs. Please report issues!"
+          else
+            TITLE="A&S RTX Patcher ${VERSION}"
+            BADGE="✅ **Stable Release**"
+          fi
+
+          cat > release_body.md << EOF
+          ## A&S Minecraft RTX Community Patcher — ${VERSION}
+
+          ${BADGE}
+
+          ---
+
+          ### ✨ What's New
+          <!-- Fill in your changelog here before publishing -->
+          - 
+
+          ### 🐛 Bug Fixes
+          <!-- List bug fixes here -->
+          - 
+
+          ### 📦 Installation
+          1. Download \`AnS_RTX_Patcher_V2.exe\` below
+          2. Make sure [BetterRTX](https://bedrock.graphics/) is installed
+          3. Run the patcher and follow the on-screen instructions
+
+          > [!NOTE]
+          > The patcher does **not** include any original A&S assets — you need your own copy of Actions & Stuff.
+
+          ---
+
+          ### 🛡️ VirusTotal Scan
+          *This section will be automatically filled in by the VirusTotal workflow after you upload the .exe asset.*
+
+          ---
+
+          *Built with ❤️ by the A&S RTX Community · [Discord](https://discord.gg/YrMMmN2kc7)*
+          EOF
+
+          echo "title=$TITLE" >> $GITHUB_OUTPUT
+          echo "tag=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create Draft Release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('release_body.md', 'utf8');
+            const isPre = '${{ github.event.inputs.prerelease }}' === 'true';
+
+            const result = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: '${{ steps.notes.outputs.tag }}',
+              name: '${{ steps.notes.outputs.title }}',
+              body: body,
+              draft: true,
+              prerelease: isPre,
+            });
+
+            console.log(`✅ Draft release created: ${result.data.html_url}`);
+            console.log('Upload your .exe to this release, then publish it to trigger the VirusTotal scan.');
