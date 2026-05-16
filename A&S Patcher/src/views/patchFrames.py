@@ -50,13 +50,6 @@ class MainMenuFrame(ctk.CTkFrame):
         ctk.CTkLabel(primaryFrame, text="Patching", font=(
             FONT_FAMILY, 18, "bold"), text_color="#FFFFFF").pack(pady=(20, 15))
 
-        # Cleanup checkbox — always visible in patching card
-        self.cleanOldVersionsVar = ctk.BooleanVar(value=True)
-        ctk.CTkCheckBox(primaryFrame, text="Clean old versions before patching",
-                        variable=self.cleanOldVersionsVar,
-                        fg_color=COLOR_ACCENT_1, hover_color=COLOR_ACCENT_1,
-                        font=(FONT_FAMILY, 12)).pack(pady=(0, 10), padx=25, anchor="w")
-
         # 1. Normal Patcher (Marketplace) - FILLED GREEN BUTTON
         ctk.CTkButton(primaryFrame, text="⚡ Patch from Marketplace", command=self.callbacks.get("marketplace"),
                       fg_color=COLOR_ACCENT_1, text_color="#000000", hover_color="#32cc12",
@@ -67,6 +60,15 @@ class MainMenuFrame(ctk.CTkFrame):
                                     fg_color=COLOR_ACCENT_2, text_color="#000000", hover_color="#00c4d4",
                                     height=45, font=(FONT_FAMILY, 14, "bold"), corner_radius=8)
         # self.zipBtn.pack(pady=10, padx=25, fill="x") # Hidden by default
+
+        # Cleanup checkbox — subtle, smaller, below buttons
+        self.cleanOldVersionsVar = ctk.BooleanVar(value=True)
+        ctk.CTkCheckBox(primaryFrame, text="Clean old versions before patching",
+                        variable=self.cleanOldVersionsVar,
+                        fg_color="#555555", hover_color="#666666",
+                        checkmark_color="#cccccc", border_color="#555555",
+                        text_color="#777777",
+                        font=(FONT_FAMILY, 11)).pack(pady=(0, 15), padx=25, anchor="w")
 
         # --- Maintenance Actions (Right Column) ---
         maintFrame = ctk.CTkFrame(contentFrame, fg_color="#1a1a1a",
