@@ -96,6 +96,18 @@ Your A&S Copy ──→ xdelta3 + .vcdiff patch ──→ A&S Enhanced for RTX (
 
 ---
 
+## 🎬 Showcase
+
+*In-game showcases of A&S Enhanced for RTX, courtesy of **Saruky** (Discord: `sarupatty_`).*
+
+https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/raw/main/docs/showcase/Minecraft%202026.05.04%20-%2018.40.35.01.mp4
+
+https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/raw/main/docs/showcase/Minecraft%202026.05.04%20-%2018.43.04.02.mp4
+
+https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/raw/main/docs/showcase/Minecraft%202026.05.05%20-%2020.45.26.01.mp4
+
+---
+
 ## 🛠️ Tech Stack
 
 | Technology | Purpose |
