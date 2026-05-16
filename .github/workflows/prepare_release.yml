@@ -26,14 +26,14 @@ jobs:
         run: |
           VERSION=$(python3 -c "
           import re
-          with open('A\&S Patcher/src/version.py', 'r') as f:
+          with open('A&S Patcher/src/version.py', 'r') as f:
               content = f.read()
           match = re.search(r'VERSION\s*=\s*[\"\']([\d.]+)[\"|\']', content)
           print(match.group(1) if match else 'unknown')
           ")
           BUILD_DATE=$(python3 -c "
           import re
-          with open('A\&S Patcher/src/version.py', 'r') as f:
+          with open('A&S Patcher/src/version.py', 'r') as f:
               content = f.read()
           match = re.search(r'BUILD_DATE\s*=\s*[\"\'](.*?)[\"|\']', content)
           print(match.group(1) if match else 'unknown')
