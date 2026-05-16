@@ -43,7 +43,6 @@ class MainMenuFrame(ctk.CTkFrame):
         contentFrame.columnconfigure(1, weight=1)
 
         # --- Primary Actions (Left Column) ---
-        # Clean dark card with subtle border
         primaryFrame = ctk.CTkFrame(
             contentFrame, fg_color="#1a1a1a", border_width=1, border_color="#333333", corner_radius=12)
         primaryFrame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
@@ -51,10 +50,17 @@ class MainMenuFrame(ctk.CTkFrame):
         ctk.CTkLabel(primaryFrame, text="Patching", font=(
             FONT_FAMILY, 18, "bold"), text_color="#FFFFFF").pack(pady=(20, 15))
 
+        # Cleanup checkbox — always visible in patching card
+        self.cleanOldVersionsVar = ctk.BooleanVar(value=True)
+        ctk.CTkCheckBox(primaryFrame, text="Clean old versions before patching",
+                        variable=self.cleanOldVersionsVar,
+                        fg_color=COLOR_ACCENT_1, hover_color=COLOR_ACCENT_1,
+                        font=(FONT_FAMILY, 12)).pack(pady=(0, 10), padx=25, anchor="w")
+
         # 1. Normal Patcher (Marketplace) - FILLED GREEN BUTTON
         ctk.CTkButton(primaryFrame, text="⚡ Patch from Marketplace", command=self.callbacks.get("marketplace"),
                       fg_color=COLOR_ACCENT_1, text_color="#000000", hover_color="#32cc12",
-                      height=45, font=(FONT_FAMILY, 14, "bold"), corner_radius=8).pack(pady=10, padx=25, fill="x")
+                      height=45, font=(FONT_FAMILY, 14, "bold"), corner_radius=8).pack(pady=(0, 10), padx=25, fill="x")
 
         # 2. Zip/Custom Patcher (Hidden by default) - FILLED CYAN BUTTON
         self.zipBtn = ctk.CTkButton(primaryFrame, text="📦 Patch from Local File (Zip/Folder)", command=self.callbacks.get("manual"),
@@ -75,20 +81,20 @@ class MainMenuFrame(ctk.CTkFrame):
                       fg_color="#FF4444", text_color="#FFFFFF", hover_color="#cc3333",
                       height=45, font=(FONT_FAMILY, 14, "bold"), corner_radius=8).pack(pady=10, padx=25, fill="x")
 
-        # New: Adjust RTX Settings - FILLED CYAN BUTTON
+        # Adjust RTX Settings - FILLED CYAN BUTTON
         self.rtxBtn = ctk.CTkButton(maintFrame, text="🎮 Adjust Settings for RTX", command=self.callbacks.get("rtx_settings"),
                                     fg_color=COLOR_ACCENT_2, text_color="#000000", hover_color="#00c4d4",
                                     height=45, font=(FONT_FAMILY, 14, "bold"), corner_radius=8)
         self.rtxBtn.pack(pady=10, padx=25, fill="x")
 
-        # New: Adjust All Settings (Advanced only) - OUTLINED GRAY
+        # Adjust All Settings (Advanced only) - OUTLINED GRAY
         self.allSettingsBtn = ctk.CTkButton(maintFrame, text="⚙️ Adjust All Settings", command=self.callbacks.get("all_settings"),
                                             fg_color="transparent", border_width=2, border_color="#666666",
                                             text_color="#AAAAAA", hover_color="#2a2a2a",
                                             height=40, font=(FONT_FAMILY, 13), corner_radius=8)
         # Hidden by default
 
-        # 3. Exit Button (Bottom) - Subtle text button
+        # Exit Button (Bottom)
         ctk.CTkButton(self, text="Exit Application", command=self.callbacks.get("exit"),
                       fg_color="transparent", text_color="#888888", hover_color="#1a1a1a",
                       font=(FONT_FAMILY, 12)).pack(pady=20)
@@ -201,17 +207,24 @@ class PatchProgressFrame(ctk.CTkFrame):
         self.progressBar.set(0)
         self.progressBar.pack(pady=(0, 10), fill="x", padx=40)
 
+        # Simple status hint shown in non-advanced mode only
+        self.simpleHintLabel = ctk.CTkLabel(
+            container, text="", text_color="#888888",
+            font=(FONT_FAMILY, 11), wraplength=500)
+        self.simpleHintLabel.pack(pady=(0, 5))
+
+        # Cleanup checkbox kept here for advanced mode (reads from main menu in simple mode)
         self.cleanOldVersionsVar = ctk.BooleanVar(value=True)
         self.cleanCheck = ctk.CTkCheckBox(container, text="Clean old versions before patching",
                                           variable=self.cleanOldVersionsVar, fg_color=COLOR_ACCENT_1, hover_color=COLOR_ACCENT_1)
-        self.cleanCheck.pack(pady=(0, 20))
+        # Hidden by default - shown only in advanced mode
 
         self.btnFrame = ctk.CTkFrame(container, fg_color="transparent")
         self.btnFrame.pack(pady=(0, 20))
 
+        # Action button hidden in simple mode (auto-patch), shown in advanced mode
         self.actionBtn = ctk.CTkButton(
             self.btnFrame, text="Start", width=120, state="disabled", **get_button_style("filled-primary"))
-        self.actionBtn.pack(side="left", padx=5)
 
         self.secondaryBtn = ctk.CTkButton(
             self.btnFrame, text="Open Folder", width=120, **get_button_style("secondary"))
@@ -272,10 +285,19 @@ class PatchProgressFrame(ctk.CTkFrame):
             self.advFrame.pack(after=self.titleLabel, pady=(0, 20), fill="x")
             self.logFrame.pack(before=self.btnFrame, pady=(
                 10, 20), fill="both", expand=True)
+            self.cleanCheck.pack(before=self.btnFrame, pady=(0, 10))
+            if not self.actionBtn.winfo_ismapped():
+                self.actionBtn.pack(side="left", padx=5,
+                                    before=self.btnFrame.winfo_children()[0])
+            self.simpleHintLabel.pack_forget()
             self.onModeChanged()
         else:
             self.advFrame.pack_forget()
             self.logFrame.pack_forget()
+            self.cleanCheck.pack_forget()
+            self.actionBtn.pack_forget()
+            if not self.simpleHintLabel.winfo_ismapped():
+                self.simpleHintLabel.pack(pady=(0, 5))
 
     def appendLog(self, text: str):
         self.logArea.configure(state='normal')
@@ -288,6 +310,10 @@ class PatchProgressFrame(ctk.CTkFrame):
         self.clipboard_clear()
         self.clipboard_append(text)
         self.update()
+
+    def setSimpleHint(self, text: str):
+        """Update the simple-mode hint label shown below the progress bar."""
+        self.simpleHintLabel.configure(text=text)
 
     def setStatus(self, text: str):
         self.statusLabel.configure(text=text)

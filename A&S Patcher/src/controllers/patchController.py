@@ -29,6 +29,7 @@ class PatchController:
         self.cancel_event = threading.Event()
         self.temp_dir = os.path.join(tempfile.gettempdir(), "AnSPatcherFuzed")
         self.is_advanced = False
+        self.should_clean = True   # Set by AppController from main menu checkbox
         self.version_map = {}  # Display String -> (ver_key, patch_data_dict)
 
     def setAdvancedMode(self, enabled: bool):
@@ -258,10 +259,9 @@ class PatchController:
         # self.view is PatchProgressFrame
         patch_frame = self.view
 
-        # Legacy: We rely on AppController calling configureView BEFORE this.
-        # We just reset status and start.
-
-        patch_frame.setStatus("Searching for Marketplace Content...")
+        patch_frame.setStatus("Searching for your A&S pack...")
+        if not self.is_advanced:
+            patch_frame.setSimpleHint("🔍 Scanning Minecraft folders — this only takes a moment...")
         patch_frame.setProgress(0, 'indeterminate')
         patch_frame.setActionState("disabled")
         patch_frame.hideSecondaryAction()
@@ -850,12 +850,17 @@ class PatchController:
             self.view.after(0, self.view.onBack)
 
     def _onReadyToPatch(self, source_zip: str, mode: str, detected_version_data: dict = None):
-        self.view.setStatus("Ready to Patch.")
+        self.view.setStatus("Pack found! Starting patch...")
         self.view.setProgress(100, 'determinate')
 
         def runPatchAction():
-            if self.view.cleanOldVersionsVar.get():
+            # In simple mode read from should_clean; in advanced mode read from view checkbox
+            do_clean = self.view.cleanOldVersionsVar.get() if self.is_advanced else self.should_clean
+
+            if do_clean:
                 self.view.setStatus("Cleaning old versions...")
+                if not self.is_advanced:
+                    self.view.setSimpleHint("🧹 Removing old patched versions...")
 
                 # Scan ALL possible paths (Mirrors CleanController logic)
                 pathsToScan = [
@@ -914,12 +919,19 @@ class PatchController:
 
             self.view.setActionState("disabled")
             self.view.setStatus("Patching...")
+            if not self.is_advanced:
+                self.view.setSimpleHint("⚡ Applying RTX patch — please wait, this may take a minute...")
             self.view.setProgress(0, 'indeterminate')
             threading.Thread(target=self._patchWorker, args=(
                 source_zip, patch_file), daemon=True).start()
 
-        self.view.setActionCommand(runPatchAction)
-        self.view.setActionState("normal")
+        if self.is_advanced:
+            # Advanced mode: let user click the button
+            self.view.setActionCommand(runPatchAction)
+            self.view.setActionState("normal")
+        else:
+            # Simple mode: auto-fire immediately
+            self.view.after(0, runPatchAction)
 
     def _patchWorker(self, source_zip: str, patch_file: str):
         output_file = os.path.join(
@@ -958,6 +970,10 @@ class PatchController:
             self.view.after(
                 0, lambda: self.view.setStatus("Patch Successful!"))
 
+            if not self.is_advanced:
+                self.view.after(0, lambda: self.view.setSimpleHint(
+                    "✅ Patch done! Click Install Pack to launch Minecraft."))
+
             def install():
                 self._log("Installing pack...")
                 success, result = self.patcher.createMcPack(output_file)
@@ -971,6 +987,12 @@ class PatchController:
             self.view.after(0, lambda: self.view.setActionCommand(
                 install, "Install Pack"))
             self.view.after(0, lambda: self.view.setActionState("normal"))
+            # Always show the install button (also pack it in simple mode)
+            def _show_install_btn():
+                if not self.view.actionBtn.winfo_ismapped():
+                    self.view.actionBtn.pack(side="left", padx=5,
+                                             before=self.view.btnFrame.winfo_children()[0])
+            self.view.after(0, _show_install_btn)
 
             if self.is_advanced:
                 def openFolder():
