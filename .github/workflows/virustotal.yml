@@ -100,30 +100,23 @@ jobs:
         with:
           script: |
             const releaseId = parseInt(process.env.RELEASE_ID);
-            const existingBody = process.env.EXISTING_BODY;
+            const existingBody = process.env.EXISTING_BODY || "";
             const vtLink = process.env.VT_LINK;
             const sha256 = process.env.SHA256;
             const assetName = process.env.ASSET_NAME;
             const tag = context.payload.release.tag_name;
 
-            const vtSection = [
-              '',
-              '---',
-              '',
-              '### 🛡️ VirusTotal Scan',
-              '| | |',
-              '|---|---|',
-              `| **Release** | \`${tag}\` |`,
-              `| **File** | \`${assetName}\` |`,
-              `| **SHA256** | \`${sha256}\` |`,
-              `| **Scan Result** | [🔍 View on VirusTotal](${vtLink}) |`,
-            ].join('\n');
+            const vtSection = '\n\n---\n\n### 🛡️ VirusTotal Scan\n| | |\n|---|---|\n' +
+              '| **Release** | `' + tag + '` |\n' +
+              '| **File** | `' + assetName + '` |\n' +
+              '| **SHA256** | `' + sha256 + '` |\n' +
+              '| **Scan Result** | [🔍 View on VirusTotal](' + vtLink + ') |\n';
 
             await github.rest.repos.updateRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
               release_id: releaseId,
-              body: existingBody + vtSection,
+              body: existingBody + vtSection
             });
 
-            console.log(`✅ VirusTotal link appended: ${vtLink}`);
+            console.log('VirusTotal link appended: ' + vtLink);
