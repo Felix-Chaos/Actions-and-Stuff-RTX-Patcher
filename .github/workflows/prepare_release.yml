@@ -3,6 +3,16 @@ name: Prepare Release
 on:
   workflow_dispatch:
     inputs:
+      pack_version:
+        description: 'A&S Pack Version (e.g. 1.10.1)'
+        required: true
+        default: '1.10.1'
+        type: string
+      patch_version:
+        description: 'Patch Version (e.g. v1.0)'
+        required: true
+        default: 'v1.0'
+        type: string
       prerelease:
         description: 'Release type'
         required: true
@@ -40,14 +50,16 @@ jobs:
           ")
 
           IS_BETA="${{ github.event.inputs.prerelease }}"
+          PACK_VER="${{ github.event.inputs.pack_version }}"
+          PATCH_VER="${{ github.event.inputs.patch_version }}"
 
           if [ "$IS_BETA" = "beta" ]; then
             TAG="V${VERSION}b"
-            TITLE="A&S RTX Patcher V${VERSION} (Beta)"
+            TITLE="V${VERSION}b Release of: New Patch | A&S for RTX ${PACK_VER} | Patch ${PATCH_VER}"
             BADGE="🧪 **Beta Release** — may contain bugs. Please report issues on Discord!"
           else
             TAG="V${VERSION}"
-            TITLE="A&S RTX Patcher V${VERSION}"
+            TITLE="V${VERSION} Release of: New Patch | A&S for RTX ${PACK_VER} | Patch ${PATCH_VER}"
             BADGE="✅ **Stable Release**"
           fi
 
@@ -81,6 +93,10 @@ jobs:
           ### 🐛 Bug Fixes
           <!-- List bug fixes here -->
           - 
+
+          ### 👥 Contributors
+          @Javier6003 (error90099900)
+          Felix-Chaos
 
           ### 📦 Installation
           1. Download \`AnS_RTX_Patcher_V2.exe\` below
