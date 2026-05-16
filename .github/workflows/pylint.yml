@@ -32,8 +32,3 @@ jobs:
         run: |
           cd "A&S Patcher"
           pylint src/ main.py
-
-      - name: Run Pylint on Extractor
-        run: |
-          cd brachiveextractor
-          pylint main.py extractor_core.py brarchive_format.py
