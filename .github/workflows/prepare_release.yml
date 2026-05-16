@@ -3,18 +3,14 @@ name: Prepare Release
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Version tag (e.g. V2.1.0)'
-        required: true
-        type: string
       prerelease:
-        description: 'Is this a pre-release / beta?'
-        required: false
-        default: 'false'
+        description: 'Release type'
+        required: true
+        default: 'stable'
         type: choice
         options:
-          - 'false'
-          - 'true'
+          - stable
+          - beta
 
 jobs:
   create-release:
@@ -25,24 +21,56 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Generate release notes
-        id: notes
+      - name: Read version from src/version.py
+        id: get_version
         run: |
-          VERSION="${{ github.event.inputs.version }}"
+          VERSION=$(python3 -c "
+          import re
+          with open('A\&S Patcher/src/version.py', 'r') as f:
+              content = f.read()
+          match = re.search(r'VERSION\s*=\s*[\"\']([\d.]+)[\"|\']', content)
+          print(match.group(1) if match else 'unknown')
+          ")
+          BUILD_DATE=$(python3 -c "
+          import re
+          with open('A\&S Patcher/src/version.py', 'r') as f:
+              content = f.read()
+          match = re.search(r'BUILD_DATE\s*=\s*[\"\'](.*?)[\"|\']', content)
+          print(match.group(1) if match else 'unknown')
+          ")
+
           IS_BETA="${{ github.event.inputs.prerelease }}"
 
-          if [ "$IS_BETA" = "true" ]; then
-            TITLE="A&S RTX Patcher ${VERSION} (Beta)"
-            BADGE="🧪 **Beta Release** — may contain bugs. Please report issues!"
+          if [ "$IS_BETA" = "beta" ]; then
+            TAG="V${VERSION}b"
+            TITLE="A&S RTX Patcher V${VERSION} (Beta)"
+            BADGE="🧪 **Beta Release** — may contain bugs. Please report issues on Discord!"
           else
-            TITLE="A&S RTX Patcher ${VERSION}"
+            TAG="V${VERSION}"
+            TITLE="A&S RTX Patcher V${VERSION}"
             BADGE="✅ **Stable Release**"
           fi
 
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "title=$TITLE" >> $GITHUB_OUTPUT
+          echo "badge=$BADGE" >> $GITHUB_OUTPUT
+
+      - name: Generate release body
+        id: body
+        run: |
+          VERSION="${{ steps.get_version.outputs.version }}"
+          BUILD_DATE="${{ steps.get_version.outputs.build_date }}"
+          TAG="${{ steps.get_version.outputs.tag }}"
+          BADGE="${{ steps.get_version.outputs.badge }}"
+
           cat > release_body.md << EOF
-          ## A&S Minecraft RTX Community Patcher — ${VERSION}
+          ## A&S Minecraft RTX Community Patcher — ${TAG}
 
           ${BADGE}
+
+          > Built on: \`${BUILD_DATE}\`
 
           ---
 
@@ -65,15 +93,12 @@ jobs:
           ---
 
           ### 🛡️ VirusTotal Scan
-          *This section will be automatically filled in by the VirusTotal workflow after you upload the .exe asset.*
+          *This section will be automatically filled in by the VirusTotal workflow after you upload the .exe asset and publish.*
 
           ---
 
           *Built with ❤️ by the A&S RTX Community · [Discord](https://discord.gg/YrMMmN2kc7)*
           EOF
-
-          echo "title=$TITLE" >> $GITHUB_OUTPUT
-          echo "tag=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Create Draft Release
         uses: actions/github-script@v7
@@ -81,17 +106,23 @@ jobs:
           script: |
             const fs = require('fs');
             const body = fs.readFileSync('release_body.md', 'utf8');
-            const isPre = '${{ github.event.inputs.prerelease }}' === 'true';
+            const isPre = '${{ github.event.inputs.prerelease }}' === 'beta';
+            const tag = '${{ steps.get_version.outputs.tag }}';
+            const title = '${{ steps.get_version.outputs.title }}';
 
             const result = await github.rest.repos.createRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              tag_name: '${{ steps.notes.outputs.tag }}',
-              name: '${{ steps.notes.outputs.title }}',
+              tag_name: tag,
+              name: title,
               body: body,
               draft: true,
               prerelease: isPre,
             });
 
             console.log(`✅ Draft release created: ${result.data.html_url}`);
-            console.log('Upload your .exe to this release, then publish it to trigger the VirusTotal scan.');
+            console.log(`📌 Version: ${tag}`);
+            console.log('Next steps:');
+            console.log('  1. Fill in the changelog in the draft');
+            console.log('  2. Upload AnS_RTX_Patcher_V2.exe as an asset');
+            console.log('  3. Publish the release → VirusTotal scan fires automatically');
