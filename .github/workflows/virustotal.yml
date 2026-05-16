@@ -91,13 +91,19 @@ jobs:
 
       - name: Append VirusTotal result to release body
         uses: actions/github-script@v7
+        env:
+          RELEASE_ID: ${{ steps.find_exe.outputs.release_id }}
+          EXISTING_BODY: ${{ steps.find_exe.outputs.release_body }}
+          VT_LINK: ${{ steps.vt_result.outputs.permalink }}
+          SHA256: ${{ steps.vt_result.outputs.sha256 }}
+          ASSET_NAME: ${{ steps.find_exe.outputs.asset_name }}
         with:
           script: |
-            const releaseId = parseInt('${{ steps.find_exe.outputs.release_id }}');
-            const existingBody = `${{ steps.find_exe.outputs.release_body }}`;
-            const vtLink = '${{ steps.vt_result.outputs.permalink }}';
-            const sha256 = '${{ steps.vt_result.outputs.sha256 }}';
-            const assetName = '${{ steps.find_exe.outputs.asset_name }}';
+            const releaseId = parseInt(process.env.RELEASE_ID);
+            const existingBody = process.env.EXISTING_BODY;
+            const vtLink = process.env.VT_LINK;
+            const sha256 = process.env.SHA256;
+            const assetName = process.env.ASSET_NAME;
             const tag = context.payload.release.tag_name;
 
             const vtSection = [
