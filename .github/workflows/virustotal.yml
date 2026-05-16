@@ -1,0 +1,83 @@
+name: VirusTotal Scan
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  virustotal-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed to update the release body
+
+    steps:
+      - name: Find .exe asset in release
+        id: find_exe
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const release = context.payload.release;
+            const assets = await github.rest.repos.listReleaseAssets({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: release.id,
+            });
+            const exe = assets.data.find(a => a.name.endsWith('.exe'));
+            if (!exe) core.setFailed('No .exe asset found in this release.');
+            core.setOutput('asset_url', exe.browser_download_url);
+            core.setOutput('asset_name', exe.name);
+            core.setOutput('release_id', release.id);
+            core.setOutput('release_body', release.body || '');
+
+      - name: Download .exe asset
+        run: |
+          curl -L "${{ steps.find_exe.outputs.asset_url }}" -o release.exe
+
+      - name: Upload to VirusTotal
+        id: vt_upload
+        run: |
+          RESPONSE=$(curl --silent --request POST \
+            --url "https://www.virustotal.com/api/v3/files" \
+            --header "x-apikey: ${{ secrets.VIRUSTOTAL_API_KEY }}" \
+            --form "file=@release.exe")
+          echo "$RESPONSE"
+          ANALYSIS_ID=$(echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['data']['id'])")
+          echo "analysis_id=$ANALYSIS_ID" >> $GITHUB_OUTPUT
+
+      - name: Wait for analysis and get permalink
+        id: vt_result
+        run: |
+          sleep 30
+          ANALYSIS_ID="${{ steps.vt_upload.outputs.analysis_id }}"
+          RESPONSE=$(curl --silent --request GET \
+            --url "https://www.virustotal.com/api/v3/analyses/${ANALYSIS_ID}" \
+            --header "x-apikey: ${{ secrets.VIRUSTOTAL_API_KEY }}")
+          echo "$RESPONSE"
+          # Extract the sha256 to build the permalink
+          SHA256=$(echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('meta',{}).get('file_info',{}).get('sha256',''))")
+          if [ -z "$SHA256" ]; then
+            # Fallback: derive from analysis ID (format: file-<sha256>-<timestamp>)
+            SHA256=$(echo "$ANALYSIS_ID" | python3 -c "import sys; parts=sys.stdin.read().strip().split('-'); print(parts[1] if len(parts)>1 else '')")
+          fi
+          PERMALINK="https://www.virustotal.com/gui/file/${SHA256}"
+          echo "permalink=$PERMALINK" >> $GITHUB_OUTPUT
+          echo "sha256=$SHA256" >> $GITHUB_OUTPUT
+
+      - name: Append VirusTotal link to release body
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const releaseId = parseInt('${{ steps.find_exe.outputs.release_id }}');
+            const existingBody = `${{ steps.find_exe.outputs.release_body }}`;
+            const vtLink = '${{ steps.vt_result.outputs.permalink }}';
+            const sha256  = '${{ steps.vt_result.outputs.sha256 }}';
+            const assetName = '${{ steps.find_exe.outputs.asset_name }}';
+
+            const vtSection = `\n\n---\n\n### 🛡️ VirusTotal Scan\n| | |\n|---|---|\n| **File** | \`${assetName}\` |\n| **SHA256** | \`${sha256}\` |\n| **Scan Result** | [View on VirusTotal](${vtLink}) |`;
+
+            await github.rest.repos.updateRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: releaseId,
+              body: existingBody + vtSection,
+            });
