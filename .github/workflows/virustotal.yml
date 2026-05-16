@@ -3,6 +3,12 @@ name: VirusTotal Scan
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release Tag to scan (e.g., V2.1.6)'
+        required: true
+        type: string
 
 jobs:
   virustotal-scan:
@@ -16,7 +22,19 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const release = context.payload.release;
+            let release;
+            if (context.eventName === 'workflow_dispatch') {
+              const tag = context.payload.inputs.release_tag;
+              const { data } = await github.rest.repos.getReleaseByTag({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag: tag,
+              });
+              release = data;
+            } else {
+              release = context.payload.release;
+            }
+
             const assets = await github.rest.repos.listReleaseAssets({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -28,6 +46,7 @@ jobs:
             core.setOutput('asset_name', exe.name);
             core.setOutput('release_id', String(release.id));
             core.setOutput('release_body', release.body || '');
+            core.setOutput('release_tag', release.tag_name);
 
       - name: Download .exe asset
         run: |
@@ -94,6 +113,7 @@ jobs:
         env:
           RELEASE_ID: ${{ steps.find_exe.outputs.release_id }}
           EXISTING_BODY: ${{ steps.find_exe.outputs.release_body }}
+          RELEASE_TAG: ${{ steps.find_exe.outputs.release_tag }}
           VT_LINK: ${{ steps.vt_result.outputs.permalink }}
           SHA256: ${{ steps.vt_result.outputs.sha256 }}
           ASSET_NAME: ${{ steps.find_exe.outputs.asset_name }}
@@ -104,7 +124,7 @@ jobs:
             const vtLink = process.env.VT_LINK;
             const sha256 = process.env.SHA256;
             const assetName = process.env.ASSET_NAME;
-            const tag = context.payload.release.tag_name;
+            const tag = process.env.RELEASE_TAG;
 
             const vtSection = '\n\n---\n\n### 🛡️ VirusTotal Scan\n| | |\n|---|---|\n' +
               '| **Release** | `' + tag + '` |\n' +
