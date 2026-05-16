@@ -101,11 +101,14 @@ Your A&S Copy ──→ xdelta3 + .vcdiff patch ──→ A&S Enhanced for RTX (
 ### Videos
 *In-game video showcases of A&S Enhanced for RTX, courtesy of **Saruky** (Discord: `sarupatty_`).*
 
-<video src="./docs/showcase/showcase_video_1.mp4" controls preload="metadata" width="100%"></video>
+*If the player is empty, [▶️ Click here to watch Video 1](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/blob/main/docs/showcase/showcase_video_1.mp4)*
+<video src="https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/raw/main/docs/showcase/showcase_video_1.mp4" controls="controls"></video>
 
-<video src="./docs/showcase/showcase_video_2.mp4" controls preload="metadata" width="100%"></video>
+*If the player is empty, [▶️ Click here to watch Video 2](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/blob/main/docs/showcase/showcase_video_2.mp4)*
+<video src="https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/raw/main/docs/showcase/showcase_video_2.mp4" controls="controls"></video>
 
-<video src="./docs/showcase/showcase_video_3.mp4" controls preload="metadata" width="100%"></video>
+*If the player is empty, [▶️ Click here to watch Video 3](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/blob/main/docs/showcase/showcase_video_3.mp4)*
+<video src="https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/raw/main/docs/showcase/showcase_video_3.mp4" controls="controls"></video>
 
 ### Screenshots
 *In-game screenshots of the patch in action, courtesy of patch creator **J4vi3r6003** (Discord: `error90099900`).*
