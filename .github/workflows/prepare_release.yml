@@ -3,6 +3,15 @@ name: Prepare Release
 on:
   workflow_dispatch:
     inputs:
+      release_type:
+        description: 'What does this release include?'
+        required: true
+        default: 'New Patch'
+        type: choice
+        options:
+          - 'New Patch'
+          - 'Patcher update'
+          - 'Both'
       pack_version:
         description: 'A&S Pack Version (e.g. 1.10.1)'
         required: true
@@ -50,16 +59,17 @@ jobs:
           ")
 
           IS_BETA="${{ github.event.inputs.prerelease }}"
+          REL_TYPE="${{ github.event.inputs.release_type }}"
           PACK_VER="${{ github.event.inputs.pack_version }}"
           PATCH_VER="${{ github.event.inputs.patch_version }}"
 
           if [ "$IS_BETA" = "beta" ]; then
             TAG="V${VERSION}b"
-            TITLE="V${VERSION}b Release of: New Patch | A&S for RTX ${PACK_VER} | Patch ${PATCH_VER}"
+            TITLE="V${VERSION}b Release of: ${REL_TYPE} | A&S for RTX ${PACK_VER} | Patch ${PATCH_VER}"
             BADGE="🧪 **Beta Release** — may contain bugs. Please report issues on Discord!"
           else
             TAG="V${VERSION}"
-            TITLE="V${VERSION} Release of: New Patch | A&S for RTX ${PACK_VER} | Patch ${PATCH_VER}"
+            TITLE="V${VERSION} Release of: ${REL_TYPE} | A&S for RTX ${PACK_VER} | Patch ${PATCH_VER}"
             BADGE="✅ **Stable Release**"
           fi
 
