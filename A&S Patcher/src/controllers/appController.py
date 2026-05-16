@@ -158,6 +158,11 @@ class AppController:
         # Disable advanced mode switch when leaving main menu
         self.root.setAdvancedSwitchEnabled(False)
 
+        # Read cleanup preference from main menu checkbox
+        self.patch_controller.should_clean = self.main_menu_frame.cleanOldVersionsVar.get()
+        # Sync the advanced-mode checkbox too
+        self.patch_frame.cleanOldVersionsVar.set(self.patch_controller.should_clean)
+
         self.root.showFrame("PatchFrame")
         if mode == "marketplace":
             self.patch_frame.titleLabel.configure(
