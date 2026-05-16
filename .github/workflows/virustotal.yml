@@ -24,13 +24,19 @@ jobs:
           script: |
             let release;
             if (context.eventName === 'workflow_dispatch') {
-              const tag = context.payload.inputs.release_tag;
-              const { data } = await github.rest.repos.getReleaseByTag({
+              const searchTag = context.payload.inputs.release_tag.toLowerCase();
+              const { data: allReleases } = await github.rest.repos.listReleases({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                tag: tag,
+                per_page: 50,
               });
-              release = data;
+              
+              const found = allReleases.find(r => (r.tag_name || '').toLowerCase() === searchTag);
+              if (!found) {
+                core.setFailed(`Could not find a release (even draft) with tag: ${context.payload.inputs.release_tag}`);
+                return;
+              }
+              release = found;
             } else {
               release = context.payload.release;
             }
