@@ -36,12 +36,30 @@ jobs:
       - name: Upload to VirusTotal
         id: vt_upload
         run: |
+          # 1. Get special upload URL for large files (>32MB)
+          UPLOAD_URL=$(curl --silent --request GET \
+            --url "https://www.virustotal.com/api/v3/files/upload_url" \
+            --header "x-apikey: ${{ secrets.VIRUSTOTAL_API_KEY }}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('data', ''))")
+          
+          if [ -z "$UPLOAD_URL" ]; then
+            echo "Failed to get upload URL. Falling back to default endpoint."
+            UPLOAD_URL="https://www.virustotal.com/api/v3/files"
+          fi
+
+          # 2. Upload file
           RESPONSE=$(curl --silent --request POST \
-            --url "https://www.virustotal.com/api/v3/files" \
+            --url "$UPLOAD_URL" \
             --header "x-apikey: ${{ secrets.VIRUSTOTAL_API_KEY }}" \
             --form "file=@release.exe")
+          
           echo "$RESPONSE"
-          ANALYSIS_ID=$(echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['data']['id'])")
+          ANALYSIS_ID=$(echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('data', {}).get('id', ''))")
+          
+          if [ -z "$ANALYSIS_ID" ]; then
+            echo "Failed to upload file. See response above."
+            exit 1
+          fi
+          
           echo "analysis_id=$ANALYSIS_ID" >> $GITHUB_OUTPUT
 
       - name: Wait for analysis to complete
