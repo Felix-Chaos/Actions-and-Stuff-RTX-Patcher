@@ -26,7 +26,7 @@ jobs:
             if (!exe) core.setFailed('No .exe asset found in this release.');
             core.setOutput('asset_url', exe.browser_download_url);
             core.setOutput('asset_name', exe.name);
-            core.setOutput('release_id', release.id);
+            core.setOutput('release_id', String(release.id));
             core.setOutput('release_body', release.body || '');
 
       - name: Download .exe asset
@@ -44,36 +44,56 @@ jobs:
           ANALYSIS_ID=$(echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['data']['id'])")
           echo "analysis_id=$ANALYSIS_ID" >> $GITHUB_OUTPUT
 
-      - name: Wait for analysis and get permalink
+      - name: Wait for analysis to complete
+        run: sleep 45
+
+      - name: Get analysis result and build permalink
         id: vt_result
         run: |
-          sleep 30
           ANALYSIS_ID="${{ steps.vt_upload.outputs.analysis_id }}"
           RESPONSE=$(curl --silent --request GET \
             --url "https://www.virustotal.com/api/v3/analyses/${ANALYSIS_ID}" \
             --header "x-apikey: ${{ secrets.VIRUSTOTAL_API_KEY }}")
           echo "$RESPONSE"
-          # Extract the sha256 to build the permalink
-          SHA256=$(echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('meta',{}).get('file_info',{}).get('sha256',''))")
-          if [ -z "$SHA256" ]; then
-            # Fallback: derive from analysis ID (format: file-<sha256>-<timestamp>)
-            SHA256=$(echo "$ANALYSIS_ID" | python3 -c "import sys; parts=sys.stdin.read().strip().split('-'); print(parts[1] if len(parts)>1 else '')")
-          fi
+
+          SHA256=$(echo "$RESPONSE" | python3 -c "
+          import sys, json
+          d = json.load(sys.stdin)
+          sha = d.get('meta', {}).get('file_info', {}).get('sha256', '')
+          if not sha:
+              # fallback: parse from analysis ID (format: file-<sha256>-<timestamp>)
+              parts = '$ANALYSIS_ID'.split('-')
+              sha = parts[1] if len(parts) > 1 else ''
+          print(sha)
+          ")
+
           PERMALINK="https://www.virustotal.com/gui/file/${SHA256}"
           echo "permalink=$PERMALINK" >> $GITHUB_OUTPUT
           echo "sha256=$SHA256" >> $GITHUB_OUTPUT
 
-      - name: Append VirusTotal link to release body
+      - name: Append VirusTotal result to release body
         uses: actions/github-script@v7
         with:
           script: |
             const releaseId = parseInt('${{ steps.find_exe.outputs.release_id }}');
             const existingBody = `${{ steps.find_exe.outputs.release_body }}`;
             const vtLink = '${{ steps.vt_result.outputs.permalink }}';
-            const sha256  = '${{ steps.vt_result.outputs.sha256 }}';
+            const sha256 = '${{ steps.vt_result.outputs.sha256 }}';
             const assetName = '${{ steps.find_exe.outputs.asset_name }}';
+            const tag = context.payload.release.tag_name;
 
-            const vtSection = `\n\n---\n\n### 🛡️ VirusTotal Scan\n| | |\n|---|---|\n| **File** | \`${assetName}\` |\n| **SHA256** | \`${sha256}\` |\n| **Scan Result** | [View on VirusTotal](${vtLink}) |`;
+            const vtSection = [
+              '',
+              '---',
+              '',
+              '### 🛡️ VirusTotal Scan',
+              '| | |',
+              '|---|---|',
+              `| **Release** | \`${tag}\` |`,
+              `| **File** | \`${assetName}\` |`,
+              `| **SHA256** | \`${sha256}\` |`,
+              `| **Scan Result** | [🔍 View on VirusTotal](${vtLink}) |`,
+            ].join('\n');
 
             await github.rest.repos.updateRelease({
               owner: context.repo.owner,
@@ -81,3 +101,5 @@ jobs:
               release_id: releaseId,
               body: existingBody + vtSection,
             });
+
+            console.log(`✅ VirusTotal link appended: ${vtLink}`);
