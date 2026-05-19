@@ -1,0 +1,20 @@
+{
+  "errors": [
+    {
+      "keywords": ["Permission denied", "locked", "in use by another process", "pack is being used"],
+      "explanation": "Windows is preventing the Patcher from accessing your files. This usually happens if Minecraft is still running, or you have the files open in Windows Explorer or another Editor. Please close them completely and try again."
+    },
+    {
+       "keywords": ["No __brarchive directories found", "extracting"],
+       "explanation": "The extraction process could not find any .brarchive bundles inside the pack."
+    },
+    {
+       "keywords": ["FileNotFoundError", "No such file or directory"],
+       "explanation": "A specific file needed by the system was not found. This can happen if the pack structure is incomplete, or an antivirus program deleted parts of the pack."
+    },
+    {
+       "keywords": ["Failed to calculate", "checksum failed"],
+       "explanation": "Data integrity check failed. The source ZIP or original cache files might be corrupted."
+    }
+  ]
+}
