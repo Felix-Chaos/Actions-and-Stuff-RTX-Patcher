@@ -9,6 +9,8 @@ from typing import Dict, Any, Optional
 import os
 import json
 
+import sys
+
 
 class ConfigModel:
     """
@@ -44,16 +46,24 @@ class ConfigModel:
                 "zipDecrypted": "assets/Patches/Current/decrypted.vcdiff",
             },
             "patchVersions": {},
-            "cleanupPrefixes": ["A&SforRTX", "Actions & Stuff Enhanced"],
+            "cleanupPrefixes": ["A&S", "Actions & St", "Actions&St", "A&SforRTX", "Actions & Stuff Enhanced", "Actions & Stuff RTX"],
             "filesToRemove": ["contents.json", "signatures.json", "splashes.json", "sounds.json"],
             "dirsToRemove": ["texts"],
         }
+
+        # Resolve config.json relative to the app base directory (next to main.py or executable)
+        if getattr(sys, 'frozen', False):
+            base_dir = os.path.dirname(sys.executable)
+        else:
+            base_dir = os.path.dirname(os.path.dirname(
+                os.path.dirname(os.path.abspath(__file__))))
+        self.config_path = os.path.join(base_dir, "config.json")
 
         # Load dynamic patches after init
         self.load_patch_versions()
 
         # Load local config overrides if present
-        self.load_external_config("config.json")
+        self.load_external_config(self.config_path)
 
     def load_patch_versions(self):
         """
@@ -233,10 +243,12 @@ class ConfigModel:
         except Exception:
             return False
 
-    def save_config(self, config_path: str = "config.json") -> bool:
+    def save_config(self, config_path: str = None) -> bool:
         """
         Saves the current configuration to a JSON file.
         """
+        if config_path is None:
+            config_path = self.config_path
         try:
             # We might want to filter out some runtime-only keys if any, but for now dump all
             # Except maybe 'patchVersions' which is huge and dynamic?

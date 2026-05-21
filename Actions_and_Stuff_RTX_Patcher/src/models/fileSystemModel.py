@@ -164,7 +164,7 @@ class FileSystemModel:
                     return found_folders
 
                 # Check if folder name matches any prefix
-                if any(folder.startswith(p) for p in prefixes):
+                if any(folder.lower().startswith(p.lower()) for p in prefixes):
                     full_path = os.path.join(path, folder)
                     if os.path.isdir(full_path):
                         found_folders.append(full_path)

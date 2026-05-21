@@ -1,7 +1,7 @@
 <table>
 <tr>
 <td width="180" align="center">
-<img width="140" alt="A&S RTX Patcher Logo" src="../A&S Patcher/assets/resources/as_rtx_simple_logo_.png" />
+<img width="140" alt="A&S RTX Patcher Logo" src="../Actions_and_Stuff_RTX_Patcher/assets/resources/as_rtx_simple_logo_.png" />
 </td>
 <td>
 
@@ -112,7 +112,7 @@ Set your **Resource Pack load order** (Top → Bottom):
 
 ```bash
 git clone https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher.git
-cd "Actions-and-Stuff-RTX-Patcher/A&S Patcher"
+cd "Actions-and-Stuff-RTX-Patcher/Actions_and_Stuff_RTX_Patcher"
 ```
 
 **2.** Run the build script:
