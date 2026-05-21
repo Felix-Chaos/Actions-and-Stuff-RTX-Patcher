@@ -236,6 +236,7 @@ class PatchProgressFrame(ctk.CTkFrame):
         self.steps = [
             {"text": "Preparing source pack...", "indicator": None, "text_lbl": None},
             {"text": "Normalizing & zipping textures...", "indicator": None, "text_lbl": None},
+            {"text": "Cleaning old patched versions...", "indicator": None, "text_lbl": None},
             {"text": "Applying RTX community patch...", "indicator": None, "text_lbl": None},
             {"text": "Installing texture pack...", "indicator": None, "text_lbl": None}
         ]

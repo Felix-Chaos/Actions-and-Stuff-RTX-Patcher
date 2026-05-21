@@ -22,8 +22,12 @@
         "zipDecrypted": "assets/Patches/Current/decrypted.vcdiff"
     },
     "cleanupPrefixes": [
+        "A&S",
+        "Actions & St",
+        "Actions&St",
         "A&SforRTX",
-        "Actions & Stuff Enhanced"
+        "Actions & Stuff Enhanced",
+        "Actions & Stuff RTX"
     ],
     "filesToRemove": [
         "contents.json",

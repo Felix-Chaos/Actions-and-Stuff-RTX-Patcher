@@ -36,33 +36,25 @@ def cls():
 
 def check_dependencies():
     logger.log("INFO", "Checking Python dependencies...")
-    required = ["PyInstaller", "PIL", "ttkbootstrap"]
+    dependencies = {
+        "PyInstaller": "pyinstaller",
+        "PIL": "pillow",
+        "ttkbootstrap": "ttkbootstrap",
+        "win32api": "pywin32",
+    }
     missing = []
 
-    for req in required:
+    for module, package in dependencies.items():
         try:
-            if req == "PyInstaller":
-                subprocess.check_call(
-                    [sys.executable, "-c", "import PyInstaller"],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                )
-            elif req == "PIL":
-                subprocess.check_call(
-                    [sys.executable, "-c", "import PIL"],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                )
-            else:
-                subprocess.check_call(
-                    [sys.executable, "-c", f"import {req}"],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                )
-            logger.log("SUCCESS", f"{req} found.")
+            subprocess.check_call(
+                [sys.executable, "-c", f"import {module}"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            logger.log("SUCCESS", f"{module} found.")
         except subprocess.CalledProcessError:
-            logger.log("ERROR", f"{req} is MISSING.")
-            missing.append(req)
+            logger.log("ERROR", f"{module} is MISSING.")
+            missing.append(package)
 
     return missing
 
@@ -71,7 +63,7 @@ def install_dependencies(missing_list):
     logger.log("INFO", f"Attempting to install: {', '.join(missing_list)}")
     try:
         subprocess.check_call(
-            [sys.executable, "-m", "pip", "install", "pypiwin32"] + missing_list
+            [sys.executable, "-m", "pip", "install"] + missing_list
         )
         logger.log("SUCCESS", "Dependencies installed successfully.")
         return True

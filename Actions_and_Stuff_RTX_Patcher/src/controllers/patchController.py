@@ -922,37 +922,6 @@ class PatchController:
             # In simple mode read from should_clean; in advanced mode read from view checkbox
             do_clean = self.view.cleanOldVersionsVar.get() if self.is_advanced else self.should_clean
 
-            if do_clean:
-                self.view.setStatus("Cleaning old versions...")
-                if not self.is_advanced:
-                    self.view.setSimpleHint("🧹 Removing old patched versions...")
-
-                # Scan ALL possible paths (Mirrors CleanController logic)
-                pathsToScan = [
-                    os.path.join(os.path.expandvars(self.config.get_path(
-                        "minecraftUwp")), "games", "com.mojang"),
-                    os.path.join(os.path.expandvars(self.config.get_path(
-                        "minecraftUwpPreview")), "games", "com.mojang"),
-                    os.path.join(os.path.expandvars(self.config.get_path(
-                        "minecraftBedrock")), "games", "com.mojang"),
-                    os.path.join(os.path.expandvars(self.config.get_path(
-                        "minecraftBedrock")), "Users", "Shared", "games", "com.mojang"),
-                    os.path.join(os.path.expandvars(self.config.get_path(
-                        "minecraftBedrockPreview")), "games", "com.mojang"),
-                ]
-
-                prefixes = self.config.get_cleanup_prefixes()
-
-                for basePath in pathsToScan:
-                    if not os.path.exists(basePath):
-                        continue
-
-                    rpPath = os.path.join(basePath, "resource_packs")
-                    found = self.fs.scanDirectory(rpPath, prefixes)
-                    for f in found:
-                        self.fs.robustCleanup(f)
-                        self._log(f"Cleaned: {os.path.basename(f)}")
-
             patch_type = "marketplaceEncrypted" if mode == "marketplace" else "zipDecrypted"
             patch_file_relative = self.config.get_patch_path(patch_type)
 
@@ -983,26 +952,128 @@ class PatchController:
                     patch_file = custom
 
             self.view.setActionState("disabled")
-            self.view.setStatus("Patching...")
-            self.view.updateStep(2, 'active')
-            self.view.setProgress(60)
-            if not self.is_advanced:
-                self.view.setSimpleHint("⚡ Applying RTX patch — please wait, this may take a minute...")
-            
+            if do_clean:
+                self.view.updateStep(2, 'active')
+                self.view.setProgress(55)
+            else:
+                self.view.updateStep(2, 'completed')
+                self.view.updateStep(3, 'active')
+                self.view.setProgress(60)
+
             threading.Thread(target=self._patchWorker, args=(
-                source_zip, patch_file), daemon=True).start()
+                source_zip, patch_file, do_clean), daemon=True).start()
 
         # Auto-fire patching after compressing/normalization is ready
         self.view.after(0, runPatchAction)
 
-    def _patchWorker(self, source_zip: str, patch_file: str):
+    def _patchWorker(self, source_zip: str, patch_file: str, do_clean: bool):
+        if do_clean:
+            self.view.after(0, lambda: self.view.setStatus("Cleaning old versions..."))
+            if not self.is_advanced:
+                self.view.after(0, lambda: self.view.setSimpleHint("🧹 Scanning for old patched versions..."))
+            self._log("🧹 Scanning for old patched versions to remove...")
+            import time
+            time.sleep(1.0)
+
+            # Scan ALL possible paths (dynamically scanning all Xbox users under Users/)
+            minecraft_bedrock_base = os.path.expandvars(self.config.get_path("minecraftBedrock"))
+            users_dir = os.path.join(minecraft_bedrock_base, "Users")
+
+            pathsToScan = [
+                os.path.join(os.path.expandvars(self.config.get_path(
+                    "minecraftUwp")), "games", "com.mojang"),
+                os.path.join(os.path.expandvars(self.config.get_path(
+                    "minecraftUwpPreview")), "games", "com.mojang"),
+                os.path.join(minecraft_bedrock_base, "games", "com.mojang"),
+                os.path.join(os.path.expandvars(self.config.get_path(
+                    "minecraftBedrockPreview")), "games", "com.mojang"),
+            ]
+
+            if os.path.exists(users_dir):
+                try:
+                    for user_folder in os.listdir(users_dir):
+                        user_path = os.path.join(users_dir, user_folder, "games", "com.mojang")
+                        if os.path.exists(user_path) and user_path not in pathsToScan:
+                            pathsToScan.append(user_path)
+                except Exception as e:
+                    self._log(f"Warning scanning Users folder: {e}")
+
+            prefixes = self.config.get_cleanup_prefixes()
+            cleaned_any = False
+            failed_any = False
+
+            for basePath in pathsToScan:
+                if not os.path.exists(basePath):
+                    continue
+
+                # Clean resource_packs
+                rpPath = os.path.join(basePath, "resource_packs")
+                found = self.fs.scanDirectory(rpPath, prefixes)
+                for f in found:
+                    folder_name = os.path.basename(f)
+                    self.view.after(0, lambda folder_name=folder_name: self.view.setStatus(f"Removing {folder_name}..."))
+                    if not self.is_advanced:
+                        self.view.after(0, lambda folder_name=folder_name: self.view.setSimpleHint(f"🧹 Deleting: {folder_name}"))
+                    self._log(f"Removing old pack folder: {folder_name}...")
+                    if self.fs.robustCleanup(f):
+                        self._log(f"Successfully cleaned: {folder_name}")
+                        cleaned_any = True
+                        time.sleep(1.0)
+                    else:
+                        self._log(f"Warning: Failed to clean: {folder_name}")
+                        failed_any = True
+
+                # Clean development_resource_packs
+                devRpPath = os.path.join(basePath, "development_resource_packs")
+                foundDev = self.fs.scanDirectory(devRpPath, prefixes)
+                for f in foundDev:
+                    folder_name = os.path.basename(f)
+                    self.view.after(0, lambda folder_name=folder_name: self.view.setStatus(f"Removing {folder_name}..."))
+                    if not self.is_advanced:
+                        self.view.after(0, lambda folder_name=folder_name: self.view.setSimpleHint(f"🧹 Deleting: {folder_name}"))
+                    self._log(f"Removing old dev pack folder: {folder_name}...")
+                    if self.fs.robustCleanup(f):
+                        self._log(f"Successfully cleaned: {folder_name}")
+                        cleaned_any = True
+                        time.sleep(1.0)
+                    else:
+                        self._log(f"Warning: Failed to clean: {folder_name}")
+                        failed_any = True
+
+            if failed_any:
+                self.view.after(0, lambda: messagebox.showwarning(
+                    "Cleanup Warning",
+                    "Failed to delete some old resource pack folders.\n\n"
+                    "Please ensure Minecraft is closed and try again, otherwise the old files might persist.",
+                    parent=self.view
+                ))
+
+            if not cleaned_any:
+                self._log("No old packs found to clean.")
+                self.view.after(0, lambda: self.view.setStatus("No old packs found."))
+                if not self.is_advanced:
+                    self.view.after(0, lambda: self.view.setSimpleHint("✓ No old versions to clean."))
+                time.sleep(1.0)
+            else:
+                self.view.after(0, lambda: self.view.setStatus("Cleanup finished."))
+                if not self.is_advanced:
+                    self.view.after(0, lambda: self.view.setSimpleHint("✓ Removed old patched versions successfully."))
+                time.sleep(1.5)
+
+            self.view.after(0, lambda: self.view.updateStep(2, 'completed'))
+            self.view.after(0, lambda: self.view.updateStep(3, 'active'))
+            self.view.after(0, lambda: self.view.setProgress(60))
+
         output_file = os.path.join(
             self.temp_dir, self.config.get_filename("finalMcPack"))
         xdelta = self.config.get_executable("xdelta")
         xdelta_params = resourcePath(xdelta)
 
         self._log("Starting XDelta patch...")
+        self.view.after(0, lambda: self.view.setStatus("Patching..."))
         self.view.after(0, lambda: self.view.setProgress(70))
+        if not self.is_advanced:
+            self.view.after(0, lambda: self.view.setSimpleHint("⚡ Applying RTX patch — please wait, this may take a minute..."))
 
         # Explicitly log the patch file as requested
         self._log("-" * 40)
@@ -1031,8 +1102,8 @@ class PatchController:
                 self._log(f"Warning: Cleanup failed: {e}")
 
             self.view.is_patching = False
-            self.view.after(0, lambda: self.view.updateStep(2, 'completed'))
-            self.view.after(0, lambda: self.view.updateStep(3, 'active'))
+            self.view.after(0, lambda: self.view.updateStep(3, 'completed'))
+            self.view.after(0, lambda: self.view.updateStep(4, 'active'))
             self.view.after(0, lambda: self.view.setProgress(90))
             self.view.after(
                 0, lambda: self.view.setStatus("Patch Successful!"))
@@ -1046,11 +1117,11 @@ class PatchController:
                 success, result = self.patcher.createMcPack(output_file)
                 if success:
                     self._log(f"launched {result}")
-                    self.view.after(0, lambda: self.view.updateStep(3, 'completed'))
+                    self.view.after(0, lambda: self.view.updateStep(4, 'completed'))
                     self.view.after(0, lambda: self.view.setProgress(100))
                 else:
                     self._log(f"Install failed: {result}")
-                    self.view.after(0, lambda: self.view.updateStep(3, 'failed'))
+                    self.view.after(0, lambda: self.view.updateStep(4, 'failed'))
                     self.view.after(0, lambda: showErrorWithCopy(
                         "Install Failed", f"Could not launch pack:\n{result}", self.view))
 
@@ -1074,6 +1145,7 @@ class PatchController:
                 "✅ Patch created successfully! Click Install to launch."))
         else:
             self.view.is_patching = False
+            self.view.after(0, lambda: self.view.updateStep(3, 'failed'))
             self.view.after(0, lambda: showErrorWithCopy(
                 "Patch Failed", msg, self.view))
             # self.view.after(0, self.view.onBack) # DISABLED FOR DEBUGGING
@@ -1182,6 +1254,8 @@ class PatchController:
         self.view.after(0, lambda: self.view.updateStep(1, 'active'))
         self.view.after(0, lambda: self.view.updateStep(1, 'completed'))
         self.view.after(0, lambda: self.view.updateStep(2, 'active'))
+        self.view.after(0, lambda: self.view.updateStep(2, 'completed'))
+        self.view.after(0, lambda: self.view.updateStep(3, 'active'))
         self.view.after(0, lambda: self.view.setProgress(60))
         self.view.after(0, lambda: self.view.setStatus("Applying patch..."))
 
@@ -1209,8 +1283,8 @@ class PatchController:
 
             if success:
                 self.view.is_patching = False
-                self.view.after(0, lambda: self.view.updateStep(2, 'completed'))
-                self.view.after(0, lambda: self.view.updateStep(3, 'active'))
+                self.view.after(0, lambda: self.view.updateStep(3, 'completed'))
+                self.view.after(0, lambda: self.view.updateStep(4, 'active'))
                 self.view.after(0, lambda: self.view.setProgress(90))
                 self.view.after(
                     0, lambda: self.view.setStatus("Patch Successful!"))
@@ -1220,11 +1294,11 @@ class PatchController:
                     success, result = self.patcher.createMcPack(output_abs)
                     if success:
                         self._log(f"launched {result}")
-                        self.view.after(0, lambda: self.view.updateStep(3, 'completed'))
+                        self.view.after(0, lambda: self.view.updateStep(4, 'completed'))
                         self.view.after(0, lambda: self.view.setProgress(100))
                     else:
                         self._log(f"Install failed: {result}")
-                        self.view.after(0, lambda: self.view.updateStep(3, 'failed'))
+                        self.view.after(0, lambda: self.view.updateStep(4, 'failed'))
                         showErrorWithCopy(
                             "Install Failed", f"Could not launch pack:\n{result}", self.view)
 
@@ -1238,13 +1312,13 @@ class PatchController:
 
             else:
                 self.view.is_patching = False
-                self.view.after(0, lambda: self.view.updateStep(2, 'failed'))
+                self.view.after(0, lambda: self.view.updateStep(3, 'failed'))
                 self.view.after(0, lambda: showErrorWithCopy(
                     "Patch Failed", msg, self.view))
                 self.view.after(0, lambda: self.view.setActionState("normal"))
 
         except Exception as e:
             self.view.is_patching = False
-            self.view.after(0, lambda: self.view.updateStep(2, 'failed'))
+            self.view.after(0, lambda: self.view.updateStep(3, 'failed'))
             self.view.after(0, lambda: showErrorWithCopy(
                 "Error", str(e), self.view))

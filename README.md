@@ -1,7 +1,7 @@
 <table>
 <tr>
 <td width="180" align="center">
-<img width="160" alt="Actions & Stuff RTX Patcher Logo" src="./A&S Patcher/assets/resources/as_rtx_simple_logo_.png" />
+<img width="160" alt="Actions & Stuff RTX Patcher Logo" src="./Actions_and_Stuff_RTX_Patcher/assets/resources/as_rtx_simple_logo_.png" />
 </td>
 <td>
 

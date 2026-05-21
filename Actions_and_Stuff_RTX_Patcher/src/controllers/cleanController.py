@@ -19,20 +19,27 @@ class CleanController:
         threading.Thread(target=self._scanWorker, daemon=True).start()
 
     def _scanWorker(self):
+        minecraft_bedrock_base = os.path.expandvars(self.config.get_path("minecraftBedrock"))
+        users_dir = os.path.join(minecraft_bedrock_base, "Users")
+
         pathsToScan = [
             os.path.join(os.path.expandvars(self.config.get_path(
                 "minecraftUwp")), "games", "com.mojang"),
             os.path.join(os.path.expandvars(self.config.get_path(
                 "minecraftUwpPreview")), "games", "com.mojang"),
-            # Add AppData paths (Launcher versions)
-            os.path.join(os.path.expandvars(self.config.get_path(
-                "minecraftBedrock")), "games", "com.mojang"),
-            # Handle specific launcher structure (Users/Shared)
-            os.path.join(os.path.expandvars(self.config.get_path(
-                "minecraftBedrock")), "Users", "Shared", "games", "com.mojang"),
+            os.path.join(minecraft_bedrock_base, "games", "com.mojang"),
             os.path.join(os.path.expandvars(self.config.get_path(
                 "minecraftBedrockPreview")), "games", "com.mojang"),
         ]
+
+        if os.path.exists(users_dir):
+            try:
+                for user_folder in os.listdir(users_dir):
+                    user_path = os.path.join(users_dir, user_folder, "games", "com.mojang")
+                    if os.path.exists(user_path) and user_path not in pathsToScan:
+                        pathsToScan.append(user_path)
+            except Exception:
+                pass
 
         prefixes = self.config.get_cleanup_prefixes()
         resultsText = ""
@@ -84,7 +91,6 @@ class CleanController:
             if self.fs.robustCleanup(folder):
                 deletedCount += 1
 
-        messagebox.showinfo("Done", f"Deleted {deletedCount} folders.")
         messagebox.showinfo("Done", f"Deleted {deletedCount} folders.")
         # self.view.onConfirm() was causing a crash because it's None.
         # The user can just click Back.
