@@ -116,7 +116,7 @@ jobs:
 
           ### 📦 Installation
           1. Download \`AnS_RTX_Patcher_V2.exe\` below
-          2. Make sure [BetterRTX](https://bedrock.graphics/) is installed
+          2. Make sure [BetterRTX] is installed
           3. Run the patcher and follow the on-screen instructions
 
           > [!NOTE]
@@ -128,8 +128,6 @@ jobs:
           *This section will be automatically filled in by the VirusTotal workflow after you upload the .exe asset and publish.*
 
           ---
-
-          *Built with ❤️ by the A&S RTX Community · [Discord](https://discord.gg/YrMMmN2kc7)*
           EOF
 
       - name: Create Draft Release

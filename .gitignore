@@ -27,11 +27,15 @@ venv/
 node_modules
 
 # A&S Patcher files
-A&S Patcher/app.log
-A&S Patcher/build/
-A&S Patcher/dist/
-A&S Patcher/*.spec
-A&S Patcher/temp_rs/
+Actions_and_Stuff_RTX_Patcher/app.log
+Actions_and_Stuff_RTX_Patcher/build/
+Actions_and_Stuff_RTX_Patcher/dist/
+Actions_and_Stuff_RTX_Patcher/*.spec
+Actions_and_Stuff_RTX_Patcher/temp_rs/
+Actions_and_Stuff_RTX_Patcher/libs/
+Actions_and_Stuff_RTX_Patcher/tools/_input/
+Actions_and_Stuff_RTX_Patcher/tools/tool_config.json
+Actions_and_Stuff_RTX_Patcher/tools/tool_config_v2.json
 
 # Brarchive Extractor files
 brachiveextractor/build/
@@ -40,5 +44,12 @@ brachiveextractor/*.spec
 brachiveextractor/test_output/
 brachiveextractor/db.json
 brachiveextractor/__pycache__/
+
+# General / Temporary / Reports
 temp_test_pack/
 pylint_report.txt
+*.bak
+Actions_and_Stuff_RTX_Patcher/dist/Actions_and_Stuff_RTX_Patcher.exe
+A-S-Minecraft-RTX-Community-PatcherV2.code-workspace
+/Actions_and_Stuff_RTX_Patcher/dist
+Actions_and_Stuff_RTX_Patcher/dist/Actions_and_Stuff_RTX_Patcher.exe
