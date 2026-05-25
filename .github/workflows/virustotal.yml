@@ -139,17 +139,27 @@ jobs:
 
             const existingBody = release.body || '';
 
-            const vtSection = '\n\n---\n\n### 🛡️ VirusTotal Scan\n| | |\n|---|---|\n' +
-              '| **Release** | `' + tag + '` |\n' +
-              '| **File** | `' + assetName + '` |\n' +
-              '| **SHA256** | `' + sha256 + '` |\n' +
-              '| **Scan Result** | [🔍 View on VirusTotal](' + vtLink + ') |\n';
+            const vtSection = '\n\n### 🛡️ VirusTotal Scan\n' +
+              '- **Release**: `' + tag + '`\n' +
+              '- **File**: `' + assetName + '`\n' +
+              '- **SHA256**: `' + sha256 + '`\n' +
+              '- **Scan Result**: [🔍 View on VirusTotal](' + vtLink + ')\n';
+
+            // Find and replace the placeholder if present in the release body
+            const placeholderRegex = /###\s*🛡️\s*VirusTotal\s*Scan[\r\n\s]*\*This\s+section\s+will\s+be\s+automatically\s+filled\s+in\s+by\s+the\s+VirusTotal\s+workflow\s+after\s+you\s+upload\s+the\s+\.exe\s+asset\s+and\s+publish\.\*/gi;
+
+            let newBody = existingBody;
+            if (placeholderRegex.test(existingBody)) {
+              newBody = existingBody.replace(placeholderRegex, vtSection.trim());
+            } else {
+              newBody = existingBody + vtSection;
+            }
 
             await github.rest.repos.updateRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
               release_id: releaseId,
-              body: existingBody + vtSection
+              body: newBody
             });
 
             console.log('VirusTotal link appended: ' + vtLink);

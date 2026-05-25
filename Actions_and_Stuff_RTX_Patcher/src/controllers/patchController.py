@@ -21,7 +21,9 @@ class PatchController:
     Controller handling the main patching flows: Marketplace, Zip, and Custom.
     """
 
-    def __init__(self, config: ConfigModel, patcher: PatcherModel, fs: FileSystemModel, view):
+    def __init__(
+        self, config: ConfigModel, patcher: PatcherModel, fs: FileSystemModel, view
+    ):
         self.config = config
         self.patcher = patcher
         self.fs = fs
@@ -29,7 +31,7 @@ class PatchController:
         self.cancel_event = threading.Event()
         self.temp_dir = os.path.join(tempfile.gettempdir(), "AnSPatcherFuzed")
         self.is_advanced = False
-        self.should_clean = True   # Set by AppController from main menu checkbox
+        self.should_clean = True  # Set by AppController from main menu checkbox
         self.version_map = {}  # Display String -> (ver_key, patch_data_dict)
 
     def setAdvancedMode(self, enabled: bool):
@@ -42,13 +44,12 @@ class PatchController:
             # Helper for SemVer sorting
             def parse_ver(v_str):
                 try:
-                    clean = v_str.lstrip('v')
-                    return tuple(map(int, clean.split('.')))
+                    clean = v_str.lstrip("v")
+                    return tuple(map(int, clean.split(".")))
                 except Exception:
                     return (0,)
 
-            sorted_keys = sorted(list(raw_versions.keys()),
-                                 key=parse_ver, reverse=True)
+            sorted_keys = sorted(list(raw_versions.keys()), key=parse_ver, reverse=True)
 
             display_list = ["Auto (Default)"]
             self.version_map = {}
@@ -85,13 +86,20 @@ class PatchController:
                 print(f"Failed to clean up temp directory: {e}")
 
         # Reset patching state
-        if hasattr(self, 'view') and hasattr(self.view, 'is_patching'):
+        if hasattr(self, "view") and hasattr(self.view, "is_patching"):
             self.view.is_patching = False
 
         # Reset cancel event for next operation
         self.cancel_event.clear()
 
-    def _showVersionMismatchDialog(self, detected_ver: str, target_ver: str, path: str, is_manual: bool = False, allow_force: bool = False):
+    def _showVersionMismatchDialog(
+        self,
+        detected_ver: str,
+        target_ver: str,
+        path: str,
+        is_manual: bool = False,
+        allow_force: bool = False,
+    ):
         """
         Shows a custom dialog for resolving version mismatch.
         Returns: 'detected', 'latest', or None (cancel).
@@ -100,7 +108,11 @@ class PatchController:
         title_text = "Selection Mismatch" if is_manual else "Version Mismatch"
         header_text = "Selection Not Found" if is_manual else "Older Version Detected"
         target_label = "Selected:" if is_manual else "Latest:"
-        target_btn_text = f"Force Selected ({target_ver})" if is_manual else f"Force Latest ({target_ver})"
+        target_btn_text = (
+            f"Force Selected ({target_ver})"
+            if is_manual
+            else f"Force Latest ({target_ver})"
+        )
 
         dialog = ctk.CTkToplevel(self.view)
         dialog.title(title_text)
@@ -119,34 +131,43 @@ class PatchController:
         container = ctk.CTkFrame(dialog, corner_radius=10)
         container.pack(fill="both", expand=True, padx=20, pady=20)
 
-        ctk.CTkLabel(container, text=header_text, font=(
-            FONT_FAMILY, 20, "bold"), text_color="#FFCC00").pack(pady=(0, 15))
+        ctk.CTkLabel(
+            container,
+            text=header_text,
+            font=(FONT_FAMILY, 20, "bold"),
+            text_color="#FFCC00",
+        ).pack(pady=(0, 15))
 
-        info_frame = ctk.CTkFrame(
-            container, border_width=1, border_color="gray")
+        info_frame = ctk.CTkFrame(container, border_width=1, border_color="gray")
         info_frame.pack(fill="x", pady=5)
 
-        grid_opts = {'padx': 5, 'pady': 2, 'sticky': 'w'}
+        grid_opts = {"padx": 5, "pady": 2, "sticky": "w"}
 
-        ctk.CTkLabel(info_frame, text="Detected:", font=(
-            FONT_FAMILY, 12, "bold")).grid(row=0, column=0, **grid_opts)
+        ctk.CTkLabel(info_frame, text="Detected:", font=(FONT_FAMILY, 12, "bold")).grid(
+            row=0, column=0, **grid_opts
+        )
         ctk.CTkLabel(info_frame, text=f"{detected_ver}", text_color="#FFCC00").grid(
-            row=0, column=1, **grid_opts)
+            row=0, column=1, **grid_opts
+        )
 
-        ctk.CTkLabel(info_frame, text=target_label, font=(
-            FONT_FAMILY, 12, "bold")).grid(row=1, column=0, **grid_opts)
+        ctk.CTkLabel(
+            info_frame, text=target_label, font=(FONT_FAMILY, 12, "bold")
+        ).grid(row=1, column=0, **grid_opts)
         ctk.CTkLabel(info_frame, text=f"{target_ver}", text_color=COLOR_ACCENT_1).grid(
-            row=1, column=1, **grid_opts)
+            row=1, column=1, **grid_opts
+        )
 
-        ctk.CTkLabel(info_frame, text="Location:", font=(
-            FONT_FAMILY, 12, "bold")).grid(row=2, column=0, **grid_opts)
+        ctk.CTkLabel(info_frame, text="Location:", font=(FONT_FAMILY, 12, "bold")).grid(
+            row=2, column=0, **grid_opts
+        )
 
         # Truncate path if too long
         display_path = path
         if len(display_path) > 40:
             display_path = "..." + display_path[-37:]
-        ctk.CTkLabel(info_frame, text=display_path, font=(
-            "Consolas", 10)).grid(row=2, column=1, **grid_opts)
+        ctk.CTkLabel(info_frame, text=display_path, font=("Consolas", 10)).grid(
+            row=2, column=1, **grid_opts
+        )
 
         if is_manual:
             if allow_force:
@@ -156,8 +177,9 @@ class PatchController:
         else:
             msg_text = "It is recommended to update to the latest version.\nHowever, you can choose to proceed with the detected version."
 
-        ctk.CTkLabel(container, text=msg_text, justify="center",
-                     wraplength=400).pack(pady=15)
+        ctk.CTkLabel(container, text=msg_text, justify="center", wraplength=400).pack(
+            pady=15
+        )
 
         btn_frame = ctk.CTkFrame(container, fg_color="transparent")
         btn_frame.pack(fill="x", pady=10)
@@ -181,13 +203,27 @@ class PatchController:
             dialog.destroy()
 
         # Buttons
-        ctk.CTkButton(btn_frame, text=f"Use Detected ({detected_ver})", command=on_detected, **get_button_style(
-            "secondary")).pack(side="left", expand=True, fill="x", padx=5)
+        ctk.CTkButton(
+            btn_frame,
+            text=f"Use Detected ({detected_ver})",
+            command=on_detected,
+            **get_button_style("secondary"),
+        ).pack(side="left", expand=True, fill="x", padx=5)
         if allow_force:
-            ctk.CTkButton(btn_frame, text=target_btn_text, command=on_latest, **get_button_style(
-                "filled-primary")).pack(side="left", expand=True, fill="x", padx=5)
-        ctk.CTkButton(btn_frame, text="Browse Folder...", command=on_browse, fg_color="transparent",
-                      border_width=1, border_color="gray").pack(side="left", expand=True, fill="x", padx=5)
+            ctk.CTkButton(
+                btn_frame,
+                text=target_btn_text,
+                command=on_latest,
+                **get_button_style("filled-primary"),
+            ).pack(side="left", expand=True, fill="x", padx=5)
+        ctk.CTkButton(
+            btn_frame,
+            text="Browse Folder...",
+            command=on_browse,
+            fg_color="transparent",
+            border_width=1,
+            border_color="gray",
+        ).pack(side="left", expand=True, fill="x", padx=5)
 
         dialog.protocol("WM_DELETE_WINDOW", on_cancel)
         dialog.transient(self.view)
@@ -218,12 +254,17 @@ class PatchController:
         container = ctk.CTkFrame(dialog, corner_radius=10)
         container.pack(fill="both", expand=True, padx=20, pady=20)
 
-        ctk.CTkLabel(container, text="Pack Not Found", font=(
-            FONT_FAMILY, 20, "bold"), text_color="#FF3333").pack(pady=(0, 15))
+        ctk.CTkLabel(
+            container,
+            text="Pack Not Found",
+            font=(FONT_FAMILY, 20, "bold"),
+            text_color="#FF3333",
+        ).pack(pady=(0, 15))
 
         msg = "Could not find a supported version of 'Actions & Stuff'.\n\nEither the pack is not installed, or the installed version does not have a matching patch available.\n\nWould you like to browse for the folder manually?"
-        ctk.CTkLabel(container, text=msg, justify="center",
-                     wraplength=350).pack(pady=10)
+        ctk.CTkLabel(container, text=msg, justify="center", wraplength=350).pack(
+            pady=10
+        )
 
         btn_frame = ctk.CTkFrame(container, fg_color="transparent")
         btn_frame.pack(fill="x", pady=20)
@@ -238,10 +279,20 @@ class PatchController:
             result["value"] = None
             dialog.destroy()
 
-        ctk.CTkButton(btn_frame, text="Browse Folder...", command=on_browse, **
-                      get_button_style("filled-primary")).pack(side="left", expand=True, fill="x", padx=5)
-        ctk.CTkButton(btn_frame, text="Cancel", command=on_cancel, fg_color="transparent",
-                      border_width=1, border_color="gray").pack(side="left", expand=True, fill="x", padx=5)
+        ctk.CTkButton(
+            btn_frame,
+            text="Browse Folder...",
+            command=on_browse,
+            **get_button_style("filled-primary"),
+        ).pack(side="left", expand=True, fill="x", padx=5)
+        ctk.CTkButton(
+            btn_frame,
+            text="Cancel",
+            command=on_cancel,
+            fg_color="transparent",
+            border_width=1,
+            border_color="gray",
+        ).pack(side="left", expand=True, fill="x", padx=5)
 
         dialog.protocol("WM_DELETE_WINDOW", on_cancel)
         dialog.transient(self.view)
@@ -264,31 +315,46 @@ class PatchController:
         patch_frame.clearLog()
         patch_frame.setStatus("Searching for your A&S pack...")
         if not self.is_advanced:
-            patch_frame.setSimpleHint("🔍 Scanning Minecraft folders — this only takes a moment...")
-        patch_frame.setProgress(0, 'indeterminate')
+            patch_frame.setSimpleHint(
+                "🔍 Scanning Minecraft folders — this only takes a moment..."
+            )
+        patch_frame.setProgress(0, "indeterminate")
         patch_frame.setActionState("disabled")
         patch_frame.hideSecondaryAction()
         self.cancel_event.clear()
-        threading.Thread(target=self._marketplaceSearchWorker,
-                         daemon=True).start()
+        threading.Thread(target=self._marketplaceSearchWorker, daemon=True).start()
 
-    def _marketplaceSearchWorker(self, target_patch_data: dict = None, target_ver_key: str = None):
+    def _marketplaceSearchWorker(
+        self, target_patch_data: dict = None, target_ver_key: str = None
+    ):
         paths_to_check = [
-            os.path.join(os.path.expandvars(self.config.get_path(
-                "minecraftBedrock")), "premium_cache", "resource_packs"),
-            os.path.join(os.path.expandvars(self.config.get_path(
-                "minecraftBedrockPreview")), "premium_cache", "resource_packs"),
-            os.path.join(os.path.expandvars(self.config.get_path(
-                "minecraftUwp")), "premium_cache", "resource_packs"),
-            os.path.join(os.path.expandvars(self.config.get_path(
-                "minecraftUwpPreview")), "premium_cache", "resource_packs")
+            os.path.join(
+                os.path.expandvars(self.config.get_path("minecraftBedrock")),
+                "premium_cache",
+                "resource_packs",
+            ),
+            os.path.join(
+                os.path.expandvars(self.config.get_path("minecraftBedrockPreview")),
+                "premium_cache",
+                "resource_packs",
+            ),
+            os.path.join(
+                os.path.expandvars(self.config.get_path("minecraftUwp")),
+                "premium_cache",
+                "resource_packs",
+            ),
+            os.path.join(
+                os.path.expandvars(self.config.get_path("minecraftUwpPreview")),
+                "premium_cache",
+                "resource_packs",
+            ),
         ]
 
         target_versions = self.config.config["patchVersions"]
         found_folder = None
         _detected_version_data = None
         detected_version_key = None
-        detection_method = 'unknown'
+        detection_method = "unknown"
 
         candidates = []
 
@@ -309,7 +375,7 @@ class PatchController:
             if not os.path.exists(manifest_path):
                 return False
             try:
-                with open(manifest_path, 'r', encoding='utf-8', errors='ignore') as f:
+                with open(manifest_path, "r", encoding="utf-8", errors="ignore") as f:
                     data = json.load(f)
 
                     # 1. Check UUID
@@ -347,7 +413,7 @@ class PatchController:
             extracted_version = None
             try:
                 # Limit read size to avoid memory issues with huge files (100KB is plenty for lang file)
-                with open(lang_path, 'r', encoding='utf-8', errors='ignore') as f:
+                with open(lang_path, "r", encoding="utf-8", errors="ignore") as f:
                     content = f.read(102400)
                     if "pack.name=" in content and "Actions & Stuf" in content:
                         # Try to extract version: "pack.name=Actions & Stuff 1.9"
@@ -357,7 +423,9 @@ class PatchController:
                                 if len(parts) > 1:
                                     raw_str = parts[1]
                                     # Strip color codes and extract pure numeric semantic versioning
-                                    extracted_version = re.sub(r'[^0-9.]', '', raw_str).strip('.')
+                                    extracted_version = re.sub(
+                                        r"[^0-9.]", "", raw_str
+                                    ).strip(".")
                                     if extracted_version:
                                         break
                         return True, extracted_version
@@ -393,7 +461,8 @@ class PatchController:
                     # 1. Manifest Check
                     is_manifest_match = check_manifest(full_path)
                     self._log(
-                        f"      [Manifest Check]: {'PASS' if is_manifest_match else 'FAIL'}")
+                        f"      [Manifest Check]: {'PASS' if is_manifest_match else 'FAIL'}"
+                    )
                     if is_manifest_match:
                         score += 1
 
@@ -404,38 +473,42 @@ class PatchController:
 
                     if latest_ver_data and "validation" in latest_ver_data:
                         target_logo_hash = latest_ver_data["validation"].get(
-                            "logo_hash", target_logo_hash)
+                            "logo_hash", target_logo_hash
+                        )
 
                     # OVERRIDE: If manual selection passed, use ITS logo hash
                     if target_patch_data and "validation" in target_patch_data:
                         target_logo_hash = target_patch_data["validation"].get(
-                            "logo_hash", target_logo_hash)
+                            "logo_hash", target_logo_hash
+                        )
 
                     logo_path = os.path.join(full_path, "pack_icon.png")
                     _is_logo_match = False
                     if os.path.exists(logo_path):
                         current_hash = calculate_file_hash(logo_path)
                         match = current_hash == target_logo_hash
-                        self._log(f"      [Logo Check]: {'Match' if match else 'Mismatch'} (Hash: {current_hash[:8]}...)")
+                        self._log(
+                            f"      [Logo Check]: {'Match' if match else 'Mismatch'} (Hash: {current_hash[:8]}...)"
+                        )
                         if match:
                             _is_logo_match = True
                             score += 1
                     else:
-                        self._log(
-                            "      [Logo Check]: No pack_icon.png found.")
+                        self._log("      [Logo Check]: No pack_icon.png found.")
 
                     # 3. Lang Check
-                    is_lang_match, lang_version_str = check_lang_file(
-                        full_path)
+                    is_lang_match, lang_version_str = check_lang_file(full_path)
                     self._log(
-                        f"      [Lang Check]: {'PASS' if is_lang_match else 'FAIL'} (Detected: {lang_version_str})")
+                        f"      [Lang Check]: {'PASS' if is_lang_match else 'FAIL'} (Detected: {lang_version_str})"
+                    )
                     if is_lang_match:
                         score += 1
 
                     # 4. Stats Check (Version Specific)
                     curr_stats = self.fs.getFolderStats(full_path)
                     self._log(
-                        f"      [Stats Check]: Found Files={curr_stats[0]}, Dirs={curr_stats[1]}")
+                        f"      [Stats Check]: Found Files={curr_stats[0]}, Dirs={curr_stats[1]}"
+                    )
 
                     stats_match_version_key = None
                     stats_match_data = None
@@ -443,13 +516,14 @@ class PatchController:
                     # Iterate Latest -> Oldest (STRICT SEMVER SORT)
                     def parse_ver_local(v_str):
                         try:
-                            clean = v_str.lstrip('v')
-                            return tuple(map(int, clean.split('.')))
+                            clean = v_str.lstrip("v")
+                            return tuple(map(int, clean.split(".")))
                         except Exception:
                             return (0,)
 
                     sorted_ver_keys = sorted(
-                        list(target_versions.keys()), key=parse_ver_local, reverse=True)
+                        list(target_versions.keys()), key=parse_ver_local, reverse=True
+                    )
 
                     # LOGIC CHANGE: If user selected a specific version manually, check THAT version first!
                     if target_ver_key and target_ver_key in sorted_ver_keys:
@@ -457,17 +531,23 @@ class PatchController:
                         sorted_ver_keys.remove(target_ver_key)
                         sorted_ver_keys.insert(0, target_ver_key)
                         self._log(
-                            f"      [Stats Check] Prioritizing manual selection: {target_ver_key}")
+                            f"      [Stats Check] Prioritizing manual selection: {target_ver_key}"
+                        )
 
                     for ver_key in sorted_ver_keys:
                         patch_list = target_versions[ver_key]
                         for ver_data in patch_list:
                             stats = ver_data.get("stats")
-                            if stats and curr_stats[0] == stats["files"] and curr_stats[1] == stats["dirs"]:
+                            if (
+                                stats
+                                and curr_stats[0] == stats["files"]
+                                and curr_stats[1] == stats["dirs"]
+                            ):
                                 stats_match_version_key = ver_key
                                 stats_match_data = ver_data
                                 self._log(
-                                    f"      [Stats Check] Matched version: {ver_key}")
+                                    f"      [Stats Check] Matched version: {ver_key}"
+                                )
                                 break
 
                         if stats_match_version_key:
@@ -477,7 +557,8 @@ class PatchController:
                         score += 1
                     else:
                         self._log(
-                            "      [Stats Check] No version configuration matched folder stats.")
+                            "      [Stats Check] No version configuration matched folder stats."
+                        )
 
                     # FINAL DECISION LOGIC
                     # We need at least 2 indicators to confirm it is A&S
@@ -487,7 +568,7 @@ class PatchController:
                         # Determine Version for this candidate
                         c_version_key = None
                         c_version_data = None
-                        c_method = 'unknown'
+                        c_method = "unknown"
 
                         # Case C: Lang file provided a version string (e.g. "1.9")
                         if lang_version_str:
@@ -495,42 +576,48 @@ class PatchController:
                             if potential_key in target_versions:
                                 c_version_key = potential_key
                                 c_version_data = target_versions[potential_key][0]
-                                c_method = 'lang_string'
+                                c_method = "lang_string"
                             else:
                                 self._log(
-                                    f"  -> Candidate Version string '{lang_version_str}' unknown.")
+                                    f"  -> Candidate Version string '{lang_version_str}' unknown."
+                                )
                                 # Fallback to stats if text version is unknown
                                 if stats_match_version_key:
                                     c_version_data = stats_match_data
                                     c_version_key = stats_match_version_key
-                                    c_method = 'stats_fallback'
-                                    self._log(f"  -> Falling back to stats match: {c_version_key}")
+                                    c_method = "stats_fallback"
+                                    self._log(
+                                        f"  -> Falling back to stats match: {c_version_key}"
+                                    )
 
                         # Case B: Stats matched a known version
                         if not c_version_data and stats_match_version_key:
                             c_version_data = stats_match_data
                             c_version_key = stats_match_version_key
-                            c_method = 'stats'
+                            c_method = "stats"
 
                         # No matching version config — skip this candidate
                         if not c_version_data:
                             self._log(
-                                "  -> No suitable patch version found for this pack. Skipping candidate.")
+                                "  -> No suitable patch version found for this pack. Skipping candidate."
+                            )
                             continue
 
-                        candidates.append({
-                            'path': full_path,
-                            'version_key': c_version_key,
-                            'version_data': c_version_data,
-                            'method': c_method,
-                            'score': score
-                        })
+                        candidates.append(
+                            {
+                                "path": full_path,
+                                "version_key": c_version_key,
+                                "version_data": c_version_data,
+                                "method": c_method,
+                                "score": score,
+                            }
+                        )
                         self._log(
-                            f"  -> Helper: Candidate added. Version: {c_version_key}")
+                            f"  -> Helper: Candidate added. Version: {c_version_key}"
+                        )
 
                     else:
-                        self._log(
-                            f"    -> Verification Failed. Score: {score}")
+                        self._log(f"    -> Verification Failed. Score: {score}")
 
             except OSError as e:
                 self._log(f"Error scanning path: {e}")
@@ -543,31 +630,35 @@ class PatchController:
             # Sort candidates by Version (Hightest First)
             # Re-use parse_ver_local
             def candidate_sort_key(c):
-                v_key = c['version_key']
+                v_key = c["version_key"]
                 return parse_ver_local(v_key)
 
             candidates.sort(key=candidate_sort_key, reverse=True)
 
             best = candidates[0]
-            found_folder = best['path']
-            detected_version_key = best['version_key']
-            _detected_version_data = best['version_data']
-            detection_method = best['method']
+            found_folder = best["path"]
+            detected_version_key = best["version_key"]
+            _detected_version_data = best["version_data"]
+            detection_method = best["method"]
 
             self._log(f"Selected Candidate: {found_folder}")
             self._log(
-                f"Detected Version: {detected_version_key} (Method: {detection_method})")
+                f"Detected Version: {detected_version_key} (Method: {detection_method})"
+            )
 
         else:
             self._log(
-                "No valid Actions & Stuff pack found (or no supported version installed).")
+                "No valid Actions & Stuff pack found (or no supported version installed)."
+            )
 
         if not found_folder:
+
             def handle_not_found():
                 choice = self._showNotFoundDialog()
-                if choice == 'browse':
+                if choice == "browse":
                     new_path = filedialog.askdirectory(
-                        title="Select Actions & Stuff Folder")
+                        title="Select Actions & Stuff Folder"
+                    )
                     if new_path:
                         # Use latest version data as fallback for manual browse
                         latest_data = self.config.get_latest_version_data()
@@ -576,7 +667,7 @@ class PatchController:
                 # User cancelled
                 self.view.is_patching = False
                 self.view.setStatus("Cancelled.")
-                self.view.setProgress(0, 'determinate')
+                self.view.setProgress(0, "determinate")
 
             self.view.after(0, handle_not_found)
             return
@@ -595,9 +686,11 @@ class PatchController:
             target_key = detected_version_key
 
             # Warn about stats mismatch if applicable
-            if detection_method == 'lang':
+            if detection_method == "lang":
                 messagebox.showinfo(
-                    "Warning", "Folder statistics did not match known configurations.\nHowever, the Language file confirmed this is Actions & Stuff.\nProceeding with detected version logic.")
+                    "Warning",
+                    "Folder statistics did not match known configurations.\nHowever, the Language file confirmed this is Actions & Stuff.\nProceeding with detected version logic.",
+                )
 
             # STEP A: Version Selection (Detailed vs Latest)
 
@@ -608,27 +701,31 @@ class PatchController:
                 # Manual Mode Check
                 if detected_version_key != target_ver_key:
                     self._log(
-                        f"DEBUG: Manual Selection Mismatch. Detected: {detected_version_key}, Selected: {target_ver_key}")
+                        f"DEBUG: Manual Selection Mismatch. Detected: {detected_version_key}, Selected: {target_ver_key}"
+                    )
                     # Pass is_manual=True
                     choice = self._showVersionMismatchDialog(
-                        detected_version_key, target_ver_key, found_folder, is_manual=True, allow_force=False)
+                        detected_version_key,
+                        target_ver_key,
+                        found_folder,
+                        is_manual=True,
+                        allow_force=False,
+                    )
 
-                    if choice == 'latest':
+                    if choice == "latest":
                         target_key = target_ver_key
-                        self._log(
-                            f"User forced selected version: {target_key}")
-                    elif choice == 'detected':
+                        self._log(f"User forced selected version: {target_key}")
+                    elif choice == "detected":
                         target_key = detected_version_key
-                        self._log(
-                            f"User switched to detected version: {target_key}")
-                    elif choice == 'browse':
+                        self._log(f"User switched to detected version: {target_key}")
+                    elif choice == "browse":
                         new_path = filedialog.askdirectory(
-                            title="Select Actions & Stuff Folder")
+                            title="Select Actions & Stuff Folder"
+                        )
                         if new_path:
                             found_folder = new_path
                             target_key = target_ver_key
-                            self._log(
-                                f"User manually selected folder: {found_folder}")
+                            self._log(f"User manually selected folder: {found_folder}")
                         else:
                             self.view.onBack()
                             return
@@ -643,18 +740,22 @@ class PatchController:
                 # Normal Auto logic (Older detected)
                 # Pass is_manual=False (default)
                 choice = self._showVersionMismatchDialog(
-                    detected_version_key, latest_key, found_folder, is_manual=False)
+                    detected_version_key, latest_key, found_folder, is_manual=False
+                )
 
-                if choice == 'latest':
+                if choice == "latest":
                     messagebox.showinfo(
-                        "Notice", "You have chosen to force the Latest Patch on an older Pack version.\nThis is allowed but may have unexpected results.")
+                        "Notice",
+                        "You have chosen to force the Latest Patch on an older Pack version.\nThis is allowed but may have unexpected results.",
+                    )
                     target_key = latest_key
                     self._log(f"User forced latest version: {target_key}")
-                elif choice == 'detected':
+                elif choice == "detected":
                     self._log(f"User kept detected version: {target_key}")
-                elif choice == 'browse':
+                elif choice == "browse":
                     new_path = filedialog.askdirectory(
-                        title="Select Actions & Stuff Folder")
+                        title="Select Actions & Stuff Folder"
+                    )
                     if new_path:
                         found_folder = new_path
                         # If browsing in auto mode, what version do we target?
@@ -662,7 +763,8 @@ class PatchController:
                         # Let's assume they want the latest patch if they browse manually in auto mode.
                         target_key = latest_key
                         self._log(
-                            f"User manually selected folder (Auto Mode): {found_folder}")
+                            f"User manually selected folder (Auto Mode): {found_folder}"
+                        )
                     else:
                         self.view.onBack()
                         return
@@ -673,7 +775,10 @@ class PatchController:
 
             # Handle unknown version (detected but not in config)
             if target_key not in target_versions:
-                if messagebox.askyesno("Unknown Version", f"Detected version '{target_key}' has no known patches.\nTry using the latest patch ({latest_key})?"):
+                if messagebox.askyesno(
+                    "Unknown Version",
+                    f"Detected version '{target_key}' has no known patches.\nTry using the latest patch ({latest_key})?",
+                ):
                     target_key = latest_key
                 else:
                     self.view.onBack()
@@ -689,7 +794,8 @@ class PatchController:
                 # Create a selection list
                 # Format: "v1.1"
                 options_map = {
-                    f"v{p.get('patchVersion', '?')}": p for p in patch_options}
+                    f"v{p.get('patchVersion', '?')}": p for p in patch_options
+                }
                 options_labels = list(options_map.keys())
 
                 def ask_user_choice():
@@ -707,10 +813,19 @@ class PatchController:
                         pass
 
                     ctk.CTkLabel(
-                        dialog, text=f"Multiple patches found for {target_key}.\nPlease select a version:", justify="center").pack(pady=15)
+                        dialog,
+                        text=f"Multiple patches found for {target_key}.\nPlease select a version:",
+                        justify="center",
+                    ).pack(pady=15)
 
-                    cbo = ctk.CTkComboBox(dialog, values=options_labels, variable=choice, state="readonly",
-                                          button_color=COLOR_ACCENT_1, border_color=COLOR_ACCENT_1)
+                    cbo = ctk.CTkComboBox(
+                        dialog,
+                        values=options_labels,
+                        variable=choice,
+                        state="readonly",
+                        button_color=COLOR_ACCENT_1,
+                        border_color=COLOR_ACCENT_1,
+                    )
                     cbo.pack(pady=5, padx=20, fill="x")
                     cbo.set(options_labels[0])
 
@@ -720,8 +835,12 @@ class PatchController:
                         result["value"] = choice.get()
                         dialog.destroy()
 
-                    ctk.CTkButton(dialog, text="Select", command=on_ok,
-                                  **get_button_style("filled-primary")).pack(pady=20)
+                    ctk.CTkButton(
+                        dialog,
+                        text="Select",
+                        command=on_ok,
+                        **get_button_style("filled-primary"),
+                    ).pack(pady=20)
 
                     dialog.transient(self.view)
                     dialog.grab_set()
@@ -741,20 +860,24 @@ class PatchController:
 
     def _prepareAndPatch(self, found_folder, version_data):
         self._log(
-            f"Preparing to patch using Patch Version: {version_data.get('patchVersion', 'Unknown')}")
+            f"Preparing to patch using Patch Version: {version_data.get('patchVersion', 'Unknown')}"
+        )
 
         # Prepare temp directory
         os.makedirs(self.temp_dir, exist_ok=True)
         temp_zip = os.path.join(self.temp_dir, "temp_vanilla.zip")
 
-        self.view.after(0, lambda: self.view.updateStep(0, 'completed'))
-        self.view.after(0, lambda: self.view.updateStep(1, 'active'))
+        self.view.after(0, lambda: self.view.updateStep(0, "completed"))
+        self.view.after(0, lambda: self.view.updateStep(1, "active"))
         self.view.after(0, lambda: self.view.setStatus("Backing up Pack..."))
         self.view.after(0, lambda: self.view.setProgress(10))
 
         # Spawn thread for compression
-        threading.Thread(target=self._compressionWorker, args=(
-            found_folder, temp_zip, version_data), daemon=True).start()
+        threading.Thread(
+            target=self._compressionWorker,
+            args=(found_folder, temp_zip, version_data),
+            daemon=True,
+        ).start()
 
     def _compressionWorker(self, found_folder, temp_zip, version_data):
         self._log("Starting compression/backup...")
@@ -766,8 +889,9 @@ class PatchController:
             target_folder = os.path.join(self.temp_dir, "mp_extracted")
             self.fs.robustCleanup(target_folder)
             shutil.copytree(found_folder, target_folder)
-            
+
             from ..utils.brarchive_extract import extract_brarchives_from_workspace
+
             extract_brarchives_from_workspace(target_folder, self._log)
 
         def on_compress_progress(current, total):
@@ -781,7 +905,7 @@ class PatchController:
             output_zip=temp_zip,
             cancel_event=self.cancel_event,
             progress_callback=on_compress_progress,
-            log_callback=self._log
+            log_callback=self._log,
         )
 
         if self.cancel_event.is_set():
@@ -789,18 +913,22 @@ class PatchController:
 
         if not success:
             self.view.is_patching = False
-            self.view.after(0, lambda: self.view.updateStep(1, 'failed'))
-            self.view.after(0, lambda: showErrorWithCopy(
-                "Backup Failed", 
-                "Failed to create a backup of the pack.\n\n"
-                "Please make sure Minecraft is closed and no files in the pack are locked, then try again.", 
-                self.view
-            ))
+            self.view.after(0, lambda: self.view.updateStep(1, "failed"))
+            self.view.after(
+                0,
+                lambda: showErrorWithCopy(
+                    "Backup Failed",
+                    "Failed to create a backup of the pack.\n\n"
+                    "Please make sure Minecraft is closed and no files in the pack are locked, then try again.",
+                    self.view,
+                ),
+            )
             self.view.after(0, self.view.onBack)
             return
 
-        self.view.after(0, lambda: self._onReadyToPatch(
-            temp_zip, "marketplace", version_data))
+        self.view.after(
+            0, lambda: self._onReadyToPatch(temp_zip, "marketplace", version_data)
+        )
 
     def startZipPatch(self):
         patch_frame = self.view
@@ -857,22 +985,23 @@ class PatchController:
             if should_apply_manifest[0]:
                 manifest_path = resourcePath("assets/resources/manifest.json")
                 if os.path.exists(manifest_path):
-                    shutil.copyfile(manifest_path, os.path.join(
-                        extract_dir, "manifest.json"))
+                    shutil.copyfile(
+                        manifest_path, os.path.join(extract_dir, "manifest.json")
+                    )
             # -----------------------------
 
             if self.is_advanced and getattr(self, "extract_brarchives", False):
                 self._log("Extracting Brarchives (Beta)...")
                 from ..utils.brarchive_extract import extract_brarchives_from_workspace
+
                 extract_brarchives_from_workspace(extract_dir, self._log)
 
-            self.view.after(0, lambda: self.view.updateStep(0, 'completed'))
-            self.view.after(0, lambda: self.view.updateStep(1, 'active'))
+            self.view.after(0, lambda: self.view.updateStep(0, "completed"))
+            self.view.after(0, lambda: self.view.updateStep(1, "active"))
             self.view.after(0, lambda: self.view.setProgress(20))
 
             normalized_zip = os.path.join(self.temp_dir, "normalized.zip")
-            self._log(
-                "Starting deterministic compression (this may take a while)...")
+            self._log("Starting deterministic compression (this may take a while)...")
 
             def on_compress_progress(current, total):
                 pct = int((current / total) * 100)
@@ -885,12 +1014,12 @@ class PatchController:
                 output_zip=normalized_zip,
                 cancel_event=self.cancel_event,
                 progress_callback=on_compress_progress,
-                log_callback=self._log
+                log_callback=self._log,
             )
 
             if not success:
                 self.view.is_patching = False
-                self.view.after(0, lambda: self.view.updateStep(1, 'failed'))
+                self.view.after(0, lambda: self.view.updateStep(1, "failed"))
                 self.view.after(0, self.view.onBack)
                 return
 
@@ -898,45 +1027,62 @@ class PatchController:
             if detected_version_data:
                 self._log("Using selected version configuration.")
                 # Verify content
-                p_ver = detected_version_data.get('patchVersion', 'Unknown')
+                p_ver = detected_version_data.get("patchVersion", "Unknown")
                 self._log(f"DEBUG: ZipWorker using patch version: {p_ver}")
             else:
                 self._log("DEBUG: ZipWorker received NO target data.")
 
-            self.view.after(0, lambda: self._onReadyToPatch(
-                normalized_zip, "zip", detected_version_data))
+            self.view.after(
+                0,
+                lambda: self._onReadyToPatch(
+                    normalized_zip, "zip", detected_version_data
+                ),
+            )
 
         except Exception as e:
             self.view.is_patching = False
-            self.view.after(0, lambda: self.view.updateStep(0, 'failed'))
-            self.view.after(0, lambda e=e: showErrorWithCopy(
-                "Error", f"Failed to process zip:\n{e}", self.view))
+            self.view.after(0, lambda: self.view.updateStep(0, "failed"))
+            self.view.after(
+                0,
+                lambda e=e: showErrorWithCopy(
+                    "Error", f"Failed to process zip:\n{e}", self.view
+                ),
+            )
             self.view.after(0, self.view.onBack)
 
-    def _onReadyToPatch(self, source_zip: str, mode: str, detected_version_data: dict = None):
+    def _onReadyToPatch(
+        self, source_zip: str, mode: str, detected_version_data: dict = None
+    ):
         self.view.setStatus("Pack normalized! Ready to patch...")
         self.view.setProgress(50)
-        self.view.updateStep(1, 'completed')
+        self.view.updateStep(1, "completed")
 
         def runPatchAction():
             # In simple mode read from should_clean; in advanced mode read from view checkbox
-            do_clean = self.view.cleanOldVersionsVar.get() if self.is_advanced else self.should_clean
+            do_clean = (
+                self.view.cleanOldVersionsVar.get()
+                if self.is_advanced
+                else self.should_clean
+            )
 
-            patch_type = "marketplaceEncrypted" if mode == "marketplace" else "zipDecrypted"
+            patch_type = (
+                "marketplaceEncrypted" if mode == "marketplace" else "zipDecrypted"
+            )
             patch_file_relative = self.config.get_patch_path(patch_type)
 
             # Fallback: If no version detected/selected, use the LATEST available version
             current_version_data = detected_version_data
             if not current_version_data:
-                self._log(
-                    "No specific version detected. Defaulting to latest version.")
+                self._log("No specific version detected. Defaulting to latest version.")
                 current_version_data = self.config.get_latest_version_data()
                 if current_version_data:
                     self._log(
-                        f"Fallback Version Config: Patch {current_version_data.get('patchVersion', '?')}")
+                        f"Fallback Version Config: Patch {current_version_data.get('patchVersion', '?')}"
+                    )
             else:
                 self._log(
-                    f"DEBUG: Ready to patch with provided version data: {current_version_data.get('patchVersion', '?')}")
+                    f"DEBUG: Ready to patch with provided version data: {current_version_data.get('patchVersion', '?')}"
+                )
 
             # Use detected/fallback patch file if available
             if current_version_data and "patches" in current_version_data:
@@ -953,15 +1099,18 @@ class PatchController:
 
             self.view.setActionState("disabled")
             if do_clean:
-                self.view.updateStep(2, 'active')
+                self.view.updateStep(2, "active")
                 self.view.setProgress(55)
             else:
-                self.view.updateStep(2, 'completed')
-                self.view.updateStep(3, 'active')
+                self.view.updateStep(2, "completed")
+                self.view.updateStep(3, "active")
                 self.view.setProgress(60)
 
-            threading.Thread(target=self._patchWorker, args=(
-                source_zip, patch_file, do_clean), daemon=True).start()
+            threading.Thread(
+                target=self._patchWorker,
+                args=(source_zip, patch_file, do_clean),
+                daemon=True,
+            ).start()
 
         # Auto-fire patching after compressing/normalization is ready
         self.view.after(0, runPatchAction)
@@ -970,29 +1119,48 @@ class PatchController:
         if do_clean:
             self.view.after(0, lambda: self.view.setStatus("Cleaning old versions..."))
             if not self.is_advanced:
-                self.view.after(0, lambda: self.view.setSimpleHint("🧹 Scanning for old patched versions..."))
+                self.view.after(
+                    0,
+                    lambda: self.view.setSimpleHint(
+                        "🧹 Scanning for old patched versions..."
+                    ),
+                )
             self._log("🧹 Scanning for old patched versions to remove...")
             import time
+
             time.sleep(1.0)
 
             # Scan ALL possible paths (dynamically scanning all Xbox users under Users/)
-            minecraft_bedrock_base = os.path.expandvars(self.config.get_path("minecraftBedrock"))
+            minecraft_bedrock_base = os.path.expandvars(
+                self.config.get_path("minecraftBedrock")
+            )
             users_dir = os.path.join(minecraft_bedrock_base, "Users")
 
             pathsToScan = [
-                os.path.join(os.path.expandvars(self.config.get_path(
-                    "minecraftUwp")), "games", "com.mojang"),
-                os.path.join(os.path.expandvars(self.config.get_path(
-                    "minecraftUwpPreview")), "games", "com.mojang"),
+                os.path.join(
+                    os.path.expandvars(self.config.get_path("minecraftUwp")),
+                    "games",
+                    "com.mojang",
+                ),
+                os.path.join(
+                    os.path.expandvars(self.config.get_path("minecraftUwpPreview")),
+                    "games",
+                    "com.mojang",
+                ),
                 os.path.join(minecraft_bedrock_base, "games", "com.mojang"),
-                os.path.join(os.path.expandvars(self.config.get_path(
-                    "minecraftBedrockPreview")), "games", "com.mojang"),
+                os.path.join(
+                    os.path.expandvars(self.config.get_path("minecraftBedrockPreview")),
+                    "games",
+                    "com.mojang",
+                ),
             ]
 
             if os.path.exists(users_dir):
                 try:
                     for user_folder in os.listdir(users_dir):
-                        user_path = os.path.join(users_dir, user_folder, "games", "com.mojang")
+                        user_path = os.path.join(
+                            users_dir, user_folder, "games", "com.mojang"
+                        )
                         if os.path.exists(user_path) and user_path not in pathsToScan:
                             pathsToScan.append(user_path)
                 except Exception as e:
@@ -1011,9 +1179,19 @@ class PatchController:
                 found = self.fs.scanDirectory(rpPath, prefixes)
                 for f in found:
                     folder_name = os.path.basename(f)
-                    self.view.after(0, lambda folder_name=folder_name: self.view.setStatus(f"Removing {folder_name}..."))
+                    self.view.after(
+                        0,
+                        lambda folder_name=folder_name: self.view.setStatus(
+                            f"Removing {folder_name}..."
+                        ),
+                    )
                     if not self.is_advanced:
-                        self.view.after(0, lambda folder_name=folder_name: self.view.setSimpleHint(f"🧹 Deleting: {folder_name}"))
+                        self.view.after(
+                            0,
+                            lambda folder_name=folder_name: self.view.setSimpleHint(
+                                f"🧹 Deleting: {folder_name}"
+                            ),
+                        )
                     self._log(f"Removing old pack folder: {folder_name}...")
                     if self.fs.robustCleanup(f):
                         self._log(f"Successfully cleaned: {folder_name}")
@@ -1028,9 +1206,19 @@ class PatchController:
                 foundDev = self.fs.scanDirectory(devRpPath, prefixes)
                 for f in foundDev:
                     folder_name = os.path.basename(f)
-                    self.view.after(0, lambda folder_name=folder_name: self.view.setStatus(f"Removing {folder_name}..."))
+                    self.view.after(
+                        0,
+                        lambda folder_name=folder_name: self.view.setStatus(
+                            f"Removing {folder_name}..."
+                        ),
+                    )
                     if not self.is_advanced:
-                        self.view.after(0, lambda folder_name=folder_name: self.view.setSimpleHint(f"🧹 Deleting: {folder_name}"))
+                        self.view.after(
+                            0,
+                            lambda folder_name=folder_name: self.view.setSimpleHint(
+                                f"🧹 Deleting: {folder_name}"
+                            ),
+                        )
                     self._log(f"Removing old dev pack folder: {folder_name}...")
                     if self.fs.robustCleanup(f):
                         self._log(f"Successfully cleaned: {folder_name}")
@@ -1041,31 +1229,43 @@ class PatchController:
                         failed_any = True
 
             if failed_any:
-                self.view.after(0, lambda: messagebox.showwarning(
-                    "Cleanup Warning",
-                    "Failed to delete some old resource pack folders.\n\n"
-                    "Please ensure Minecraft is closed and try again, otherwise the old files might persist.",
-                    parent=self.view
-                ))
+                self.view.after(
+                    0,
+                    lambda: messagebox.showwarning(
+                        "Cleanup Warning",
+                        "Failed to delete some old resource pack folders.\n\n"
+                        "Please ensure Minecraft is closed and try again, otherwise the old files might persist.",
+                        parent=self.view,
+                    ),
+                )
 
             if not cleaned_any:
                 self._log("No old packs found to clean.")
                 self.view.after(0, lambda: self.view.setStatus("No old packs found."))
                 if not self.is_advanced:
-                    self.view.after(0, lambda: self.view.setSimpleHint("✓ No old versions to clean."))
+                    self.view.after(
+                        0,
+                        lambda: self.view.setSimpleHint("✓ No old versions to clean."),
+                    )
                 time.sleep(1.0)
             else:
                 self.view.after(0, lambda: self.view.setStatus("Cleanup finished."))
                 if not self.is_advanced:
-                    self.view.after(0, lambda: self.view.setSimpleHint("✓ Removed old patched versions successfully."))
+                    self.view.after(
+                        0,
+                        lambda: self.view.setSimpleHint(
+                            "✓ Removed old patched versions successfully."
+                        ),
+                    )
                 time.sleep(1.5)
 
-            self.view.after(0, lambda: self.view.updateStep(2, 'completed'))
-            self.view.after(0, lambda: self.view.updateStep(3, 'active'))
+            self.view.after(0, lambda: self.view.updateStep(2, "completed"))
+            self.view.after(0, lambda: self.view.updateStep(3, "active"))
             self.view.after(0, lambda: self.view.setProgress(60))
 
         output_file = os.path.join(
-            self.temp_dir, self.config.get_filename("finalMcPack"))
+            self.temp_dir, self.config.get_filename("finalMcPack")
+        )
         xdelta = self.config.get_executable("xdelta")
         xdelta_params = resourcePath(xdelta)
 
@@ -1073,7 +1273,12 @@ class PatchController:
         self.view.after(0, lambda: self.view.setStatus("Patching..."))
         self.view.after(0, lambda: self.view.setProgress(70))
         if not self.is_advanced:
-            self.view.after(0, lambda: self.view.setSimpleHint("⚡ Applying RTX patch — please wait, this may take a minute..."))
+            self.view.after(
+                0,
+                lambda: self.view.setSimpleHint(
+                    "⚡ Applying RTX patch — please wait, this may take a minute..."
+                ),
+            )
 
         # Explicitly log the patch file as requested
         self._log("-" * 40)
@@ -1087,7 +1292,7 @@ class PatchController:
             source_zip=source_zip,
             patch_file=patch_file,
             output_file=output_file,
-            log_callback=self._log
+            log_callback=self._log,
         )
 
         if success:
@@ -1102,52 +1307,70 @@ class PatchController:
                 self._log(f"Warning: Cleanup failed: {e}")
 
             self.view.is_patching = False
-            self.view.after(0, lambda: self.view.updateStep(3, 'completed'))
-            self.view.after(0, lambda: self.view.updateStep(4, 'active'))
+            self.view.after(0, lambda: self.view.updateStep(3, "completed"))
+            self.view.after(0, lambda: self.view.updateStep(4, "active"))
             self.view.after(0, lambda: self.view.setProgress(90))
-            self.view.after(
-                0, lambda: self.view.setStatus("Patch Successful!"))
+            self.view.after(0, lambda: self.view.setStatus("Patch Successful!"))
 
             if not self.is_advanced:
-                self.view.after(0, lambda: self.view.setSimpleHint(
-                    "✅ Patch done! Click Install Pack to launch Minecraft."))
+                self.view.after(
+                    0,
+                    lambda: self.view.setSimpleHint(
+                        "✅ Patch done! Click Install Pack to launch Minecraft."
+                    ),
+                )
 
             def install():
                 self._log("Installing pack...")
                 success, result = self.patcher.createMcPack(output_file)
                 if success:
                     self._log(f"launched {result}")
-                    self.view.after(0, lambda: self.view.updateStep(4, 'completed'))
+                    self.view.after(0, lambda: self.view.updateStep(4, "completed"))
                     self.view.after(0, lambda: self.view.setProgress(100))
                 else:
                     self._log(f"Install failed: {result}")
-                    self.view.after(0, lambda: self.view.updateStep(4, 'failed'))
-                    self.view.after(0, lambda: showErrorWithCopy(
-                        "Install Failed", f"Could not launch pack:\n{result}", self.view))
+                    self.view.after(0, lambda: self.view.updateStep(4, "failed"))
+                    self.view.after(
+                        0,
+                        lambda: showErrorWithCopy(
+                            "Install Failed",
+                            f"Could not launch pack:\n{result}",
+                            self.view,
+                        ),
+                    )
 
-            self.view.after(0, lambda: self.view.setActionCommand(
-                install, "Install Pack"))
+            self.view.after(
+                0, lambda: self.view.setActionCommand(install, "Install Pack")
+            )
             self.view.after(0, lambda: self.view.setActionState("normal"))
             # Always show the install button (also pack it in simple mode)
             self.view.after(0, self.view.showActionBtn)
 
             if self.is_advanced:
+
                 def openFolder():
                     try:
                         folder = os.path.dirname(output_file)
                         os.startfile(folder)
                     except Exception:
                         pass
-                self.view.after(0, lambda: self.view.setSecondaryAction(
-                    openFolder, "Open Folder"))
 
-            self.view.after(0, lambda: self.view.setStatus(
-                "✅ Patch created successfully! Click Install to launch."))
+                self.view.after(
+                    0, lambda: self.view.setSecondaryAction(openFolder, "Open Folder")
+                )
+
+            self.view.after(
+                0,
+                lambda: self.view.setStatus(
+                    "✅ Patch created successfully! Click Install to launch."
+                ),
+            )
         else:
             self.view.is_patching = False
-            self.view.after(0, lambda: self.view.updateStep(3, 'failed'))
-            self.view.after(0, lambda: showErrorWithCopy(
-                "Patch Failed", msg, self.view))
+            self.view.after(0, lambda: self.view.updateStep(3, "failed"))
+            self.view.after(
+                0, lambda: showErrorWithCopy("Patch Failed", msg, self.view)
+            )
             # self.view.after(0, self.view.onBack) # DISABLED FOR DEBUGGING
 
     def startAdvancedLogic(self):
@@ -1177,27 +1400,33 @@ class PatchController:
         self.cancel_event.clear()
 
         if mode == "marketplace":
-            lbl = target_ver_key if target_ver_key else 'Auto'
-            patch_frame.setStatus(
-                f"Searching for Marketplace Content ({lbl})...")
-            patch_frame.updateStep(0, 'active')
+            lbl = target_ver_key if target_ver_key else "Auto"
+            patch_frame.setStatus(f"Searching for Marketplace Content ({lbl})...")
+            patch_frame.updateStep(0, "active")
             patch_frame.setProgress(0)
-            threading.Thread(target=self._marketplaceSearchWorker, args=(
-                target_patch_data, target_ver_key), daemon=True).start()
+            threading.Thread(
+                target=self._marketplaceSearchWorker,
+                args=(target_patch_data, target_ver_key),
+                daemon=True,
+            ).start()
 
         elif mode == "zip":
             file_path = filedialog.askopenfilename(
-                filetypes=[("Minecraft Packs", "*.zip *.mcpack")], title="Select Pack")
+                filetypes=[("Minecraft Packs", "*.zip *.mcpack")], title="Select Pack"
+            )
             if not file_path:
                 patch_frame.setActionState("normal")
                 return
 
-            lbl = target_ver_key if target_ver_key else 'Auto'
+            lbl = target_ver_key if target_ver_key else "Auto"
             patch_frame.setStatus(f"Processing Zip ({lbl})...")
-            patch_frame.updateStep(0, 'active')
+            patch_frame.updateStep(0, "active")
             patch_frame.setProgress(0)
-            threading.Thread(target=self._zipProcessWorker, args=(
-                file_path, target_patch_data), daemon=True).start()
+            threading.Thread(
+                target=self._zipProcessWorker,
+                args=(file_path, target_patch_data),
+                daemon=True,
+            ).start()
 
         elif mode == "custom":
             src = patch_frame.srcVar.get()
@@ -1205,16 +1434,16 @@ class PatchController:
             patch = patch_frame.patchVar.get()
 
             if not src or not tgt or not patch:
-                showErrorWithCopy(
-                    "Error", "Please fill all fields.", self.view)
+                showErrorWithCopy("Error", "Please fill all fields.", self.view)
                 patch_frame.setActionState("normal")
                 return
 
             self._log("Starting Custom Patch...")
-            patch_frame.updateStep(0, 'active')
+            patch_frame.updateStep(0, "active")
             patch_frame.setProgress(0)
-            threading.Thread(target=self._customProcessWorker,
-                             args=(src, tgt, patch), daemon=True).start()
+            threading.Thread(
+                target=self._customProcessWorker, args=(src, tgt, patch), daemon=True
+            ).start()
 
     def _customProcessWorker(self, src, tgt, patch_file):
         # 1. Prepare Source
@@ -1224,7 +1453,7 @@ class PatchController:
 
         if os.path.isdir(src):
             self._log(f"Compressing source: {src}")
-            
+
             def on_compress_progress(current, total):
                 pct = int((current / total) * 100)
                 overall = 10 + int(pct * 0.4)  # 10% to 50%
@@ -1235,11 +1464,11 @@ class PatchController:
                 output_zip=temp_zip,
                 cancel_event=self.cancel_event,
                 progress_callback=on_compress_progress,
-                log_callback=self._log
+                log_callback=self._log,
             )
             if not success:
                 self.view.is_patching = False
-                self.view.after(0, lambda: self.view.updateStep(0, 'failed'))
+                self.view.after(0, lambda: self.view.updateStep(0, "failed"))
                 self.view.after(0, lambda: self.view.setActionState("normal"))
                 return
         else:
@@ -1250,18 +1479,19 @@ class PatchController:
         if self.cancel_event.is_set():
             return
 
-        self.view.after(0, lambda: self.view.updateStep(0, 'completed'))
-        self.view.after(0, lambda: self.view.updateStep(1, 'active'))
-        self.view.after(0, lambda: self.view.updateStep(1, 'completed'))
-        self.view.after(0, lambda: self.view.updateStep(2, 'active'))
-        self.view.after(0, lambda: self.view.updateStep(2, 'completed'))
-        self.view.after(0, lambda: self.view.updateStep(3, 'active'))
+        self.view.after(0, lambda: self.view.updateStep(0, "completed"))
+        self.view.after(0, lambda: self.view.updateStep(1, "active"))
+        self.view.after(0, lambda: self.view.updateStep(1, "completed"))
+        self.view.after(0, lambda: self.view.updateStep(2, "active"))
+        self.view.after(0, lambda: self.view.updateStep(2, "completed"))
+        self.view.after(0, lambda: self.view.updateStep(3, "active"))
         self.view.after(0, lambda: self.view.setProgress(60))
         self.view.after(0, lambda: self.view.setStatus("Applying patch..."))
 
         # 2. Patch
-        patch_abs = os.path.abspath(patch_file) if not os.path.isabs(
-            patch_file) else patch_file
+        patch_abs = (
+            os.path.abspath(patch_file) if not os.path.isabs(patch_file) else patch_file
+        )
 
         # 3. Run Patch
         try:
@@ -1272,53 +1502,59 @@ class PatchController:
 
             self._log(f"Applying patch: {patch_abs}")
             self.view.after(0, lambda: self.view.setProgress(70))
-            
+
             success, msg = self.patcher.runPatch(
                 xdelta_path=xdelta_params,
                 source_zip=temp_zip,
                 patch_file=patch_abs,
                 output_file=output_abs,
-                log_callback=self._log
+                log_callback=self._log,
             )
 
             if success:
                 self.view.is_patching = False
-                self.view.after(0, lambda: self.view.updateStep(3, 'completed'))
-                self.view.after(0, lambda: self.view.updateStep(4, 'active'))
+                self.view.after(0, lambda: self.view.updateStep(3, "completed"))
+                self.view.after(0, lambda: self.view.updateStep(4, "active"))
                 self.view.after(0, lambda: self.view.setProgress(90))
-                self.view.after(
-                    0, lambda: self.view.setStatus("Patch Successful!"))
+                self.view.after(0, lambda: self.view.setStatus("Patch Successful!"))
 
                 def install():
                     self._log("Installing pack...")
                     success, result = self.patcher.createMcPack(output_abs)
                     if success:
                         self._log(f"launched {result}")
-                        self.view.after(0, lambda: self.view.updateStep(4, 'completed'))
+                        self.view.after(0, lambda: self.view.updateStep(4, "completed"))
                         self.view.after(0, lambda: self.view.setProgress(100))
                     else:
                         self._log(f"Install failed: {result}")
-                        self.view.after(0, lambda: self.view.updateStep(4, 'failed'))
+                        self.view.after(0, lambda: self.view.updateStep(4, "failed"))
                         showErrorWithCopy(
-                            "Install Failed", f"Could not launch pack:\n{result}", self.view)
+                            "Install Failed",
+                            f"Could not launch pack:\n{result}",
+                            self.view,
+                        )
 
                 patch_frame = self.view
-                self.view.after(0, lambda: patch_frame.setActionCommand(
-                    install, "Install Pack"))
                 self.view.after(
-                    0, lambda: patch_frame.setActionState("normal"))
-                self.view.after(0, lambda: patch_frame.setStatus(
-                    "✅ Patch created successfully! Click Install to launch."))
+                    0, lambda: patch_frame.setActionCommand(install, "Install Pack")
+                )
+                self.view.after(0, lambda: patch_frame.setActionState("normal"))
+                self.view.after(
+                    0,
+                    lambda: patch_frame.setStatus(
+                        "✅ Patch created successfully! Click Install to launch."
+                    ),
+                )
 
             else:
                 self.view.is_patching = False
-                self.view.after(0, lambda: self.view.updateStep(3, 'failed'))
-                self.view.after(0, lambda: showErrorWithCopy(
-                    "Patch Failed", msg, self.view))
+                self.view.after(0, lambda: self.view.updateStep(3, "failed"))
+                self.view.after(
+                    0, lambda: showErrorWithCopy("Patch Failed", msg, self.view)
+                )
                 self.view.after(0, lambda: self.view.setActionState("normal"))
 
         except Exception as e:
             self.view.is_patching = False
-            self.view.after(0, lambda: self.view.updateStep(3, 'failed'))
-            self.view.after(0, lambda: showErrorWithCopy(
-                "Error", str(e), self.view))
+            self.view.after(0, lambda: self.view.updateStep(3, "failed"))
+            self.view.after(0, lambda: showErrorWithCopy("Error", str(e), self.view))
