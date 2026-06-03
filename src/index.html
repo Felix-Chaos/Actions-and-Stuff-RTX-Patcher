@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Actions &amp; Stuff RTX Patcher v3</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono&display=swap" rel="stylesheet" />
+    <script type="module" src="/main.js" defer></script>
+  </head>
+
+  <body>
+    <!-- App Container -->
+    <div class="app-container">
+      
+      <!-- Top Titlebar / Header -->
+      <header class="app-header">
+        <div class="logo-area">
+          <span class="logo-text">ACTIONS &amp; STUFF <span class="accent-text">RTX</span></span>
+          <div class="logo-badges">
+            <span class="version-badge" id="app-version-badge">v3.0</span>
+            <span id="update-badge" class="update-badge state-checking">Checking...</span>
+          </div>
+          <button id="btn-update-now" class="btn btn-primary btn-xs hidden-group" style="margin-top: 8px; font-size: 0.75rem; padding: 4px 8px; width: 100%;">Update Now</button>
+        </div>
+        <nav class="app-nav">
+          <button class="nav-tab active" data-tab="patcher">
+            <span class="tab-icon">⚡</span> Patcher
+          </button>
+          <button class="nav-tab" data-tab="cleaner">
+            <span class="tab-icon">🧹</span> Cleaner
+          </button>
+          <button class="nav-tab" data-tab="settings">
+            <span class="tab-icon">⚙️</span> RTX Settings
+          </button>
+          <div class="nav-dropdown" id="nav-utils-dropdown">
+            <button class="nav-tab nav-dropdown-toggle" data-tab="utils" type="button">
+              <span class="tab-icon">🛠️</span> Utilities
+              <span class="dropdown-arrow">▼</span>
+            </button>
+            <div class="nav-dropdown-items">
+              <button class="nav-subtab" data-util="pack" type="button">
+                <span class="subtab-dot">•</span> ZIP Packer
+              </button>
+              <button class="nav-subtab" data-util="extract" type="button">
+                <span class="subtab-dot">•</span> Extract ZIP
+              </button>
+              <button class="nav-subtab" data-util="genpatch" type="button">
+                <span class="subtab-dot">•</span> Create Patch
+              </button>
+              <button class="nav-subtab" data-util="brarchive" type="button">
+                <span class="subtab-dot">•</span> Ext Brarchives
+              </button>
+            </div>
+          </div>
+          <button class="nav-tab" data-tab="release">
+            <span class="tab-icon">📦</span> Release
+          </button>
+        </nav>
+        <div class="sidebar-footer">
+          <div class="advanced-toggle-container">
+            <span class="toggle-label">Advanced Mode</span>
+            <label class="switch">
+              <input type="checkbox" id="chk-advanced-mode" />
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <div class="advanced-toggle-container" style="margin-top: 8px;">
+            <span class="toggle-label">Beta Updates</span>
+            <label class="switch">
+              <input type="checkbox" id="chk-beta-updates" />
+              <span class="slider round"></span>
+            </label>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main class="app-main">
+        
+        <!-- Tab: Patcher -->
+        <section class="tab-content active" id="tab-patcher">
+          <div class="split-view">
+            <!-- Left Side: Controls -->
+            <div class="controls-panel card">
+              <h2>Select Patch Mode</h2>
+              <div class="mode-toggle-group">
+                <label class="mode-radio">
+                  <input type="radio" name="patch-mode" value="marketplace" checked />
+                  <span class="radio-card">
+                    <span class="mode-icon">🏪</span>
+                    <span class="mode-title">Marketplace</span>
+                    <span class="mode-desc">Patches your purchased Marketplace pack directly from premium cache</span>
+                  </span>
+                </label>
+                <label class="mode-radio disabled-mode" id="mode-zip-label" title="Enable Advanced Mode to use this feature">
+                  <input type="radio" name="patch-mode" value="zip" id="radio-mode-zip" disabled />
+                  <span class="radio-card">
+                    <span class="mode-icon">📂</span>
+                    <span class="mode-title">Zip / McPack</span>
+                    <span class="mode-desc">Normalize and patch an external Minecraft pack file</span>
+                  </span>
+                </label>
+                <label class="mode-radio disabled-mode" id="mode-custom-label" title="Enable Advanced Mode to use this feature">
+                  <input type="radio" name="patch-mode" value="custom" id="radio-mode-custom" disabled />
+                  <span class="radio-card">
+                    <span class="mode-icon">🔧</span>
+                    <span class="mode-title">Custom Patch</span>
+                    <span class="mode-desc">Select specific source, target, and .vcdiff patch files manually</span>
+                  </span>
+                </label>
+              </div>
+
+              <!-- Disclaimer -->
+              <div class="disclaimer-box hidden-group">
+                <span class="disclaimer-icon">⚠️</span>
+                <span class="disclaimer-text"><strong>Disclaimer:</strong> A valid Actions &amp; Stuff license is required for legal usage of this patcher!</span>
+              </div>
+
+              <!-- Config options contextually shown -->
+              <div class="patch-options-section">
+                <!-- Version Selection (For Marketplace/Zip) -->
+                <div class="form-group" id="version-select-group">
+                  <label>Version Selection Mode:</label>
+                  <div class="text-switch-container">
+                    <input type="hidden" id="version-selection-mode" value="auto" />
+                    <button type="button" class="switch-option active" id="btn-ver-auto" data-value="auto">Auto-detect</button>
+                    <button type="button" class="switch-option" id="btn-ver-manual" data-value="manual">Manual Select</button>
+                  </div>
+
+                  <!-- Manual Sub-options (hidden initially) -->
+                  <div id="manual-version-options" class="hidden-group">
+                    <div class="manual-version-row">
+                      <div class="form-group flex-1">
+                        <label for="select-as-version">A&amp;S Version:</label>
+                        <select id="select-as-version" class="custom-select">
+                          <!-- Populated dynamically -->
+                        </select>
+                      </div>
+                      <div class="form-group flex-1">
+                        <label for="select-patch-version">Patch Version:</label>
+                        <select id="select-patch-version" class="custom-select">
+                          <!-- Populated dynamically based on A&S version -->
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Zip/McPack file picker (shown only in zip mode) -->
+                <div id="zip-file-group" class="form-group hidden-group">
+                  <label>Input File (.zip / .mcpack):</label>
+                  <div class="file-picker-group">
+                    <input type="text" id="zip-input-file" placeholder="No file selected" readonly />
+                    <button id="btn-browse-zip-input" class="btn btn-secondary">Browse...</button>
+                  </div>
+                </div>
+
+                <!-- Custom Patch inputs -->
+                <div id="custom-inputs-group" class="hidden-group">
+                  <div class="form-group">
+                    <label>Source (Folder / ZIP):</label>
+                    <div class="file-picker-group">
+                      <input type="text" id="custom-src" placeholder="No source selected" readonly />
+                      <button id="btn-browse-src" class="btn btn-secondary">Browse...</button>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label>Target File (.mcpack / .zip):</label>
+                    <div class="file-picker-group">
+                      <input type="text" id="custom-tgt" placeholder="No target selected" readonly />
+                      <button id="btn-copy-tgt" class="btn-icon-action" title="Copy path to clipboard" style="padding: 8px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                      </button>
+                      <button id="btn-browse-tgt" class="btn btn-secondary">Browse...</button>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label>Patch File (.vcdiff):</label>
+                    <div class="file-picker-group">
+                      <input type="text" id="custom-patch" placeholder="No patch selected" readonly />
+                      <button id="btn-browse-patch" class="btn btn-secondary">Browse...</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Common Checkbox Options -->
+                <div class="checkbox-group" id="common-checkbox-group">
+                  <label class="custom-checkbox">
+                    <input type="checkbox" id="chk-clean-old" checked />
+                    <span class="checkmark"></span>
+                    Delete older patched versions automatically
+                  </label>
+                </div>
+
+                <!-- Advanced Checkbox Options -->
+                <div class="checkbox-group advanced-only hidden-group" id="advanced-checkbox-group">
+                  <label class="custom-checkbox">
+                    <input type="checkbox" id="chk-extract-brarchives" />
+                    <span class="checkmark"></span>
+                    [Beta] Extract Brarchives
+                  </label>
+                  <p class="checkbox-hint">Extracts compressed .brarchive files from the source and patches directly against them.</p>
+                </div>
+              </div>
+
+              <div class="action-bar">
+                <button id="btn-start-patch" class="btn btn-gold-3d">Apply RTX Patch</button>
+              </div>
+            </div>
+
+            <!-- Right Side: Process Step Feedback -->
+            <div class="progress-panel card hidden-group">
+              <h2>Patch Status</h2>
+              
+              <!-- Simple Status Summary -->
+              <div class="status-summary">
+                <div class="status-icon" id="status-spinner">💤</div>
+                <div class="status-text-container">
+                  <div class="status-title" id="status-title-text">Ready to Patch</div>
+                  <div class="status-subtitle" id="status-subtitle-text">Configure options and click Apply</div>
+                </div>
+              </div>
+
+              <!-- Progress bar -->
+              <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="patch-progress-fill" style="width: 0%"></div>
+              </div>
+              <div class="progress-percent" id="patch-percent-text">0%</div>
+
+              <!-- Detailed Steps Checklist -->
+              <div class="steps-checklist">
+                <div class="step-item" id="step-0">
+                  <span class="step-indicator">⚪</span>
+                  <span class="step-label">Scan / Verify source contents</span>
+                </div>
+                <div class="step-item" id="step-1">
+                  <span class="step-indicator">⚪</span>
+                  <span class="step-label">Deterministic compression &amp; normalization</span>
+                </div>
+                <div class="step-item" id="step-2">
+                  <span class="step-indicator">⚪</span>
+                  <span class="step-label">Clean older versions</span>
+                </div>
+                <div class="step-item" id="step-3">
+                  <span class="step-indicator">⚪</span>
+                  <span class="step-label">Execute XDelta RTX patch</span>
+                </div>
+                <div class="step-item" id="step-4">
+                  <span class="step-indicator">⚪</span>
+                  <span class="step-label">Import Minecraft Pack</span>
+                </div>
+              </div>
+
+              <!-- Post-patch action buttons -->
+              <div id="progress-actions-container" class="progress-actions hidden-group">
+                <button id="btn-install-pack" class="btn btn-success hidden-group">Install Pack</button>
+                <button id="btn-copy-log-large" class="btn btn-secondary hidden-group" title="Copy log to clipboard">📋 Copy Log</button>
+                <button id="btn-patch-back" class="btn btn-secondary">Back to Selection</button>
+              </div>
+
+              <!-- Console output toggle -->
+              <div class="console-section">
+                <div class="console-header">
+                  <span>Execution Output</span>
+                  <div class="console-actions">
+                    <button id="btn-copy-log" class="btn-icon-action" title="Copy log to clipboard">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                    </button>
+                    <button id="btn-clear-console" class="btn-icon-action" title="Clear console">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="console-body" id="console-logs">
+                  <div class="log-line system">Waiting for process start...</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Tab: Cleaner -->
+        <section class="tab-content" id="tab-cleaner">
+          <div class="card full-card">
+            <h2>🧹 Scan &amp; Clean Old Patches</h2>
+            <p>Locates and deletes leftover Actions &amp; Stuff pack directories from Minecraft resource pack and world folders to keep your installation clean.</p>
+            
+            <div class="action-panel">
+              <button id="btn-scan-cleaner" class="btn btn-secondary">Scan Folders</button>
+              <button id="btn-run-cleaner" class="btn btn-danger" disabled>Delete Selected Files</button>
+            </div>
+
+            <div class="clean-results-container">
+              <div class="results-header">
+                <span>Scan Results:</span>
+                <span id="clean-results-count" class="count-tag">0 found</span>
+              </div>
+              <div class="results-list" id="clean-results-list">
+                <div class="placeholder-text">Click Scan Folders to begin search...</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- Tab: RTX Settings -->
+        <section class="tab-content" id="tab-settings">
+          <div class="card full-card">
+            <h2>⚙️ Edit options.txt directly</h2>
+            <p>Directly modify Minecraft graphics configuration files to force Ray Tracing, Upscaling, and other premium visual toggles.</p>
+
+            <div class="form-group options-file-selector">
+              <label for="options-file-select">Target options.txt Profile:</label>
+              <select id="options-file-select" class="custom-select">
+                <option value="">Loading profiles...</option>
+              </select>
+            </div>
+
+            <div class="options-grid" id="rtx-settings-grid">
+              <!-- Dynamically populated options inputs -->
+              <div class="placeholder-text">Select an options.txt profile to read settings...</div>
+            </div>
+
+            <div class="action-bar">
+              <button id="btn-save-settings" class="btn btn-primary" disabled>Apply Settings</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Tab: Utilities -->
+        <section class="tab-content" id="tab-utils">
+          <div class="card full-card">
+            <h2>🛠️ Standalone Utilities</h2>
+            <p>Select a utility tool to execute specialized tasks without running the main patcher pipeline.</p>
+            
+            <div class="form-group utils-selector-group hidden-group" style="max-width: 320px; margin-bottom: 20px;">
+              <label for="utils-tool-select">Select Utility Tool:</label>
+              <select id="utils-tool-select" class="custom-select">
+                <option value="pack">Deterministic ZIP Packer</option>
+                <option value="extract">Extract ZIP / MCPack</option>
+                <option value="genpatch">Create Patch (VCDIFF)</option>
+                <option value="brarchive">Extract Brarchives</option>
+              </select>
+            </div>
+
+            <div class="utils-container">
+              <!-- Utility 1: Pack Folder -->
+              <div class="util-card" id="util-card-pack">
+                <h3>Deterministic ZIP Packer</h3>
+                <p>Creates a zip archive with fixed timestamps (Jan 1, 1980) and no compression (stored). Ideal for patch generators.</p>
+                
+                <div class="form-group">
+                  <label>Folder to Pack:</label>
+                  <div class="file-picker-group">
+                    <input type="text" id="pack-src-folder" placeholder="No folder selected" readonly />
+                    <button id="btn-pack-src-browse" class="btn btn-secondary">Browse...</button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Save Zip / McPack Location:</label>
+                  <div class="file-picker-group">
+                    <input type="text" id="pack-dst-file" placeholder="No output zip selected" readonly />
+                    <button id="btn-pack-dst-browse" class="btn btn-secondary">Browse...</button>
+                  </div>
+                </div>
+                <button id="btn-run-pack" class="btn btn-primary">Compress Deterministically</button>
+              </div>
+
+              <!-- Utility 2: Extract Archive -->
+              <div class="util-card hidden-group" id="util-card-extract">
+                <h3>Extract ZIP / MCPack</h3>
+                <p>Extracts any archive file to a destination directory, resolving double-nested folders automatically.</p>
+                
+                <div class="form-group">
+                  <label>Archive file:</label>
+                  <div class="file-picker-group">
+                    <input type="text" id="extract-src-file" placeholder="No zip file selected" readonly />
+                    <button id="btn-extract-src-browse" class="btn btn-secondary">Browse...</button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Destination Folder:</label>
+                  <div class="file-picker-group">
+                    <input type="text" id="extract-dst-folder" placeholder="No destination selected" readonly />
+                    <button id="btn-extract-dst-browse" class="btn btn-secondary">Browse...</button>
+                  </div>
+                </div>
+                <button id="btn-run-extract" class="btn btn-primary">Extract Files</button>
+              </div>
+
+              <!-- Utility 3: Generate VCDIFF Patch (V2-style) -->
+              <div class="util-card hidden-group" id="util-card-genpatch">
+                <h3>Create Patch (VCDIFF)</h3>
+                <p>Generates encrypted and decrypted .vcdiff patch files from source and patched pack directories. Matches the V2 patch creator workflow.</p>
+
+                <div class="genpatch-grid">
+                  <!-- Left column: folder inputs -->
+                  <div class="genpatch-inputs">
+                    <div class="form-group">
+                      <label>1. Target Folder <span class="label-hint">(your modified/patched version)</span></label>
+                      <div class="file-picker-group">
+                        <input type="text" id="gen-patched-dir" placeholder="No folder selected" readonly />
+                        <button id="btn-gen-patched-browse" class="btn btn-secondary">Browse...</button>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label>2. Source Decrypted Folder <span class="label-hint">(vanilla baseline)</span></label>
+                      <div class="file-picker-group">
+                        <input type="text" id="gen-decrypted-dir" placeholder="No folder selected" readonly />
+                        <button id="btn-gen-decrypted-browse" class="btn btn-secondary">Browse...</button>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label>3. Source Encrypted Folder <span class="label-hint">(premium cache / marketplace)</span></label>
+                      <div class="file-picker-group">
+                        <input type="text" id="gen-encrypted-dir" placeholder="No folder selected" readonly />
+                        <button id="btn-gen-encrypted-browse" class="btn btn-secondary">Browse...</button>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label>Output Directory <span class="label-hint">(where .vcdiff files are saved)</span></label>
+                      <div class="file-picker-group">
+                        <input type="text" id="gen-output-dir" placeholder="No output directory selected" readonly />
+                        <button id="btn-gen-output-browse" class="btn btn-secondary">Browse...</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Right column: version + options -->
+                  <div class="genpatch-meta">
+                    <div class="form-group">
+                      <label for="gen-pack-version">Pack Version</label>
+                      <input type="text" id="gen-pack-version" class="custom-input" placeholder="e.g. 1.10.1" value="1.10.1" />
+                    </div>
+                    <div class="form-group">
+                      <label for="gen-patch-version">Patch Version</label>
+                      <input type="text" id="gen-patch-version" class="custom-input" placeholder="e.g. 1.1" value="1.1" />
+                    </div>
+                    <label class="custom-checkbox" style="margin-top: 8px;">
+                      <input type="checkbox" id="gen-inject-manifest" checked />
+                      <span class="checkmark"></span>
+                      Inject Custom Manifest
+                    </label>
+                    <div class="genpatch-actions" style="margin-top: 16px;">
+                      <button id="btn-run-gen-patch" class="btn btn-gold-3d" style="width: 100%;">Create Patches</button>
+                    </div>
+                    <div class="genpatch-status" id="genpatch-status" style="margin-top: 12px; display: none;">
+                      <div id="genpatch-status-text" class="status-hint"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Log output inside genpatch -->
+                <div class="console-section" style="margin-top: 16px;">
+                  <div class="console-header">
+                    <span>Patch Creator Log</span>
+                    <div class="console-actions">
+                    <button id="btn-copy-genpatch-log" class="btn-icon-action" title="Copy log">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                    </button>
+                    <button id="btn-clear-genpatch-log" class="btn-icon-action" title="Clear">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                    </button>
+                  </div>
+                  </div>
+                  <div class="console-body" id="genpatch-logs" style="height: 140px;">
+                    <div class="log-line system">Ready to create patches...</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Utility 4: Standalone Brarchive Extractor -->
+              <div class="util-card hidden-group" id="util-card-brarchive">
+                <h3>Extract Brarchives</h3>
+                <p>Recursively scans a workspace directory, deserializes and unpacks <code>.brarchive</code> contents, and cleans up temp pointer files.</p>
+                
+                <div class="form-group">
+                  <label>Workspace / Target Folder:</label>
+                  <div class="file-picker-group">
+                    <input type="text" id="util-br-folder" placeholder="No workspace folder selected" readonly />
+                    <button id="btn-util-br-browse" class="btn btn-secondary">Browse...</button>
+                  </div>
+                </div>
+                <button id="btn-run-util-br" class="btn btn-primary">Extract Brarchives in Folder</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Tab: Release Builder -->
+        <section class="tab-content" id="tab-release">
+          <div class="card full-card">
+            <h2>📦 Release Builder</h2>
+            <p>Edit version metadata and build a distributable release of the patcher.</p>
+
+            <div class="release-grid">
+              <!-- Version Editor -->
+              <div class="release-section">
+                <h3>Version Editor</h3>
+                <div class="form-group">
+                  <label for="rel-app-version">App Version (tauri.conf.json)</label>
+                  <div class="file-picker-group">
+                    <input type="text" id="rel-app-version" class="custom-input" placeholder="e.g. 3.0.1" />
+                    <button id="btn-apply-version" class="btn btn-secondary">Apply</button>
+                  </div>
+                  <span class="field-hint" id="rel-version-hint">Loading current version...</span>
+                </div>
+                <div class="form-group">
+                  <label>Version Adjustments:</label>
+                  <div style="display: flex; gap: 8px;">
+                    <button type="button" id="btn-inc-major" class="btn btn-secondary btn-xs" style="padding: 4px 8px; font-size: 0.7rem; min-width: 50px;">+1.0.0</button>
+                    <button type="button" id="btn-inc-minor" class="btn btn-secondary btn-xs" style="padding: 4px 8px; font-size: 0.7rem; min-width: 50px;">+0.1.0</button>
+                    <button type="button" id="btn-inc-patch" class="btn btn-secondary btn-xs" style="padding: 4px 8px; font-size: 0.7rem; min-width: 50px;">+0.0.1</button>
+                  </div>
+                </div>
+                <div class="checkbox-group" style="margin-top: 0; margin-bottom: 12px;">
+                  <label class="custom-checkbox">
+                    <input type="checkbox" id="chk-is-beta-ver" />
+                    <span class="checkmark"></span>
+                    Beta Version (_b)
+                  </label>
+                </div>
+                <div class="checkbox-group" style="margin-top: 0; margin-bottom: 12px;">
+                  <label class="custom-checkbox">
+                    <input type="checkbox" id="chk-ping-needed" checked />
+                    <span class="checkmark"></span>
+                    Ping Everyone on Discord (@everyone)
+                  </label>
+                </div>
+                <div class="form-group">
+                  <label for="rel-default-pack-ver">Default Pack Version (patch_config)</label>
+                  <input type="text" id="rel-default-pack-ver" class="custom-input" placeholder="e.g. 1.10.1" />
+                </div>
+                <div class="form-group">
+                  <label for="rel-changelog">Release Notes / Changelog</label>
+                  <textarea id="rel-changelog" class="custom-textarea" rows="4" placeholder="What changed in this release..."></textarea>
+                </div>
+              </div>
+
+              <!-- Build Actions -->
+              <div class="release-section">
+                <h3>Build Actions</h3>
+
+                <div class="release-action-card">
+                  <div class="release-action-info">
+                    <strong>Build Installer (MSI / NSIS)</strong>
+                    <span>Runs <code>npm run tauri build</code> and opens the output folder</span>
+                  </div>
+                  <button id="btn-build-release" class="btn btn-gold-3d">Build Release</button>
+                </div>
+
+                <div class="release-action-card">
+                  <div class="release-action-info">
+                    <strong>Open Output Folder</strong>
+                    <span>Opens <code>src-tauri/target/release/bundle</code> in Explorer</span>
+                  </div>
+                  <button id="btn-open-bundle-folder" class="btn btn-secondary">Open Folder</button>
+                </div>
+
+                <div class="release-action-card">
+                  <div class="release-action-info">
+                    <strong>Open Patches Folder</strong>
+                    <span>Opens <code>src-tauri/assets/Patches</code> in Explorer</span>
+                  </div>
+                  <button id="btn-open-patches-folder" class="btn btn-secondary">Open Folder</button>
+                </div>
+
+                <!-- Build log -->
+                <div class="console-section" style="margin-top: 16px;">
+                  <div class="console-header">
+                    <span>Build Log</span>
+                    <div class="console-actions">
+                    <button id="btn-copy-build-log" class="btn-icon-action" title="Copy log">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                    </button>
+                    <button id="btn-clear-build-log" class="btn-icon-action" title="Clear">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                    </button>
+                  </div>
+                  </div>
+                  <div class="console-body" id="build-logs" style="height: 160px;">
+                    <div class="log-line system">Build output will appear here...</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+
+    <!-- Custom Modal Dialog -->
+    <div id="custom-modal" class="modal-overlay hidden-group">
+      <div class="modal-card">
+        <h3>Notification</h3>
+        <p id="modal-message">Message goes here</p>
+        <button id="btn-modal-ok" class="btn btn-primary">OK</button>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,5 +1,16 @@
 /executables/
 
+# Executables / binaries
+*.exe
+*.dll
+*.pdb
+*.msi
+*.appimage
+*.dmg
+*.pkg
+*.deb
+*.rpm
+
 # Ignore all .mcpack files everywhere
 *.mcpack
 
@@ -11,45 +22,23 @@
 dist/*
 
 
-# Standard Python ignores (optional but useful for this repo)
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
+# Standard ignores
 *.log
-*.spec
-build/
-venv/
+*.tmp
+*.cache
+*.swp
+*.swo
 .env/
+.env.*
 .DS_Store
 .idea/
 .vscode/
-node_modules
+node_modules/
 
-# A&S Patcher files
-Actions_and_Stuff_RTX_Patcher/app.log
-Actions_and_Stuff_RTX_Patcher/build/
-Actions_and_Stuff_RTX_Patcher/dist/
-Actions_and_Stuff_RTX_Patcher/*.spec
-Actions_and_Stuff_RTX_Patcher/temp_rs/
-Actions_and_Stuff_RTX_Patcher/libs/
-Actions_and_Stuff_RTX_Patcher/tools/_input/
-Actions_and_Stuff_RTX_Patcher/tools/tool_config.json
-Actions_and_Stuff_RTX_Patcher/tools/tool_config_v2.json
-
-# Brarchive Extractor files
-brachiveextractor/build/
-brachiveextractor/dist/
-brachiveextractor/*.spec
-brachiveextractor/test_output/
-brachiveextractor/db.json
-brachiveextractor/__pycache__/
+# Tauri / Rust
+src-tauri/target/
 
 # General / Temporary / Reports
 temp_test_pack/
-pylint_report.txt
 *.bak
-Actions_and_Stuff_RTX_Patcher/dist/Actions_and_Stuff_RTX_Patcher.exe
 A-S-Minecraft-RTX-Community-PatcherV2.code-workspace
-/Actions_and_Stuff_RTX_Patcher/dist
-Actions_and_Stuff_RTX_Patcher/dist/Actions_and_Stuff_RTX_Patcher.exe

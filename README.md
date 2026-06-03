@@ -12,7 +12,6 @@
 [![Release](https://img.shields.io/github/v/release/Felix-Chaos/Actions-and-Stuff-RTX-Patcher?style=flat-square&color=blue&label=Release)](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases)
 [![Stars](https://img.shields.io/github/stars/Felix-Chaos/Actions-and-Stuff-RTX-Patcher?style=flat-square&color=yellow)](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/stargazers)
 [![Issues](https://img.shields.io/github/issues/Felix-Chaos/Actions-and-Stuff-RTX-Patcher?style=flat-square)](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/issues)
-[![Pylint](https://img.shields.io/github/actions/workflow/status/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/pylint.yml?label=Pylint&style=flat-square&color=blue)](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/actions/workflows/pylint.yml)
 [![Discord](https://img.shields.io/discord/1432653252171661364?logo=discord&style=flat-square&label=Discord)](https://discord.gg/YrMMmN2kc7)
 [![FAQ](https://img.shields.io/badge/📖_FAQ-5865F2?style=flat-square)](https://discord.com/channels/691547840463241267/1360688874388455504/1376325634246049792)
 [![BetterRTX](https://img.shields.io/badge/💬_BetterRTX-5865F2?style=flat-square)](https://discord.gg/5kK4EMRbd3)
@@ -111,10 +110,11 @@ Your A&S Copy ──→ xdelta3 + .vcdiff patch ──→ A&S Enhanced for RTX (
 
 | Technology | Purpose |
 | :--- | :--- |
-| **Python** | Core patching logic, GUI, and build system |
-| **CustomTkinter** | Modern dark-themed desktop UI |
+| **Tauri** | Desktop app framework and packaging |
+| **Rust** | Native patching engine and system integration |
+| **JavaScript** | UI logic and app orchestration |
+| **HTML/CSS** | UI layout and styling |
 | **xdelta3** | Binary patch creation & application |
-| **PyInstaller** | Packaging into a standalone `.exe` |
 | **Blockbench** | Model editing & RTX material authoring |
 
 ---

@@ -1,0 +1,43 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "app": {
+    "security": {
+      "csp": null
+    },
+    "windows": [
+      {
+        "fullscreen": false,
+        "height": 650,
+        "resizable": false,
+        "title": "Actions & Stuff RTX Patcher v2.2.1_b",
+        "width": 950
+      }
+    ],
+    "withGlobalTauri": true
+  },
+  "build": {
+    "frontendDist": "../src"
+  },
+  "bundle": {
+    "active": true,
+    "icon": [
+      "assets/resources/icon.ico"
+    ],
+    "resources": [
+      "assets/**/*"
+    ],
+    "targets": "all"
+  },
+  "identifier": "com.actions-and-stuff.rtx-patcher",
+  "plugins": {
+    "updater": {
+      "active": true,
+      "endpoints": [
+        "https://raw.githubusercontent.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/main/updater.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDkxNkFFMTYwQ0RBMzU4NTgKUldSWVdLUE5ZT0Zxa1pQclFBaU1ka3pqYUM3SW96MStScFJqMFBDcVJuOUVPR2ZkQU5MV1FQVG4K"
+    }
+  },
+  "productName": "Actions and Stuff RTX Patcher",
+  "version": "2.2.1-0"
+}

@@ -1,0 +1,12 @@
+{
+  "notes": "Initial Tauri V3 release with advanced patch creators, cleaner utilities, direct option edits, and native explorer browses.",
+  "platforms": {
+    "windows-x86_64": {
+      "signature": "PASTE_THE_CONTENT_OF_YOUR_MSI_ZIP_SIG_FILE_HERE",
+      "url": "https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/download/v2.2.1-b/Actions_and_Stuff_RTX_Patcher_2.2.1-b_x64_en-US.msi.zip"
+    }
+  },
+  "pub_date": "2026-06-03T00:00:00Z",
+  "version": "2.2.1-0",
+  "ping_everyone": true
+}
