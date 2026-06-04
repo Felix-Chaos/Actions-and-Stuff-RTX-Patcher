@@ -745,57 +745,132 @@ p {
 .options-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 16px 24px;
+  gap: 16px;
   overflow-y: auto;
   flex: 1;
-  padding: 16px;
   margin-bottom: 16px;
-  background: rgba(15, 23, 35, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
 }
 
 .option-field {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  transition: background 0.2s;
-}
-
-.option-field:hover {
-  background: rgba(255, 255, 255, 0.05);
 }
 
 .option-name {
-  font-size: 0.9rem;
-  font-weight: 500;
-  font-family: var(--font-family-sans);
-  color: #e2e8f0;
-}
-
-.option-control select,
-.option-control input[type="number"] {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #60a5fa;
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-family: var(--font-family-mono);
-  font-size: 0.85rem;
   font-weight: 600;
-  width: 110px;
-  outline: none;
-  transition: all 0.2s;
+  font-size: 0.9rem;
+  color: #ffffff;
 }
 
-.option-control select:focus,
+.option-control select {
+  background-color: #c0c1c4;
+  box-shadow: inset 3px 3px 0 #edeeef, inset -3px -5px 0 #6a6c70, 0 2.5px 0 rgba(0, 0, 0, 0.35);
+  color: #313233;
+  border: 2.5px solid #1e1e1f;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-family: var(--font-family-sans);
+  font-weight: 700;
+  font-size: 0.85rem;
+  width: 120px;
+  outline: none;
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+}
+
+.option-control select:hover {
+  background-color: #c9cbcd;
+}
+
+.option-control select:active {
+  box-shadow: inset 2.5px 2.5px 0 #1e1e1f, 0 1px 0 rgba(0, 0, 0, 0.2);
+}
+
+.option-control input[type="number"] {
+  background: #1c1c1c;
+  border: 1px solid #2e2e2e;
+  border-radius: 6px;
+  color: var(--text-main);
+  padding: 8px 12px;
+  font-family: var(--font-family-mono);
+  font-size: 0.875rem;
+  width: 120px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
 .option-control input[type="number"]:focus {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+
+/* Minecraft Toggle Switch */
+.mc-toggle {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 24px;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+.mc-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.mc-slider {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #8b8b8b;
+  border: 2px solid #1e1e1f;
+  transition: .1s;
+  box-shadow: inset 2px 2px 0px rgba(0,0,0,0.5);
+}
+
+.mc-slider::after {
+  content: "O";
+  position: absolute;
+  right: 6px;
+  top: 0;
+  line-height: 20px;
+  font-family: var(--font-family-sans);
+  font-weight: 700;
+  font-size: 13px;
+  color: #313233;
+}
+
+.mc-slider::before {
+  content: "";
+  position: absolute;
+  height: 20px;
+  width: 22px;
+  left: 0;
+  bottom: 0;
+  background-color: #c0c1c4;
+  box-shadow: inset 2px 2px 0 #edeeef, inset -2px -2px 0 #6a6c70;
+  transition: .1s;
+  z-index: 2;
+}
+
+.mc-toggle input:checked + .mc-slider {
+  background-color: #3c8527;
+}
+
+.mc-toggle input:checked + .mc-slider::after {
+  content: "I";
+  left: 8px;
+  right: auto;
+  color: #ffffff;
+}
+
+.mc-toggle input:checked + .mc-slider::before {
+  transform: translateX(22px);
 }
 
 /* Utilities grid */

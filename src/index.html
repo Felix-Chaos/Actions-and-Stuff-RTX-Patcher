@@ -60,16 +60,16 @@
         <div class="sidebar-footer">
           <div class="advanced-toggle-container">
             <span class="toggle-label">Advanced Mode</span>
-            <label class="switch">
+            <label class="mc-toggle" style="margin-left: 0;">
               <input type="checkbox" id="chk-advanced-mode" />
-              <span class="slider round"></span>
+              <span class="mc-slider"></span>
             </label>
           </div>
           <div class="advanced-toggle-container" style="margin-top: 8px;">
             <span class="toggle-label">Beta Updates</span>
-            <label class="switch">
+            <label class="mc-toggle" style="margin-left: 0;">
               <input type="checkbox" id="chk-beta-updates" />
-              <span class="slider round"></span>
+              <span class="mc-slider"></span>
             </label>
           </div>
         </div>
@@ -186,20 +186,24 @@
 
                 <!-- Common Checkbox Options -->
                 <div class="checkbox-group" id="common-checkbox-group">
-                  <label class="custom-checkbox">
-                    <input type="checkbox" id="chk-clean-old" checked />
-                    <span class="checkmark"></span>
-                    Delete older patched versions automatically
-                  </label>
+                  <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
+                    <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Delete older patched versions automatically</span>
+                    <label class="mc-toggle" style="margin-left: 0;">
+                      <input type="checkbox" id="chk-clean-old" checked />
+                      <span class="mc-slider"></span>
+                    </label>
+                  </div>
                 </div>
 
                 <!-- Advanced Checkbox Options -->
                 <div class="checkbox-group advanced-only hidden-group" id="advanced-checkbox-group">
-                  <label class="custom-checkbox">
-                    <input type="checkbox" id="chk-extract-brarchives" />
-                    <span class="checkmark"></span>
-                    [Beta] Extract Brarchives
-                  </label>
+                  <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
+                    <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">[Beta] Extract Brarchives</span>
+                    <label class="mc-toggle" style="margin-left: 0;">
+                      <input type="checkbox" id="chk-extract-brarchives" />
+                      <span class="mc-slider"></span>
+                    </label>
+                  </div>
                   <p class="checkbox-hint">Extracts compressed .brarchive files from the source and patches directly against them.</p>
                 </div>
               </div>
@@ -437,11 +441,13 @@
                       <label for="gen-patch-version">Patch Version</label>
                       <input type="text" id="gen-patch-version" class="custom-input" placeholder="e.g. 1.1" value="1.1" />
                     </div>
-                    <label class="custom-checkbox" style="margin-top: 8px;">
-                      <input type="checkbox" id="gen-inject-manifest" checked />
-                      <span class="checkmark"></span>
-                      Inject Custom Manifest
-                    </label>
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0; margin-top: 8px;">
+                      <span style="font-size: 0.85rem; color: #ffffff; font-weight: 500;">Inject Custom Manifest</span>
+                      <label class="mc-toggle" style="margin-left: 0;">
+                        <input type="checkbox" id="gen-inject-manifest" checked />
+                        <span class="mc-slider"></span>
+                      </label>
+                    </div>
                     <div class="genpatch-actions" style="margin-top: 16px;">
                       <button id="btn-run-gen-patch" class="btn btn-gold-3d" style="width: 100%;">Create Patches</button>
                     </div>
@@ -523,11 +529,13 @@
                   </select>
                 </div>
                 <div class="checkbox-group" style="margin-top: 0; margin-bottom: 12px;">
-                  <label class="custom-checkbox">
-                    <input type="checkbox" id="chk-ping-needed" checked />
-                    <span class="checkmark"></span>
-                    Ping Everyone on Discord (@everyone)
-                  </label>
+                  <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
+                    <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Ping Everyone on Discord (@everyone)</span>
+                    <label class="mc-toggle" style="margin-left: 0;">
+                      <input type="checkbox" id="chk-ping-needed" checked />
+                      <span class="mc-slider"></span>
+                    </label>
+                  </div>
                 </div>
                 <div class="form-group">
                   <label for="rel-default-pack-ver">Default Pack Version (patch_config)</label>

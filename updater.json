@@ -1,5 +1,6 @@
 {
   "notes": "Initial Tauri V3 release with advanced patch creators, cleaner utilities, direct option edits, and native explorer browses.",
+  "ping_everyone": true,
   "platforms": {
     "windows-x86_64": {
       "signature": "PASTE_THE_CONTENT_OF_YOUR_MSI_ZIP_SIG_FILE_HERE",
@@ -7,6 +8,5 @@
     }
   },
   "pub_date": "2026-06-03T00:00:00Z",
-  "version": "2.2.1-0",
-  "ping_everyone": true
+  "version": "2.2.2-1"
 }

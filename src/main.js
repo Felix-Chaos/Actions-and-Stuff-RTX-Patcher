@@ -662,7 +662,7 @@ async function loadOptionsData(path) {
     const rtxKeys = {
       'gfx_raytracing': { label: 'Ray Tracing', type: 'bool' },
       'gfx_upscaling': { label: 'Upscaling / DLSS', type: 'bool' },
-      'gfx_rtx_resolution_scaling': { label: 'RTX Resolution Scale', type: 'percent' },
+      'raytracing_viewdistance': { label: 'Ray Tracing View Distance (Chunks)', type: 'number' },
       'gfx_max_framerate': { label: 'Max Framerate', type: 'number' },
       'gfx_vsync': { label: 'VSync', type: 'bool' }
     };
@@ -686,13 +686,21 @@ async function loadOptionsData(path) {
       controlDiv.className = 'option-control';
       
       if (cfg.type === 'bool') {
-        const sel = document.createElement('select');
-        sel.dataset.key = key;
-        sel.innerHTML = `
-          <option value="1" ${val == '1' ? 'selected' : ''}>On / True</option>
-          <option value="0" ${val == '0' ? 'selected' : ''}>Off / False</option>
-        `;
-        controlDiv.appendChild(sel);
+        const toggle = document.createElement('label');
+        toggle.className = 'mc-toggle';
+        
+        const inp = document.createElement('input');
+        inp.type = 'checkbox';
+        inp.dataset.key = key;
+        inp.checked = (val == '1');
+        
+        const slider = document.createElement('span');
+        slider.className = 'mc-slider';
+        
+        toggle.appendChild(inp);
+        toggle.appendChild(slider);
+        
+        controlDiv.appendChild(toggle);
       } else if (cfg.type === 'percent' || cfg.type === 'number') {
         const inp = document.createElement('input');
         inp.type = 'number';
@@ -717,7 +725,11 @@ document.getElementById('btn-save-settings').addEventListener('click', async () 
   const controls = document.querySelectorAll('.option-control select, .option-control input');
   const changes = {};
   controls.forEach(ctrl => {
-    changes[ctrl.dataset.key] = ctrl.value;
+    if (ctrl.type === 'checkbox') {
+      changes[ctrl.dataset.key] = ctrl.checked ? '1' : '0';
+    } else {
+      changes[ctrl.dataset.key] = ctrl.value;
+    }
   });
   
   try {
@@ -1211,7 +1223,7 @@ document.getElementById('btn-clear-console').addEventListener('click', clearCons
 
 function parseVersion(verStr) {
   const isBeta = verStr.endsWith('_b') || verStr.endsWith('-b') || verStr.endsWith('-0');
-  const isAlpha = verStr.endsWith('_a') || verStr.endsWith('-a');
+  const isAlpha = verStr.endsWith('_a') || verStr.endsWith('-a') || verStr.endsWith('-1');
   const cleanVer = isBeta || isAlpha ? verStr.slice(0, -2) : verStr;
   const parts = cleanVer.split('.').map(Number);
   
@@ -1383,8 +1395,12 @@ async function checkForUpdates() {
     
     if (update && update.version) {
       const isBetaUpdate = update.version.endsWith('_b') || update.version.endsWith('-b') || update.version.endsWith('-0');
-      const isAlphaUpdate = update.version.endsWith('_a') || update.version.endsWith('-a');
-      const userFacingVersion = update.version.replace('-b', '_b').replace('-0', '_b').replace('-a', '_a');
+      const isAlphaUpdate = update.version.endsWith('_a') || update.version.endsWith('-a') || update.version.endsWith('-1');
+      const userFacingVersion = update.version
+        .replace('-b', '_b')
+        .replace('-0', '_b')
+        .replace('-a', '_a')
+        .replace('-1', '_a');
       
       // If beta/alpha update but beta updates are disabled, ignore it
       if ((isBetaUpdate || isAlphaUpdate) && !allowBetaUpdates) {
@@ -1445,7 +1461,11 @@ window.addEventListener('DOMContentLoaded', async () => {
   // Dynamically set version badge from backend/tauri.conf.json
   try {
     let appVersion = await invoke("get_app_version");
-    appVersion = appVersion.replace("-b", "_b").replace("-0", "_b");
+    appVersion = appVersion
+      .replace("-b", "_b")
+      .replace("-0", "_b")
+      .replace("-a", "_a")
+      .replace("-1", "_a");
     const versionBadge = document.getElementById('app-version-badge');
     if (versionBadge) {
       versionBadge.innerText = `v${appVersion}`;

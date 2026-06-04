@@ -1404,7 +1404,11 @@ fn update_app_version(app: tauri::AppHandle, version: String, ping_everyone: boo
         return Err("Could not determine project root directory".to_string());
     }
 
-    let semver_version = version.replace("_b", "-0");
+    let semver_version = version
+        .replace("_b", "-0")
+        .replace("_a", "-1")
+        .replace("-b", "-0")
+        .replace("-a", "-1");
     
     // 1. Update tauri.conf.json
     let tauri_conf_path = project_root.join("src-tauri/tauri.conf.json");
