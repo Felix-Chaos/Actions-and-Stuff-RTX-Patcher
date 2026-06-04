@@ -16,16 +16,69 @@ if (window.__TAURI__) {
   });
 }
 
-// Override window.alert with custom modal dialog to avoid exposing server IP
-window.alert = function(msg) {
-  const modal = document.getElementById('custom-modal');
-  const messageEl = document.getElementById('modal-message');
-  if (modal && messageEl) {
-    messageEl.innerText = msg;
+function showModal(message, options = {}) {
+  const {
+    title = 'Notification',
+    confirm = false,
+    okText = 'OK',
+    cancelText = 'Cancel'
+  } = options;
+
+  return new Promise((resolve) => {
+    const modal = document.getElementById('custom-modal');
+    const titleEl = document.getElementById('modal-title');
+    const messageEl = document.getElementById('modal-message');
+    const okBtn = document.getElementById('btn-modal-ok');
+    const cancelBtn = document.getElementById('btn-modal-cancel');
+
+    if (!modal || !messageEl || !okBtn || !cancelBtn) {
+      console.warn("Custom modal missing; fallback log: ", message);
+      resolve(false);
+      return;
+    }
+
+    if (titleEl) titleEl.innerText = title;
+    messageEl.innerText = message;
+    okBtn.innerText = okText;
+    cancelBtn.innerText = cancelText;
+
+    if (confirm) {
+      cancelBtn.classList.remove('hidden-group');
+    } else {
+      cancelBtn.classList.add('hidden-group');
+    }
+
+    const cleanup = () => {
+      modal.classList.add('hidden-group');
+      okBtn.onclick = null;
+      cancelBtn.onclick = null;
+    };
+
+    okBtn.onclick = () => {
+      cleanup();
+      resolve(true);
+    };
+
+    cancelBtn.onclick = () => {
+      cleanup();
+      resolve(false);
+    };
+
     modal.classList.remove('hidden-group');
-  } else {
-    console.warn("Custom alert modal: ", msg);
-  }
+  });
+}
+
+function showAlert(message, title = 'Notification') {
+  showModal(message, { title, confirm: false });
+}
+
+async function showConfirm(message, title = 'Confirm') {
+  return showModal(message, { title, confirm: true });
+}
+
+// Override window.alert to use the in-app modal
+window.alert = function(msg) {
+  showAlert(msg);
 };
 
 // Global State
@@ -789,9 +842,11 @@ document.getElementById('btn-scan-cleaner').addEventListener('click', async () =
 
 document.getElementById('btn-run-cleaner').addEventListener('click', async () => {
   if (cleanablePacksPaths.length === 0) return;
-  if (!confirm(`Are you sure you want to delete all ${cleanablePacksPaths.length} located folders?`)) {
-    return;
-  }
+  const confirmDelete = await showConfirm(
+    `Are you sure you want to delete all ${cleanablePacksPaths.length} located folders?`,
+    'Confirm Deletion'
+  );
+  if (!confirmDelete) return;
   
   try {
     log("Deleting located folders...");
@@ -878,7 +933,11 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
         patchConfigToUse = resolvePatchConfig(selectionMode, best.version);
         if (selectionMode === 'manual' && patchConfigToUse.packVersion !== best.version) {
           log(`Warning: Target patch version (${patchConfigToUse.packVersion}) does not match detected pack version (${best.version}).`, 'warning');
-          if (!confirm(`Warning: The selected patch version (${patchConfigToUse.packVersion}) differs from your installed pack version (${best.version}).\n\nDo you want to proceed anyway?`)) {
+          const proceed = await showConfirm(
+            `Warning: The selected patch version (${patchConfigToUse.packVersion}) differs from your installed pack version (${best.version}).\n\nDo you want to proceed anyway?`,
+            'Version Mismatch'
+          );
+          if (!proceed) {
             throw "User aborted due to version mismatch.";
           }
         }
@@ -1392,8 +1451,8 @@ async function checkForUpdates() {
   try {
     log("Checking for software updates...");
     const update = await invoke("plugin:updater|check");
-    
-    if (update && update.version) {
+
+    if (update && update.available) {
       const isBetaUpdate = update.version.endsWith('_b') || update.version.endsWith('-b') || update.version.endsWith('-0');
       const isAlphaUpdate = update.version.endsWith('_a') || update.version.endsWith('-a') || update.version.endsWith('-1');
       const userFacingVersion = update.version
@@ -1422,15 +1481,20 @@ async function checkForUpdates() {
         if (isBetaUpdate) updateType = "Beta";
         else if (isAlphaUpdate) updateType = "Alpha";
         
-        if (!confirm(`A new ${updateType} update (v${userFacingVersion}) is available.\n\nWould you like to download and install this update now?`)) {
-          return;
-        }
+        const confirmed = await showConfirm(
+          `A new ${updateType} update (v${userFacingVersion}) is available.\n\nWould you like to download and install this update now?`,
+          'Update Available'
+        );
+        if (!confirmed) return;
 
         btn.disabled = true;
         btn.innerText = "Updating...";
         log("Downloading and installing update...");
         try {
-          await invoke("plugin:updater|download_and_install");
+          if (!update.rid) {
+            throw "Update metadata missing rid.";
+          }
+          await invoke("plugin:updater|download_and_install", { rid: update.rid });
           log("Update installed successfully. App will relaunch shortly.", "success");
           alert("Update installed successfully! The application will now restart.");
         } catch (err) {
@@ -1511,15 +1575,6 @@ window.addEventListener('DOMContentLoaded', async () => {
           console.error("Failed to copy target path:", err);
         });
       }
-    });
-  }
-
-  // Wire OK button for custom alert modal
-  const btnModalOk = document.getElementById('btn-modal-ok');
-  const customModal = document.getElementById('custom-modal');
-  if (btnModalOk && customModal) {
-    btnModalOk.addEventListener('click', () => {
-      customModal.classList.add('hidden-group');
     });
   }
 

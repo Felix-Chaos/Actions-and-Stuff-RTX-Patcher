@@ -603,9 +603,12 @@
     <!-- Custom Modal Dialog -->
     <div id="custom-modal" class="modal-overlay hidden-group">
       <div class="modal-card">
-        <h3>Notification</h3>
+        <h3 id="modal-title">Notification</h3>
         <p id="modal-message">Message goes here</p>
-        <button id="btn-modal-ok" class="btn btn-primary">OK</button>
+        <div class="modal-actions">
+          <button id="btn-modal-cancel" class="btn btn-secondary hidden-group">Cancel</button>
+          <button id="btn-modal-ok" class="btn btn-primary">OK</button>
+        </div>
       </div>
     </div>
   </body>

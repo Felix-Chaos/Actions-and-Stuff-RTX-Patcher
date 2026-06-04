@@ -1553,7 +1553,12 @@ input:checked + .slider:before {
 
 .modal-card .btn {
   width: 120px;
-  margin: 0 auto;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
 }
 
 
