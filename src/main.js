@@ -1,7 +1,7 @@
 // JavaScript Controller for Actions & Stuff RTX Patcher v3
 
 // Destructure invoke and listen from Tauri Core
-const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: () => Promise.reject("Tauri not available") };
+const { invoke, Channel } = window.__TAURI__ ? window.__TAURI__.core : { invoke: () => Promise.reject("Tauri not available"), Channel: class {} };
 const { listen } = window.__TAURI__ ? window.__TAURI__.event : { listen: () => {} };
 
 // Listen for backend log messages and route them to correct UI console
@@ -1488,12 +1488,32 @@ async function checkForUpdates() {
   badge.innerText = "Checking...";
 
   const allowBetaUpdates = localStorage.getItem('allow-beta-updates') === 'true';
+  const isAdvanced = document.getElementById('chk-advanced-mode')?.checked;
+
+  const debugBtn = document.getElementById('btn-debug-updater');
+  if (debugBtn) {
+    if (isAdvanced) {
+      debugBtn.classList.remove('hidden-group');
+    } else {
+      debugBtn.classList.add('hidden-group');
+    }
+    debugBtn.onclick = async () => {
+      debugBtn.innerText = "Running...";
+      try {
+        const res = await invoke("debug_updater");
+        alert("DEBUG LOG:\n\n" + res);
+      } catch (e) {
+        alert("DEBUG ERROR:\n\n" + e);
+      }
+      debugBtn.innerText = "Debug Updater";
+    };
+  }
 
   try {
     log("Checking for software updates...");
     const update = await invoke("plugin:updater|check");
 
-    if (update && update.available) {
+    if (update) {
       const isBetaUpdate = update.version.endsWith('_b') || update.version.endsWith('-b') || update.version.endsWith('-0');
       const isAlphaUpdate = update.version.endsWith('_a') || update.version.endsWith('-a') || update.version.endsWith('-1');
       const userFacingVersion = update.version
@@ -1552,7 +1572,22 @@ async function checkForUpdates() {
           if (!update.rid) {
             throw "Update metadata missing rid.";
           }
-          await invoke("plugin:updater|download_and_install", { rid: update.rid });
+          
+          const onEvent = new Channel();
+          onEvent.onmessage = (event) => {
+            if (event.event === "Progress") {
+              const current = event.data.chunkLength || 0;
+              log(`Downloading update: ${current} bytes...`);
+            } else if (event.event === "Finished") {
+              log("Download finished.");
+            }
+          };
+
+          await invoke("plugin:updater|download_and_install", { 
+            rid: update.rid,
+            onEvent: onEvent
+          });
+          
           log("Update installed successfully. App will relaunch shortly.", "success");
           alert("Update installed successfully! The application will now restart.");
         } catch (err) {

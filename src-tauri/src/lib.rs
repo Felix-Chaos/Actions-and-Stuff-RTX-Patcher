@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{Read, Write, BufRead};
+use std::io::{BufRead, Read, Write};
 use std::path::{Path, PathBuf};
+use tauri::{Emitter, Manager};
 use zip::write::SimpleFileOptions;
 use zip::ZipWriter;
-use tauri::{Manager, Emitter};
 
 #[cfg(target_os = "windows")]
 use std::os::windows::ffi::OsStrExt;
@@ -24,11 +24,14 @@ struct LogPayload {
 }
 
 fn emit_log(app: &tauri::AppHandle, container: &str, msg: &str, log_type: &str) {
-    let _ = app.emit("app-log", LogPayload {
-        container: container.to_string(),
-        message: msg.to_string(),
-        log_type: log_type.to_string(),
-    });
+    let _ = app.emit(
+        "app-log",
+        LogPayload {
+            container: container.to_string(),
+            message: msg.to_string(),
+            log_type: log_type.to_string(),
+        },
+    );
 }
 
 #[tauri::command]
@@ -56,7 +59,11 @@ fn robust_cleanup(path: &Path) -> bool {
 }
 
 // Helper: collect files for deterministic zip
-fn collect_files(root: &Path, current: &Path, files: &mut Vec<(PathBuf, String)>) -> Result<(), String> {
+fn collect_files(
+    root: &Path,
+    current: &Path,
+    files: &mut Vec<(PathBuf, String)>,
+) -> Result<(), String> {
     if current.is_dir() {
         for entry in std::fs::read_dir(current).map_err(|e| e.to_string())? {
             let entry = entry.map_err(|e| e.to_string())?;
@@ -64,7 +71,8 @@ fn collect_files(root: &Path, current: &Path, files: &mut Vec<(PathBuf, String)>
             collect_files(root, &path, files)?;
         }
     } else if current.is_file() {
-        let rel_path = current.strip_prefix(root)
+        let rel_path = current
+            .strip_prefix(root)
             .map_err(|e| e.to_string())?
             .to_string_lossy()
             .replace("\\", "/");
@@ -74,7 +82,12 @@ fn collect_files(root: &Path, current: &Path, files: &mut Vec<(PathBuf, String)>
 }
 
 // Helper: deterministic ZIP packer
-fn pack_folder_impl(app: Option<&tauri::AppHandle>, folder_path: &Path, output_zip: &Path, container: &str) -> Result<(), String> {
+fn pack_folder_impl(
+    app: Option<&tauri::AppHandle>,
+    folder_path: &Path,
+    output_zip: &Path,
+    container: &str,
+) -> Result<(), String> {
     let file = File::create(output_zip).map_err(|e| format!("Failed to create zip: {}", e))?;
     let mut zip = ZipWriter::new(file);
 
@@ -91,8 +104,18 @@ fn pack_folder_impl(app: Option<&tauri::AppHandle>, folder_path: &Path, output_z
     files.sort_by(|a, b| a.1.cmp(&b.1));
 
     if let Some(app_handle) = app {
-        emit_log(app_handle, container, &format!("Scanning folder to pack: {:?}", folder_path), "info");
-        emit_log(app_handle, container, &format!("Found {} files to compress deterministically.", files.len()), "info");
+        emit_log(
+            app_handle,
+            container,
+            &format!("Scanning folder to pack: {:?}", folder_path),
+            "info",
+        );
+        emit_log(
+            app_handle,
+            container,
+            &format!("Found {} files to compress deterministically.", files.len()),
+            "info",
+        );
     }
 
     for (abs_path, rel_path) in files {
@@ -105,50 +128,86 @@ fn pack_folder_impl(app: Option<&tauri::AppHandle>, folder_path: &Path, output_z
             .map_err(|e| format!("Failed to write file to zip: {}", e))?;
     }
 
-    zip.finish().map_err(|e| format!("Failed to finalize zip: {}", e))?;
+    zip.finish()
+        .map_err(|e| format!("Failed to finalize zip: {}", e))?;
     if let Some(app_handle) = app {
-        emit_log(app_handle, container, &format!("Deterministic pack created successfully at: {:?}", output_zip), "success");
+        emit_log(
+            app_handle,
+            container,
+            &format!(
+                "Deterministic pack created successfully at: {:?}",
+                output_zip
+            ),
+            "success",
+        );
     }
     Ok(())
 }
 
 // Helper: zip/mcpack extraction with smart folder unwrapping
-fn extract_archive_impl(app: Option<&tauri::AppHandle>, zip_path: &Path, output_dir: &Path, container: &str) -> Result<(), String> {
+fn extract_archive_impl(
+    app: Option<&tauri::AppHandle>,
+    zip_path: &Path,
+    output_dir: &Path,
+    container: &str,
+) -> Result<(), String> {
     let file = File::open(zip_path).map_err(|e| format!("Failed to open zip: {}", e))?;
-    let mut archive = zip::ZipArchive::new(file).map_err(|e| format!("Failed to read zip: {}", e))?;
-    
+    let mut archive =
+        zip::ZipArchive::new(file).map_err(|e| format!("Failed to read zip: {}", e))?;
+
     if output_dir.exists() {
         if let Some(app_handle) = app {
-            emit_log(app_handle, container, &format!("Cleaning existing extraction directory: {:?}", output_dir), "info");
+            emit_log(
+                app_handle,
+                container,
+                &format!("Cleaning existing extraction directory: {:?}", output_dir),
+                "info",
+            );
         }
         let _ = std::fs::remove_dir_all(output_dir);
     }
-    std::fs::create_dir_all(output_dir).map_err(|e| format!("Failed to create output dir: {}", e))?;
-    
+    std::fs::create_dir_all(output_dir)
+        .map_err(|e| format!("Failed to create output dir: {}", e))?;
+
     if let Some(app_handle) = app {
-        emit_log(app_handle, container, &format!("Extracting archive {:?} (contains {} files)", zip_path, archive.len()), "info");
+        emit_log(
+            app_handle,
+            container,
+            &format!(
+                "Extracting archive {:?} (contains {} files)",
+                zip_path,
+                archive.len()
+            ),
+            "info",
+        );
     }
 
     for i in 0..archive.len() {
-        let mut file = archive.by_index(i).map_err(|e| format!("Failed to read zip file: {}", e))?;
+        let mut file = archive
+            .by_index(i)
+            .map_err(|e| format!("Failed to read zip file: {}", e))?;
         let outpath = match file.enclosed_name() {
             Some(path) => output_dir.join(path),
             None => continue,
         };
-        
+
         if file.name().ends_with('/') {
-            std::fs::create_dir_all(&outpath).map_err(|e| format!("Failed to create directory: {}", e))?;
+            std::fs::create_dir_all(&outpath)
+                .map_err(|e| format!("Failed to create directory: {}", e))?;
         } else {
             if let Some(p) = outpath.parent() {
                 if !p.exists() {
-                    std::fs::create_dir_all(p).map_err(|e| format!("Failed to create directory: {}", e))?;
+                    std::fs::create_dir_all(p)
+                        .map_err(|e| format!("Failed to create directory: {}", e))?;
                 }
             }
-            let mut outfile = File::create(&outpath).map_err(|e| format!("Failed to create output file: {}", e))?;
-            std::io::copy(&mut file, &mut outfile).map_err(|e| format!("Failed to copy file contents: {}", e))?;
+            let mut outfile = File::create(&outpath)
+                .map_err(|e| format!("Failed to create output file: {}", e))?;
+            std::io::copy(&mut file, &mut outfile)
+                .map_err(|e| format!("Failed to copy file contents: {}", e))?;
         }
     }
-    
+
     // Smart folder detection: if the extract_dir contains only a single directory, move all its contents up
     let mut entries = Vec::new();
     if let Ok(rd) = std::fs::read_dir(output_dir) {
@@ -159,14 +218,27 @@ fn extract_archive_impl(app: Option<&tauri::AppHandle>, zip_path: &Path, output_
     if entries.len() == 1 && entries[0].is_dir() {
         let single_dir = &entries[0];
         if let Some(app_handle) = app {
-            emit_log(app_handle, container, &format!("Smart Unwrap: single root folder {:?} detected. Moving contents up...", single_dir.file_name().unwrap()), "info");
+            emit_log(
+                app_handle,
+                container,
+                &format!(
+                    "Smart Unwrap: single root folder {:?} detected. Moving contents up...",
+                    single_dir.file_name().unwrap()
+                ),
+                "info",
+            );
         }
         if let Ok(rd) = std::fs::read_dir(single_dir) {
             for entry in rd.flatten() {
                 let path = entry.path();
                 let dest = output_dir.join(path.file_name().unwrap());
                 if let Some(app_handle) = app {
-                    emit_log(app_handle, container, &format!("  [Moving up] -> {:?}", path.file_name().unwrap()), "info");
+                    emit_log(
+                        app_handle,
+                        container,
+                        &format!("  [Moving up] -> {:?}", path.file_name().unwrap()),
+                        "info",
+                    );
                 }
                 std::fs::rename(&path, &dest)
                     .map_err(|e| format!("Failed to move file during smart unwrap: {}", e))?;
@@ -174,9 +246,14 @@ fn extract_archive_impl(app: Option<&tauri::AppHandle>, zip_path: &Path, output_
         }
         let _ = std::fs::remove_dir(single_dir);
     }
-    
+
     if let Some(app_handle) = app {
-        emit_log(app_handle, container, &format!("Successfully extracted all files to {:?}", output_dir), "success");
+        emit_log(
+            app_handle,
+            container,
+            &format!("Successfully extracted all files to {:?}", output_dir),
+            "success",
+        );
     }
     Ok(())
 }
@@ -192,7 +269,8 @@ fn get_lang_version(path: &Path) -> Option<String> {
             if line.starts_with("pack.name=") {
                 if let Some(idx) = line.find("Actions & Stuf") {
                     let raw_ver = &line[idx + 14..];
-                    let clean_ver: String = raw_ver.chars()
+                    let clean_ver: String = raw_ver
+                        .chars()
                         .filter(|c| c.is_numeric() || *c == '.')
                         .collect();
                     let clean_ver = clean_ver.trim_matches('.').to_string();
@@ -211,16 +289,20 @@ fn get_mojang_paths() -> Vec<PathBuf> {
     let mut paths = Vec::new();
     let local_app_data = std::env::var("LOCALAPPDATA").ok().map(PathBuf::from);
     let app_data = std::env::var("APPDATA").ok().map(PathBuf::from);
-    
+
     if let Some(ref lad) = local_app_data {
-        paths.push(lad.join(r"Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\LocalState\games\com.mojang"));
-        paths.push(lad.join(r"Packages\Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe\LocalState\games\com.mojang"));
+        paths.push(
+            lad.join(r"Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\LocalState\games\com.mojang"),
+        );
+        paths.push(lad.join(
+            r"Packages\Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe\LocalState\games\com.mojang",
+        ));
     }
-    
+
     if let Some(ref ad) = app_data {
         paths.push(ad.join(r"Minecraft Bedrock\games\com.mojang"));
         paths.push(ad.join(r"Minecraft Bedrock Preview\games\com.mojang"));
-        
+
         let users_dir = ad.join(r"Minecraft Bedrock\Users");
         if users_dir.exists() {
             if let Ok(entries) = std::fs::read_dir(users_dir) {
@@ -232,7 +314,7 @@ fn get_mojang_paths() -> Vec<PathBuf> {
             }
         }
     }
-    
+
     paths.retain(|p| p.exists());
     paths
 }
@@ -240,8 +322,15 @@ fn get_mojang_paths() -> Vec<PathBuf> {
 // Helper: scan a com.mojang directory for cleanable packs matching prefixes
 fn scan_cleanable_packs_in_mojang(mojang_path: &Path) -> Vec<PathBuf> {
     let mut results = Vec::new();
-    let prefixes = vec!["a&s", "actions & st", "actions&st", "a&sforrtx", "actions & stuff enhanced", "actions & stuff rtx"];
-    
+    let prefixes = vec![
+        "a&s",
+        "actions & st",
+        "actions&st",
+        "a&sforrtx",
+        "actions & stuff enhanced",
+        "actions & stuff rtx",
+    ];
+
     let check_dir_and_collect = |dir_path: &Path, results: &mut Vec<PathBuf>| {
         if let Ok(entries) = std::fs::read_dir(dir_path) {
             for entry in entries.flatten() {
@@ -256,10 +345,13 @@ fn scan_cleanable_packs_in_mojang(mojang_path: &Path) -> Vec<PathBuf> {
             }
         }
     };
-    
+
     check_dir_and_collect(&mojang_path.join("resource_packs"), &mut results);
-    check_dir_and_collect(&mojang_path.join("development_resource_packs"), &mut results);
-    
+    check_dir_and_collect(
+        &mojang_path.join("development_resource_packs"),
+        &mut results,
+    );
+
     let worlds_dir = mojang_path.join("minecraftWorlds");
     if worlds_dir.exists() {
         if let Ok(world_entries) = std::fs::read_dir(worlds_dir) {
@@ -270,7 +362,7 @@ fn scan_cleanable_packs_in_mojang(mojang_path: &Path) -> Vec<PathBuf> {
             }
         }
     }
-    
+
     results
 }
 
@@ -309,16 +401,18 @@ fn scan_marketplace_packs() -> Result<Vec<MarketplaceCandidate>, String> {
     let mut base_paths = Vec::new();
     let local_app_data = std::env::var("LOCALAPPDATA").ok();
     let app_data = std::env::var("APPDATA").ok();
-    
+
     if let Some(ref lad) = local_app_data {
         base_paths.push(PathBuf::from(lad).join(r"Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\LocalState\premium_cache\resource_packs"));
         base_paths.push(PathBuf::from(lad).join(r"Packages\Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe\LocalState\premium_cache\resource_packs"));
     }
     if let Some(ref ad) = app_data {
         base_paths.push(PathBuf::from(ad).join(r"Minecraft Bedrock\premium_cache\resource_packs"));
-        base_paths.push(PathBuf::from(ad).join(r"Minecraft Bedrock Preview\premium_cache\resource_packs"));
+        base_paths.push(
+            PathBuf::from(ad).join(r"Minecraft Bedrock Preview\premium_cache\resource_packs"),
+        );
     }
-    
+
     for base_path in base_paths {
         if !base_path.exists() {
             continue;
@@ -329,18 +423,20 @@ fn scan_marketplace_packs() -> Result<Vec<MarketplaceCandidate>, String> {
                 if path.is_dir() {
                     let manifest_path = path.join("manifest.json");
                     let mut is_match = false;
-                    
+
                     if manifest_path.exists() {
                         if let Ok(manifest_content) = std::fs::read_to_string(&manifest_path) {
-                            if manifest_content.contains("22ed17a6-ea7c-5ccd-93b4-b90e86ce0046") || 
-                               manifest_content.contains("Oreville Studios") {
+                            if manifest_content.contains("22ed17a6-ea7c-5ccd-93b4-b90e86ce0046")
+                                || manifest_content.contains("Oreville Studios")
+                            {
                                 is_match = true;
                             }
                         }
                     }
-                    
+
                     if is_match {
-                        let version = get_lang_version(&path).unwrap_or_else(|| "Unknown".to_string());
+                        let version =
+                            get_lang_version(&path).unwrap_or_else(|| "Unknown".to_string());
                         let folder_name = entry.file_name().to_string_lossy().into_owned();
                         let (files_count, dirs_count) = get_folder_stats(&path);
                         candidates.push(MarketplaceCandidate {
@@ -360,15 +456,17 @@ fn scan_marketplace_packs() -> Result<Vec<MarketplaceCandidate>, String> {
 
 #[tauri::command]
 fn get_patch_configs(app: tauri::AppHandle) -> Result<Vec<serde_json::Value>, String> {
-    let resource_dir = app.path().resource_dir()
+    let resource_dir = app
+        .path()
+        .resource_dir()
         .map_err(|e| format!("Failed to get resource dir: {}", e))?;
     let patches_dir = resource_dir.join("assets/Patches");
-        
+
     let mut configs = Vec::new();
     if !patches_dir.exists() {
         return Ok(configs);
     }
-    
+
     if let Ok(entries) = std::fs::read_dir(patches_dir) {
         for entry in entries.flatten() {
             let path = entry.path();
@@ -376,11 +474,16 @@ fn get_patch_configs(app: tauri::AppHandle) -> Result<Vec<serde_json::Value>, St
                 let config_file = path.join("patch_config.json");
                 if config_file.exists() {
                     if let Ok(content) = std::fs::read_to_string(&config_file) {
-                        if let Ok(mut json_val) = serde_json::from_str::<serde_json::Value>(&content) {
+                        if let Ok(mut json_val) =
+                            serde_json::from_str::<serde_json::Value>(&content)
+                        {
                             if let Some(obj) = json_val.as_object_mut() {
                                 let folder_name = entry.file_name().to_string_lossy().into_owned();
-                                obj.insert("folder_name".to_string(), serde_json::Value::String(folder_name));
-                                
+                                obj.insert(
+                                    "folder_name".to_string(),
+                                    serde_json::Value::String(folder_name),
+                                );
+
                                 // Standardize stats field
                                 if let Some(mp_stats) = obj.get("marketplace_pack_stats") {
                                     if let Some(v1) = mp_stats.get("v1") {
@@ -407,16 +510,21 @@ fn run_xdelta_patch(
     app: tauri::AppHandle,
     source_zip: String,
     patch_file: String,
-    output_file: String
+    output_file: String,
 ) -> Result<String, String> {
-    let resource_dir = app.path().resource_dir()
+    let resource_dir = app
+        .path()
+        .resource_dir()
         .map_err(|e| format!("Failed to get resource dir: {}", e))?;
     let xdelta_path = resource_dir.join("assets/xdelta3/exec/xdelta3_x86_64_win.exe");
-        
+
     if !xdelta_path.exists() {
-        return Err(format!("XDelta executable not found at resources: {:?}", xdelta_path));
+        return Err(format!(
+            "XDelta executable not found at resources: {:?}",
+            xdelta_path
+        ));
     }
-    
+
     let mut actual_patch_file = Path::new(&patch_file).to_path_buf();
     if !actual_patch_file.is_absolute() {
         actual_patch_file = resource_dir.join(&patch_file);
@@ -424,32 +532,63 @@ fn run_xdelta_patch(
     let resolved_patch_str = actual_patch_file.to_string_lossy().to_string();
 
     emit_log(&app, "main", "Initiating XDelta patch execution...", "info");
-    emit_log(&app, "main", &format!("  [Executable] -> {:?}", xdelta_path), "info");
-    emit_log(&app, "main", &format!("  [Source ZIP] -> {}", source_zip), "info");
-    emit_log(&app, "main", &format!("  [Patch File] -> {}", resolved_patch_str), "info");
-    emit_log(&app, "main", &format!("  [Output File] -> {}", output_file), "info");
+    emit_log(
+        &app,
+        "main",
+        &format!("  [Executable] -> {:?}", xdelta_path),
+        "info",
+    );
+    emit_log(
+        &app,
+        "main",
+        &format!("  [Source ZIP] -> {}", source_zip),
+        "info",
+    );
+    emit_log(
+        &app,
+        "main",
+        &format!("  [Patch File] -> {}", resolved_patch_str),
+        "info",
+    );
+    emit_log(
+        &app,
+        "main",
+        &format!("  [Output File] -> {}", output_file),
+        "info",
+    );
 
     let out_path = Path::new(&output_file);
     if let Some(parent) = out_path.parent() {
-        std::fs::create_dir_all(parent).map_err(|e| format!("Failed to create output dir: {}", e))?;
+        std::fs::create_dir_all(parent)
+            .map_err(|e| format!("Failed to create output dir: {}", e))?;
     }
-    
+
     if out_path.exists() {
         emit_log(&app, "main", "Removing pre-existing output file...", "info");
         let _ = std::fs::remove_file(out_path);
     }
-    
+
     let mut cmd = std::process::Command::new(&xdelta_path);
-    cmd.args(&["-f", "-v", "-d", "-s", &source_zip, &resolved_patch_str, &output_file]);
-    
+    cmd.args(&[
+        "-f",
+        "-v",
+        "-d",
+        "-s",
+        &source_zip,
+        &resolved_patch_str,
+        &output_file,
+    ]);
+
     #[cfg(target_os = "windows")]
     cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-    
-    let output = cmd.output().map_err(|e| format!("Failed to run patch executable: {}", e))?;
-    
+
+    let output = cmd
+        .output()
+        .map_err(|e| format!("Failed to run patch executable: {}", e))?;
+
     let stdout = String::from_utf8_lossy(&output.stdout);
     let stderr = String::from_utf8_lossy(&output.stderr);
-    
+
     if !stdout.trim().is_empty() {
         emit_log(&app, "main", &format!("XDelta stdout: {}", stdout), "info");
     }
@@ -461,8 +600,13 @@ fn run_xdelta_patch(
         let err_msg = String::from_utf8_lossy(&output.stderr);
         return Err(format!("Patching failed: {}", err_msg));
     }
-    
-    emit_log(&app, "main", "XDelta patch decoding completed successfully.", "success");
+
+    emit_log(
+        &app,
+        "main",
+        "XDelta patch decoding completed successfully.",
+        "success",
+    );
     Ok("Patch applied successfully.".to_string())
 }
 
@@ -472,11 +616,13 @@ fn install_mcpack(output_file: String) -> Result<String, String> {
     if !src_path.exists() {
         return Err("Output file not found".to_string());
     }
-    
+
     let parent = src_path.parent().unwrap_or_else(|| Path::new(""));
-    let file_stem = src_path.file_stem().ok_or_else(|| "Invalid filename".to_string())?;
+    let file_stem = src_path
+        .file_stem()
+        .ok_or_else(|| "Invalid filename".to_string())?;
     let mcpack_path = parent.join(format!("{}.mcpack", file_stem.to_string_lossy()));
-    
+
     if src_path != mcpack_path {
         if mcpack_path.exists() {
             let _ = std::fs::remove_file(&mcpack_path);
@@ -484,7 +630,7 @@ fn install_mcpack(output_file: String) -> Result<String, String> {
         std::fs::rename(src_path, &mcpack_path)
             .map_err(|e| format!("Failed to rename pack: {}", e))?;
     }
-    
+
     #[cfg(target_os = "windows")]
     {
         let mut wide: Vec<u16> = mcpack_path.as_os_str().encode_wide().collect();
@@ -493,20 +639,22 @@ fn install_mcpack(output_file: String) -> Result<String, String> {
             SetFileAttributesW(wide.as_ptr(), 2); // FILE_ATTRIBUTE_HIDDEN = 2
         }
     }
-    
+
     // Open the pack (starts Minecraft import)
     #[cfg(target_os = "windows")]
     {
         let mut cmd = std::process::Command::new("cmd");
         cmd.args(&["/c", "start", "", &mcpack_path.to_string_lossy()]);
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-        cmd.spawn().map_err(|e| format!("Failed to launch Minecraft installer: {}", e))?;
+        cmd.spawn()
+            .map_err(|e| format!("Failed to launch Minecraft installer: {}", e))?;
     }
     #[cfg(not(target_os = "windows"))]
     {
-        open::that(&mcpack_path).map_err(|e| format!("Failed to launch Minecraft installer: {}", e))?;
+        open::that(&mcpack_path)
+            .map_err(|e| format!("Failed to launch Minecraft installer: {}", e))?;
     }
-    
+
     Ok(mcpack_path.to_string_lossy().into_owned())
 }
 
@@ -543,13 +691,15 @@ fn get_options_paths() -> Result<Vec<OptionsFile>, String> {
     let mut results = Vec::new();
     let local_app_data = std::env::var("LOCALAPPDATA").ok();
     let app_data = std::env::var("APPDATA").ok();
-    
+
     if let Some(ref ad) = app_data {
         let roaming_users = PathBuf::from(ad).join(r"Minecraft Bedrock\Users");
         if roaming_users.exists() {
             if let Ok(entries) = std::fs::read_dir(roaming_users) {
                 for entry in entries.flatten() {
-                    let candidate = entry.path().join(r"games\com.mojang\minecraftpe\options.txt");
+                    let candidate = entry
+                        .path()
+                        .join(r"games\com.mojang\minecraftpe\options.txt");
                     if candidate.exists() {
                         let user_id = entry.file_name().to_string_lossy().into_owned();
                         results.push(OptionsFile {
@@ -561,7 +711,7 @@ fn get_options_paths() -> Result<Vec<OptionsFile>, String> {
             }
         }
     }
-    
+
     if let Some(ref lad) = local_app_data {
         let uwp_path = PathBuf::from(lad).join(r"Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\LocalState\games\com.mojang\minecraftpe\options.txt");
         if uwp_path.exists() {
@@ -571,7 +721,7 @@ fn get_options_paths() -> Result<Vec<OptionsFile>, String> {
             });
         }
     }
-    
+
     Ok(results)
 }
 
@@ -579,14 +729,14 @@ fn get_options_paths() -> Result<Vec<OptionsFile>, String> {
 fn read_options(path: String) -> Result<HashMap<String, String>, String> {
     let content = std::fs::read_to_string(Path::new(&path))
         .map_err(|e| format!("Failed to read options.txt: {}", e))?;
-        
+
     let mut map = HashMap::new();
     let lines: Vec<&str> = if content.contains("\\n") && !content.contains('\n') {
         content.split("\\n").collect()
     } else {
         content.lines().collect()
     };
-    
+
     for line in lines {
         let line = line.trim();
         if line.is_empty() || !line.contains(':') {
@@ -603,24 +753,24 @@ fn write_options(path: String, changes: HashMap<String, String>) -> Result<(), S
     let file_path = Path::new(&path);
     let content = std::fs::read_to_string(file_path)
         .map_err(|e| format!("Failed to read options.txt: {}", e))?;
-        
+
     let is_literal_newline = content.contains("\\n") && !content.contains('\n');
     let lines: Vec<&str> = if is_literal_newline {
         content.split("\\n").collect()
     } else {
         content.lines().collect()
     };
-    
+
     let mut new_lines = Vec::new();
     let mut written_keys = std::collections::HashSet::new();
-    
+
     for line in lines {
         let line_trimmed = line.trim();
         if line_trimmed.is_empty() || !line_trimmed.contains(':') {
             new_lines.push(line.to_string());
             continue;
         }
-        
+
         let parts: Vec<&str> = line_trimmed.splitn(2, ':').collect();
         let key = parts[0];
         if let Some(new_val) = changes.get(key) {
@@ -630,29 +780,46 @@ fn write_options(path: String, changes: HashMap<String, String>) -> Result<(), S
             new_lines.push(line.to_string());
         }
     }
-    
+
     for (key, val) in &changes {
         if !written_keys.contains(key) {
             new_lines.push(format!("{}:{}", key, val));
         }
     }
-    
+
     let join_char = if is_literal_newline { "\\n" } else { "\n" };
     let output = new_lines.join(join_char);
-    
-    std::fs::write(file_path, output)
-        .map_err(|e| format!("Failed to write options.txt: {}", e))?;
+
+    std::fs::write(file_path, output).map_err(|e| format!("Failed to write options.txt: {}", e))?;
     Ok(())
 }
 
 #[tauri::command]
-fn pack_folder(app: tauri::AppHandle, folder_path: String, output_zip: String) -> Result<(), String> {
-    pack_folder_impl(Some(&app), Path::new(&folder_path), Path::new(&output_zip), "main")
+fn pack_folder(
+    app: tauri::AppHandle,
+    folder_path: String,
+    output_zip: String,
+) -> Result<(), String> {
+    pack_folder_impl(
+        Some(&app),
+        Path::new(&folder_path),
+        Path::new(&output_zip),
+        "main",
+    )
 }
 
 #[tauri::command]
-fn extract_archive(app: tauri::AppHandle, zip_path: String, output_dir: String) -> Result<(), String> {
-    extract_archive_impl(Some(&app), Path::new(&zip_path), Path::new(&output_dir), "main")
+fn extract_archive(
+    app: tauri::AppHandle,
+    zip_path: String,
+    output_dir: String,
+) -> Result<(), String> {
+    extract_archive_impl(
+        Some(&app),
+        Path::new(&zip_path),
+        Path::new(&output_dir),
+        "main",
+    )
 }
 
 #[tauri::command]
@@ -661,40 +828,83 @@ fn normalize_extracted_pack(app: tauri::AppHandle, extract_dir: String) -> Resul
     if !dir.exists() {
         return Err("Extraction directory does not exist".to_string());
     }
-    
-    emit_log(&app, "main", &format!("Normalizing extracted pack directory: {:?}", dir), "info");
-    
-    let files_to_remove = ["contents.json", "signatures.json", "splashes.json", "sounds.json"];
+
+    emit_log(
+        &app,
+        "main",
+        &format!("Normalizing extracted pack directory: {:?}", dir),
+        "info",
+    );
+
+    let files_to_remove = [
+        "contents.json",
+        "signatures.json",
+        "splashes.json",
+        "sounds.json",
+    ];
     let dirs_to_remove = ["texts"];
-    
+
     let mut files_deleted = Vec::new();
     let mut dirs_deleted = Vec::new();
-    
-    find_files_to_clean(dir, &files_to_remove, &dirs_to_remove, &mut files_deleted, &mut dirs_deleted);
-    
+
+    find_files_to_clean(
+        dir,
+        &files_to_remove,
+        &dirs_to_remove,
+        &mut files_deleted,
+        &mut dirs_deleted,
+    );
+
     for f in &files_deleted {
         if let Some(file_name) = f.file_name() {
-            emit_log(&app, "main", &format!("  [Removed signature/license file] -> {:?}", file_name), "info");
+            emit_log(
+                &app,
+                "main",
+                &format!("  [Removed signature/license file] -> {:?}", file_name),
+                "info",
+            );
         }
         let _ = std::fs::remove_file(f);
     }
     for d in &dirs_deleted {
         if let Some(dir_name) = d.file_name() {
-            emit_log(&app, "main", &format!("  [Removed texts/translation folder] -> {:?}", dir_name), "info");
+            emit_log(
+                &app,
+                "main",
+                &format!("  [Removed texts/translation folder] -> {:?}", dir_name),
+                "info",
+            );
         }
         let _ = std::fs::remove_dir_all(d);
     }
-    let resource_dir = app.path().resource_dir()
+    let resource_dir = app
+        .path()
+        .resource_dir()
         .map_err(|e| format!("Failed to get resource dir: {}", e))?;
     let resource_manifest = resource_dir.join("assets/resources/manifest.json");
-        
+
     if resource_manifest.exists() {
-        emit_log(&app, "main", "Injecting custom manifest.json to ensure compatibility.", "info");
+        emit_log(
+            &app,
+            "main",
+            "Injecting custom manifest.json to ensure compatibility.",
+            "info",
+        );
         std::fs::copy(&resource_manifest, dir.join("manifest.json"))
             .map_err(|e| format!("Failed to copy manifest.json: {}", e))?;
-        emit_log(&app, "main", "Custom manifest.json injected successfully.", "success");
+        emit_log(
+            &app,
+            "main",
+            "Custom manifest.json injected successfully.",
+            "success",
+        );
     } else {
-        emit_log(&app, "main", "Warning: Custom manifest.json baseline not found in resources.", "warning");
+        emit_log(
+            &app,
+            "main",
+            "Warning: Custom manifest.json baseline not found in resources.",
+            "warning",
+        );
     }
     Ok(())
 }
@@ -716,7 +926,13 @@ fn find_files_to_clean(
                         continue;
                     }
                 }
-                find_files_to_clean(&path, files_to_remove, dirs_to_remove, files_deleted, dirs_deleted);
+                find_files_to_clean(
+                    &path,
+                    files_to_remove,
+                    dirs_to_remove,
+                    files_deleted,
+                    dirs_deleted,
+                );
             } else if path.is_file() {
                 if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
                     if files_to_remove.contains(&name) {
@@ -730,68 +946,68 @@ fn find_files_to_clean(
 
 #[tauri::command]
 fn move_marketplace_folders() -> Result<usize, String> {
-    let local_app_data = std::env::var("LOCALAPPDATA")
-        .map_err(|_| "LOCALAPPDATA env var not found".to_string())?;
+    let local_app_data =
+        std::env::var("LOCALAPPDATA").map_err(|_| "LOCALAPPDATA env var not found".to_string())?;
     let uwp_path = PathBuf::from(local_app_data)
         .join(r"Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\LocalState");
-        
+
     let src_dir = uwp_path.join(r"premium_cache\resource_packs");
     let dst_dir = uwp_path.join(r"games\com.mojang\resource_packs");
-    
+
     if !src_dir.exists() {
         return Err(format!("Source directory not found: {:?}", src_dir));
     }
-    
+
     std::fs::create_dir_all(&dst_dir)
         .map_err(|e| format!("Failed to create destination directory: {}", e))?;
-        
+
     let mut moved_count = 0;
-    
+
     if let Ok(entries) = std::fs::read_dir(src_dir) {
         for entry in entries.flatten() {
             let path = entry.path();
             if path.is_dir() {
                 let folder_name = entry.file_name().to_string_lossy().into_owned();
-                
+
                 let contents_path = path.join("contents.json");
                 if contents_path.exists() {
                     let bak_path = path.join("contents.json.bak");
                     let _ = std::fs::rename(&contents_path, &bak_path);
                 }
-                
+
                 let new_name = format!("{}_mp", folder_name);
                 let target_path = dst_dir.join(new_name);
-                
+
                 if target_path.exists() {
                     continue;
                 }
-                
+
                 if std::fs::rename(&path, &target_path).is_ok() {
                     moved_count += 1;
                 }
             }
         }
     }
-    
+
     Ok(moved_count)
 }
 
 #[tauri::command]
 fn restore_marketplace_folders() -> Result<usize, String> {
-    let local_app_data = std::env::var("LOCALAPPDATA")
-        .map_err(|_| "LOCALAPPDATA env var not found".to_string())?;
+    let local_app_data =
+        std::env::var("LOCALAPPDATA").map_err(|_| "LOCALAPPDATA env var not found".to_string())?;
     let uwp_path = PathBuf::from(local_app_data)
         .join(r"Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\LocalState");
-        
+
     let src_dir = uwp_path.join(r"games\com.mojang\resource_packs");
     let dst_dir = uwp_path.join(r"premium_cache\resource_packs");
-    
+
     if !src_dir.exists() {
         return Err(format!("Source directory not found: {:?}", src_dir));
     }
-    
+
     let mut moved_count = 0;
-    
+
     if let Ok(entries) = std::fs::read_dir(src_dir) {
         for entry in entries.flatten() {
             let path = entry.path();
@@ -800,11 +1016,11 @@ fn restore_marketplace_folders() -> Result<usize, String> {
                 if folder_name.ends_with("_mp") {
                     let original_name = &folder_name[..folder_name.len() - 3];
                     let target_path = dst_dir.join(original_name);
-                    
+
                     if target_path.exists() {
                         let _ = std::fs::remove_dir_all(&target_path);
                     }
-                    
+
                     if std::fs::rename(&path, &target_path).is_ok() {
                         let bak_path = target_path.join("contents.json.bak");
                         if bak_path.exists() {
@@ -817,7 +1033,7 @@ fn restore_marketplace_folders() -> Result<usize, String> {
             }
         }
     }
-    
+
     Ok(moved_count)
 }
 
@@ -829,7 +1045,7 @@ fn get_existing_dir(path_str: &str) -> Option<std::path::PathBuf> {
     } else if cleaned.starts_with(r"//?/") {
         cleaned = cleaned[4..].to_string();
     }
-    
+
     let mut path = std::path::PathBuf::from(cleaned);
     while !path.exists() && path.parent().is_some() {
         path.pop();
@@ -859,7 +1075,11 @@ fn select_directory(title: String, default_path: Option<String>) -> Result<Strin
 }
 
 #[tauri::command]
-fn select_file(title: String, filter: String, default_path: Option<String>) -> Result<String, String> {
+fn select_file(
+    title: String,
+    filter: String,
+    default_path: Option<String>,
+) -> Result<String, String> {
     let mut dialog = rfd::FileDialog::new().set_title(&title);
     if let Some(path_str) = default_path {
         if !path_str.is_empty() {
@@ -869,7 +1089,7 @@ fn select_file(title: String, filter: String, default_path: Option<String>) -> R
             } else if cleaned.starts_with(r"//?/") {
                 cleaned = cleaned[4..].to_string();
             }
-            
+
             let p = std::path::Path::new(&cleaned);
             if p.is_dir() {
                 if let Some(existing_dir) = get_existing_dir(&cleaned) {
@@ -887,18 +1107,19 @@ fn select_file(title: String, filter: String, default_path: Option<String>) -> R
             }
         }
     }
-    
+
     if !filter.is_empty() {
         if let Some(pipe_idx) = filter.find('|') {
             let name = &filter[..pipe_idx];
             let exts_part = &filter[pipe_idx + 1..];
-            let extensions: Vec<&str> = exts_part.split(';')
+            let extensions: Vec<&str> = exts_part
+                .split(';')
                 .map(|e| e.trim_start_matches('*').trim_start_matches('.'))
                 .collect();
             dialog = dialog.add_filter(name, &extensions);
         }
     }
-    
+
     if let Some(path) = dialog.pick_file() {
         Ok(path.to_string_lossy().to_string())
     } else {
@@ -922,7 +1143,10 @@ fn deserialize_brarchive(data: &[u8]) -> Result<HashMap<String, Vec<u8>>, String
     let version = u32::from_le_bytes(data[12..16].try_into().unwrap());
 
     if magic != 0x267052A0B125277D {
-        return Err(format!("Magic Mismatch: expected 0x267052A0B125277D, got 0x{:X}", magic));
+        return Err(format!(
+            "Magic Mismatch: expected 0x267052A0B125277D, got 0x{:X}",
+            magic
+        ));
     }
 
     if version != 1 {
@@ -976,7 +1200,10 @@ fn deserialize_brarchive(data: &[u8]) -> Result<HashMap<String, Vec<u8>>, String
         let end = start + entry.contents_len as usize;
 
         if end > data.len() {
-            return Err(format!("Offset out of bounds reading content for {}", entry.name));
+            return Err(format!(
+                "Offset out of bounds reading content for {}",
+                entry.name
+            ));
         }
 
         entry_map.insert(entry.name, data[start..end].to_vec());
@@ -1034,7 +1261,11 @@ fn remove_brarchive_pointers(dir: &Path) -> Result<(), String> {
     Ok(())
 }
 
-fn extract_brarchives_in_workspace_impl(app: Option<&tauri::AppHandle>, workspace: &Path, container: &str) -> Result<bool, String> {
+fn extract_brarchives_in_workspace_impl(
+    app: Option<&tauri::AppHandle>,
+    workspace: &Path,
+    container: &str,
+) -> Result<bool, String> {
     let mut brarchive_dirs = Vec::new();
     find_brarchive_dirs(workspace, &mut brarchive_dirs)?;
 
@@ -1043,8 +1274,18 @@ fn extract_brarchives_in_workspace_impl(app: Option<&tauri::AppHandle>, workspac
     }
 
     if let Some(app_handle) = app {
-        emit_log(app_handle, container, &format!("Scanning workspace for brarchives: {:?}", workspace), "info");
-        emit_log(app_handle, container, &format!("Found {} __brarchive directories.", brarchive_dirs.len()), "info");
+        emit_log(
+            app_handle,
+            container,
+            &format!("Scanning workspace for brarchives: {:?}", workspace),
+            "info",
+        );
+        emit_log(
+            app_handle,
+            container,
+            &format!("Found {} __brarchive directories.", brarchive_dirs.len()),
+            "info",
+        );
     }
 
     let mut brarchives_found = 0;
@@ -1052,7 +1293,9 @@ fn extract_brarchives_in_workspace_impl(app: Option<&tauri::AppHandle>, workspac
     let mut skipped_placeholders = 0;
 
     for brarchive_root in &brarchive_dirs {
-        let pack_context = brarchive_root.parent().ok_or("No parent for __brarchive folder")?;
+        let pack_context = brarchive_root
+            .parent()
+            .ok_or("No parent for __brarchive folder")?;
 
         let mut files_to_extract = Vec::new();
         collect_brarchive_files(brarchive_root, &mut files_to_extract)?;
@@ -1060,7 +1303,8 @@ fn extract_brarchives_in_workspace_impl(app: Option<&tauri::AppHandle>, workspac
 
         for brarchive_path in files_to_extract {
             brarchives_found += 1;
-            let rel_to_brarchive_root = brarchive_path.strip_prefix(brarchive_root)
+            let rel_to_brarchive_root = brarchive_path
+                .strip_prefix(brarchive_root)
                 .map_err(|e| e.to_string())?;
 
             let file_name_str = rel_to_brarchive_root.to_string_lossy();
@@ -1071,7 +1315,12 @@ fn extract_brarchives_in_workspace_impl(app: Option<&tauri::AppHandle>, workspac
             let extract_dir = pack_context.join(target_rel_str);
 
             if let Some(app_handle) = app {
-                emit_log(app_handle, container, &format!("  [Brarchive Found] -> {}", file_name_str), "info");
+                emit_log(
+                    app_handle,
+                    container,
+                    &format!("  [Brarchive Found] -> {}", file_name_str),
+                    "info",
+                );
             }
 
             let mut data = Vec::new();
@@ -1083,7 +1332,12 @@ fn extract_brarchives_in_workspace_impl(app: Option<&tauri::AppHandle>, workspac
             if data.len() <= 16 {
                 skipped_placeholders += 1;
                 if let Some(app_handle) = app {
-                    emit_log(app_handle, container, "    (Skipped placeholder / empty brarchive)", "info");
+                    emit_log(
+                        app_handle,
+                        container,
+                        "    (Skipped placeholder / empty brarchive)",
+                        "info",
+                    );
                 }
                 continue;
             }
@@ -1091,8 +1345,13 @@ fn extract_brarchives_in_workspace_impl(app: Option<&tauri::AppHandle>, workspac
             let entry_map = deserialize_brarchive(&data)
                 .map_err(|e| format!("Error deserializing {}: {}", brarchive_path.display(), e))?;
 
-            std::fs::create_dir_all(&extract_dir)
-                .map_err(|e| format!("Failed to create extract dir {}: {}", extract_dir.display(), e))?;
+            std::fs::create_dir_all(&extract_dir).map_err(|e| {
+                format!(
+                    "Failed to create extract dir {}: {}",
+                    extract_dir.display(),
+                    e
+                )
+            })?;
 
             for (entry_name, content) in entry_map {
                 let out_file = extract_dir.join(&entry_name);
@@ -1103,13 +1362,20 @@ fn extract_brarchives_in_workspace_impl(app: Option<&tauri::AppHandle>, workspac
 
                 extracted_files += 1;
                 if let Some(parent) = out_file.parent() {
-                    std::fs::create_dir_all(parent)
-                        .map_err(|e| format!("Failed to create parent dir for {}: {}", out_file.display(), e))?;
+                    std::fs::create_dir_all(parent).map_err(|e| {
+                        format!(
+                            "Failed to create parent dir for {}: {}",
+                            out_file.display(),
+                            e
+                        )
+                    })?;
                 }
 
-                let mut out_f = File::create(&out_file)
-                    .map_err(|e| format!("Failed to create output file {}: {}", out_file.display(), e))?;
-                out_f.write_all(&content)
+                let mut out_f = File::create(&out_file).map_err(|e| {
+                    format!("Failed to create output file {}: {}", out_file.display(), e)
+                })?;
+                out_f
+                    .write_all(&content)
                     .map_err(|e| format!("Failed to write to {}: {}", out_file.display(), e))?;
             }
         }
@@ -1119,7 +1385,12 @@ fn extract_brarchives_in_workspace_impl(app: Option<&tauri::AppHandle>, workspac
     for brarchive_root in &brarchive_dirs {
         if let Some(app_handle) = app {
             if let Some(dir_name) = brarchive_root.file_name() {
-                emit_log(app_handle, container, &format!("Cleaning up raw brarchive folder: {:?}", dir_name), "info");
+                emit_log(
+                    app_handle,
+                    container,
+                    &format!("Cleaning up raw brarchive folder: {:?}", dir_name),
+                    "info",
+                );
             }
         }
         let _ = robust_cleanup(brarchive_root);
@@ -1150,13 +1421,25 @@ fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> std::io::Result
 }
 
 #[tauri::command]
-fn stage_and_extract_brarchives(app: tauri::AppHandle, source_dir: String, temp_dir: String) -> Result<String, String> {
+fn stage_and_extract_brarchives(
+    app: tauri::AppHandle,
+    source_dir: String,
+    temp_dir: String,
+) -> Result<String, String> {
     let src = Path::new(&source_dir);
     let dst = Path::new(&temp_dir);
 
     let _ = robust_cleanup(dst);
 
-    emit_log(&app, "main", &format!("Staging files from {:?} to temporary workspace {:?}", src, dst), "info");
+    emit_log(
+        &app,
+        "main",
+        &format!(
+            "Staging files from {:?} to temporary workspace {:?}",
+            src, dst
+        ),
+        "info",
+    );
     copy_dir_all(src, dst).map_err(|e| format!("Failed to copy source folder: {}", e))?;
 
     let found = extract_brarchives_in_workspace_impl(Some(&app), dst, "main")?;
@@ -1169,7 +1452,10 @@ fn stage_and_extract_brarchives(app: tauri::AppHandle, source_dir: String, temp_
 }
 
 #[tauri::command]
-fn extract_brarchives_in_workspace(app: tauri::AppHandle, workspace: String) -> Result<bool, String> {
+fn extract_brarchives_in_workspace(
+    app: tauri::AppHandle,
+    workspace: String,
+) -> Result<bool, String> {
     let ws = Path::new(&workspace);
     // This command can be called from utilities tab (so log container = "main" or we check which log console is used)
     extract_brarchives_in_workspace_impl(Some(&app), ws, "main")
@@ -1180,56 +1466,109 @@ fn generate_xdelta_patch(
     app: tauri::AppHandle,
     source_file: String,
     target_file: String,
-    patch_file: String
+    patch_file: String,
 ) -> Result<String, String> {
-    let resource_dir = app.path().resource_dir()
+    let resource_dir = app
+        .path()
+        .resource_dir()
         .map_err(|e| format!("Failed to get resource dir: {}", e))?;
     let xdelta_path = resource_dir.join("assets/xdelta3/exec/xdelta3_x86_64_win.exe");
-        
+
     if !xdelta_path.exists() {
-        return Err(format!("XDelta executable not found at resources: {:?}", xdelta_path));
+        return Err(format!(
+            "XDelta executable not found at resources: {:?}",
+            xdelta_path
+        ));
     }
-    
-    emit_log(&app, "genpatch-logs", "Encoding patch via XDelta...", "info");
-    emit_log(&app, "genpatch-logs", &format!("  [Executable] -> {:?}", xdelta_path), "info");
-    emit_log(&app, "genpatch-logs", &format!("  [Source File] -> {}", source_file), "info");
-    emit_log(&app, "genpatch-logs", &format!("  [Target File] -> {}", target_file), "info");
-    emit_log(&app, "genpatch-logs", &format!("  [Patch Output] -> {}", patch_file), "info");
+
+    emit_log(
+        &app,
+        "genpatch-logs",
+        "Encoding patch via XDelta...",
+        "info",
+    );
+    emit_log(
+        &app,
+        "genpatch-logs",
+        &format!("  [Executable] -> {:?}", xdelta_path),
+        "info",
+    );
+    emit_log(
+        &app,
+        "genpatch-logs",
+        &format!("  [Source File] -> {}", source_file),
+        "info",
+    );
+    emit_log(
+        &app,
+        "genpatch-logs",
+        &format!("  [Target File] -> {}", target_file),
+        "info",
+    );
+    emit_log(
+        &app,
+        "genpatch-logs",
+        &format!("  [Patch Output] -> {}", patch_file),
+        "info",
+    );
 
     let patch_path = Path::new(&patch_file);
     if let Some(parent) = patch_path.parent() {
-        std::fs::create_dir_all(parent).map_err(|e| format!("Failed to create output dir: {}", e))?;
+        std::fs::create_dir_all(parent)
+            .map_err(|e| format!("Failed to create output dir: {}", e))?;
     }
-    
+
     if patch_path.exists() {
-        emit_log(&app, "genpatch-logs", "Removing existing patch file...", "info");
+        emit_log(
+            &app,
+            "genpatch-logs",
+            "Removing existing patch file...",
+            "info",
+        );
         let _ = std::fs::remove_file(patch_path);
     }
-    
+
     let mut cmd = std::process::Command::new(&xdelta_path);
     cmd.args(&["-e", "-s", &source_file, &target_file, &patch_file]);
-    
+
     #[cfg(target_os = "windows")]
     cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-    
-    let output = cmd.output().map_err(|e| format!("Failed to run patch executable: {}", e))?;
-    
+
+    let output = cmd
+        .output()
+        .map_err(|e| format!("Failed to run patch executable: {}", e))?;
+
     let stdout = String::from_utf8_lossy(&output.stdout);
     let stderr = String::from_utf8_lossy(&output.stderr);
-    
+
     if !stdout.trim().is_empty() {
-        emit_log(&app, "genpatch-logs", &format!("XDelta stdout: {}", stdout), "info");
+        emit_log(
+            &app,
+            "genpatch-logs",
+            &format!("XDelta stdout: {}", stdout),
+            "info",
+        );
     }
     if !stderr.trim().is_empty() {
-        emit_log(&app, "genpatch-logs", &format!("XDelta stderr: {}", stderr), "info");
+        emit_log(
+            &app,
+            "genpatch-logs",
+            &format!("XDelta stderr: {}", stderr),
+            "info",
+        );
     }
 
     if !output.status.success() {
         let err_msg = String::from_utf8_lossy(&output.stderr);
         return Err(format!("Patch generation failed: {}", err_msg));
     }
-    
-    emit_log(&app, "genpatch-logs", "XDelta patch generation successful.", "success");
+
+    emit_log(
+        &app,
+        "genpatch-logs",
+        "XDelta patch generation successful.",
+        "success",
+    );
     Ok("Patch generated successfully.".to_string())
 }
 
@@ -1332,7 +1671,10 @@ fn open_project_dir(app: tauri::AppHandle, name: String) -> Result<(), String> {
                 p1
             } else {
                 let resource_dir = app.path().resource_dir().ok();
-                let p2 = resource_dir.as_ref().map(|rd| rd.join("assets/Patches")).unwrap_or_default();
+                let p2 = resource_dir
+                    .as_ref()
+                    .map(|rd| rd.join("assets/Patches"))
+                    .unwrap_or_default();
                 if p2.exists() {
                     p2
                 } else {
@@ -1361,7 +1703,10 @@ fn get_default_paths(app: tauri::AppHandle) -> std::collections::HashMap<String,
     let gdk_resource_packs = format!("{}/games/com.mojang/resource_packs", gdk_root);
 
     // UWP / Windows Store path
-    let uwp_root = format!("{}/Packages/Microsoft.MinecraftUWP_8wekyb3d8bbwe/LocalState", localappdata);
+    let uwp_root = format!(
+        "{}/Packages/Microsoft.MinecraftUWP_8wekyb3d8bbwe/LocalState",
+        localappdata
+    );
     let uwp_premium = format!("{}/premium_cache/resource_packs", uwp_root);
 
     // Prefer GDK if it exists
@@ -1381,7 +1726,10 @@ fn get_default_paths(app: tauri::AppHandle) -> std::collections::HashMap<String,
 
     let downloads = format!("{}/Downloads", userprofile).replace('\\', "/");
     let resource_dir = app.path().resource_dir().ok().unwrap_or_default();
-    let patches = resource_dir.join("assets/Patches").to_string_lossy().replace('\\', "/");
+    let patches = resource_dir
+        .join("assets/Patches")
+        .to_string_lossy()
+        .replace('\\', "/");
 
     paths.insert("premium_cache".to_string(), premium_cache);
     paths.insert("resource_packs".to_string(), resource_packs);
@@ -1413,23 +1761,40 @@ fn update_app_version(app: tauri::AppHandle, version: String) -> Result<(), Stri
             break;
         }
     }
-    
+
     // 1. Update tauri.conf.json
     let tauri_conf_path = project_root.join("src-tauri/tauri.conf.json");
     if tauri_conf_path.exists() {
-        emit_log(&app, "build-logs", &format!("Updating version to {} (semver: {}) in tauri.conf.json...", version, semver_version), "info");
+        emit_log(
+            &app,
+            "build-logs",
+            &format!(
+                "Updating version to {} (semver: {}) in tauri.conf.json...",
+                version, semver_version
+            ),
+            "info",
+        );
         let content = std::fs::read_to_string(&tauri_conf_path)
             .map_err(|e| format!("Failed to read tauri.conf.json: {}", e))?;
         let mut val: serde_json::Value = serde_json::from_str(&content)
             .map_err(|e| format!("Failed to parse tauri.conf.json: {}", e))?;
         if let Some(obj) = val.as_object_mut() {
-            obj.insert("version".to_string(), serde_json::Value::String(semver_version.clone()));
+            obj.insert(
+                "version".to_string(),
+                serde_json::Value::String(semver_version.clone()),
+            );
             if let Some(app_obj) = obj.get_mut("app") {
                 if let Some(windows) = app_obj.get_mut("windows") {
                     if let Some(win_arr) = windows.as_array_mut() {
                         if let Some(win) = win_arr.get_mut(0) {
                             if let Some(win_obj) = win.as_object_mut() {
-                                win_obj.insert("title".to_string(), serde_json::Value::String(format!("Actions & Stuff RTX Patcher v{}", version)));
+                                win_obj.insert(
+                                    "title".to_string(),
+                                    serde_json::Value::String(format!(
+                                        "Actions & Stuff RTX Patcher v{}",
+                                        version
+                                    )),
+                                );
                             }
                         }
                     }
@@ -1440,9 +1805,22 @@ fn update_app_version(app: tauri::AppHandle, version: String) -> Result<(), Stri
             .map_err(|e| format!("Failed to serialize tauri.conf.json: {}", e))?;
         std::fs::write(&tauri_conf_path, updated_content)
             .map_err(|e| format!("Failed to write tauri.conf.json: {}", e))?;
-        emit_log(&app, "build-logs", "Successfully updated tauri.conf.json and window title.", "success");
+        emit_log(
+            &app,
+            "build-logs",
+            "Successfully updated tauri.conf.json and window title.",
+            "success",
+        );
     } else {
-        emit_log(&app, "build-logs", &format!("Warning: tauri.conf.json not found at expected path: {:?}", tauri_conf_path), "warning");
+        emit_log(
+            &app,
+            "build-logs",
+            &format!(
+                "Warning: tauri.conf.json not found at expected path: {:?}",
+                tauri_conf_path
+            ),
+            "warning",
+        );
     }
 
     // Set title on the active running window dynamically
@@ -1453,40 +1831,80 @@ fn update_app_version(app: tauri::AppHandle, version: String) -> Result<(), Stri
     // 2. Update package.json (base version only)
     let package_json_path = project_root.join("package.json");
     if package_json_path.exists() {
-        emit_log(&app, "build-logs", &format!("Updating package.json version to {}...", base_version), "info");
+        emit_log(
+            &app,
+            "build-logs",
+            &format!("Updating package.json version to {}...", base_version),
+            "info",
+        );
         let content = std::fs::read_to_string(&package_json_path)
             .map_err(|e| format!("Failed to read package.json: {}", e))?;
         let mut val: serde_json::Value = serde_json::from_str(&content)
             .map_err(|e| format!("Failed to parse package.json: {}", e))?;
         if let Some(obj) = val.as_object_mut() {
-            obj.insert("version".to_string(), serde_json::Value::String(base_version.clone()));
+            obj.insert(
+                "version".to_string(),
+                serde_json::Value::String(base_version.clone()),
+            );
         }
         let updated_content = serde_json::to_string_pretty(&val)
             .map_err(|e| format!("Failed to serialize package.json: {}", e))?;
         std::fs::write(&package_json_path, updated_content)
             .map_err(|e| format!("Failed to write package.json: {}", e))?;
-        emit_log(&app, "build-logs", "Successfully updated package.json.", "success");
+        emit_log(
+            &app,
+            "build-logs",
+            "Successfully updated package.json.",
+            "success",
+        );
     } else {
-        emit_log(&app, "build-logs", &format!("Warning: package.json not found at expected path: {:?}", package_json_path), "warning");
+        emit_log(
+            &app,
+            "build-logs",
+            &format!(
+                "Warning: package.json not found at expected path: {:?}",
+                package_json_path
+            ),
+            "warning",
+        );
     }
 
     // 3. Update updater.json
     let updater_json_path = project_root.join("updater.json");
     if updater_json_path.exists() {
-        emit_log(&app, "build-logs", &format!("Updating version to {} (semver: {}) in updater.json...", version, semver_version), "info");
+        emit_log(
+            &app,
+            "build-logs",
+            &format!(
+                "Updating version to {} (semver: {}) in updater.json...",
+                version, semver_version
+            ),
+            "info",
+        );
         let content = std::fs::read_to_string(&updater_json_path)
             .map_err(|e| format!("Failed to read updater.json: {}", e))?;
         let mut val: serde_json::Value = serde_json::from_str(&content)
             .map_err(|e| format!("Failed to parse updater.json: {}", e))?;
         if let Some(obj) = val.as_object_mut() {
-            let old_version = obj.get("version").and_then(|v| v.as_str()).unwrap_or("3.0.0").to_string();
-            obj.insert("version".to_string(), serde_json::Value::String(semver_version.clone()));
+            let old_version = obj
+                .get("version")
+                .and_then(|v| v.as_str())
+                .unwrap_or("3.0.0")
+                .to_string();
+            obj.insert(
+                "version".to_string(),
+                serde_json::Value::String(semver_version.clone()),
+            );
             if let Some(platforms) = obj.get_mut("platforms") {
                 if let Some(win) = platforms.get_mut("windows-x86_64") {
                     if let Some(url_val) = win.get_mut("url") {
                         if let Some(url_str) = url_val.as_str() {
-                            let new_url = url_str.replace(&format!("v{}", old_version), &format!("v{}", semver_version))
-                                                 .replace(&old_version, &semver_version);
+                            let new_url = url_str
+                                .replace(
+                                    &format!("v{}", old_version),
+                                    &format!("v{}", semver_version),
+                                )
+                                .replace(&old_version, &semver_version);
                             *url_val = serde_json::Value::String(new_url);
                         }
                     }
@@ -1497,9 +1915,22 @@ fn update_app_version(app: tauri::AppHandle, version: String) -> Result<(), Stri
             .map_err(|e| format!("Failed to serialize updater.json: {}", e))?;
         std::fs::write(&updater_json_path, updated_content)
             .map_err(|e| format!("Failed to write updater.json: {}", e))?;
-        emit_log(&app, "build-logs", "Successfully updated updater.json.", "success");
+        emit_log(
+            &app,
+            "build-logs",
+            "Successfully updated updater.json.",
+            "success",
+        );
     } else {
-        emit_log(&app, "build-logs", &format!("Warning: updater.json not found at expected path: {:?}", updater_json_path), "warning");
+        emit_log(
+            &app,
+            "build-logs",
+            &format!(
+                "Warning: updater.json not found at expected path: {:?}",
+                updater_json_path
+            ),
+            "warning",
+        );
     }
 
     Ok(())
@@ -1525,19 +1956,36 @@ fn run_release_build(app: tauri::AppHandle) -> Result<(), String> {
 
     let app_clone = app.clone();
     std::thread::spawn(move || {
-        emit_log(&app_clone, "build-logs", "Starting project release build...", "info");
-        emit_log(&app_clone, "build-logs", "Executing command: npm run tauri build", "info");
+        emit_log(
+            &app_clone,
+            "build-logs",
+            "Starting project release build...",
+            "info",
+        );
+        emit_log(
+            &app_clone,
+            "build-logs",
+            "Executing command: npm run tauri build",
+            "info",
+        );
 
         let mut cmd = std::process::Command::new("cmd");
         cmd.args(&["/c", "npm run tauri build"]);
         cmd.current_dir(&project_root);
-        
+
         // Simple .env parser to pass TAURI_SIGNING_PRIVATE_KEY during local builds
         if let Ok(env_content) = std::fs::read_to_string(project_root.join(".env")) {
-            emit_log(&app_clone, "build-logs", "Loaded environment variables from .env file.", "info");
+            emit_log(
+                &app_clone,
+                "build-logs",
+                "Loaded environment variables from .env file.",
+                "info",
+            );
             for line in env_content.lines() {
                 let line = line.trim();
-                if line.is_empty() || line.starts_with('#') { continue; }
+                if line.is_empty() || line.starts_with('#') {
+                    continue;
+                }
                 if let Some((k, v)) = line.split_once('=') {
                     let k = k.trim();
                     let v = v.trim().trim_matches(|c| c == '"' || c == '\'');
@@ -1545,25 +1993,29 @@ fn run_release_build(app: tauri::AppHandle) -> Result<(), String> {
                 }
             }
         }
-        
+
         #[cfg(target_os = "windows")]
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
 
-        match cmd.stdout(std::process::Stdio::piped())
+        match cmd
+            .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())
-            .spawn() {
+            .spawn()
+        {
             Ok(mut child) => {
                 let stdout = child.stdout.take().unwrap();
                 let stderr = child.stderr.take().unwrap();
-                
+
                 let app_c1 = app_clone.clone();
                 let app_c2 = app_clone.clone();
-                
+
                 std::thread::spawn(move || {
                     let mut reader = std::io::BufReader::new(stdout);
                     let mut line = String::new();
                     while let Ok(bytes) = reader.read_line(&mut line) {
-                        if bytes == 0 { break; }
+                        if bytes == 0 {
+                            break;
+                        }
                         emit_log(&app_c1, "build-logs", line.trim_end(), "info");
                         line.clear();
                     }
@@ -1573,7 +2025,9 @@ fn run_release_build(app: tauri::AppHandle) -> Result<(), String> {
                     let mut reader = std::io::BufReader::new(stderr);
                     let mut line = String::new();
                     while let Ok(bytes) = reader.read_line(&mut line) {
-                        if bytes == 0 { break; }
+                        if bytes == 0 {
+                            break;
+                        }
                         emit_log(&app_c2, "build-logs", line.trim_end(), "warning");
                         line.clear();
                     }
@@ -1582,32 +2036,61 @@ fn run_release_build(app: tauri::AppHandle) -> Result<(), String> {
                 match child.wait() {
                     Ok(status) => {
                         if status.success() {
-                            emit_log(&app_clone, "build-logs", "Build finished successfully! Automating updater.json...", "info");
-                            
+                            emit_log(
+                                &app_clone,
+                                "build-logs",
+                                "Build finished successfully! Automating updater.json...",
+                                "info",
+                            );
+
                             // Automate updater.json signature injection
                             let conf_path = project_root.join("src-tauri/tauri.conf.json");
                             if let Ok(content) = std::fs::read_to_string(&conf_path) {
-                                if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content) {
-                                    if let Some(version) = val.get("version").and_then(|v| v.as_str()) {
+                                if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content)
+                                {
+                                    if let Some(version) =
+                                        val.get("version").and_then(|v| v.as_str())
+                                    {
                                         let sig_path = project_root.join(format!("src-tauri/target/release/bundle/nsis/Actions and Stuff RTX Patcher_{}_x64-setup.exe.sig", version));
                                         if let Ok(signature) = std::fs::read_to_string(&sig_path) {
                                             let updater_path = project_root.join("updater.json");
-                                            if let Ok(updater_content) = std::fs::read_to_string(&updater_path) {
-                                                if let Ok(mut updater_val) = serde_json::from_str::<serde_json::Value>(&updater_content) {
-                                                    
-                                                    // Also determine the user-facing version format (e.g. 2.2.5_a)
-                                                    let user_version = version.replace("-1", "_a").replace("-b", "_b").replace("-0", "_b");
-                                                    let url = format!("https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/download/v{}/Actions.and.Stuff.RTX.Patcher_{}_x64-setup.exe", user_version, version);
-                                                    
-                                                    if let Some(platforms) = updater_val.get_mut("platforms") {
-                                                        if let Some(win) = platforms.get_mut("windows-x86_64") {
-                                                            win["signature"] = serde_json::Value::String(signature.trim().to_string());
-                                                            win["url"] = serde_json::Value::String(url);
+                                            if let Ok(updater_content) =
+                                                std::fs::read_to_string(&updater_path)
+                                            {
+                                                if let Ok(mut updater_val) =
+                                                    serde_json::from_str::<serde_json::Value>(
+                                                        &updater_content,
+                                                    )
+                                                {
+                                                    // Also determine the user-facing version format for the github tag to match prepare_release.yml (e.g. V2.2.6a)
+                                                    let user_version = version
+                                                        .replace("-1", "a")
+                                                        .replace("-b", "b")
+                                                        .replace("-0", "b");
+                                                    let url = format!("https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/download/{}/Actions.and.Stuff.RTX.Patcher_{}_x64-setup.exe", user_version, version);
+
+                                                    if let Some(platforms) =
+                                                        updater_val.get_mut("platforms")
+                                                    {
+                                                        if let Some(win) =
+                                                            platforms.get_mut("windows-x86_64")
+                                                        {
+                                                            win["signature"] =
+                                                                serde_json::Value::String(
+                                                                    signature.trim().to_string(),
+                                                                );
+                                                            win["url"] =
+                                                                serde_json::Value::String(url);
                                                         }
                                                     }
-                                                    
-                                                    if let Ok(new_content) = serde_json::to_string_pretty(&updater_val) {
-                                                        let _ = std::fs::write(&updater_path, new_content);
+
+                                                    if let Ok(new_content) =
+                                                        serde_json::to_string_pretty(&updater_val)
+                                                    {
+                                                        let _ = std::fs::write(
+                                                            &updater_path,
+                                                            new_content,
+                                                        );
                                                         emit_log(&app_clone, "build-logs", "Successfully injected new signature and URL into updater.json!", "success");
                                                     }
                                                 }
@@ -1619,16 +2102,31 @@ fn run_release_build(app: tauri::AppHandle) -> Result<(), String> {
                                 }
                             }
                         } else {
-                            emit_log(&app_clone, "build-logs", &format!("Build failed with exit status: {}", status), "error");
+                            emit_log(
+                                &app_clone,
+                                "build-logs",
+                                &format!("Build failed with exit status: {}", status),
+                                "error",
+                            );
                         }
                     }
                     Err(e) => {
-                        emit_log(&app_clone, "build-logs", &format!("Error waiting for build process: {}", e), "error");
+                        emit_log(
+                            &app_clone,
+                            "build-logs",
+                            &format!("Error waiting for build process: {}", e),
+                            "error",
+                        );
                     }
                 }
             }
             Err(e) => {
-                emit_log(&app_clone, "build-logs", &format!("Failed to start build process: {}", e), "error");
+                emit_log(
+                    &app_clone,
+                    "build-logs",
+                    &format!("Failed to start build process: {}", e),
+                    "error",
+                );
             }
         }
     });
@@ -1644,6 +2142,28 @@ fn get_app_version(app: tauri::AppHandle) -> String {
 #[tauri::command]
 fn is_dev_build() -> bool {
     cfg!(debug_assertions)
+}
+
+#[tauri::command]
+async fn debug_updater(app: tauri::AppHandle) -> Result<String, String> {
+    use tauri_plugin_updater::UpdaterExt;
+    let mut log = String::new();
+    log.push_str(&format!("App Version: {}\n", app.package_info().version));
+    
+    match app.updater() {
+        Ok(updater) => {
+            log.push_str("Updater initialized.\n");
+            match updater.check().await {
+                Ok(Some(update)) => {
+                    log.push_str(&format!("Found update: {}\nBody: {:?}\n", update.version, update.body));
+                }
+                Ok(None) => log.push_str("Check succeeded, but no update returned (Option::None).\n"),
+                Err(e) => log.push_str(&format!("Check failed: {:?}\n", e)),
+            }
+        }
+        Err(e) => log.push_str(&format!("Failed to get updater instance: {:?}\n", e)),
+    }
+    Ok(log)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -1693,7 +2213,8 @@ pub fn run() {
             get_app_version,
             check_build_exists,
             is_dev_build,
-            open_url
+            open_url,
+            debug_updater
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
