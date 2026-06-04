@@ -1,12 +1,12 @@
 {
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  },
   "name": "tauri-app",
   "private": true,
-  "version": "2.2.1",
-  "type": "module",
   "scripts": {
     "tauri": "tauri"
   },
-  "devDependencies": {
-    "@tauri-apps/cli": "^2"
-  }
+  "type": "module",
+  "version": "2.2.3"
 }

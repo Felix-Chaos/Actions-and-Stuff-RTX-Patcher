@@ -1409,6 +1409,15 @@ fn update_app_version(app: tauri::AppHandle, version: String) -> Result<(), Stri
         .replace("_a", "-1")
         .replace("-b", "-0")
         .replace("-a", "-1");
+
+    let mut base_version = version.clone();
+    for suffix in ["_a", "_b", "-a", "-b", "-0", "-1"] {
+        if base_version.ends_with(suffix) {
+            let new_len = base_version.len().saturating_sub(suffix.len());
+            base_version.truncate(new_len);
+            break;
+        }
+    }
     
     // 1. Update tauri.conf.json
     let tauri_conf_path = project_root.join("src-tauri/tauri.conf.json");
@@ -1446,7 +1455,27 @@ fn update_app_version(app: tauri::AppHandle, version: String) -> Result<(), Stri
         let _ = window.set_title(&format!("Actions & Stuff RTX Patcher v{}", version));
     }
 
-    // 2. Update updater.json
+    // 2. Update package.json (base version only)
+    let package_json_path = project_root.join("package.json");
+    if package_json_path.exists() {
+        emit_log(&app, "build-logs", &format!("Updating package.json version to {}...", base_version), "info");
+        let content = std::fs::read_to_string(&package_json_path)
+            .map_err(|e| format!("Failed to read package.json: {}", e))?;
+        let mut val: serde_json::Value = serde_json::from_str(&content)
+            .map_err(|e| format!("Failed to parse package.json: {}", e))?;
+        if let Some(obj) = val.as_object_mut() {
+            obj.insert("version".to_string(), serde_json::Value::String(base_version.clone()));
+        }
+        let updated_content = serde_json::to_string_pretty(&val)
+            .map_err(|e| format!("Failed to serialize package.json: {}", e))?;
+        std::fs::write(&package_json_path, updated_content)
+            .map_err(|e| format!("Failed to write package.json: {}", e))?;
+        emit_log(&app, "build-logs", "Successfully updated package.json.", "success");
+    } else {
+        emit_log(&app, "build-logs", &format!("Warning: package.json not found at expected path: {:?}", package_json_path), "warning");
+    }
+
+    // 3. Update updater.json
     let updater_json_path = project_root.join("updater.json");
     if updater_json_path.exists() {
         emit_log(&app, "build-logs", &format!("Updating version to {} (semver: {}) in updater.json...", version, semver_version), "info");
