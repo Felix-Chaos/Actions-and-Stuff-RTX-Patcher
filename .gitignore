@@ -28,7 +28,7 @@ dist/*
 *.cache
 *.swp
 *.swo
-.env/
+.env
 .env.*
 .DS_Store
 .idea/

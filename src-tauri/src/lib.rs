@@ -1532,6 +1532,20 @@ fn run_release_build(app: tauri::AppHandle) -> Result<(), String> {
         cmd.args(&["/c", "npm run tauri build"]);
         cmd.current_dir(&project_root);
         
+        // Simple .env parser to pass TAURI_SIGNING_PRIVATE_KEY during local builds
+        if let Ok(env_content) = std::fs::read_to_string(project_root.join(".env")) {
+            emit_log(&app_clone, "build-logs", "Loaded environment variables from .env file.", "info");
+            for line in env_content.lines() {
+                let line = line.trim();
+                if line.is_empty() || line.starts_with('#') { continue; }
+                if let Some((k, v)) = line.split_once('=') {
+                    let k = k.trim();
+                    let v = v.trim().trim_matches(|c| c == '"' || c == '\'');
+                    cmd.env(k, v);
+                }
+            }
+        }
+        
         #[cfg(target_os = "windows")]
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
 
@@ -1568,7 +1582,42 @@ fn run_release_build(app: tauri::AppHandle) -> Result<(), String> {
                 match child.wait() {
                     Ok(status) => {
                         if status.success() {
-                            emit_log(&app_clone, "build-logs", "Build finished successfully!", "success");
+                            emit_log(&app_clone, "build-logs", "Build finished successfully! Automating updater.json...", "info");
+                            
+                            // Automate updater.json signature injection
+                            let conf_path = project_root.join("src-tauri/tauri.conf.json");
+                            if let Ok(content) = std::fs::read_to_string(&conf_path) {
+                                if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content) {
+                                    if let Some(version) = val.get("version").and_then(|v| v.as_str()) {
+                                        let sig_path = project_root.join(format!("src-tauri/target/release/bundle/nsis/Actions and Stuff RTX Patcher_{}_x64-setup.exe.sig", version));
+                                        if let Ok(signature) = std::fs::read_to_string(&sig_path) {
+                                            let updater_path = project_root.join("updater.json");
+                                            if let Ok(updater_content) = std::fs::read_to_string(&updater_path) {
+                                                if let Ok(mut updater_val) = serde_json::from_str::<serde_json::Value>(&updater_content) {
+                                                    
+                                                    // Also determine the user-facing version format (e.g. 2.2.5_a)
+                                                    let user_version = version.replace("-1", "_a").replace("-b", "_b").replace("-0", "_b");
+                                                    let url = format!("https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/download/v{}/Actions.and.Stuff.RTX.Patcher_{}_x64-setup.exe", user_version, version);
+                                                    
+                                                    if let Some(platforms) = updater_val.get_mut("platforms") {
+                                                        if let Some(win) = platforms.get_mut("windows-x86_64") {
+                                                            win["signature"] = serde_json::Value::String(signature.trim().to_string());
+                                                            win["url"] = serde_json::Value::String(url);
+                                                        }
+                                                    }
+                                                    
+                                                    if let Ok(new_content) = serde_json::to_string_pretty(&updater_val) {
+                                                        let _ = std::fs::write(&updater_path, new_content);
+                                                        emit_log(&app_clone, "build-logs", "Successfully injected new signature and URL into updater.json!", "success");
+                                                    }
+                                                }
+                                            }
+                                        } else {
+                                            emit_log(&app_clone, "build-logs", "Could not find .sig file to inject into updater.json", "warning");
+                                        }
+                                    }
+                                }
+                            }
                         } else {
                             emit_log(&app_clone, "build-logs", &format!("Build failed with exit status: {}", status), "error");
                         }

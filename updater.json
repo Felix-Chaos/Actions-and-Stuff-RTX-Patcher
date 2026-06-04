@@ -2,10 +2,10 @@
   "notes": "Initial Tauri V3 release with advanced patch creators, cleaner utilities, direct option edits, and native explorer browses.",
   "platforms": {
     "windows-x86_64": {
-      "signature": "PASTE_THE_CONTENT_OF_YOUR_MSI_ZIP_SIG_FILE_HERE",
-      "url": "https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/download/v2.2.1-b/Actions_and_Stuff_RTX_Patcher_2.2.1-b_x64_en-US.msi.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSWVdLUE5ZT0Zxa1Z2cUZFWGlGZ2Rud0ZHQ3oza2tvQS9JamtDaGZoY2JtUmJkQU9kZnZGbmJiekpvY1p2dWJRQnkzVWI1Ky9XSHNlVERZaFVZTnlPN1A4ejN4b1lmNEFNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwNTgyMTI3CWZpbGU6QWN0aW9ucyBhbmQgU3R1ZmYgUlRYIFBhdGNoZXJfMi4yLjYtMV94NjQtc2V0dXAuZXhlCitwN0dqeHVFL0l5Q1NYS0JRYXp0STVZOVNwYVUwMFYxL21tcGlpd1ZibURvRUY5U1VGSlo1cVhMMHZPUTkyQ2drU0IrRlR4Mk80NGUyQS9JZ0xSc0F3PT0K",
+      "url": "https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/download/v2.2.6_a/Actions.and.Stuff.RTX.Patcher_2.2.6-1_x64-setup.exe"
     }
   },
   "pub_date": "2026-06-03T00:00:00Z",
-  "version": "2.2.4-1"
+  "version": "2.2.6-1"
 }

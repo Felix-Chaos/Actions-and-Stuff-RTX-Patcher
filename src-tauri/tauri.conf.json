@@ -9,7 +9,7 @@
         "fullscreen": false,
         "height": 650,
         "resizable": false,
-        "title": "Actions & Stuff RTX Patcher v2.2.4_a",
+        "title": "Actions & Stuff RTX Patcher v2.2.6_a",
         "width": 950
       }
     ],
@@ -20,6 +20,7 @@
   },
   "bundle": {
     "active": true,
+    "createUpdaterArtifacts": true,
     "icon": [
       "assets/resources/icon.ico"
     ],
@@ -39,5 +40,5 @@
     }
   },
   "productName": "Actions and Stuff RTX Patcher",
-  "version": "2.2.4-1"
+  "version": "2.2.6-1"
 }
