@@ -1398,7 +1398,7 @@ fn get_default_paths(app: tauri::AppHandle) -> std::collections::HashMap<String,
 }
 
 #[tauri::command]
-fn update_app_version(app: tauri::AppHandle, version: String, ping_everyone: bool) -> Result<(), String> {
+fn update_app_version(app: tauri::AppHandle, version: String) -> Result<(), String> {
     let project_root = get_project_root(&app);
     if project_root.to_string_lossy().is_empty() {
         return Err("Could not determine project root directory".to_string());
@@ -1457,7 +1457,6 @@ fn update_app_version(app: tauri::AppHandle, version: String, ping_everyone: boo
         if let Some(obj) = val.as_object_mut() {
             let old_version = obj.get("version").and_then(|v| v.as_str()).unwrap_or("3.0.0").to_string();
             obj.insert("version".to_string(), serde_json::Value::String(semver_version.clone()));
-            obj.insert("ping_everyone".to_string(), serde_json::Value::Bool(ping_everyone));
             if let Some(platforms) = obj.get_mut("platforms") {
                 if let Some(win) = platforms.get_mut("windows-x86_64") {
                     if let Some(url_val) = win.get_mut("url") {

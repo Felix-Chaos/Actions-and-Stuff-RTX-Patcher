@@ -1373,9 +1373,8 @@ function setupReleaseBuilder() {
     btnApplyVer.addEventListener('click', async () => {
       const newVer = relVerInput ? relVerInput.value.trim() : '';
       if (!newVer) { alert("Please enter a version number."); return; }
-      const pingNeeded = document.getElementById('chk-ping-needed') ? document.getElementById('chk-ping-needed').checked : true;
       try {
-        await invoke("update_app_version", { version: newVer, pingEveryone: pingNeeded });
+        await invoke("update_app_version", { version: newVer });
         if (relHint) relHint.innerText = `Current: v${newVer} (saved)`;
         if (versionBadge) versionBadge.innerText = `v${newVer}`;
       } catch (err) {
