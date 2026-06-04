@@ -1211,18 +1211,27 @@ document.getElementById('btn-clear-console').addEventListener('click', clearCons
 
 function parseVersion(verStr) {
   const isBeta = verStr.endsWith('_b') || verStr.endsWith('-b') || verStr.endsWith('-0');
-  const cleanVer = verStr.endsWith('_b') ? verStr.slice(0, -2) : (verStr.endsWith('-b') ? verStr.slice(0, -2) : (verStr.endsWith('-0') ? verStr.slice(0, -2) : verStr));
+  const isAlpha = verStr.endsWith('_a') || verStr.endsWith('-a');
+  const cleanVer = isBeta || isAlpha ? verStr.slice(0, -2) : verStr;
   const parts = cleanVer.split('.').map(Number);
+  
+  let relType = 'stable';
+  if (isBeta) relType = 'beta';
+  else if (isAlpha) relType = 'alpha';
+  
   return {
     major: isNaN(parts[0]) ? 0 : parts[0],
     minor: isNaN(parts[1]) ? 0 : parts[1],
     patch: isNaN(parts[2]) ? 0 : parts[2],
-    isBeta: isBeta
+    relType: relType
   };
 }
 
 function formatVersion(parsed) {
-  return `${parsed.major}.${parsed.minor}.${parsed.patch}${parsed.isBeta ? '_b' : ''}`;
+  let suffix = '';
+  if (parsed.relType === 'beta') suffix = '_b';
+  else if (parsed.relType === 'alpha') suffix = '_a';
+  return `${parsed.major}.${parsed.minor}.${parsed.patch}${suffix}`;
 }
 
 // =====================================================================
@@ -1236,14 +1245,14 @@ function setupReleaseBuilder() {
   const versionBadge = document.getElementById('app-version-badge');
   const relVerInput = document.getElementById('rel-app-version');
   const relHint = document.getElementById('rel-version-hint');
-  const chkIsBeta = document.getElementById('chk-is-beta-ver');
+  const selReleaseType = document.getElementById('select-release-type');
 
   const updateVerInputs = (parsed) => {
     if (relVerInput) {
       relVerInput.value = formatVersion(parsed);
     }
-    if (chkIsBeta) {
-      chkIsBeta.checked = parsed.isBeta;
+    if (selReleaseType) {
+      selReleaseType.value = parsed.relType;
     }
   };
 
@@ -1279,11 +1288,11 @@ function setupReleaseBuilder() {
     updateVerInputs(parsed);
   });
 
-  // Beta checkbox listener
-  chkIsBeta?.addEventListener('change', (e) => {
+  // Release type select listener
+  selReleaseType?.addEventListener('change', (e) => {
     if (!relVerInput) return;
     const parsed = parseVersion(relVerInput.value);
-    parsed.isBeta = e.target.checked;
+    parsed.relType = e.target.value;
     updateVerInputs(parsed);
   });
 
@@ -1374,11 +1383,12 @@ async function checkForUpdates() {
     
     if (update && update.version) {
       const isBetaUpdate = update.version.endsWith('_b') || update.version.endsWith('-b') || update.version.endsWith('-0');
-      const userFacingVersion = update.version.replace('-b', '_b').replace('-0', '_b');
+      const isAlphaUpdate = update.version.endsWith('_a') || update.version.endsWith('-a');
+      const userFacingVersion = update.version.replace('-b', '_b').replace('-0', '_b').replace('-a', '_a');
       
-      // If beta update but beta updates are disabled, ignore it
-      if (isBetaUpdate && !allowBetaUpdates) {
-        log(`Software update v${userFacingVersion} is a Beta version, and Beta updates are disabled.`);
+      // If beta/alpha update but beta updates are disabled, ignore it
+      if ((isBetaUpdate || isAlphaUpdate) && !allowBetaUpdates) {
+        log(`Software update v${userFacingVersion} is a Pre-release version, and Beta updates are disabled.`);
         badge.className = "update-badge state-uptodate";
         badge.innerText = "Up to Date";
         btn.classList.add('hidden-group');
@@ -1392,7 +1402,10 @@ async function checkForUpdates() {
       
       btn.onclick = async () => {
         // Confirmation dialog to never force beta updates
-        const updateType = isBetaUpdate ? "Beta" : "Stable";
+        let updateType = "Stable";
+        if (isBetaUpdate) updateType = "Beta";
+        else if (isAlphaUpdate) updateType = "Alpha";
+        
         if (!confirm(`A new ${updateType} update (v${userFacingVersion}) is available.\n\nWould you like to download and install this update now?`)) {
           return;
         }

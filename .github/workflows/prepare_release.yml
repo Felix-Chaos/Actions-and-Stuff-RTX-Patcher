@@ -30,6 +30,7 @@ on:
         options:
           - stable
           - beta
+          - alpha
 
 jobs:
   create-release:
@@ -57,10 +58,14 @@ jobs:
             DISPLAY_TYPE="$REL_TYPE"
           fi
 
-          if [ "$IS_BETA" = "beta" ]; then
+          if [ "$IS_BETA" = "alpha" ]; then
+            TAG="V${VERSION}a"
+            TITLE="V${VERSION}a Release of: ${DISPLAY_TYPE} | A&S for RTX ${PACK_VER} | Patch ${PATCH_VER}"
+            BADGE="🧪 **Alpha Release** — early testing build. Please report issues on Discord!"
+          elif [ "$IS_BETA" = "beta" ]; then
             TAG="V${VERSION}b"
             TITLE="V${VERSION}b Release of: ${DISPLAY_TYPE} | A&S for RTX ${PACK_VER} | Patch ${PATCH_VER}"
-            BADGE="🧪 **Beta Release** — may contain bugs. Please report issues on Discord!"
+            BADGE="🚧 **Beta Release** — may contain bugs. Please report issues on Discord!"
           else
             TAG="V${VERSION}"
             TITLE="V${VERSION} Release of: ${DISPLAY_TYPE} | A&S for RTX ${PACK_VER} | Patch ${PATCH_VER}"
@@ -124,7 +129,7 @@ jobs:
           script: |
             const fs = require('fs');
             const body = fs.readFileSync('release_body.md', 'utf8');
-            const isPre = '${{ github.event.inputs.prerelease }}' === 'beta';
+            const isPre = '${{ github.event.inputs.prerelease }}' === 'beta' || '${{ github.event.inputs.prerelease }}' === 'alpha';
             const tag = '${{ steps.get_version.outputs.tag }}';
             const title = '${{ steps.get_version.outputs.title }}';
 

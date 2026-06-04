@@ -514,12 +514,13 @@
                     <button type="button" id="btn-inc-patch" class="btn btn-secondary btn-xs" style="padding: 4px 8px; font-size: 0.7rem; min-width: 50px;">+0.0.1</button>
                   </div>
                 </div>
-                <div class="checkbox-group" style="margin-top: 0; margin-bottom: 12px;">
-                  <label class="custom-checkbox">
-                    <input type="checkbox" id="chk-is-beta-ver" />
-                    <span class="checkmark"></span>
-                    Beta Version (_b)
-                  </label>
+                <div class="form-group" style="margin-top: 0; margin-bottom: 12px;">
+                  <label for="select-release-type" style="font-weight: 600; font-size: 0.85rem; color: var(--text-light); margin-bottom: 6px; display: block;">Release Type</label>
+                  <select id="select-release-type" class="custom-select">
+                    <option value="stable">Stable</option>
+                    <option value="beta">Beta Version (_b)</option>
+                    <option value="alpha">Alpha Version (_a)</option>
+                  </select>
                 </div>
                 <div class="checkbox-group" style="margin-top: 0; margin-bottom: 12px;">
                   <label class="custom-checkbox">
