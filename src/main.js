@@ -1262,6 +1262,7 @@ document.getElementById('chk-advanced-mode').addEventListener('change', (e) => {
       }
     }
   }
+  checkForUpdates();
 });
 
 // Back to Selection Button
@@ -1388,6 +1389,24 @@ function setupReleaseBuilder() {
   const btnBuild = document.getElementById('btn-build-release');
   if (btnBuild) {
     btnBuild.addEventListener('click', async () => {
+      const currentVersion = document.getElementById('rel-app-version').value;
+      if (currentVersion) {
+        try {
+          const exists = await invoke("check_build_exists", { version: currentVersion });
+          if (exists) {
+            const result = await showModal(
+              `A release build for version v${currentVersion} already exists in the output folder.\n\nDo you want to overwrite it?`,
+              { title: 'Build Already Exists', confirm: true, okText: 'Overwrite', cancelText: 'Cancel' }
+            );
+            if (!result) {
+              return;
+            }
+          }
+        } catch (e) {
+          console.warn("Failed to check if build exists:", e);
+        }
+      }
+
       buildLog.innerHTML = '<div class="log-line system">Starting release build...</div>';
       btnBuild.disabled = true;
       try {
@@ -1427,6 +1446,29 @@ function setupReleaseBuilder() {
     });
   }
 
+  // Support Links
+  const btnChaosDiscord = document.getElementById('btn-chaos-discord');
+  if (btnChaosDiscord) {
+    btnChaosDiscord.addEventListener('click', async () => {
+      try {
+        await invoke("open_url", { url: "https://discord.gg/your-chaos-invite" }); // REPLACE WITH REAL INVITE
+      } catch (e) {
+        console.warn("Failed to open URL", e);
+      }
+    });
+  }
+
+  const btnBetterrtxDiscord = document.getElementById('btn-betterrtx-discord');
+  if (btnBetterrtxDiscord) {
+    btnBetterrtxDiscord.addEventListener('click', async () => {
+      try {
+        await invoke("open_url", { url: "https://discord.gg/minecraft-rtx" }); // Generic BetterRTX discord
+      } catch (e) {
+        console.warn("Failed to open URL", e);
+      }
+    });
+  }
+
   // Copy/Clear build log
   const btnCopyBuild = document.getElementById('btn-copy-build-log');
   if (btnCopyBuild) btnCopyBuild.addEventListener('click', () => copyLogsFromEl('build-logs', 'btn-copy-build-log'));
@@ -1460,9 +1502,20 @@ async function checkForUpdates() {
         .replace('-a', '_a')
         .replace('-1', '_a');
       
-      // If beta/alpha update but beta updates are disabled, ignore it
-      if ((isBetaUpdate || isAlphaUpdate) && !allowBetaUpdates) {
-        log(`Software update v${userFacingVersion} is a Pre-release version, and Beta updates are disabled.`);
+      const isAdvanced = document.getElementById('chk-advanced-mode').checked;
+
+      // If beta update but beta updates are disabled, ignore it
+      if (isBetaUpdate && !allowBetaUpdates) {
+        log(`Software update v${userFacingVersion} is a Beta version, and Beta updates are disabled.`);
+        badge.className = "update-badge state-uptodate";
+        badge.innerText = "Up to Date";
+        btn.classList.add('hidden-group');
+        return;
+      }
+
+      // If alpha update but (beta updates are disabled OR advanced mode is disabled), ignore it
+      if (isAlphaUpdate && (!allowBetaUpdates || !isAdvanced)) {
+        log(`Software update v${userFacingVersion} is an Alpha version. It requires both Beta updates and Advanced Mode to be enabled.`);
         badge.className = "update-badge state-uptodate";
         badge.innerText = "Up to Date";
         btn.classList.add('hidden-group');
@@ -1480,8 +1533,14 @@ async function checkForUpdates() {
         if (isBetaUpdate) updateType = "Beta";
         else if (isAlphaUpdate) updateType = "Alpha";
         
+        let message = `A new ${updateType} update (v${userFacingVersion}) is available.\n\nWould you like to download and install this update now?`;
+        
+        if (isAlphaUpdate) {
+          message += `\n\n⚠️ WARNING ⚠️\nAlpha builds are highly unstable, completely untested, and might break your packs or fail entirely. Stuff will NOT work as expected! Proceed at your own risk!`;
+        }
+
         const confirmed = await showConfirm(
-          `A new ${updateType} update (v${userFacingVersion}) is available.\n\nWould you like to download and install this update now?`,
+          message,
           'Update Available'
         );
         if (!confirmed) return;

@@ -4,28 +4,28 @@ on:
   workflow_dispatch:
     inputs:
       release_type:
-        description: 'What does this release include?'
+        description: "What does this release include?"
         required: true
-        default: 'New Patch'
+        default: "New Patch"
         type: choice
         options:
-          - 'New Patch'
-          - 'Patcher update'
-          - 'Both'
+          - "New Patch"
+          - "Patcher update"
+          - "Both"
       pack_version:
-        description: 'A&S Pack Version (e.g. 1.10.1)'
+        description: "A&S Pack Version (e.g. 1.10.1)"
         required: true
-        default: '1.10.1'
+        default: "1.10.1"
         type: string
       patch_version:
-        description: 'Patch Version (e.g. v1.0)'
+        description: "Patch Version (e.g. v1.0)"
         required: true
-        default: 'v1.0'
+        default: "v1.0"
         type: string
       prerelease:
-        description: 'Release type'
+        description: "Release type"
         required: true
-        default: 'stable'
+        default: "stable"
         type: choice
         options:
           - stable
@@ -61,11 +61,11 @@ jobs:
           if [ "$IS_BETA" = "alpha" ]; then
             TAG="V${VERSION}a"
             TITLE="V${VERSION}a Release of: ${DISPLAY_TYPE} | A&S for RTX ${PACK_VER} | Patch ${PATCH_VER}"
-            BADGE="🧪 **Alpha Release** — early testing build. Please report issues on Discord!"
+            BADGE="🧪 **Alpha Release** | early testing build, Part of this Programm will not work, use with caution! Report issues on Discord!"
           elif [ "$IS_BETA" = "beta" ]; then
             TAG="V${VERSION}b"
             TITLE="V${VERSION}b Release of: ${DISPLAY_TYPE} | A&S for RTX ${PACK_VER} | Patch ${PATCH_VER}"
-            BADGE="🚧 **Beta Release** — may contain bugs. Please report issues on Discord!"
+            BADGE="🚧 **Beta Release** | may contain bugs, use with caution! Report issues on Discord!"
           else
             TAG="V${VERSION}"
             TITLE="V${VERSION} Release of: ${DISPLAY_TYPE} | A&S for RTX ${PACK_VER} | Patch ${PATCH_VER}"
@@ -96,11 +96,9 @@ jobs:
           ---
 
           ### ✨ What's New
-          <!-- Fill in your changelog here before publishing -->
           - 
 
           ### 🐛 Bug Fixes
-          <!-- List bug fixes here -->
           - 
 
           ### 👥 Contributors
@@ -113,12 +111,12 @@ jobs:
           3. Run the patcher and follow the on-screen instructions
 
           > [!NOTE]
-          > The patcher does **not** include any original A&S assets — you need your own copy of Actions & Stuff.
+          > The patcher does **not** include any original A&S assets, you need your own copy of Actions & Stuff.
 
           ---
 
           ### 🛡️ VirusTotal Scan
-          *This section will be automatically filled in by the VirusTotal workflow after you upload the .exe asset and publish.*
+          *This section will be automatically filled in by the VirusTotal workflow in a few minutes.*
 
           ---
           EOF

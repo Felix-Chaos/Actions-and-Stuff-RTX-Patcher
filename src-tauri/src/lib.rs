@@ -96,18 +96,12 @@ fn pack_folder_impl(app: Option<&tauri::AppHandle>, folder_path: &Path, output_z
     }
 
     for (abs_path, rel_path) in files {
-        if let Some(app_handle) = app {
-            emit_log(app_handle, container, &format!("  [Compressing] -> {}", rel_path), "info");
-        }
         let mut f = File::open(&abs_path)
             .map_err(|e| format!("Failed to open file {:?}: {}", abs_path, e))?;
-        let mut buffer = Vec::new();
-        f.read_to_end(&mut buffer)
-            .map_err(|e| format!("Failed to read file {:?}: {}", abs_path, e))?;
 
         zip.start_file(rel_path, options)
             .map_err(|e| format!("Failed to start file in zip: {}", e))?;
-        zip.write_all(&buffer)
+        std::io::copy(&mut f, &mut zip)
             .map_err(|e| format!("Failed to write file to zip: {}", e))?;
     }
 
@@ -143,14 +137,8 @@ fn extract_archive_impl(app: Option<&tauri::AppHandle>, zip_path: &Path, output_
         };
         
         if file.name().ends_with('/') {
-            if let Some(app_handle) = app {
-                emit_log(app_handle, container, &format!("  [Dir Created] -> {}", file.name()), "info");
-            }
             std::fs::create_dir_all(&outpath).map_err(|e| format!("Failed to create directory: {}", e))?;
         } else {
-            if let Some(app_handle) = app {
-                emit_log(app_handle, container, &format!("  [Extracted] -> {} ({} bytes)", file.name(), file.size()), "info");
-            }
             if let Some(p) = outpath.parent() {
                 if !p.exists() {
                     std::fs::create_dir_all(p).map_err(|e| format!("Failed to create directory: {}", e))?;
@@ -429,10 +417,16 @@ fn run_xdelta_patch(
         return Err(format!("XDelta executable not found at resources: {:?}", xdelta_path));
     }
     
+    let mut actual_patch_file = Path::new(&patch_file).to_path_buf();
+    if !actual_patch_file.is_absolute() {
+        actual_patch_file = resource_dir.join(&patch_file);
+    }
+    let resolved_patch_str = actual_patch_file.to_string_lossy().to_string();
+
     emit_log(&app, "main", "Initiating XDelta patch execution...", "info");
     emit_log(&app, "main", &format!("  [Executable] -> {:?}", xdelta_path), "info");
     emit_log(&app, "main", &format!("  [Source ZIP] -> {}", source_zip), "info");
-    emit_log(&app, "main", &format!("  [Patch File] -> {}", patch_file), "info");
+    emit_log(&app, "main", &format!("  [Patch File] -> {}", resolved_patch_str), "info");
     emit_log(&app, "main", &format!("  [Output File] -> {}", output_file), "info");
 
     let out_path = Path::new(&output_file);
@@ -446,7 +440,7 @@ fn run_xdelta_patch(
     }
     
     let mut cmd = std::process::Command::new(&xdelta_path);
-    cmd.args(&["-f", "-v", "-d", "-s", &source_zip, &patch_file, &output_file]);
+    cmd.args(&["-f", "-v", "-d", "-s", &source_zip, &resolved_patch_str, &output_file]);
     
     #[cfg(target_os = "windows")]
     cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
@@ -1108,9 +1102,6 @@ fn extract_brarchives_in_workspace_impl(app: Option<&tauri::AppHandle>, workspac
                 }
 
                 extracted_files += 1;
-                if let Some(app_handle) = app {
-                    emit_log(app_handle, container, &format!("    -> Decompressing nested: {}", entry_name), "info");
-                }
                 if let Some(parent) = out_file.parent() {
                     std::fs::create_dir_all(parent)
                         .map_err(|e| format!("Failed to create parent dir for {}: {}", out_file.display(), e))?;
@@ -1246,29 +1237,33 @@ fn generate_xdelta_patch(
 /// If path is a directory, Explorer opens it.
 #[tauri::command]
 fn open_in_explorer(path: String) -> Result<(), String> {
-    let p = std::path::Path::new(&path);
+    let mut cleaned_path = path.replace("/", "\\");
+    if cleaned_path.starts_with(r"\\?\") {
+        cleaned_path = cleaned_path[4..].to_string();
+    }
+    let p = std::path::Path::new(&cleaned_path);
     if !p.exists() {
         // Try to open the parent directory instead
         if let Some(parent) = p.parent() {
             if parent.exists() {
                 std::process::Command::new("explorer")
-                    .arg(parent.to_str().unwrap_or(""))
+                    .arg(parent.to_str().unwrap_or("").replace("/", "\\"))
                     .spawn()
                     .map_err(|e| format!("Failed to open explorer: {}", e))?;
                 return Ok(());
             }
         }
-        return Err(format!("Path does not exist: {}", path));
+        return Err(format!("Path does not exist: {}", cleaned_path));
     }
     if p.is_file() {
         // /select, highlights the file in its parent folder
         std::process::Command::new("explorer")
-            .args(&["/select,", &path])
+            .args(&["/select,", &cleaned_path])
             .spawn()
             .map_err(|e| format!("Failed to open explorer: {}", e))?;
     } else {
         std::process::Command::new("explorer")
-            .arg(&path)
+            .arg(&cleaned_path)
             .spawn()
             .map_err(|e| format!("Failed to open explorer: {}", e))?;
     }
@@ -1511,6 +1506,17 @@ fn update_app_version(app: tauri::AppHandle, version: String) -> Result<(), Stri
 }
 
 #[tauri::command]
+fn check_build_exists(app: tauri::AppHandle, version: String) -> Result<bool, String> {
+    let project_root = get_project_root(&app);
+    let nsis_dir = project_root.join("src-tauri/target/release/bundle/nsis");
+    let expected_exe = format!("Actions and Stuff RTX Patcher_{}_x64-setup.exe", version);
+    if nsis_dir.join(&expected_exe).exists() {
+        return Ok(true);
+    }
+    Ok(false)
+}
+
+#[tauri::command]
 fn run_release_build(app: tauri::AppHandle) -> Result<(), String> {
     let project_root = get_project_root(&app);
     if project_root.to_string_lossy().is_empty() {
@@ -1592,6 +1598,19 @@ fn is_dev_build() -> bool {
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
+#[tauri::command]
+fn open_url(url: String) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("cmd")
+            .args(&["/c", "start", "", &url])
+            .creation_flags(0x08000000)
+            .spawn()
+            .map_err(|e| format!("Failed to open URL: {}", e))?;
+    }
+    Ok(())
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
@@ -1623,7 +1642,9 @@ pub fn run() {
             update_app_version,
             run_release_build,
             get_app_version,
-            is_dev_build
+            check_build_exists,
+            is_dev_build,
+            open_url
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
