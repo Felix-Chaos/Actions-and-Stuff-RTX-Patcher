@@ -6,7 +6,7 @@ use std::os::windows::ffi::OsStrExt;
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
 use std::path::{Path, PathBuf};
-use tauri::{Emitter, Manager};
+use tauri::Manager;
 #[cfg(target_os = "windows")]
 extern "system" {
     fn SetFileAttributesW(lpFileName: *const u16, dwFileAttributes: u32) -> i32;
@@ -18,7 +18,7 @@ pub fn greet(name: &str) -> String {
 }
 
 #[tauri::command]
-pub fn scan_marketplace_packs() -> Result<Vec<MarketplaceCandidate>, String> {
+pub async fn scan_marketplace_packs() -> Result<Vec<MarketplaceCandidate>, String> {
     let mut candidates = Vec::new();
     let mut base_paths = Vec::new();
     let local_app_data = std::env::var("LOCALAPPDATA").ok();
@@ -94,7 +94,7 @@ pub fn scan_marketplace_packs() -> Result<Vec<MarketplaceCandidate>, String> {
 }
 
 #[tauri::command]
-pub fn get_patch_configs(app: tauri::AppHandle) -> Result<Vec<serde_json::Value>, String> {
+pub async fn get_patch_configs(app: tauri::AppHandle) -> Result<Vec<serde_json::Value>, String> {
     let patches_dir = resolve_asset_path(&app, "assets/Patches")?;
 
     let mut configs = Vec::new();
@@ -141,7 +141,7 @@ pub fn get_patch_configs(app: tauri::AppHandle) -> Result<Vec<serde_json::Value>
 }
 
 #[tauri::command]
-pub fn run_xdelta_patch(
+pub async fn run_xdelta_patch(
     app: tauri::AppHandle,
     source_zip: String,
     patch_file: String,
@@ -242,7 +242,7 @@ pub fn run_xdelta_patch(
 }
 
 #[tauri::command]
-pub fn install_mcpack(output_file: String) -> Result<String, String> {
+pub async fn install_mcpack(output_file: String) -> Result<String, String> {
     let src_path = Path::new(&output_file);
     if !src_path.exists() {
         return Err("Output file not found".to_string());
@@ -301,7 +301,7 @@ pub fn get_cleanable_packs() -> Result<Vec<String>, String> {
 }
 
 #[tauri::command]
-pub fn delete_folders(folders: Vec<String>) -> Result<usize, String> {
+pub async fn delete_folders(folders: Vec<String>) -> Result<usize, String> {
     let mut deleted_count = 0;
     for f in folders {
         if robust_cleanup(Path::new(&f)) {
@@ -420,7 +420,7 @@ pub fn write_options(path: String, changes: HashMap<String, String>) -> Result<(
 }
 
 #[tauri::command]
-pub fn pack_folder(
+pub async fn pack_folder(
     app: tauri::AppHandle,
     folder_path: String,
     output_zip: String,
@@ -434,7 +434,7 @@ pub fn pack_folder(
 }
 
 #[tauri::command]
-pub fn extract_archive(
+pub async fn extract_archive(
     app: tauri::AppHandle,
     zip_path: String,
     output_dir: String,
@@ -448,7 +448,7 @@ pub fn extract_archive(
 }
 
 #[tauri::command]
-pub fn normalize_extracted_pack(app: tauri::AppHandle, extract_dir: String) -> Result<(), String> {
+pub async fn normalize_extracted_pack(app: tauri::AppHandle, extract_dir: String) -> Result<(), String> {
     let dir = Path::new(&extract_dir);
     if !dir.exists() {
         return Err("Extraction directory does not exist".to_string());
@@ -535,7 +535,7 @@ pub fn normalize_extracted_pack(app: tauri::AppHandle, extract_dir: String) -> R
 }
 
 #[tauri::command]
-pub fn move_marketplace_folders() -> Result<usize, String> {
+pub async fn move_marketplace_folders() -> Result<usize, String> {
     let local_app_data =
         std::env::var("LOCALAPPDATA").map_err(|_| "LOCALAPPDATA env var not found".to_string())?;
     let uwp_path = PathBuf::from(local_app_data)
@@ -583,7 +583,7 @@ pub fn move_marketplace_folders() -> Result<usize, String> {
 }
 
 #[tauri::command]
-pub fn restore_marketplace_folders() -> Result<usize, String> {
+pub async fn restore_marketplace_folders() -> Result<usize, String> {
     let local_app_data =
         std::env::var("LOCALAPPDATA").map_err(|_| "LOCALAPPDATA env var not found".to_string())?;
     let uwp_path = PathBuf::from(local_app_data)
@@ -698,7 +698,7 @@ pub fn select_file(
 }
 
 #[tauri::command]
-pub fn stage_and_extract_brarchives(
+pub async fn stage_and_extract_brarchives(
     app: tauri::AppHandle,
     source_dir: String,
     temp_dir: String,
@@ -729,7 +729,7 @@ pub fn stage_and_extract_brarchives(
 }
 
 #[tauri::command]
-pub fn extract_brarchives_in_workspace(
+pub async fn extract_brarchives_in_workspace(
     app: tauri::AppHandle,
     workspace: String,
 ) -> Result<bool, String> {
@@ -739,7 +739,7 @@ pub fn extract_brarchives_in_workspace(
 }
 
 #[tauri::command]
-pub fn generate_xdelta_patch(
+pub async fn generate_xdelta_patch(
     app: tauri::AppHandle,
     source_file: String,
     target_file: String,
@@ -1402,7 +1402,7 @@ pub fn write_text_file(path: String, content: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn calculate_patch_stats(folder_path: String) -> Result<PatchStats, String> {
+pub async fn calculate_patch_stats(folder_path: String) -> Result<PatchStats, String> {
     use sha2::{Digest, Sha256};
 
     let path = std::path::Path::new(&folder_path);
@@ -1440,7 +1440,7 @@ pub fn calculate_patch_stats(folder_path: String) -> Result<PatchStats, String> 
 }
 
 #[tauri::command]
-pub fn inject_custom_manifest_to_target(
+pub async fn inject_custom_manifest_to_target(
     app: tauri::AppHandle,
     target_dir: String,
     pack_ver: String,
