@@ -1,7 +1,7 @@
 <table>
 <tr>
 <td width="180" align="center">
-<img width="160" alt="Actions & Stuff RTX Patcher Logo" src="./Actions_and_Stuff_RTX_Patcher/assets/resources/as_rtx_simple_logo_.png" />
+<img width="160" alt="Actions & Stuff RTX Patcher Logo" src="./assets/as_rtx_simple_logo_.png" />
 </td>
 <td>
 
@@ -14,7 +14,7 @@
 [![Issues](https://img.shields.io/github/issues/Felix-Chaos/Actions-and-Stuff-RTX-Patcher?style=flat-square)](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/issues)
 [![Discord](https://img.shields.io/discord/1432653252171661364?logo=discord&style=flat-square&label=Discord)](https://discord.gg/YrMMmN2kc7)
 [![FAQ](https://img.shields.io/badge/📖_FAQ-5865F2?style=flat-square)](https://discord.com/channels/691547840463241267/1360688874388455504/1376325634246049792)
-[![BetterRTX](https://img.shields.io/badge/💬_BetterRTX-5865F2?style=flat-square)](https://discord.gg/5kK4EMRbd3)
+[![BetterRTX](https://img.shields.io/badge/💬_BetterRTX-5865F2?style=flat-square)](https://discord.gg/HPP6J4qFPu)
 [![Discord Thread](https://img.shields.io/badge/📢_Discord_Thread-5865F2?style=flat-square)](https://discord.com/channels/691547840463241267/1360688874388455504)
 
 [![Download Latest](https://img.shields.io/badge/Download-Latest_Release-2ea44f?style=for-the-badge&logo=github)](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/latest)
@@ -128,7 +128,7 @@ Your A&S Copy ──→ xdelta3 + .vcdiff patch ──→ A&S Enhanced for RTX (
 | **Demente Parker** | Original creator, source files provider | Discord: `demente_parker` · [Ko-fi](https://ko-fi.com/dementeparker) |
 | **Community Testers** | Bug reporting, testing, feedback | Various Discord contributors |
 
-> Contributions welcome! Open a PR or join the [BetterRTX Discord](https://discord.gg/5kK4EMRbd3) / [ChaosDev Projects](https://discord.gg/YrMMmN2kc7).
+> Contributions welcome! Open a PR or join the [BetterRTX Discord](https://discord.gg/HPP6J4qFPu) / [ChaosDev Projects](https://discord.gg/YrMMmN2kc7).
 
 ---
 

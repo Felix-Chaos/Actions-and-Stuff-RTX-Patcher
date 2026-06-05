@@ -42,3 +42,5 @@ src-tauri/target/
 temp_test_pack/
 *.bak
 A-S-Minecraft-RTX-Community-PatcherV2.code-workspace
+updater.json
+updater.json

@@ -301,7 +301,7 @@ function updatePatchVersionsList(asVersion) {
   });
 }
 
-function resolvePatchConfig(selectionMode, detectedVersion) {
+function resolvePatchConfig(selectionMode, detectedCandidate) {
   // Sort patchConfigs descending by packVersion and then by patchVersion
   const sortedConfigs = [...patchConfigs].sort((a, b) => {
     const verCompare = b.packVersion.localeCompare(a.packVersion, undefined, { numeric: true, sensitivity: 'base' });
@@ -312,9 +312,42 @@ function resolvePatchConfig(selectionMode, detectedVersion) {
   });
 
   if (selectionMode === 'auto') {
-    if (detectedVersion && detectedVersion !== 'Unknown') {
-      const match = sortedConfigs.find(c => c.packVersion === detectedVersion);
-      if (match) return match;
+    if (detectedCandidate && typeof detectedCandidate === 'object') {
+      // 1. Try to strictly match using stats and logo_hash
+      const exactMatch = sortedConfigs.find(c => {
+        const stats = c.stats || {};
+        const valid = c.validation || {};
+        
+        // If the config requires validation, test it
+        let hashMatch = true;
+        if (valid.logo_hash && detectedCandidate.logo_hash) {
+            hashMatch = valid.logo_hash === detectedCandidate.logo_hash;
+        }
+
+        let fileMatch = true;
+        let dirMatch = true;
+        if (stats.files && detectedCandidate.files_count > 0) {
+            // Allow slight variance in files if user added a custom file, but mostly strict
+            fileMatch = Math.abs(stats.files - detectedCandidate.files_count) <= 5;
+        }
+        if (stats.dirs && detectedCandidate.dirs_count > 0) {
+            dirMatch = stats.dirs === detectedCandidate.dirs_count;
+        }
+
+        // If we have any of these fields to compare, and they match, it's a solid hit
+        return (valid.logo_hash || stats.files) && hashMatch && fileMatch && dirMatch;
+      });
+
+      if (exactMatch) return exactMatch;
+
+      // 2. Fallback to version string
+      if (detectedCandidate.version && detectedCandidate.version !== 'Unknown') {
+        const verMatch = sortedConfigs.find(c => c.packVersion === detectedCandidate.version);
+        if (verMatch) return verMatch;
+      }
+    } else if (typeof detectedCandidate === 'string' && detectedCandidate !== 'Unknown') {
+      const verMatch = sortedConfigs.find(c => c.packVersion === detectedCandidate);
+      if (verMatch) return verMatch;
     }
     // Default to the highest pack version config
     return sortedConfigs[0] || patchConfigs[0];
@@ -518,6 +551,22 @@ function setupUtilities() {
     try {
       gLog_fn(`Pack Version: ${packVer}  |  Patch Version: ${patchVer}`);
 
+      if (injectManifest) {
+          gLog_fn(`  Injecting baseline custom manifest into source directories...`);
+          try {
+              await invoke("inject_custom_manifest_to_target", { targetDir: decryptedDir, packVer: "", patchVer: "" });
+          } catch (e) {
+              gLog_fn(`  ⚠️ Could not inject baseline manifest: ${e}`, "warning");
+          }
+
+          gLog_fn(`  Injecting versioned custom manifest into patched target...`);
+          try {
+              await invoke("inject_custom_manifest_to_target", { targetDir: patchedDir, packVer: packVer, patchVer: patchVer });
+          } catch (e) {
+              gLog_fn(`  ⚠️ Could not inject versioned manifest: ${e}`, "warning");
+          }
+      }
+
       // Step 1: Compress the Encrypted (Marketplace) source → encrypted.vcdiff source
       gLog_fn(`[1/4] Compressing encrypted source: ${encryptedDir}`);
       const encZip = outputDir + "/_temp_source_enc.zip";
@@ -539,8 +588,11 @@ function setupUtilities() {
       // Step 4: Generate both patches
       gLog_fn(`[4/4] Generating VCDIFF patches...`);
 
-      const encPatch = outputDir + "/encrypted.vcdiff";
-      const decPatch = outputDir + "/decrypted.vcdiff";
+      const folderName = `Actions & Stuff for RTX ${packVer} V${patchVer}`;
+      const finalOutputDir = outputDir + "/" + folderName;
+
+      const encPatch = finalOutputDir + "/encrypted.vcdiff";
+      const decPatch = finalOutputDir + "/decrypted.vcdiff";
 
       gLog_fn(`  Encoding encrypted.vcdiff (source: encrypted, target: patched)...`);
       await invoke("generate_xdelta_patch", { sourceFile: encZip, targetFile: tgtZip, patchFile: encPatch });
@@ -549,15 +601,44 @@ function setupUtilities() {
       gLog_fn(`  Encoding decrypted.vcdiff (source: decrypted, target: patched)...`);
       await invoke("generate_xdelta_patch", { sourceFile: decZip, targetFile: tgtZip, patchFile: decPatch });
       gLog_fn(`  ✓ decrypted.vcdiff created`);
+      
+      // Calculate patch stats from the encrypted directory
+      gLog_fn(`  Calculating patch stats from ${encryptedDir}...`);
+      let patchStats = null;
+      try {
+          patchStats = await invoke("calculate_patch_stats", { folderPath: encryptedDir });
+          gLog_fn(`  ✓ Stats calculated: ${patchStats.files} files, ${patchStats.dirs} dirs`);
+      } catch (err) {
+          gLog_fn(`  ⚠️ Failed to calculate stats: ${err}`, "warning");
+      }
+
+      // Generate patch_config.json
+      const configPath = finalOutputDir + "/patch_config.json";
+      const configData = {
+          packVersion: `v${packVer}`,
+          patchVersion: patchVer,
+          marketplace_pack_stats: {
+              v1: { 
+                  files: patchStats ? patchStats.files : 11653, 
+                  dirs: patchStats ? patchStats.dirs : 159 
+              }
+          },
+          validation: {
+              logo_hash: patchStats ? patchStats.logo_hash : "d4d088d108cd635116215134ad40e97272f9fbe17ead8a03ba4155b1f58fecd4",
+              has_lang_file: patchStats ? patchStats.has_lang_file : true
+          }
+      };
+      await invoke("write_text_file", { path: configPath, content: JSON.stringify(configData, null, 4) });
+      gLog_fn(`  ✓ patch_config.json created`);
 
       // Clean temp zips
       await invoke("delete_folders", { folders: [encZip, decZip, tgtZip] });
 
-      gLog_fn(`✅ All patches created successfully in: ${outputDir}`, 'success');
+      gLog_fn(`✅ All patches created successfully in: ${finalOutputDir}`, 'success');
       gLog_fn(`   Pack: ${packVer}  |  Patch: ${patchVer}`, 'success');
 
       // Open output folder in Explorer
-      try { await invoke("open_in_explorer", { path: outputDir }); } catch (_) {}
+      try { await invoke("open_in_explorer", { path: finalOutputDir }); } catch (_) {}
 
     } catch (err) {
       gLog_fn(`❌ Patch creation failed: ${err}`, 'error');
@@ -930,11 +1011,18 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
         log(`  Version: ${best.version}`);
         log(`  Complexity: ${best.files_count} files and ${best.dirs_count} folders`);
         
-        patchConfigToUse = resolvePatchConfig(selectionMode, best.version);
-        if (selectionMode === 'manual' && patchConfigToUse.packVersion !== best.version) {
-          log(`Warning: Target patch version (${patchConfigToUse.packVersion}) does not match detected pack version (${best.version}).`, 'warning');
+        patchConfigToUse = resolvePatchConfig(selectionMode, best);
+        // If selection is manual, we check if the selected patch pack version matches the detected pack version
+        // To be safe, if we resolved an exact patchConfigToUse, its packVersion is the best determination of truth
+        let determinedVersion = best.version;
+        if (patchConfigToUse && patchConfigToUse.packVersion) {
+            determinedVersion = patchConfigToUse.packVersion;
+        }
+
+        if (selectionMode === 'manual' && patchConfigToUse.packVersion !== determinedVersion) {
+          log(`Warning: Target patch version (${patchConfigToUse.packVersion}) does not match detected pack version (${determinedVersion}).`, 'warning');
           const proceed = await showConfirm(
-            `Warning: The selected patch version (${patchConfigToUse.packVersion}) differs from your installed pack version (${best.version}).\n\nDo you want to proceed anyway?`,
+            `Warning: The selected patch version (${patchConfigToUse.packVersion}) differs from your installed pack version (${determinedVersion}).\n\nDo you want to proceed anyway?`,
             'Version Mismatch'
           );
           if (!proceed) {
@@ -949,13 +1037,15 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
       updateStepState(1, 'active');
       
       const sourcePackPath = candidates.length > 0 ? candidates[0].path : document.getElementById('custom-src').value;
-      const zipOut = `${sourcePackPath}_vanilla.zip`;
+      const tempRoot = defaultPaths.temp ? defaultPaths.temp.replace(/\\/g, "/") : ".";
+      const baseName = sourcePackPath.split(/[\\/]/).pop() || "source";
+      const zipOut = `${tempRoot}/${baseName}_vanilla.zip`;
       let targetFolder = sourcePackPath;
  
       if (extractBrarchives) {
         updateStatus("Extracting Brarchives (Beta)", "Copying and extracting brarchives...", '📦');
         updateProgress(15);
-        targetFolder = `${sourcePackPath}_mp_extracted`;
+        targetFolder = `${tempRoot}/${baseName}_mp_extracted`;
         log("Staging Marketplace files to extract Brarchives...");
         log(`  Staging Source: "${sourcePackPath}"`);
         log(`  Staging Target: "${targetFolder}"`);
@@ -1001,14 +1091,17 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
       updateStatus("Extracting & Normalizing", "Unpacking ZIP and removing licensing signatures...", '⚙️');
       updateProgress(20);
       
-      const tempExtract = `${selectedZip}_extracted`;
+      const tempRoot = defaultPaths.temp ? defaultPaths.temp.replace(/\\/g, "/") : ".";
+      const baseName = selectedZip.split(/[\\/]/).pop() || "pack";
+      
+      const tempExtract = `${tempRoot}/${baseName}_extracted`;
       log(`Extracting ZIP file to temp directory:`);
       log(`  Source ZIP: "${selectedZip}"`);
       log(`  Target Dir: "${tempExtract}"`);
       await invoke("extract_archive", { zipPath: selectedZip, outputDir: tempExtract });
       log("ZIP extraction completed successfully.");
       
-      log("Normalizing contents: deleting license signatures (contents.json, signatures.json, splashes.json, sounds.json, texts/) and injecting custom manifest...");
+      log("Normalizing contents: deleting license signatures (contents.json, signatures.json, splashes.json, sounds.json) and injecting custom manifest...");
       log(`  Target Dir: "${tempExtract}"`);
       await invoke("normalize_extracted_pack", { extractDir: tempExtract });
       log("Normalization and custom manifest injection finished.");
@@ -1021,7 +1114,7 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
         log("Nested brarchive extraction complete.");
       }
       
-      const normalizedZip = `${selectedZip}_normalized.zip`;
+      const normalizedZip = `${tempRoot}/${baseName}_normalized.zip`;
       updateStatus("Compressing Normalized", "Generating deterministic ZIP of normalized pack...", '⚙️');
       updateProgress(35);
       log(`Re-compressing normalized files into deterministic ZIP:`);
@@ -1057,15 +1150,17 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
       updateStepState(1, 'active');
       
       if (src.endsWith('.zip') || src.endsWith('.mcpack')) {
+        const tempRoot = defaultPaths.temp ? defaultPaths.temp.replace(/\\/g, "/") : ".";
+        const baseName = src.split(/[\\/]/).pop() || "custom";
         if (extractBrarchives) {
           updateStatus("Extracting Brarchives (Beta)", "Extracting brarchives inside custom source ZIP...", '📦');
           updateProgress(15);
-          const tempExtract = `${src}_custom_extracted`;
+          const tempExtract = `${tempRoot}/${baseName}_custom_extracted`;
           log(`Extracting custom source ZIP: "${src}" to "${tempExtract}"`);
           await invoke("extract_archive", { zipPath: src, outputDir: tempExtract });
           log(`Extracting brarchives recursively inside: "${tempExtract}"`);
           await invoke("extract_brarchives_in_workspace", { workspace: tempExtract });
-          const customZip = `${src}_custom_source.zip`;
+          const customZip = `${tempRoot}/${baseName}_custom_source.zip`;
           updateStatus("Compressing Custom", "Generating deterministic ZIP...", '📦');
           updateProgress(30);
           log(`Creating deterministic zip: "${customZip}" from "${tempExtract}"`);
@@ -1080,15 +1175,17 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
           sourceZipPath = src;
         }
       } else {
+        const tempRoot = defaultPaths.temp ? defaultPaths.temp.replace(/\\/g, "/") : ".";
+        const baseName = src.split(/[\\/]/).pop() || "custom";
         if (extractBrarchives) {
           updateStatus("Extracting Brarchives (Beta)", "Copying and extracting custom brarchives...", '📦');
           updateProgress(15);
-          const targetFolder = `${src}_custom_staged`;
+          const targetFolder = `${tempRoot}/${baseName}_custom_staged`;
           log(`Staging custom source folder to Extract Brarchives:`);
           log(`  Staging Source: "${src}"`);
           log(`  Staging Target: "${targetFolder}"`);
           await invoke("stage_and_extract_brarchives", { sourceDir: src, tempDir: targetFolder });
-          const customZip = `${src}_custom_source.zip`;
+          const customZip = `${tempRoot}/${baseName}_custom_source.zip`;
           updateStatus("Compressing Custom", "Generating deterministic ZIP...", '📦');
           updateProgress(30);
           log(`Creating deterministic ZIP: "${customZip}" from "${targetFolder}"`);
@@ -1099,7 +1196,7 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
         } else {
           updateStatus("Compressing Custom", "Compressing custom directory...", '📦');
           updateProgress(30);
-          const customZip = `${src}_custom_source.zip`;
+          const customZip = `${tempRoot}/${baseName}_custom_source.zip`;
           log(`Source is folder. Creating deterministic zip: "${customZip}" from "${src}"`);
           await invoke("pack_folder", { folderPath: src, outputZip: customZip });
           sourceZipPath = customZip;
@@ -1451,7 +1548,7 @@ function setupReleaseBuilder() {
   if (btnChaosDiscord) {
     btnChaosDiscord.addEventListener('click', async () => {
       try {
-        await invoke("open_url", { url: "https://discord.gg/your-chaos-invite" }); // REPLACE WITH REAL INVITE
+        await invoke("open_url", { url: "https://discord.gg/YrMMmN2kc7" }); // Chaos dev server
       } catch (e) {
         console.warn("Failed to open URL", e);
       }
@@ -1462,7 +1559,7 @@ function setupReleaseBuilder() {
   if (btnBetterrtxDiscord) {
     btnBetterrtxDiscord.addEventListener('click', async () => {
       try {
-        await invoke("open_url", { url: "https://discord.gg/minecraft-rtx" }); // Generic BetterRTX discord
+        await invoke("open_url", { url: "https://discord.gg/HPP6J4qFPu" }); // Better RTX
       } catch (e) {
         console.warn("Failed to open URL", e);
       }
@@ -1490,24 +1587,7 @@ async function checkForUpdates() {
   const allowBetaUpdates = localStorage.getItem('allow-beta-updates') === 'true';
   const isAdvanced = document.getElementById('chk-advanced-mode')?.checked;
 
-  const debugBtn = document.getElementById('btn-debug-updater');
-  if (debugBtn) {
-    if (isAdvanced) {
-      debugBtn.classList.remove('hidden-group');
-    } else {
-      debugBtn.classList.add('hidden-group');
-    }
-    debugBtn.onclick = async () => {
-      debugBtn.innerText = "Running...";
-      try {
-        const res = await invoke("debug_updater");
-        alert("DEBUG LOG:\n\n" + res);
-      } catch (e) {
-        alert("DEBUG ERROR:\n\n" + e);
-      }
-      debugBtn.innerText = "Debug Updater";
-    };
-  }
+
 
   try {
     log("Checking for software updates...");

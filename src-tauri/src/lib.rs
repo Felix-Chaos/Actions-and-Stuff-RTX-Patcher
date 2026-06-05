@@ -281,6 +281,34 @@ fn get_lang_version(path: &Path) -> Option<String> {
             }
         }
     }
+
+    // Fallback to manifest.json
+    let manifest_path = path.join("manifest.json");
+    if manifest_path.exists() {
+        if let Ok(content) = std::fs::read_to_string(&manifest_path) {
+            if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content) {
+                if let Some(header) = val.get("header") {
+                    if let Some(version) = header.get("version") {
+                        if let Some(arr) = version.as_array() {
+                            let mut ver_str = String::new();
+                            for (i, v) in arr.iter().enumerate() {
+                                if i > 0 {
+                                    ver_str.push('.');
+                                }
+                                ver_str.push_str(&v.to_string());
+                            }
+                            if !ver_str.is_empty() {
+                                return Some(ver_str);
+                            }
+                        } else if let Some(s) = version.as_str() {
+                            return Some(s.to_string());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     None
 }
 
@@ -393,6 +421,7 @@ struct MarketplaceCandidate {
     folder_name: String,
     files_count: usize,
     dirs_count: usize,
+    logo_hash: String,
 }
 
 #[tauri::command]
@@ -439,12 +468,29 @@ fn scan_marketplace_packs() -> Result<Vec<MarketplaceCandidate>, String> {
                             get_lang_version(&path).unwrap_or_else(|| "Unknown".to_string());
                         let folder_name = entry.file_name().to_string_lossy().into_owned();
                         let (files_count, dirs_count) = get_folder_stats(&path);
+                        
+                        let logo_path = path.join("pack_icon.png");
+                        let logo_hash = if logo_path.exists() {
+                            if let Ok(content) = std::fs::read(&logo_path) {
+                                use sha2::{Sha256, Digest};
+                                let mut hasher = Sha256::new();
+                                hasher.update(&content);
+                                let hash = hasher.finalize();
+                                hash.iter().map(|b| format!("{:02x}", b)).collect()
+                            } else {
+                                String::new()
+                            }
+                        } else {
+                            String::new()
+                        };
+
                         candidates.push(MarketplaceCandidate {
                             path: path.to_string_lossy().into_owned(),
                             version,
                             folder_name,
                             files_count,
                             dirs_count,
+                            logo_hash,
                         });
                     }
                 }
@@ -456,11 +502,7 @@ fn scan_marketplace_packs() -> Result<Vec<MarketplaceCandidate>, String> {
 
 #[tauri::command]
 fn get_patch_configs(app: tauri::AppHandle) -> Result<Vec<serde_json::Value>, String> {
-    let resource_dir = app
-        .path()
-        .resource_dir()
-        .map_err(|e| format!("Failed to get resource dir: {}", e))?;
-    let patches_dir = resource_dir.join("assets/Patches");
+    let patches_dir = resolve_asset_path(&app, "assets/Patches")?;
 
     let mut configs = Vec::new();
     if !patches_dir.exists() {
@@ -512,11 +554,7 @@ fn run_xdelta_patch(
     patch_file: String,
     output_file: String,
 ) -> Result<String, String> {
-    let resource_dir = app
-        .path()
-        .resource_dir()
-        .map_err(|e| format!("Failed to get resource dir: {}", e))?;
-    let xdelta_path = resource_dir.join("assets/xdelta3/exec/xdelta3_x86_64_win.exe");
+    let xdelta_path = resolve_asset_path(&app, "assets/xdelta3/exec/xdelta3_x86_64_win.exe")?;
 
     if !xdelta_path.exists() {
         return Err(format!(
@@ -527,7 +565,7 @@ fn run_xdelta_patch(
 
     let mut actual_patch_file = Path::new(&patch_file).to_path_buf();
     if !actual_patch_file.is_absolute() {
-        actual_patch_file = resource_dir.join(&patch_file);
+        actual_patch_file = resolve_asset_path(&app, &patch_file)?;
     }
     let resolved_patch_str = actual_patch_file.to_string_lossy().to_string();
 
@@ -842,7 +880,7 @@ fn normalize_extracted_pack(app: tauri::AppHandle, extract_dir: String) -> Resul
         "splashes.json",
         "sounds.json",
     ];
-    let dirs_to_remove = ["texts"];
+    let dirs_to_remove: [&str; 0] = [];
 
     let mut files_deleted = Vec::new();
     let mut dirs_deleted = Vec::new();
@@ -1035,6 +1073,24 @@ fn restore_marketplace_folders() -> Result<usize, String> {
     }
 
     Ok(moved_count)
+}
+
+fn resolve_asset_path(app: &tauri::AppHandle, path: &str) -> Result<PathBuf, String> {
+    #[cfg(debug_assertions)]
+    {
+        if let Ok(current_dir) = std::env::current_dir() {
+            let dev_path = current_dir.join(path);
+            if dev_path.exists() {
+                return Ok(dev_path);
+            }
+        }
+    }
+
+    let resource_dir = app
+        .path()
+        .resource_dir()
+        .map_err(|e| format!("Failed to get resource dir: {}", e))?;
+    Ok(resource_dir.join(path))
 }
 
 fn get_existing_dir(path_str: &str) -> Option<std::path::PathBuf> {
@@ -1731,10 +1787,13 @@ fn get_default_paths(app: tauri::AppHandle) -> std::collections::HashMap<String,
         .to_string_lossy()
         .replace('\\', "/");
 
+    let temp_dir = std::env::temp_dir().to_string_lossy().replace('\\', "/");
+
     paths.insert("premium_cache".to_string(), premium_cache);
     paths.insert("resource_packs".to_string(), resource_packs);
     paths.insert("downloads".to_string(), downloads);
     paths.insert("patches".to_string(), patches);
+    paths.insert("temp".to_string(), temp_dir);
     paths.insert("gdk_root".to_string(), gdk_root.replace('\\', "/"));
     paths.insert("uwp_root".to_string(), uwp_root.replace('\\', "/"));
     paths
@@ -2145,25 +2204,131 @@ fn is_dev_build() -> bool {
 }
 
 #[tauri::command]
-async fn debug_updater(app: tauri::AppHandle) -> Result<String, String> {
-    use tauri_plugin_updater::UpdaterExt;
-    let mut log = String::new();
-    log.push_str(&format!("App Version: {}\n", app.package_info().version));
+fn write_text_file(path: String, content: String) -> Result<(), String> {
+    std::fs::write(&path, content).map_err(|e| format!("Failed to write file {}: {}", path, e))
+}
+
+#[derive(serde::Serialize)]
+struct PatchStats {
+    files: usize,
+    dirs: usize,
+    logo_hash: String,
+    has_lang_file: bool,
+}
+
+#[tauri::command]
+fn calculate_patch_stats(folder_path: String) -> Result<PatchStats, String> {
+    use sha2::{Sha256, Digest};
     
-    match app.updater() {
-        Ok(updater) => {
-            log.push_str("Updater initialized.\n");
-            match updater.check().await {
-                Ok(Some(update)) => {
-                    log.push_str(&format!("Found update: {}\nBody: {:?}\n", update.version, update.body));
+    let path = std::path::Path::new(&folder_path);
+    if !path.exists() {
+        return Err(format!("Path does not exist: {}", folder_path));
+    }
+    
+    let (files, dirs) = get_folder_stats(path);
+    
+    let logo_path = path.join("pack_icon.png");
+    let logo_hash = if logo_path.exists() {
+        if let Ok(content) = std::fs::read(&logo_path) {
+            let mut hasher = Sha256::new();
+            hasher.update(&content);
+            let hash = hasher.finalize();
+            hash.iter().map(|b| format!("{:02x}", b)).collect()
+        } else {
+            String::new()
+        }
+    } else {
+        String::new()
+    };
+    
+    let mut has_lang_file = false;
+    if path.join("texts/en_US.lang").exists() || path.join("texts\\en_US.lang").exists() {
+        has_lang_file = true;
+    }
+    
+    Ok(PatchStats {
+        files,
+        dirs,
+        logo_hash,
+        has_lang_file,
+    })
+}
+
+#[tauri::command]
+fn inject_custom_manifest_to_target(app: tauri::AppHandle, target_dir: String, pack_ver: String, patch_ver: String) -> Result<(), String> {
+    let resource_manifest = resolve_asset_path(&app, "assets/resources/manifest.json")?;
+
+    if !resource_manifest.exists() {
+        return Err("Custom manifest not found in resources".to_string());
+    }
+
+    let content = std::fs::read_to_string(&resource_manifest)
+        .map_err(|e| format!("Failed to read custom manifest: {}", e))?;
+
+    let mut val: serde_json::Value = serde_json::from_str(&content)
+        .map_err(|e| format!("Failed to parse custom manifest: {}", e))?;
+
+    if !pack_ver.is_empty() && !patch_ver.is_empty() {
+        if let Some(obj) = val.as_object_mut() {
+            if let Some(header) = obj.get_mut("header") {
+                if let Some(header_obj) = header.as_object_mut() {
+                    let formatted_name = format!("§eActions & Stuff §dRTX §b{} §5V{}", pack_ver.replace("v", ""), patch_ver);
+                    header_obj.insert("name".to_string(), serde_json::Value::String(formatted_name));
+                    
+                    if let Some(desc) = header_obj.get("description") {
+                        if let Some(desc_str) = desc.as_str() {
+                            if !desc_str.starts_with("§e") {
+                                let new_desc = format!("§e{}", desc_str);
+                                header_obj.insert("description".to_string(), serde_json::Value::String(new_desc));
+                            }
+                        }
+                    }
+
                 }
-                Ok(None) => log.push_str("Check succeeded, but no update returned (Option::None).\n"),
-                Err(e) => log.push_str(&format!("Check failed: {:?}\n", e)),
             }
         }
-        Err(e) => log.push_str(&format!("Failed to get updater instance: {:?}\n", e)),
     }
-    Ok(log)
+
+    let modified_content = serde_json::to_string_pretty(&val)
+        .map_err(|e| format!("Failed to serialize custom manifest: {}", e))?;
+
+    let target_path = std::path::Path::new(&target_dir).join("manifest.json");
+    std::fs::write(&target_path, modified_content)
+        .map_err(|e| format!("Failed to write modified manifest: {}", e))?;
+
+    let texts_path = std::path::Path::new(&target_dir).join("texts");
+    if texts_path.exists() && !pack_ver.is_empty() && !patch_ver.is_empty() {
+        if let Ok(entries) = std::fs::read_dir(&texts_path) {
+            for entry in entries.filter_map(Result::ok) {
+                let path = entry.path();
+                if path.extension().and_then(|s| s.to_str()) == Some("lang") {
+                    if let Ok(lang_content) = std::fs::read_to_string(&path) {
+                        let mut new_lang = String::new();
+                        for line in lang_content.lines() {
+                            if line.starts_with("pack.name=") {
+                                let formatted_name = format!("§eActions & Stuff §dRTX §b{} §5V{}", pack_ver.replace("v", ""), patch_ver);
+                                new_lang.push_str(&format!("pack.name={}\n", formatted_name));
+                            } else if line.starts_with("pack.description=") {
+                                let desc = line.trim_start_matches("pack.description=");
+                                if !desc.starts_with("§e") {
+                                    new_lang.push_str(&format!("pack.description=§e{}\n", desc));
+                                } else {
+                                    new_lang.push_str(line);
+                                    new_lang.push('\n');
+                                }
+                            } else {
+                                new_lang.push_str(line);
+                                new_lang.push('\n');
+                            }
+                        }
+                        let _ = std::fs::write(&path, new_lang);
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -2214,7 +2379,9 @@ pub fn run() {
             check_build_exists,
             is_dev_build,
             open_url,
-            debug_updater
+            write_text_file,
+            calculate_patch_stats,
+            inject_custom_manifest_to_target
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
