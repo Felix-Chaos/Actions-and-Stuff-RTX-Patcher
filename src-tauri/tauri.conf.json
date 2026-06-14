@@ -32,7 +32,7 @@
   "identifier": "com.actions-and-stuff.rtx-patcher",
   "plugins": {
     "updater": {
-      "active": true,
+      "active": false,
       "endpoints": [
         "https://raw.githubusercontent.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/main/updater.json"
       ],

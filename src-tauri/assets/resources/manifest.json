@@ -17,7 +17,7 @@
         }
     ],
     "capabilities": [
-        "raytraced"
+        "pbr"
     ],
     "metadata": {
         "authors": [
@@ -25,6 +25,11 @@
         ]
     },
     "subpacks": [
+        {
+            "folder_name": "Full Experience",
+            "memory_performance_tier": 0,
+            "name": "Full Experience §8The full Actions & Stuff experience."
+        },
         {
             "folder_name": "Custom",
             "memory_performance_tier": 0,
@@ -34,11 +39,6 @@
             "folder_name": "Vanilla",
             "memory_performance_tier": 0,
             "name": "Vanilla Experience §8Vanilla textures, custom animations & effects."
-        },
-        {
-            "folder_name": "Full Experience",
-            "memory_performance_tier": 0,
-            "name": "Full Experience §8The full Actions & Stuff experience."
         }
     ],
     "settings": [
