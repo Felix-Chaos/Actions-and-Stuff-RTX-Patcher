@@ -1319,7 +1319,7 @@ pub fn run_release_build(app: tauri::AppHandle) -> Result<(), String> {
                                                         .replace("-1", "a")
                                                         .replace("-b", "b")
                                                         .replace("-0", "b");
-                                                    let url = format!("https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/download/{}/Actions.and.Stuff.RTX.Patcher_{}_x64-setup.exe", user_version, version);
+                                                    let url = format!("https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/download/V{}/Actions.and.Stuff.RTX.Patcher_{}_x64-setup.exe", user_version, version);
 
                                                     if let Some(platforms) =
                                                         updater_val.get_mut("platforms")
