@@ -1275,7 +1275,7 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
     updateStepState(3, 'completed');
     
     // Clean intermediate zip
-    if (mode === 'marketplace' || (mode === 'custom' && !document.getElementById('custom-src').value.endsWith('.zip'))) {
+    if (mode === 'marketplace' || mode === 'zip' || (mode === 'custom' && !document.getElementById('custom-src').value.endsWith('.zip'))) {
       log(`Cleaning temporary source ZIP: "${sourceZipPath}"`);
       await invoke("delete_folders", { folders: [sourceZipPath] });
       log("Temporary source ZIP cleaned.");
