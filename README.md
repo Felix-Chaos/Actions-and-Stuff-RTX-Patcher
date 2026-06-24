@@ -163,6 +163,6 @@ The **original creator** who made the source files available is **Demente Parker
 <div align="center">
 
 ⭐ **Thank you for being part of the A&S RTX community!**  
-Your support, testing, and feedback keep this project alive — together we make RTX shine brighter. 💎
+Your support, testing, and feedback keep this project alive.
 
 </div>
