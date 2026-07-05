@@ -242,51 +242,47 @@ pub async fn run_xdelta_patch(
 }
 
 #[tauri::command]
-pub async fn install_mcpack(output_file: String) -> Result<String, String> {
+pub async fn install_mcpack(app: tauri::AppHandle, output_file: String) -> Result<String, String> {
     let src_path = Path::new(&output_file);
     if !src_path.exists() {
         return Err("Output file not found".to_string());
     }
 
-    let parent = src_path.parent().unwrap_or_else(|| Path::new(""));
     let file_stem = src_path
         .file_stem()
         .ok_or_else(|| "Invalid filename".to_string())?;
-    let mcpack_path = parent.join(format!("{}.mcpack", file_stem.to_string_lossy()));
 
-    if src_path != mcpack_path {
-        if mcpack_path.exists() {
-            let _ = std::fs::remove_file(&mcpack_path);
+    let mojang_paths: Vec<PathBuf> = get_mojang_paths()
+        .into_iter()
+        .filter(|p| p.exists())
+        .collect();
+
+    if mojang_paths.is_empty() {
+        return Err("Could not find Minecraft installation directory.".to_string());
+    }
+
+    let mut last_dest = String::new();
+
+    for mojang_path in mojang_paths {
+        let packs_dir = mojang_path.join("resource_packs");
+        if !packs_dir.exists() {
+            let _ = std::fs::create_dir_all(&packs_dir);
         }
-        std::fs::rename(src_path, &mcpack_path)
-            .map_err(|e| format!("Failed to rename pack: {}", e))?;
-    }
 
-    #[cfg(target_os = "windows")]
-    {
-        let mut wide: Vec<u16> = mcpack_path.as_os_str().encode_wide().collect();
-        wide.push(0);
-        unsafe {
-            SetFileAttributesW(wide.as_ptr(), 2); // FILE_ATTRIBUTE_HIDDEN = 2
+        let dest_dir = packs_dir.join(file_stem);
+
+        if let Err(e) = extract_archive_impl(Some(&app), src_path, &dest_dir, "main") {
+            crate::utils::emit_log(&app, "main", &format!("Failed to install to {:?}: {}", dest_dir, e), "error");
+        } else {
+            last_dest = dest_dir.to_string_lossy().into_owned();
         }
     }
 
-    // Open the pack (starts Minecraft import)
-    #[cfg(target_os = "windows")]
-    {
-        let mut cmd = std::process::Command::new("cmd");
-        cmd.args(&["/c", "start", "", &mcpack_path.to_string_lossy()]);
-        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-        cmd.spawn()
-            .map_err(|e| format!("Failed to launch Minecraft installer: {}", e))?;
+    if last_dest.is_empty() {
+        Err("Failed to install pack in any Minecraft directory.".to_string())
+    } else {
+        Ok(last_dest)
     }
-    #[cfg(not(target_os = "windows"))]
-    {
-        open::that(&mcpack_path)
-            .map_err(|e| format!("Failed to launch Minecraft installer: {}", e))?;
-    }
-
-    Ok(mcpack_path.to_string_lossy().into_owned())
 }
 
 #[tauri::command]
@@ -1547,3 +1543,171 @@ pub fn open_url(url: String) -> Result<(), String> {
     }
     Ok(())
 }
+
+#[tauri::command]
+pub async fn fetch_motd() -> Result<serde_json::Value, String> {
+    let api_url = std::option_env!("PATCHER_API_URL").unwrap_or("http://localhost:3000");
+    let api_key = std::option_env!("PATCHER_API_KEY").unwrap_or("");
+    println!("DEBUG: API URL is '{}', API KEY is '{}'", api_url, api_key);
+    
+    let client = reqwest::Client::new();
+    let res = client.get(&format!("{}/api/patcher/motd", api_url))
+        .header("Authorization", format!("Bearer {}", api_key))
+        .send()
+        .await
+        .map_err(|e| format!("Request failed: {}", e))?;
+        
+    let json: serde_json::Value = res.json()
+        .await
+        .map_err(|e| format!("Failed to parse JSON: {}", e))?;
+        
+    Ok(json)
+}
+
+fn encode_file_base64(path: &Path) -> Result<String, String> {
+    use std::io::Read;
+    use base64::prelude::*;
+    if !path.exists() {
+        return Err(format!("File not found: {:?}", path));
+    }
+    let mut file = std::fs::File::open(path).map_err(|e| e.to_string())?;
+    let mut buffer = Vec::new();
+    file.read_to_end(&mut buffer).map_err(|e| e.to_string())?;
+    
+    Ok(BASE64_STANDARD.encode(buffer))
+}
+
+fn get_hwid() -> String {
+    #[cfg(target_os = "windows")]
+    {
+        if let Ok(output) = std::process::Command::new("reg")
+            .args(&["query", "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Cryptography", "/v", "MachineGuid"])
+            .output()
+        {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            if let Some(line) = stdout.lines().find(|l| l.contains("MachineGuid")) {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if let Some(guid) = parts.last() {
+                    return guid.to_string();
+                }
+            }
+        }
+    }
+    "unknown_hwid".to_string()
+}
+
+#[tauri::command]
+pub async fn submit_bug_report(
+    discord_name: String,
+    description: String,
+    log_path: Option<String>,
+    pack_path: Option<String>,
+) -> Result<serde_json::Value, String> {
+    let api_url = std::option_env!("PATCHER_API_URL").unwrap_or("http://localhost:3000");
+    let api_key = std::option_env!("PATCHER_API_KEY").unwrap_or("");
+    let hwid = get_hwid();
+    
+    let mut payload = serde_json::json!({
+        "discordName": discord_name,
+        "description": description,
+        "hwid": hwid,
+        "includeLog": log_path.is_some(),
+        "includePack": pack_path.is_some(),
+    });
+    
+    if let Some(ref path) = log_path {
+        if let Ok(b64) = encode_file_base64(Path::new(path)) {
+            payload.as_object_mut().unwrap().insert("logBase64".to_string(), serde_json::Value::String(b64));
+        }
+    }
+    
+    if let Some(ref path) = pack_path {
+        if let Ok(b64) = encode_file_base64(Path::new(path)) {
+            payload.as_object_mut().unwrap().insert("packBase64".to_string(), serde_json::Value::String(b64));
+        }
+    }
+    
+    let client = reqwest::Client::new();
+    let res = client.post(&format!("{}/api/patcher/bug-report", api_url))
+        .header("Authorization", format!("Bearer {}", api_key))
+        .json(&payload)
+        .send()
+        .await
+        .map_err(|e| format!("Request failed: {}", e))?;
+        
+    let status = res.status();
+    let json: serde_json::Value = res.json()
+        .await
+        .map_err(|e| format!("Failed to parse response: {}", e))?;
+        
+    if !status.is_success() {
+        if let Some(err) = json.get("error") {
+            return Err(err.as_str().unwrap_or("Unknown error").to_string());
+        }
+        return Err(format!("Server returned {}", status));
+    }
+        
+    Ok(json)
+}
+
+#[tauri::command]
+pub async fn prepare_patch_target(
+    app: tauri::AppHandle,
+    decrypted_dir: String,
+    rtx_dir: String,
+    encrypted_dir: String,
+    temp_target_dir: String,
+    replace_unchanged: bool,
+) -> Result<(), String> {
+    let dec_path = Path::new(&decrypted_dir);
+    let rtx_path = Path::new(&rtx_dir);
+    let enc_path = Path::new(&encrypted_dir);
+    let tgt_path = Path::new(&temp_target_dir);
+    
+    emit_log(&app, "genpatch-logs", "Starting patch target preparation...", "info");
+    
+    if !tgt_path.exists() {
+        std::fs::create_dir_all(tgt_path).map_err(|e| e.to_string())?;
+    }
+    
+    emit_log(&app, "genpatch-logs", "Copying modified assets...", "info");
+    copy_dir_all(rtx_path, tgt_path).map_err(|e| format!("Failed to copy RTX dir: {}", e))?;
+    
+    let mut unchanged_count = 0;
+    
+    if replace_unchanged {
+        emit_log(&app, "genpatch-logs", "Comparing and restoring unchanged encrypted assets...", "info");
+        for entry in walkdir::WalkDir::new(dec_path).into_iter().filter_map(|e| e.ok()) {
+            if entry.file_type().is_file() {
+                let relative_path = entry.path().strip_prefix(dec_path).unwrap();
+                let rtx_file = rtx_path.join(relative_path);
+                
+                if rtx_file.exists() {
+                    let dec_content = std::fs::read(entry.path()).unwrap_or_default();
+                    let rtx_content = std::fs::read(&rtx_file).unwrap_or_default();
+                    
+                    if dec_content == rtx_content {
+                        let enc_file = enc_path.join(relative_path);
+                        let tgt_file = tgt_path.join(relative_path);
+                        
+                        if enc_file.exists() {
+                            if let Some(p) = tgt_file.parent() {
+                                let _ = std::fs::create_dir_all(p);
+                            }
+                            std::fs::copy(&enc_file, &tgt_file).unwrap_or(0);
+                            unchanged_count += 1;
+                        }
+                    }
+                }
+            }
+        }
+        emit_log(&app, "genpatch-logs", &format!("Restored {} unchanged encrypted assets.", unchanged_count), "info");
+    } else {
+        emit_log(&app, "genpatch-logs", "Skipping unchanged file replacement...", "info");
+    }
+    
+    emit_log(&app, "genpatch-logs", &format!("Replaced {} unchanged files with encrypted versions.", unchanged_count), "success");
+    
+    Ok(())
+}
+

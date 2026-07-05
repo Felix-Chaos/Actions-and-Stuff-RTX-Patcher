@@ -205,8 +205,12 @@ modeRadios.forEach(radio => {
       if (zipFileGroup) zipFileGroup.classList.remove('hidden-group');
     } else {
       customInputsGroup.classList.add('hidden-group');
-      versionSelectGroup.classList.remove('hidden-group');
       if (zipFileGroup) zipFileGroup.classList.add('hidden-group');
+    }
+
+    // Update MOTD Display based on selected mode
+    if (typeof updateMotdBox === 'function') {
+      updateMotdBox();
     }
 
     // Toggle disclaimer visibility
@@ -220,6 +224,82 @@ modeRadios.forEach(radio => {
     }
   });
 });
+
+// Load MOTD
+window.loadedMotds = {};
+
+function updateMotdBox() {
+  const motdContainer = document.getElementById('motd-container');
+  const motdTitle = document.getElementById('motd-title');
+  const motdMessage = document.getElementById('motd-message');
+
+  const mode = document.querySelector('input[name="patch-mode"]:checked')?.value || 'global';
+  let activeMotd = window.loadedMotds[mode];
+  
+  if (!activeMotd || !activeMotd.title) {
+    activeMotd = window.loadedMotds['global'];
+  }
+
+  if (activeMotd && activeMotd.title) {
+    if (motdTitle) motdTitle.innerText = activeMotd.title;
+    if (motdMessage) motdMessage.innerText = activeMotd.message || "";
+    if (motdContainer) motdContainer.classList.remove('hidden-group');
+  } else {
+    if (motdContainer) motdContainer.classList.add('hidden-group');
+  }
+}
+
+async function loadMotd() {
+  const offlineContainer = document.getElementById('motd-offline-container');
+  const offlineTitle = document.getElementById('motd-offline-title');
+  const offlineMessage = document.getElementById('motd-offline-message');
+
+  try {
+    const res = await invoke("fetch_motd");
+    if (res && res.success && res.motds) {
+      window.loadedMotds = res.motds;
+      updateMotdBox();
+      
+      if (offlineContainer) {
+        try {
+          const isDev = await invoke("is_dev_build");
+          if (isDev) {
+            if (offlineTitle) offlineTitle.innerText = "Service Offline UI Preview (Dev Mode)";
+            if (offlineMessage) offlineMessage.innerText = "This is just a preview of the offline box. The API is actually ONLINE right now.";
+            offlineContainer.classList.remove('hidden-group');
+          } else {
+            offlineContainer.classList.add('hidden-group');
+          }
+        } catch (e) {
+          offlineContainer.classList.add('hidden-group');
+        }
+      }
+    } else if (res && res.success && res.motd) {
+      // Fallback for old bot response
+      window.loadedMotds = { global: res.motd };
+      updateMotdBox();
+    }
+  } catch (err) {
+    console.warn("Could not fetch MOTD:", err);
+    if (motdContainer) motdContainer.classList.add('hidden-group'); // Hide from main page
+    
+    if (offlineContainer && offlineTitle) {
+      try {
+        const isDev = await invoke("is_dev_build");
+        if (isDev) {
+          offlineTitle.innerText = "Service Offline (Dev Mode)";
+          if (offlineMessage) offlineMessage.innerText = "Could not connect to the Chaos dev backend. This box is only visible in Dev Mode.";
+          offlineContainer.classList.remove('hidden-group');
+        } else {
+          // Completely remove/hide the text in release version
+          offlineContainer.classList.add('hidden-group');
+        }
+      } catch (e) {
+        offlineContainer.classList.add('hidden-group');
+      }
+    }
+  }
+}
 
 // Load configs and versions from Rust
 async function loadPatchConfigs() {
@@ -580,9 +660,29 @@ function setupUtilities() {
       gLog_fn(`  ✓ Decrypted source ZIP ready`);
 
       // Step 3: Compress patched (target) folder → target ZIP
-      gLog_fn(`[3/4] Compressing patched target: ${patchedDir}`);
+      gLog_fn(`[3/4] Preparing patched target: ${patchedDir}`);
       const tgtZip = outputDir + "/_temp_target.zip";
-      await invoke("pack_folder", { folderPath: patchedDir, outputZip: tgtZip });
+      const tempTargetDir = outputDir + "/_temp_target_dir";
+      
+      const extractBrarchives = document.getElementById('gen-extract-brarchives').checked;
+      const replaceUnchanged = document.getElementById('gen-replace-unchanged').checked;
+      if (extractBrarchives) {
+        gLog_fn(`  Extracting Brarchives in source and target...`);
+        await invoke("extract_brarchives_in_workspace", { workspace: decryptedDir });
+        await invoke("extract_brarchives_in_workspace", { workspace: patchedDir });
+        await invoke("extract_brarchives_in_workspace", { workspace: encryptedDir });
+      }
+
+      // Run new replace logic
+      await invoke("prepare_patch_target", {
+        decryptedDir: decryptedDir,
+        rtxDir: patchedDir,
+        encryptedDir: encryptedDir,
+        tempTargetDir: tempTargetDir,
+        replaceUnchanged: replaceUnchanged
+      });
+
+      await invoke("pack_folder", { folderPath: tempTargetDir, outputZip: tgtZip });
       gLog_fn(`  ✓ Patched target ZIP ready`);
 
       // Step 4: Generate both patches
@@ -631,8 +731,8 @@ function setupUtilities() {
       await invoke("write_text_file", { path: configPath, content: JSON.stringify(configData, null, 4) });
       gLog_fn(`  ✓ patch_config.json created`);
 
-      // Clean temp zips
-      await invoke("delete_folders", { folders: [encZip, decZip, tgtZip] });
+      // Clean temp zips and folders
+      await invoke("delete_folders", { folders: [encZip, decZip, tgtZip, tempTargetDir] });
 
       gLog_fn(`✅ All patches created successfully in: ${finalOutputDir}`, 'success');
       gLog_fn(`   Pack: ${packVer}  |  Patch: ${patchVer}`, 'success');
@@ -1012,6 +1112,22 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
         log(`  Complexity: ${best.files_count} files and ${best.dirs_count} folders`);
         
         patchConfigToUse = resolvePatchConfig(selectionMode, best);
+
+        if (selectionMode === 'auto' && patchConfigToUse && patchConfigToUse.stats) {
+          const stats = patchConfigToUse.stats;
+          let fileMatch = true;
+          let dirMatch = true;
+          if (stats.files && best.files_count > 0) {
+              fileMatch = Math.abs(stats.files - best.files_count) <= 5;
+          }
+          if (stats.dirs && best.dirs_count > 0) {
+              dirMatch = stats.dirs === best.dirs_count;
+          }
+          if (!fileMatch || !dirMatch) {
+              throw `Validation failed: Pack seems corrupted or modified! Expected ~${stats.files} files and ${stats.dirs} folders, but found ${best.files_count} files and ${best.dirs_count} folders.`;
+          }
+        }
+
         // If selection is manual, we check if the selected patch pack version matches the detected pack version
         // To be safe, if we resolved an exact patchConfigToUse, its packVersion is the best determination of truth
         let determinedVersion = best.version;
@@ -1299,6 +1415,7 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
     document.getElementById('progress-actions-container').classList.remove('hidden-group');
     document.getElementById('btn-install-pack').classList.add('hidden-group');
     document.getElementById('btn-copy-log-large').classList.remove('hidden-group');
+    document.getElementById('btn-report-bug-quick').classList.remove('hidden-group');
   } finally {
     document.getElementById('btn-start-patch').disabled = false;
   }
@@ -1306,14 +1423,21 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
 
 document.getElementById('btn-install-pack').addEventListener('click', async () => {
   if (!finalPatchedPath) return;
+  const btn = document.getElementById('btn-install-pack');
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Installing...`;
+
   try {
     log(`Launching installer for: ${finalPatchedPath}`);
     const actualMcpack = await invoke("install_mcpack", { outputFile: finalPatchedPath });
-    log(`Minecraft launched. Registered pack as: ${actualMcpack}`, 'success');
+    log(`Successfully installed pack to: ${actualMcpack}`, 'success');
     updateStepState(4, 'completed');
-    document.getElementById('btn-install-pack').classList.add('hidden-group');
+    btn.classList.add('hidden-group');
   } catch (err) {
     log(`Install failed: ${err}`, 'error');
+    btn.disabled = false;
+    btn.innerHTML = originalText;
   }
 });
 
@@ -1366,9 +1490,19 @@ document.getElementById('chk-advanced-mode').addEventListener('change', (e) => {
 document.getElementById('btn-patch-back').addEventListener('click', () => {
   document.querySelector('.progress-panel').classList.add('hidden-group');
   document.querySelector('.controls-panel').classList.remove('hidden-group');
+  document.getElementById('btn-report-bug-quick').classList.add('hidden-group');
   updateStatus("Ready to Patch", "Configure options and click Apply", '💤');
   updateProgress(0);
   resetSteps();
+});
+
+// Quick Report Bug Button
+document.getElementById('btn-report-bug-quick').addEventListener('click', () => {
+  // Navigate to Support Tab
+  document.querySelector('.nav-tab[data-tab="support"]').click();
+  // Scroll to Bug Report section
+  document.getElementById('bug-discord-name').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  document.getElementById('bug-discord-name').focus();
 });
 
 // Copy Console Log
@@ -1575,6 +1709,103 @@ function setupReleaseBuilder() {
   });
 }
 
+async function setupBugReporter() {
+  const btnSubmit = document.getElementById('btn-submit-bug');
+  if (!btnSubmit) return;
+
+  btnSubmit.addEventListener('click', async () => {
+    const discordName = document.getElementById('bug-discord-name').value.trim();
+    if (!discordName) {
+      alert("Please enter your Discord username.");
+      return;
+    }
+
+    const includeLog = document.getElementById('bug-include-log').checked;
+    const includePack = document.getElementById('bug-include-pack').checked;
+    const statusEl = document.getElementById('bug-report-status');
+
+    statusEl.innerHTML = "Submitting bug report... <span class='status-spinner'>⏳</span>";
+    statusEl.className = "status-hint";
+    btnSubmit.disabled = true;
+
+    let logPath = null;
+    let packPath = null;
+    let tempZipToClean = null;
+
+    try {
+
+      if (includeLog) {
+        logPath = "patcher.log";
+        const logContent = Array.from(document.querySelectorAll('.log-line')).map(el => el.innerText).join('\n');
+        await invoke("write_text_file", { path: logPath, content: logContent });
+      }
+
+
+
+      if (includePack) {
+        const mode = document.querySelector('input[name="patch-mode"]:checked').value;
+        if (mode === 'zip') {
+          packPath = document.getElementById('zip-input-file').value;
+        } else if (mode === 'marketplace') {
+          statusEl.innerHTML = "Zipping Marketplace Pack... <span class='status-spinner'>📦</span>";
+          const candidates = await invoke("scan_marketplace_packs");
+          if (candidates && candidates.length > 0) {
+            const tempRoot = defaultPaths.temp ? defaultPaths.temp.replace(/\\/g, "/") : ".";
+            const zipOut = `${tempRoot}/bug_report_marketplace_pack.zip`;
+            await invoke("pack_folder", { folderPath: candidates[0].path, outputZip: zipOut });
+            packPath = zipOut;
+            tempZipToClean = zipOut;
+          }
+        }
+      }
+
+      const description = document.getElementById('bug-description').value.trim();
+
+      const res = await invoke("submit_bug_report", {
+        discordName: discordName,
+        description: description,
+        logPath: logPath,
+        packPath: packPath
+      });
+
+      if (res && res.success) {
+        let msg = `✅ Bug Report submitted successfully! Case ID: #${res.caseId}`;
+        if (res.replacedOld) {
+            msg += `<br><br><span style="color: #fbbf24; font-size: 0.8rem;">Note: You already had a recent issue submitted. Your previous pack file has been replaced to save space.</span>`;
+        }
+        statusEl.innerHTML = msg;
+        statusEl.className = "status-success";
+      }
+
+    } catch (err) {
+      statusEl.innerHTML = `❌ Failed to submit: ${err}`;
+      statusEl.className = "status-error";
+
+      if (err.includes("User not found")) {
+        showModal(err + "\nWould you like to join the Chaos dev project server now?", {
+          title: "Join Server Required",
+          confirm: true,
+          okText: "Join Discord",
+          cancelText: "Cancel"
+        }).then(async (joined) => {
+          if (joined) {
+            await invoke("open_url", { url: "https://discord.gg/YrMMmN2kc7" });
+          }
+        });
+      }
+    } finally {
+      btnSubmit.disabled = false;
+      if (logPath) {
+        try { await invoke("delete_folders", { folders: [logPath] }); } catch (e) {}
+      }
+      if (tempZipToClean) {
+        try { await invoke("delete_folders", { folders: [tempZipToClean] }); } catch (e) {}
+      }
+    }
+  });
+}
+
+
 // Check for Updates
 async function checkForUpdates() {
   const badge = document.getElementById('update-badge');
@@ -1715,6 +1946,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   await bindPickers();
   setupUtilities();
   setupReleaseBuilder();
+  setupBugReporter();
+  await loadMotd();
   await loadOptionsProfiles();
   log("System initialization complete. Ready.");
   

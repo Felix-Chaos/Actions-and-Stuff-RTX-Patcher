@@ -38,7 +38,10 @@ pub fn run() {
             open_url,
             write_text_file,
             calculate_patch_stats,
-            inject_custom_manifest_to_target
+            inject_custom_manifest_to_target,
+            fetch_motd,
+            submit_bug_report,
+            prepare_patch_target
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

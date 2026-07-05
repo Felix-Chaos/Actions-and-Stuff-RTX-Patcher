@@ -88,6 +88,10 @@
             <!-- Left Side: Controls -->
             <div class="controls-panel card">
               <h2>Select Patch Mode</h2>
+              <div id="motd-container" class="motd-box hidden-group" style="background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+                <h3 id="motd-title" style="color: #fbbf24; margin: 0 0 4px 0; font-size: 1rem;">Status</h3>
+                <p id="motd-message" style="margin: 0; font-size: 0.85rem; color: #e2e8f0;"></p>
+              </div>
               <div class="mode-toggle-group">
                 <label class="mode-radio">
                   <input type="radio" name="patch-mode" value="marketplace" checked />
@@ -264,6 +268,7 @@
               <div id="progress-actions-container" class="progress-actions hidden-group">
                 <button id="btn-install-pack" class="btn btn-success hidden-group">Install Pack</button>
                 <button id="btn-copy-log-large" class="btn btn-secondary hidden-group" title="Copy log to clipboard">📋 Copy Log</button>
+                <button id="btn-report-bug-quick" class="btn btn-danger hidden-group">🐞 Report Bug</button>
                 <button id="btn-patch-back" class="btn btn-secondary">Back to Selection</button>
               </div>
 
@@ -452,6 +457,20 @@
                         <span class="mc-slider"></span>
                       </label>
                     </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0; margin-top: 8px;">
+                      <span style="font-size: 0.85rem; color: #ffffff; font-weight: 500;">Extract Brarchives</span>
+                      <label class="mc-toggle" style="margin-left: 0;">
+                        <input type="checkbox" id="gen-extract-brarchives" />
+                        <span class="mc-slider"></span>
+                      </label>
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0; margin-top: 8px;">
+                      <span style="font-size: 0.85rem; color: #ffffff; font-weight: 500;">Replace Unchanged</span>
+                      <label class="mc-toggle" style="margin-left: 0;">
+                        <input type="checkbox" id="gen-replace-unchanged" checked />
+                        <span class="mc-slider"></span>
+                      </label>
+                    </div>
                     <div class="genpatch-actions" style="margin-top: 16px;">
                       <button id="btn-run-gen-patch" class="btn btn-gold-3d" style="width: 100%;">Create Patches</button>
                     </div>
@@ -500,11 +519,18 @@
 
         <!-- Tab: Support -->
         <section class="tab-content" id="tab-support">
-          <div class="card full-card">
+          <div class="card full-card" style="display: block;">
             <h2>💬 Support & Community</h2>
+            
+            <!-- Offline MOTD Box (only shown here when API is down) -->
+            <div id="motd-offline-container" class="motd-box hidden-group" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+              <h3 id="motd-offline-title" style="color: #ef4444; margin: 0 0 4px 0; font-size: 1rem;">Status</h3>
+              <p id="motd-offline-message" style="margin: 0; font-size: 0.85rem; color: #e2e8f0;"></p>
+            </div>
+
             <p>Need help or want to join the community? Check out the servers below.</p>
             
-            <div class="utils-grid" style="margin-top: 16px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
               <div class="util-card">
                 <img src="assets/chaos_dev_banner.png" alt="Chaos dev" style="width: 100%; height: 120px; object-fit: cover; border-radius: 6px; margin-bottom: 12px; border: 1px solid rgba(255, 255, 255, 0.06); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);" />
                 <h3 style="margin-bottom: 4px;">Chaos dev Projects Server <span class="badge" style="background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; margin-left: 8px;">Recommended</span></h3>
@@ -528,6 +554,43 @@
                 <button id="btn-betterrtx-discord" class="btn btn-secondary" style="margin-top: 12px; width: 100%;">Join Discord Server</button>
               </div>
             </div>
+
+            <!-- Bug Report Section -->
+            <div class="card" style="margin-top: 24px; background: rgba(0,0,0,0.2);">
+              <h3 style="margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">🐞 Submit a Bug Report</h3>
+              <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">Send an automated bug report directly to our developer team via Discord. A case number will be generated for tracking.</p>
+              
+              <div class="form-group">
+                <label for="bug-discord-name">Your Discord Username (e.g. user#1234)</label>
+                <input type="text" id="bug-discord-name" class="custom-input" placeholder="We need this to link the report to you" />
+              </div>
+
+              <div class="form-group">
+                <label for="bug-description">Bug Description</label>
+                <textarea id="bug-description" class="custom-textarea" rows="3" maxlength="500" placeholder="Please describe what went wrong (max 500 characters)"></textarea>
+              </div>
+
+              <div class="checkbox-group" style="margin-bottom: 16px; background: rgba(0,0,0,0.1); padding: 12px; border-radius: 6px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
+                  <span style="font-size: 0.85rem; font-weight: 500;">Include Application Log</span>
+                  <label class="mc-toggle" style="margin-left: 0;">
+                    <input type="checkbox" id="bug-include-log" checked />
+                    <span class="mc-slider"></span>
+                  </label>
+                </div>
+                <div id="bug-pack-toggle-row" style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0; margin-top: 8px;">
+                  <span style="font-size: 0.85rem; font-weight: 500;">Include Pack (Marketplace Cache / Zip)</span>
+                  <label class="mc-toggle" style="margin-left: 0;">
+                    <input type="checkbox" id="bug-include-pack" />
+                    <span class="mc-slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <button id="btn-submit-bug" class="btn btn-primary" style="width: 100%;">Send Bug Report</button>
+              <div id="bug-report-status" style="margin-top: 12px; font-size: 0.85rem; text-align: center;" class="hidden-group"></div>
+            </div>
+
           </div>
         </section>
 
