@@ -918,6 +918,7 @@ async function loadOptionsProfiles() {
       } else {
         document.getElementById('rtx-settings-grid').innerHTML = '<div class="placeholder-text">Select an options.txt profile to read settings...</div>';
         document.getElementById('btn-save-settings').disabled = true;
+        document.getElementById('btn-best-settings').disabled = true;
       }
     });
   } catch (err) {
@@ -935,7 +936,9 @@ async function loadOptionsData(path) {
       'gfx_upscaling': { label: 'Upscaling / DLSS', type: 'bool' },
       'raytracing_viewdistance': { label: 'Ray Tracing View Distance (Chunks)', type: 'number' },
       'gfx_max_framerate': { label: 'Max Framerate', type: 'number' },
-      'gfx_vsync': { label: 'VSync', type: 'bool' }
+      'gfx_vsync': { label: 'VSync', type: 'bool' },
+      'enable_dithering_blocks': { label: 'Block Dithering', type: 'bool' },
+      'enable_dithering_mobs': { label: 'Mob Dithering', type: 'bool' }
     };
     
     const grid = document.getElementById('rtx-settings-grid');
@@ -985,6 +988,7 @@ async function loadOptionsData(path) {
     });
     
     document.getElementById('btn-save-settings').disabled = false;
+    document.getElementById('btn-best-settings').disabled = false;
   } catch (err) {
     log(`Failed to read options: ${err}`, 'error');
   }
@@ -1012,6 +1016,23 @@ document.getElementById('btn-save-settings').addEventListener('click', async () 
     log(`Failed to write settings: ${err}`, 'error');
     alert(`Failed to save settings:\n${err}`);
   }
+});
+
+document.getElementById('btn-best-settings').addEventListener('click', () => {
+  const rt = document.querySelector('input[data-key="gfx_raytracing"]');
+  const dlss = document.querySelector('input[data-key="gfx_upscaling"]');
+  const vd = document.querySelector('input[data-key="raytracing_viewdistance"]');
+  const db = document.querySelector('input[data-key="enable_dithering_blocks"]');
+  const dm = document.querySelector('input[data-key="enable_dithering_mobs"]');
+  
+  if (rt) rt.checked = true;
+  if (dlss) dlss.checked = true;
+  if (vd) vd.value = "12";
+  if (db) db.checked = false;
+  if (dm) dm.checked = false;
+  
+  log("Automatically loaded best RTX settings into the editor. Click 'Apply Settings' to write them to options.txt.", "info");
+  alert("Best settings set in the editor! Click 'Apply Settings' to save them.");
 });
 
 
@@ -1812,6 +1833,11 @@ async function setupBugReporter() {
       return;
     }
 
+    if (discordName.includes(' ')) {
+      alert("Discord usernames/IDs cannot contain spaces.\nIf you are using your display name/nickname, please use your actual Discord username (which contains no spaces) or your 18-digit Discord User ID instead.");
+      return;
+    }
+
     const includeLog = document.getElementById('bug-include-log').checked;
     const includePack = document.getElementById('bug-include-pack').checked;
     const statusEl = document.getElementById('bug-report-status');
@@ -2072,19 +2098,20 @@ window.addEventListener('DOMContentLoaded', async () => {
   const sidebarToggleBtn = document.getElementById('btn-toggle-sidebar');
   const appHeader = document.querySelector('.app-header');
   const logoTypingText = document.getElementById('logo-typing-text');
+  const logoAccentText = document.getElementById('logo-accent-text');
   
-  const animateTyping = async (targetText) => {
-    if (!logoTypingText) return;
-    let current = logoTypingText.textContent;
+  const animateTyping = async (element, targetText) => {
+    if (!element) return;
+    let current = element.textContent;
     // Fast delete
     while (current.length > 0) {
       current = current.slice(0, -1);
-      logoTypingText.textContent = current;
+      element.textContent = current;
       await new Promise(r => setTimeout(r, 15));
     }
     // Fast type
     for (let i = 1; i <= targetText.length; i++) {
-      logoTypingText.textContent = targetText.slice(0, i);
+      element.textContent = targetText.slice(0, i);
       await new Promise(r => setTimeout(r, 20));
     }
   };
@@ -2093,14 +2120,17 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (appSettings.sidebarCollapsed) {
       appHeader.classList.add('collapsed');
       if (logoTypingText) logoTypingText.textContent = "A&S";
+      if (logoAccentText) logoAccentText.textContent = "RTX";
     } else {
       if (logoTypingText) logoTypingText.textContent = "ACTIONS & STUFF";
+      if (logoAccentText) logoAccentText.textContent = "RTX PATCHER";
     }
     
     sidebarToggleBtn.addEventListener('click', () => {
       const isCollapsed = appHeader.classList.toggle('collapsed');
       updateSetting('sidebarCollapsed', isCollapsed);
-      animateTyping(isCollapsed ? "A&S" : "ACTIONS & STUFF");
+      animateTyping(logoTypingText, isCollapsed ? "A&S" : "ACTIONS & STUFF");
+      animateTyping(logoAccentText, isCollapsed ? "RTX" : "RTX PATCHER");
     });
   }
 

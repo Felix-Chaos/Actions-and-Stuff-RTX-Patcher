@@ -1,0 +1,13 @@
+{
+  "defaultMode": "marketplace",
+  "advancedMode": false,
+  "betaUpdates": false,
+  "cleanOld": true,
+  "extractBrarchives": false,
+  "genInjectManifest": true,
+  "genExtractBrarchives": false,
+  "genReplaceUnchanged": true,
+  "bugIncludeLog": true,
+  "bugIncludePack": false,
+  "sidebarCollapsed": false
+}

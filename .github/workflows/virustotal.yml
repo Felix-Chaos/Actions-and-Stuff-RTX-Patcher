@@ -17,7 +17,7 @@ jobs:
       contents: write   # needed to update the release body
 
     steps:
-      - name: Find .exe asset in release
+      - name: Find portable.zip asset in release
         id: find_exe
         uses: actions/github-script@v7
         with:
@@ -46,17 +46,17 @@ jobs:
               repo: context.repo.repo,
               release_id: release.id,
             });
-            const exe = assets.data.find(a => a.name.endsWith('.exe'));
-            if (!exe) core.setFailed('No .exe asset found in this release.');
-            core.setOutput('asset_url', exe.browser_download_url);
-            core.setOutput('asset_name', exe.name);
+            const zip = assets.data.find(a => a.name.endsWith('_portable.zip'));
+            if (!zip) core.setFailed('No _portable.zip asset found in this release.');
+            core.setOutput('asset_url', zip.browser_download_url);
+            core.setOutput('asset_name', zip.name);
             core.setOutput('release_id', String(release.id));
             core.setOutput('release_body', release.body || '');
             core.setOutput('release_tag', release.tag_name);
 
-      - name: Download .exe asset
+      - name: Download portable.zip asset
         run: |
-          curl -L "${{ steps.find_exe.outputs.asset_url }}" -o release.exe
+          curl -L "${{ steps.find_exe.outputs.asset_url }}" -o release.zip
 
       - name: Upload to VirusTotal
         id: vt_upload
@@ -75,7 +75,7 @@ jobs:
           RESPONSE=$(curl --silent --request POST \
             --url "$UPLOAD_URL" \
             --header "x-apikey: ${{ secrets.VIRUSTOTAL_API_KEY }}" \
-            --form "file=@release.exe")
+            --form "file=@release.zip")
           
           echo "$RESPONSE"
           ANALYSIS_ID=$(echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('data', {}).get('id', ''))")
@@ -146,7 +146,7 @@ jobs:
               '- **Scan Result**: [🔍 View on VirusTotal](' + vtLink + ')\n';
 
             // Find and replace the placeholder if present in the release body
-            const placeholderRegex = /###\s*🛡️\s*VirusTotal\s*Scan[\r\n\s]*\*This\s+section\s+will\s+be\s+automatically\s+filled\s+in\s+by\s+the\s+VirusTotal\s+workflow\s+after\s+you\s+upload\s+the\s+\.exe\s+asset\s+and\s+publish\.\*/gi;
+            const placeholderRegex = /###\s*🛡️\s*VirusTotal\s*Scan[\r\n\s]*\*This\s+section\s+will\s+be\s+automatically\s+filled\s+in\s+by\s+the\s+VirusTotal\s+workflow\s+(?:after\s+you\s+upload\s+the\s+(?:\.exe|_portable\.zip)\s+asset\s+and\s+publish|in\s+a\s+few\s+minutes)\.\*/gi;
 
             let newBody = existingBody;
             if (placeholderRegex.test(existingBody)) {

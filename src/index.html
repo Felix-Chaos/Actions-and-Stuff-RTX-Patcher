@@ -19,10 +19,10 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
         </button>
         <div class="logo-area">
-          <span class="logo-text" style="display: flex; gap: 6px; font-size: 1.1rem; font-weight: 800; white-space: nowrap; align-items: baseline;">
+          <div class="logo-text" style="display: flex; flex-direction: column; gap: 2px; font-size: 1.1rem; font-weight: 800; line-height: 1.2;">
             <span id="logo-typing-text">ACTIONS &amp; STUFF</span> 
-            <span class="accent-text" style="font-size: 1.25em;">RTX</span>
-          </span>
+            <span class="accent-text" id="logo-accent-text" style="font-size: 1.3em;">RTX PATCHER</span>
+          </div>
           <div class="logo-badges">
             <span class="version-badge" id="app-version-badge">v3.0</span>
             <span id="update-badge" class="update-badge state-checking">Checking...</span>
@@ -343,7 +343,8 @@
               <div class="placeholder-text">Select an options.txt profile to read settings...</div>
             </div>
 
-            <div class="action-bar">
+            <div class="action-bar" style="gap: 12px;">
+              <button id="btn-best-settings" class="btn btn-secondary" disabled>Set Best Settings</button>
               <button id="btn-save-settings" class="btn btn-primary" disabled>Apply Settings</button>
             </div>
           </div>
@@ -454,25 +455,17 @@
                       <label for="gen-pack-version">Pack Version</label>
                       <input type="text" id="gen-pack-version" class="custom-input" placeholder="e.g. 1.10.1" value="1.10.1" style="width: 100%; margin-bottom: 4px;" />
                       <div style="display: flex; gap: 4px;">
-                        <button type="button" class="mc-btn-primary" id="btn-pack-major" style="padding: 4px 0; font-size: 0.75rem; flex: 1;">+1.0.0</button>
-                        <button type="button" class="mc-btn-primary" id="btn-pack-minor" style="padding: 4px 0; font-size: 0.75rem; flex: 1;">+0.1.0</button>
-                        <button type="button" class="mc-btn-primary" id="btn-pack-patch" style="padding: 4px 0; font-size: 0.75rem; flex: 1;">+0.0.1</button>
+                        <button type="button" class="btn btn-secondary btn-xs" id="btn-pack-major" style="flex: 1;">+1.0.0</button>
+                        <button type="button" class="btn btn-secondary btn-xs" id="btn-pack-minor" style="flex: 1;">+0.1.0</button>
+                        <button type="button" class="btn btn-secondary btn-xs" id="btn-pack-patch" style="flex: 1;">+0.0.1</button>
                       </div>
                     </div>
                     <div class="form-group">
                       <label for="gen-patch-version">Patch Version</label>
                       <input type="text" id="gen-patch-version" class="custom-input" placeholder="e.g. 1.1" value="1.1" style="width: 100%; margin-bottom: 4px;" />
                       <div style="display: flex; gap: 4px;">
-                        <button type="button" class="mc-btn-primary" id="btn-patch-major" style="padding: 4px 0; font-size: 0.75rem; flex: 1;">+1.0</button>
-                        <button type="button" class="mc-btn-primary" id="btn-patch-minor" style="padding: 4px 0; font-size: 0.75rem; flex: 1;">+0.1</button>
-                      </div>
-                    </div>
-                    <div class="form-group">
-                      <label for="gen-patch-version">Patch Version</label>
-                      <div style="display: flex; gap: 4px;">
-                        <input type="text" id="gen-patch-version" class="custom-input" placeholder="e.g. 1.1" value="1.1" style="flex: 1;" />
-                        <button class="mc-btn-primary" id="btn-dec-patch" style="padding: 0 10px; min-width: 30px;">-</button>
-                        <button class="mc-btn-primary" id="btn-inc-patch" style="padding: 0 10px; min-width: 30px;">+</button>
+                        <button type="button" class="btn btn-secondary btn-xs" id="btn-patch-major" style="flex: 1;">+1.0</button>
+                        <button type="button" class="btn btn-secondary btn-xs" id="btn-patch-minor" style="flex: 1;">+0.1</button>
                       </div>
                     </div>
                     <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0; margin-top: 8px;">

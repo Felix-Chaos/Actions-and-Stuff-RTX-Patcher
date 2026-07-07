@@ -1382,11 +1382,33 @@ pub fn run_release_build(app: tauri::AppHandle, build_type: String) -> Result<()
                                         
                                         emit_log(&app_clone, "build-logs", &format!("Sorting build artifacts into Releases/v{}...", version), "info");
                                         
-                                        // Copy portable exe
+                                        // Package portable build into zip
                                         let portable_src = project_root.join("src-tauri/target/release/tauri-app.exe");
-                                        let portable_dest = release_dir.join(format!("Actions.and.Stuff.RTX.Patcher_{}_portable.exe", version));
                                         if portable_src.exists() {
-                                            let _ = std::fs::copy(&portable_src, &portable_dest);
+                                            let staging_dir = project_root.join(format!("src-tauri/target/release/portable_staging_{}", version));
+                                            let _ = std::fs::remove_dir_all(&staging_dir); // Clean old staging if any
+                                            let _ = std::fs::create_dir_all(&staging_dir);
+                                            
+                                            // Copy exe to staging
+                                            let _ = std::fs::copy(&portable_src, staging_dir.join(format!("Actions.and.Stuff.RTX.Patcher_{}_portable.exe", version)));
+                                            
+                                            // Copy assets to staging
+                                            let assets_src = project_root.join("src-tauri/assets");
+                                            if assets_src.exists() {
+                                                let _ = copy_dir_all(&assets_src, staging_dir.join("assets"));
+                                            }
+                                            
+                                            // Pack staging folder
+                                            let zip_dest = release_dir.join(format!("Actions.and.Stuff.RTX.Patcher_{}_portable.zip", version));
+                                            emit_log(&app_clone, "build-logs", "Compressing portable release package into ZIP...", "info");
+                                            if let Err(e) = pack_folder_impl(None, &staging_dir, &zip_dest, "build-logs") {
+                                                emit_log(&app_clone, "build-logs", &format!("Failed to create portable ZIP: {}", e), "error");
+                                            } else {
+                                                emit_log(&app_clone, "build-logs", "Portable release package ZIP created successfully.", "info");
+                                            }
+                                            
+                                            // Clean up staging
+                                            let _ = std::fs::remove_dir_all(&staging_dir);
                                         }
                                         
                                         // Copy NSIS installer

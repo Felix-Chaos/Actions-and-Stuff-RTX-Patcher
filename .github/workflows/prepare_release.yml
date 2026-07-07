@@ -87,7 +87,7 @@ jobs:
           BADGE="${{ steps.get_version.outputs.badge }}"
 
           cat > release_body.md << EOF
-          ## A&S Minecraft RTX Community Patcher — ${TAG}
+          ## A&S Minecraft RTX Patcher — ${TAG}
 
           ${BADGE}
 
@@ -105,20 +105,9 @@ jobs:
           @Javier6003 (error90099900)
           @Felix-Chaos (FelixChaos)
 
-          ### 📦 Installation
-          1. Download \`AnS_RTX_Patcher_V2.exe\` below
-          2. Make sure [BetterRTX] is installed
-          3. Run the patcher and follow the on-screen instructions
-
           > [!NOTE]
           > The patcher does **not** include any original A&S assets, you need your own copy of Actions & Stuff.
 
-          ---
-
-          ### 🛡️ VirusTotal Scan
-          *This section will be automatically filled in by the VirusTotal workflow in a few minutes.*
-
-          ---
           EOF
 
       - name: Create Draft Release
@@ -145,5 +134,5 @@ jobs:
             console.log(`📌 Version: ${tag}`);
             console.log('Next steps:');
             console.log('  1. Fill in the changelog in the draft');
-            console.log('  2. Upload AnS_RTX_Patcher_V2.exe as an asset');
+            console.log('  2. Upload portable.zip as an asset');
             console.log('  3. Publish the release → VirusTotal scan fires automatically');
