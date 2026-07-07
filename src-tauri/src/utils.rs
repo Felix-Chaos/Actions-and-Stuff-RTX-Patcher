@@ -408,6 +408,7 @@ pub struct MarketplaceCandidate {
     pub files_count: usize,
     pub dirs_count: usize,
     pub logo_hash: String,
+    pub score: i32,
 }
 
 #[derive(serde::Serialize)]

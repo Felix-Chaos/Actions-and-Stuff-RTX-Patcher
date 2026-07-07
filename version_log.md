@@ -1,7 +1,5 @@
-# Version Changelog: v2.2.7
+# Version Changelog: v2.2.8
 
-- **Updater Link Fix:** Fixed a bug where the application's automatic updater was looking for the wrong download link because it was missing a "V" in front of the version number.
-- **Graphics Naming Update:** Changed internal graphical settings labels from "Raytraced" to "PBR" (Physically Based Rendering).
-- **Menu Reorganization:** Moved the "Full Experience" option to the top of the list in the application.
-- **Auto-Updater Disabled:** Temporarily disabled the auto-updater system in the main application settings.
-- **Security Updates:** Updated the application's update security signatures and download addresses to make sure everything points to the correct new release.
+- **Smart Patcher Detection**: Completely upgraded the system that automatically detects your downloaded Actions & Stuff pack. The app now thoroughly evaluates all installed resource packs and grades them on their file count, folder count, pack icon, and language files. This ensures it always picks the correct pack (even prioritizing the newest one if you have multiples) and prevents you from accidentally patching an invalid or modified folder by showing an error.
+- **Auto-Incrementing Patch Versions**: Added a new Version Increaser feature for patch creators! The app now persistently remembers the latest version of your patch configurations. When you successfully generate a new patch, the version number will now automatically increase (for example, from `1.0` to `1.1`), saving you the hassle of manually tracking versions.
+- **Security Updates**: Rebuilt the application and injected the latest update signatures and addresses to secure the new release.

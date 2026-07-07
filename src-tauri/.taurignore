@@ -2,3 +2,5 @@ assets/Patches
 assets/Patches/
 assets/Patches/*
 **/assets/Patches/**
+settings.json
+patch_versions.json

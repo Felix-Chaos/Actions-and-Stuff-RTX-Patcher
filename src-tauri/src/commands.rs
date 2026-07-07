@@ -2,23 +2,30 @@ use crate::utils::*;
 use std::collections::HashMap;
 use std::io::BufRead;
 #[cfg(target_os = "windows")]
-use std::os::windows::ffi::OsStrExt;
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
 use std::path::{Path, PathBuf};
 use tauri::Manager;
-#[cfg(target_os = "windows")]
-extern "system" {
-    fn SetFileAttributesW(lpFileName: *const u16, dwFileAttributes: u32) -> i32;
-}
 
 #[tauri::command]
 pub fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
 
+#[derive(serde::Deserialize, Debug, Clone)]
+pub struct ValidStats {
+    pub files: usize,
+    pub dirs: usize,
+    pub version: Option<String>,
+    pub is_latest: bool,
+}
+
 #[tauri::command]
-pub async fn scan_marketplace_packs() -> Result<Vec<MarketplaceCandidate>, String> {
+pub async fn scan_marketplace_packs(
+    expected_logo_hash: Option<String>,
+    expected_has_lang_file: Option<bool>,
+    valid_stats_list: Option<Vec<ValidStats>>,
+) -> Result<Vec<MarketplaceCandidate>, String> {
     let mut candidates = Vec::new();
     let mut base_paths = Vec::new();
     let local_app_data = std::env::var("LOCALAPPDATA").ok();
@@ -43,40 +50,91 @@ pub async fn scan_marketplace_packs() -> Result<Vec<MarketplaceCandidate>, Strin
             for entry in entries.flatten() {
                 let path = entry.path();
                 if path.is_dir() {
-                    let manifest_path = path.join("manifest.json");
-                    let mut is_match = false;
+                    let version = get_lang_version(&path).unwrap_or_else(|| "Unknown".to_string());
+                    let folder_name = entry.file_name().to_string_lossy().into_owned();
+                    let (files_count, dirs_count) = get_folder_stats(&path);
 
-                    if manifest_path.exists() {
-                        if let Ok(manifest_content) = std::fs::read_to_string(&manifest_path) {
-                            if manifest_content.contains("22ed17a6-ea7c-5ccd-93b4-b90e86ce0046")
-                                || manifest_content.contains("Oreville Studios")
-                            {
-                                is_match = true;
+                    let logo_path = path.join("pack_icon.png");
+                    let logo_hash = if logo_path.exists() {
+                        if let Ok(content) = std::fs::read(&logo_path) {
+                            use sha2::{Digest, Sha256};
+                            let mut hasher = Sha256::new();
+                            hasher.update(&content);
+                            let hash = hasher.finalize();
+                            hash.iter().map(|b| format!("{:02x}", b)).collect()
+                        } else {
+                            String::new()
+                        }
+                    } else {
+                        String::new()
+                    };
+
+                    let has_lang_file = path.join("texts/en_US.lang").exists() || path.join("texts/en_US.txt").exists() || path.join("en_US.lang").exists() || path.join("en_US.txt").exists();
+
+                    let mut score = 0;
+                    
+                    // Score +1 for matching logo hash
+                    if let Some(ref expected) = expected_logo_hash {
+                        if &logo_hash == expected {
+                            score += 1;
+                        }
+                    }
+                    
+                    // Score +1 for having the language file as expected
+                    if let Some(expected) = expected_has_lang_file {
+                        if has_lang_file == expected {
+                            score += 1;
+                        }
+                    }
+                    
+                    // Score +1 for matching ANY files+dirs, and an extra +1 if it matches the LATEST version
+                    // Score +1 for matching ANY version extracted from lang file
+                    if let Some(ref valid_list) = valid_stats_list {
+                        let mut matched = false;
+                        let mut matched_latest = false;
+                        let mut matched_version = false;
+                        
+                        for valid in valid_list {
+                            if files_count == valid.files && dirs_count == valid.dirs {
+                                matched = true;
+                                if valid.is_latest {
+                                    matched_latest = true;
+                                }
+                            }
+                            if let Some(ref ev) = valid.version {
+                                if version == *ev || version.starts_with(ev) || ev.starts_with(&version) {
+                                    matched_version = true;
+                                }
+                            }
+                        }
+                        
+                        if matched {
+                            score += 1;
+                        }
+                        if matched_latest {
+                            score += 1;
+                        }
+                        if matched_version {
+                            score += 1;
+                        }
+                    }
+                    
+                    // If no expected stats are passed, just give score 1 if manifest matches (legacy fallback for bug reporter)
+                    if valid_stats_list.is_none() && expected_logo_hash.is_none() {
+                        let manifest_path = path.join("manifest.json");
+                        if manifest_path.exists() {
+                            if let Ok(manifest_content) = std::fs::read_to_string(&manifest_path) {
+                                if manifest_content.contains("22ed17a6-ea7c-5ccd-93b4-b90e86ce0046")
+                                    || manifest_content.contains("Oreville Studios")
+                                {
+                                    score = 1;
+                                }
                             }
                         }
                     }
 
-                    if is_match {
-                        let version =
-                            get_lang_version(&path).unwrap_or_else(|| "Unknown".to_string());
-                        let folder_name = entry.file_name().to_string_lossy().into_owned();
-                        let (files_count, dirs_count) = get_folder_stats(&path);
-
-                        let logo_path = path.join("pack_icon.png");
-                        let logo_hash = if logo_path.exists() {
-                            if let Ok(content) = std::fs::read(&logo_path) {
-                                use sha2::{Digest, Sha256};
-                                let mut hasher = Sha256::new();
-                                hasher.update(&content);
-                                let hash = hasher.finalize();
-                                hash.iter().map(|b| format!("{:02x}", b)).collect()
-                            } else {
-                                String::new()
-                            }
-                        } else {
-                            String::new()
-                        };
-
+                    // Include if score > 0
+                    if score > 0 {
                         candidates.push(MarketplaceCandidate {
                             path: path.to_string_lossy().into_owned(),
                             version,
@@ -84,12 +142,21 @@ pub async fn scan_marketplace_packs() -> Result<Vec<MarketplaceCandidate>, Strin
                             files_count,
                             dirs_count,
                             logo_hash,
+                            score,
                         });
                     }
                 }
             }
         }
     }
+    
+    candidates.sort_by(|a, b| b.score.cmp(&a.score));
+    
+    // If we have expected stats and no candidate fits, throw error
+    if (valid_stats_list.is_some() || expected_logo_hash.is_some()) && candidates.is_empty() {
+        return Err("No pack fits the expected stats in premium_cache. Please ensure the official pack is downloaded.".to_string());
+    }
+
     Ok(candidates)
 }
 
@@ -891,23 +958,27 @@ pub fn open_project_dir(app: tauri::AppHandle, name: String) -> Result<(), Strin
 
     let target_path = match name.as_str() {
         "bundle" => {
-            let p_nsis = project_root.join("src-tauri/target/release/bundle/nsis");
-            if p_nsis.exists() {
-                p_nsis
-            } else {
-                let p1 = project_root.join("src-tauri/target/release/bundle");
-                if p1.exists() {
-                    p1
-                } else {
-                    let p2 = project_root.join("src-tauri/target/release");
-                    if p2.exists() {
-                        p2
-                    } else {
-                        let p3 = project_root.join("src-tauri/target/release/bundle");
-                        let _ = std::fs::create_dir_all(&p3);
-                        p3
+            let conf_path = project_root.join("src-tauri/tauri.conf.json");
+            let mut version_str = String::new();
+            if let Ok(content) = std::fs::read_to_string(&conf_path) {
+                if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content) {
+                    if let Some(v) = val.get("version").and_then(|v| v.as_str()) {
+                        version_str = v.to_string();
                     }
                 }
+            }
+
+            if !version_str.is_empty() {
+                let release_dir = project_root.join(format!("Releases/v{}", version_str));
+                if release_dir.exists() {
+                    release_dir
+                } else {
+                    let fallback_dir = project_root.join("Releases");
+                    if fallback_dir.exists() { fallback_dir } else { project_root.clone() }
+                }
+            } else {
+                let fallback_dir = project_root.join("Releases");
+                if fallback_dir.exists() { fallback_dir } else { project_root.clone() }
             }
         }
         "patches" => {
@@ -1196,7 +1267,7 @@ pub fn check_build_exists(app: tauri::AppHandle, version: String) -> Result<bool
 }
 
 #[tauri::command]
-pub fn run_release_build(app: tauri::AppHandle) -> Result<(), String> {
+pub fn run_release_build(app: tauri::AppHandle, build_type: String) -> Result<(), String> {
     let project_root = get_project_root(&app);
     if project_root.to_string_lossy().is_empty() {
         return Err("Could not determine project root directory".to_string());
@@ -1204,6 +1275,12 @@ pub fn run_release_build(app: tauri::AppHandle) -> Result<(), String> {
 
     let app_clone = app.clone();
     std::thread::spawn(move || {
+        let cmd_str = match build_type.as_str() {
+            "portable_only" => "npm run tauri build -- --no-bundle",
+            "installers_only" => "npm run tauri build -- --bundles msi,nsis",
+            _ => "npm run tauri build",
+        };
+
         emit_log(
             &app_clone,
             "build-logs",
@@ -1213,12 +1290,12 @@ pub fn run_release_build(app: tauri::AppHandle) -> Result<(), String> {
         emit_log(
             &app_clone,
             "build-logs",
-            "Executing command: npm run tauri build",
+            &format!("Executing command: {}", cmd_str),
             "info",
         );
 
         let mut cmd = std::process::Command::new("cmd");
-        cmd.args(&["/c", "npm run tauri build"]);
+        cmd.args(&["/c", cmd_str]);
         cmd.current_dir(&project_root);
 
         // Simple .env parser to pass TAURI_SIGNING_PRIVATE_KEY during local builds
@@ -1291,7 +1368,7 @@ pub fn run_release_build(app: tauri::AppHandle) -> Result<(), String> {
                                 "info",
                             );
 
-                            // Automate updater.json signature injection
+                            // Automate updater.json signature injection and copy artifacts
                             let conf_path = project_root.join("src-tauri/tauri.conf.json");
                             if let Ok(content) = std::fs::read_to_string(&conf_path) {
                                 if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content)
@@ -1299,6 +1376,33 @@ pub fn run_release_build(app: tauri::AppHandle) -> Result<(), String> {
                                     if let Some(version) =
                                         val.get("version").and_then(|v| v.as_str())
                                     {
+                                        // Sort build artifacts into Releases folder
+                                        let release_dir = project_root.join(format!("Releases/v{}", version));
+                                        let _ = std::fs::create_dir_all(&release_dir);
+                                        
+                                        emit_log(&app_clone, "build-logs", &format!("Sorting build artifacts into Releases/v{}...", version), "info");
+                                        
+                                        // Copy portable exe
+                                        let portable_src = project_root.join("src-tauri/target/release/tauri-app.exe");
+                                        let portable_dest = release_dir.join(format!("Actions.and.Stuff.RTX.Patcher_{}_portable.exe", version));
+                                        if portable_src.exists() {
+                                            let _ = std::fs::copy(&portable_src, &portable_dest);
+                                        }
+                                        
+                                        // Copy NSIS installer
+                                        let nsis_src = project_root.join(format!("src-tauri/target/release/bundle/nsis/Actions and Stuff RTX Patcher_{}_x64-setup.exe", version));
+                                        let nsis_dest = release_dir.join(format!("Actions.and.Stuff.RTX.Patcher_{}_x64-setup.exe", version));
+                                        if nsis_src.exists() {
+                                            let _ = std::fs::copy(&nsis_src, &nsis_dest);
+                                        }
+                                        
+                                        // Copy MSI installer
+                                        let msi_src = project_root.join(format!("src-tauri/target/release/bundle/msi/Actions and Stuff RTX Patcher_{}_x64_en-US.msi", version));
+                                        let msi_dest = release_dir.join(format!("Actions.and.Stuff.RTX.Patcher_{}_x64_en-US.msi", version));
+                                        if msi_src.exists() {
+                                            let _ = std::fs::copy(&msi_src, &msi_dest);
+                                        }
+
                                         let sig_path = project_root.join(format!("src-tauri/target/release/bundle/nsis/Actions and Stuff RTX Patcher_{}_x64-setup.exe.sig", version));
                                         if let Ok(signature) = std::fs::read_to_string(&sig_path) {
                                             let updater_path = project_root.join("updater.json");
@@ -1711,3 +1815,60 @@ pub async fn prepare_patch_target(
     Ok(())
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
+pub struct PatchVersions {
+    #[serde(rename = "packVersion")]
+    pub pack_version: String,
+    #[serde(rename = "patchVersion")]
+    pub patch_version: String,
+}
+
+#[tauri::command]
+pub fn get_patch_versions(_app: tauri::AppHandle) -> Result<PatchVersions, String> {
+    let project_root = std::env::current_dir().map_err(|e| e.to_string())?;
+    let config_path = project_root.join("patch_versions.json");
+    
+    if !config_path.exists() {
+        return Err("patch_versions.json does not exist".to_string());
+    }
+    
+    let content = std::fs::read_to_string(&config_path).map_err(|e| e.to_string())?;
+    let versions = serde_json::from_str::<PatchVersions>(&content).map_err(|e| e.to_string())?;
+    
+    Ok(versions)
+}
+
+#[tauri::command]
+pub fn save_patch_versions(_app: tauri::AppHandle, pack_version: String, patch_version: String) -> Result<(), String> {
+    let project_root = std::env::current_dir().map_err(|e| e.to_string())?;
+    let config_path = project_root.join("patch_versions.json");
+    
+    let versions = PatchVersions {
+        pack_version,
+        patch_version,
+    };
+    
+    let content = serde_json::to_string_pretty(&versions).map_err(|e| e.to_string())?;
+    std::fs::write(&config_path, content).map_err(|e| e.to_string())?;
+    
+    Ok(())
+}
+
+
+#[tauri::command]
+pub fn load_settings(_app: tauri::AppHandle) -> Result<String, String> {
+    let project_root = std::env::current_dir().map_err(|e| e.to_string())?;
+    let settings_path = project_root.join("settings.json");
+    if settings_path.exists() {
+        std::fs::read_to_string(settings_path).map_err(|e| e.to_string())
+    } else {
+        Ok("{}".to_string())
+    }
+}
+
+#[tauri::command]
+pub fn save_settings(_app: tauri::AppHandle, settings: String) -> Result<(), String> {
+    let project_root = std::env::current_dir().map_err(|e| e.to_string())?;
+    let settings_path = project_root.join("settings.json");
+    std::fs::write(settings_path, settings).map_err(|e| e.to_string())
+}

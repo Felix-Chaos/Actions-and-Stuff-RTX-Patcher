@@ -459,6 +459,36 @@ async function openInExplorer(path) {
 // File and Folder Picker bindings
 async function bindPickers() {
   // Load default paths from Rust backend
+  // Version Increaser / Decreaser Buttons
+    const adjustVersion = async (inputId, index, amount) => {
+    const el = document.getElementById(inputId);
+    if (!el) return;
+    let parts = el.value.split('.');
+    while (parts.length <= index) parts.push('0');
+    let val = parseInt(parts[index]);
+    if (!isNaN(val)) {
+      parts[index] = Math.max(0, val + amount);
+      // Reset lower parts to 0 if increasing a higher part
+      if (amount > 0) {
+        for (let i = index + 1; i < parts.length; i++) {
+          parts[i] = 0;
+        }
+      }
+      el.value = parts.join('.');
+      
+      const packEl = document.getElementById('gen-pack-version');
+      const patchEl = document.getElementById('gen-patch-version');
+      try { await invoke("save_patch_versions", { packVersion: packEl ? packEl.value : "1.0", patchVersion: patchEl ? patchEl.value : "1.0" }); } catch(e) {}
+    }
+  };
+
+  document.getElementById('btn-pack-major')?.addEventListener('click', () => adjustVersion('gen-pack-version', 0, 1));
+  document.getElementById('btn-pack-minor')?.addEventListener('click', () => adjustVersion('gen-pack-version', 1, 1));
+  document.getElementById('btn-pack-patch')?.addEventListener('click', () => adjustVersion('gen-pack-version', 2, 1));
+  
+  document.getElementById('btn-patch-major')?.addEventListener('click', () => adjustVersion('gen-patch-version', 0, 1));
+  document.getElementById('btn-patch-minor')?.addEventListener('click', () => adjustVersion('gen-patch-version', 1, 1));
+  
   try {
     defaultPaths = await invoke("get_default_paths");
   } catch (_) {
@@ -736,6 +766,13 @@ function setupUtilities() {
 
       gLog_fn(`✅ All patches created successfully in: ${finalOutputDir}`, 'success');
       gLog_fn(`   Pack: ${packVer}  |  Patch: ${patchVer}`, 'success');
+
+      // Save current patch version persistently
+      try {
+        await invoke("save_patch_versions", { packVersion: packVer, patchVersion: patchVer });
+      } catch (err) {
+        console.error("Failed to save patch version:", err);
+      }
 
       // Open output folder in Explorer
       try { await invoke("open_in_explorer", { path: finalOutputDir }); } catch (_) {}
@@ -1085,7 +1122,44 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
     
     if (mode === 'marketplace') {
       log("Scanning premium cache locations for purchased Marketplace pack candidate...");
-      const candidates = await invoke("scan_marketplace_packs");
+      let expectedStats = { expectedLogoHash: null, expectedHasLangFile: null, validStatsList: null };
+      if (selectionMode === 'manual') {
+        const asVer = document.getElementById('select-as-version').value;
+        const ptVer = document.getElementById('select-patch-version').value;
+        const selected = patchConfigs.find(c => c.packVersion === asVer && c.patchVersion === ptVer);
+        if (selected) {
+          expectedStats.expectedLogoHash = selected.validation?.logo_hash || null;
+          expectedStats.expectedHasLangFile = selected.validation?.has_lang_file || null;
+          
+          let files = selected.marketplace_pack_stats?.v1?.files || selected.stats?.files || 0;
+          let dirs = selected.marketplace_pack_stats?.v1?.dirs || selected.stats?.dirs || 0;
+          if (files > 0 && dirs > 0) {
+            expectedStats.validStatsList = [{ files, dirs, version: selected.packVersion || null, is_latest: true }];
+          }
+        }
+      } else {
+        const sortedConfigs = [...patchConfigs].sort((a, b) => b.packVersion.localeCompare(a.packVersion, undefined, { numeric: true, sensitivity: 'base' }));
+        if (sortedConfigs.length > 0) {
+          expectedStats.expectedLogoHash = sortedConfigs[0].validation?.logo_hash || null;
+          expectedStats.expectedHasLangFile = sortedConfigs[0].validation?.has_lang_file || null;
+          
+          let statsList = sortedConfigs.map((c, i) => {
+            let files = c.marketplace_pack_stats?.v1?.files || c.stats?.files || 0;
+            let dirs = c.marketplace_pack_stats?.v1?.dirs || c.stats?.dirs || 0;
+            return {
+              files,
+              dirs,
+              version: c.packVersion || null,
+              is_latest: (i === 0)
+            };
+          }).filter(s => s.files > 0 && s.dirs > 0);
+          
+          if (statsList.length > 0) {
+            expectedStats.validStatsList = statsList;
+          }
+        }
+      }
+      const candidates = await invoke("scan_marketplace_packs", expectedStats);
       log(`Found ${candidates.length} candidate packs in premium cache.`);
       
       candidates.forEach((cand, idx) => {
@@ -1094,6 +1168,7 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
         log(`  Full Path:   ${cand.path}`);
         log(`  Version:     ${cand.version}`);
         log(`  Contents:    ${cand.files_count} files, ${cand.dirs_count} directories`);
+        log(`  Match Score: ${cand.score}`);
       });
       
       if (candidates.length === 0) {
@@ -1616,39 +1691,56 @@ function setupReleaseBuilder() {
     });
   }
 
-  // Build Release
-  const btnBuild = document.getElementById('btn-build-release');
-  if (btnBuild) {
-    btnBuild.addEventListener('click', async () => {
-      const currentVersion = document.getElementById('rel-app-version').value;
-      if (currentVersion) {
-        try {
-          const exists = await invoke("check_build_exists", { version: currentVersion });
-          if (exists) {
-            const result = await showModal(
-              `A release build for version v${currentVersion} already exists in the output folder.\n\nDo you want to overwrite it?`,
-              { title: 'Build Already Exists', confirm: true, okText: 'Overwrite', cancelText: 'Cancel' }
-            );
-            if (!result) {
-              return;
-            }
-          }
-        } catch (e) {
-          console.warn("Failed to check if build exists:", e);
-        }
-      }
+  const btnBuildAll = document.getElementById('btn-build-all');
+  const btnBuildInstallers = document.getElementById('btn-build-installers');
+  const btnBuildPortable = document.getElementById('btn-build-portable');
 
-      buildLog.innerHTML = '<div class="log-line system">Starting release build...</div>';
-      btnBuild.disabled = true;
+  async function handleBuild(buildType) {
+    const currentVersion = document.getElementById('rel-app-version').value;
+    if (currentVersion) {
       try {
-        await invoke("run_release_build");
-      } catch (err) {
-        bLog(`Failed to run release build: ${err}`, 'error');
-        alert(`Failed to run release build:\n${err}`);
-      } finally {
-        btnBuild.disabled = false;
+        const exists = await invoke("check_build_exists", { version: currentVersion });
+        if (exists) {
+          const result = await showModal(
+            `A release build for version v${currentVersion} already exists in the output folder.\n\nDo you want to overwrite it?`,
+            { title: 'Build Already Exists', confirm: true, okText: 'Overwrite', cancelText: 'Cancel' }
+          );
+          if (!result) {
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to check if build exists:", e);
       }
-    });
+    }
+
+    const buildLog = document.getElementById('build-logs');
+    buildLog.innerHTML = `<div class="log-line system">Starting build (${buildType})...</div>`;
+    
+    if (btnBuildAll) btnBuildAll.disabled = true;
+    if (btnBuildInstallers) btnBuildInstallers.disabled = true;
+    if (btnBuildPortable) btnBuildPortable.disabled = true;
+
+    try {
+      await invoke("run_release_build", { buildType: buildType });
+    } catch (err) {
+      buildLog.innerHTML += `<div class="log-line error">Failed to run build: ${err}</div>`;
+      alert(`Failed to run release build:\n${err}`);
+    } finally {
+      if (btnBuildAll) btnBuildAll.disabled = false;
+      if (btnBuildInstallers) btnBuildInstallers.disabled = false;
+      if (btnBuildPortable) btnBuildPortable.disabled = false;
+    }
+  }
+
+  if (btnBuildAll) {
+    btnBuildAll.addEventListener('click', () => handleBuild("all"));
+  }
+  if (btnBuildInstallers) {
+    btnBuildInstallers.addEventListener('click', () => handleBuild("installers_only"));
+  }
+  if (btnBuildPortable) {
+    btnBuildPortable.addEventListener('click', () => handleBuild("portable_only"));
   }
 
   // Open bundle folder
@@ -1747,8 +1839,15 @@ async function setupBugReporter() {
         if (mode === 'zip') {
           packPath = document.getElementById('zip-input-file').value;
         } else if (mode === 'marketplace') {
-          statusEl.innerHTML = "Zipping Marketplace Pack... <span class='status-spinner'>📦</span>";
-          const candidates = await invoke("scan_marketplace_packs");
+          statusEl.innerHTML = "Zipping Marketplace Pack... <span class='status-spinner'>⏳</span>";
+          let expectedLogoHash = null;
+          let expectedHasLangFile = null;
+          let validStatsList = null;
+          if (window.patchConfigs && window.patchConfigs.length > 0) {
+            expectedLogoHash = window.patchConfigs[0].validation?.logo_hash || null;
+            expectedHasLangFile = window.patchConfigs[0].validation?.has_lang_file || null;
+          }
+          const candidates = await invoke("scan_marketplace_packs", { expectedLogoHash, expectedHasLangFile, validStatsList });
           if (candidates && candidates.length > 0) {
             const tempRoot = defaultPaths.temp ? defaultPaths.temp.replace(/\\/g, "/") : ".";
             const zipOut = `${tempRoot}/bug_report_marketplace_pack.zip`;
@@ -1922,9 +2021,195 @@ async function checkForUpdates() {
   }
 }
 
+// App Settings State and Persistence
+let appSettings = {
+  defaultMode: 'marketplace',
+  advancedMode: false,
+  betaUpdates: false,
+  cleanOld: true,
+  extractBrarchives: false,
+  genInjectManifest: true,
+  genExtractBrarchives: false,
+  genReplaceUnchanged: true,
+  bugIncludeLog: true,
+  bugIncludePack: false,
+  sidebarCollapsed: false
+};
+
+async function loadSettings() {
+  try {
+    const raw = await invoke("load_settings");
+    if (raw && raw !== "{}") {
+      const parsed = JSON.parse(raw);
+      appSettings = { ...appSettings, ...parsed };
+    }
+  } catch(e) {
+    console.error("Failed to load settings", e);
+  }
+}
+
+async function saveSettings() {
+  try {
+    await invoke("save_settings", { settings: JSON.stringify(appSettings, null, 2) });
+  } catch(e) {
+    console.error("Failed to save settings", e);
+  }
+}
+
 // Initialize everything on page load
 window.addEventListener('DOMContentLoaded', async () => {
   log("Initializing Actions & Stuff Patcher v3 Frontend...");
+
+  // Load user settings
+  await loadSettings();
+  
+  const updateSetting = async (key, val) => {
+    appSettings[key] = val;
+    await saveSettings();
+  };
+
+  // Sidebar Toggle
+  const sidebarToggleBtn = document.getElementById('btn-toggle-sidebar');
+  const appHeader = document.querySelector('.app-header');
+  const logoTypingText = document.getElementById('logo-typing-text');
+  
+  const animateTyping = async (targetText) => {
+    if (!logoTypingText) return;
+    let current = logoTypingText.textContent;
+    // Fast delete
+    while (current.length > 0) {
+      current = current.slice(0, -1);
+      logoTypingText.textContent = current;
+      await new Promise(r => setTimeout(r, 15));
+    }
+    // Fast type
+    for (let i = 1; i <= targetText.length; i++) {
+      logoTypingText.textContent = targetText.slice(0, i);
+      await new Promise(r => setTimeout(r, 20));
+    }
+  };
+
+  if (sidebarToggleBtn && appHeader) {
+    if (appSettings.sidebarCollapsed) {
+      appHeader.classList.add('collapsed');
+      if (logoTypingText) logoTypingText.textContent = "A&S";
+    } else {
+      if (logoTypingText) logoTypingText.textContent = "ACTIONS & STUFF";
+    }
+    
+    sidebarToggleBtn.addEventListener('click', () => {
+      const isCollapsed = appHeader.classList.toggle('collapsed');
+      updateSetting('sidebarCollapsed', isCollapsed);
+      animateTyping(isCollapsed ? "A&S" : "ACTIONS & STUFF");
+    });
+  }
+
+
+  const syncToggle = (id1, id2, key, trigger = false) => {
+    const el1 = document.getElementById(id1);
+    const el2 = document.getElementById(id2);
+    if (el1) {
+      el1.checked = appSettings[key];
+      el1.addEventListener('change', e => { 
+        if (el2) el2.checked = e.target.checked; 
+        updateSetting(key, e.target.checked); 
+        if (trigger && el2) el2.dispatchEvent(new Event('change'));
+      });
+    }
+    if (el2) {
+      el2.checked = appSettings[key];
+      el2.addEventListener('change', e => { 
+        if (el1) el1.checked = e.target.checked; 
+        updateSetting(key, e.target.checked); 
+      });
+    }
+    if (trigger && el2) el2.dispatchEvent(new Event('change'));
+  };
+
+  // Sync settings tabs to main UI tabs
+  syncToggle('set-advanced-mode', 'chk-advanced-mode', 'advancedMode', true);
+  syncToggle('set-beta-updates', 'chk-beta-updates', 'betaUpdates', true);
+  syncToggle('set-clean-old', 'chk-clean-old', 'cleanOld');
+  syncToggle('set-extract-brarchives', 'chk-extract-brarchives', 'extractBrarchives');
+  syncToggle('set-gen-inject-manifest', 'gen-inject-manifest', 'genInjectManifest');
+  syncToggle('set-gen-extract-brarchives', 'gen-extract-brarchives', 'genExtractBrarchives');
+  syncToggle('set-gen-replace-unchanged', 'gen-replace-unchanged', 'genReplaceUnchanged');
+  syncToggle('set-bug-include-log', 'bug-include-log', 'bugIncludeLog');
+  syncToggle('set-bug-include-pack', 'bug-include-pack', 'bugIncludePack');
+
+  // Handle default mode
+  const defaultModeSelect = document.getElementById('set-default-mode');
+  if (defaultModeSelect) {
+    defaultModeSelect.value = appSettings.defaultMode;
+    defaultModeSelect.addEventListener('change', e => {
+      updateSetting('defaultMode', e.target.value);
+      const targetRadio = document.querySelector(`input[name="patch-mode"][value="${e.target.value}"]`);
+      if (targetRadio && !targetRadio.disabled) {
+        targetRadio.checked = true;
+        targetRadio.dispatchEvent(new Event('change'));
+      }
+    });
+  }
+  
+  // Actually apply the default mode to the UI initially
+  const targetRadio = document.querySelector(`input[name="patch-mode"][value="${appSettings.defaultMode}"]`);
+  if (targetRadio && !targetRadio.disabled) {
+    targetRadio.checked = true;
+    targetRadio.dispatchEvent(new Event('change'));
+  }
+
+  // API Tests
+  document.getElementById('btn-test-github-api')?.addEventListener('click', async () => {
+    const resEl = document.getElementById('api-test-results');
+    if (!resEl) return;
+    resEl.style.color = '#e2e8f0';
+    resEl.textContent = 'Testing GitHub API...';
+    try {
+      const resp = await fetch('https://api.github.com/repos/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/latest');
+      if (resp.ok) {
+        const data = await resp.json();
+        resEl.style.color = '#4ade80';
+        resEl.textContent = `✅ Online. Latest release: ${data.tag_name}`;
+      } else {
+        resEl.style.color = '#ef4444';
+        resEl.textContent = `❌ API returned status: ${resp.status}`;
+      }
+    } catch(e) {
+      resEl.style.color = '#ef4444';
+      resEl.textContent = `❌ Fetch failed: ${e.message}`;
+    }
+  });
+
+  document.getElementById('btn-test-backend')?.addEventListener('click', async () => {
+    const resEl = document.getElementById('api-test-results');
+    if (!resEl) return;
+    resEl.style.color = '#e2e8f0';
+    resEl.textContent = 'Pinging Rust Backend...';
+    try {
+      const resp = await invoke("greet", { name: "Test" });
+      resEl.style.color = '#4ade80';
+      resEl.textContent = `✅ Rust backend is responding: ${resp}`;
+    } catch(e) {
+      resEl.style.color = '#ef4444';
+      resEl.textContent = `❌ Backend error: ${e}`;
+    }
+  });
+
+  document.getElementById('btn-test-workspace')?.addEventListener('click', async () => {
+    const resEl = document.getElementById('api-test-results');
+    if (!resEl) return;
+    resEl.style.color = '#e2e8f0';
+    resEl.textContent = 'Testing Workspace Paths...';
+    try {
+      const paths = await invoke("get_default_paths");
+      const foundPath = paths.premium_cache || paths.mc_resource_packs || paths.premiumCache || paths.mcResourcePacks;
+      resEl.style.color = '#4ade80';
+      resEl.textContent = `✅ Found Workspace: ${foundPath || 'Unknown, check advanced options'}`;
+    } catch(e) {
+      resEl.style.color = '#ef4444';
+      resEl.textContent = `❌ Workspace error: ${e}`;
+    }
+  });
 
   // Dynamically set version badge from backend/tauri.conf.json
   try {
@@ -1938,8 +2223,21 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (versionBadge) {
       versionBadge.innerText = `v${appVersion}`;
     }
-  } catch (e) {
-    console.error("Failed to load app version:", e);
+  } catch (err) {
+    console.error("Failed to fetch app version:", err);
+  }
+
+  // Load latest patch versions
+  try {
+    const versions = await invoke("get_patch_versions");
+    if (versions) {
+      const packVerInput = document.getElementById('gen-pack-version');
+      const patchVerInput = document.getElementById('gen-patch-version');
+      if (packVerInput) packVerInput.value = versions.packVersion;
+      if (patchVerInput) patchVerInput.value = versions.patchVersion;
+    }
+  } catch (err) {
+    console.error("Failed to fetch patch versions:", err);
   }
 
   await loadPatchConfigs();
@@ -1996,3 +2294,4 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   checkForUpdates();
 });
+

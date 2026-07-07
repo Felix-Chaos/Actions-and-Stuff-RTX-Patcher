@@ -41,7 +41,11 @@ pub fn run() {
             inject_custom_manifest_to_target,
             fetch_motd,
             submit_bug_report,
-            prepare_patch_target
+            prepare_patch_target,
+            get_patch_versions,
+            save_patch_versions,
+            load_settings,
+            save_settings
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

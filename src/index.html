@@ -15,50 +15,58 @@
       
       <!-- Top Titlebar / Header -->
       <header class="app-header">
+        <button id="btn-toggle-sidebar" class="sidebar-float-toggle btn btn-secondary btn-xs" title="Toggle Sidebar">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
         <div class="logo-area">
-          <span class="logo-text">ACTIONS &amp; STUFF <span class="accent-text">RTX</span></span>
+          <span class="logo-text" style="display: flex; gap: 6px; font-size: 1.1rem; font-weight: 800; white-space: nowrap; align-items: baseline;">
+            <span id="logo-typing-text">ACTIONS &amp; STUFF</span> 
+            <span class="accent-text" style="font-size: 1.25em;">RTX</span>
+          </span>
           <div class="logo-badges">
             <span class="version-badge" id="app-version-badge">v3.0</span>
             <span id="update-badge" class="update-badge state-checking">Checking...</span>
           </div>
           <button id="btn-update-now" class="btn btn-primary btn-xs hidden-group" style="margin-top: 8px; font-size: 0.75rem; padding: 4px 8px; width: 100%;">Update Now</button>
-
         </div>
         <nav class="app-nav">
           <button class="nav-tab active" data-tab="patcher">
-            <span class="tab-icon">⚡</span> Patcher
+            <span class="tab-icon">⚡</span> <span class="tab-text">Patcher</span>
           </button>
           <button class="nav-tab" data-tab="cleaner">
-            <span class="tab-icon">🧹</span> Cleaner
+            <span class="tab-icon">🧹</span> <span class="tab-text">Cleaner</span>
           </button>
           <button class="nav-tab" data-tab="settings">
-            <span class="tab-icon">⚙️</span> RTX Settings
+            <span class="tab-icon">🎛️</span> <span class="tab-text">RTX Settings</span>
           </button>
           <div class="nav-dropdown" id="nav-utils-dropdown">
             <button class="nav-tab nav-dropdown-toggle" data-tab="utils" type="button">
-              <span class="tab-icon">🛠️</span> Utilities
+              <span class="tab-icon">🛠️</span> <span class="tab-text">Utilities</span>
               <span class="dropdown-arrow">▼</span>
             </button>
             <div class="nav-dropdown-items">
               <button class="nav-subtab" data-util="pack" type="button">
-                <span class="subtab-dot">•</span> ZIP Packer
+                <span class="subtab-dot">•</span> <span class="tab-text">ZIP Packer</span>
               </button>
               <button class="nav-subtab" data-util="extract" type="button">
-                <span class="subtab-dot">•</span> Extract ZIP
+                <span class="subtab-dot">•</span> <span class="tab-text">Extract ZIP</span>
               </button>
               <button class="nav-subtab" data-util="genpatch" type="button">
-                <span class="subtab-dot">•</span> Create Patch
+                <span class="subtab-dot">•</span> <span class="tab-text">Create Patch</span>
               </button>
               <button class="nav-subtab" data-util="brarchive" type="button">
-                <span class="subtab-dot">•</span> Ext Brarchives
+                <span class="subtab-dot">•</span> <span class="tab-text">Ext Brarchives</span>
               </button>
             </div>
           </div>
           <button class="nav-tab" data-tab="support">
-            <span class="tab-icon">💬</span> Support
+            <span class="tab-icon">💬</span> <span class="tab-text">Support</span>
           </button>
           <button class="nav-tab" data-tab="release">
-            <span class="tab-icon">📦</span> Release
+            <span class="tab-icon">📦</span> <span class="tab-text">Release</span>
+          </button>
+          <button class="nav-tab" data-tab="app-settings">
+            <span class="tab-icon">⚙️</span> <span class="tab-text">App Settings</span>
           </button>
         </nav>
         <div class="sidebar-footer">
@@ -442,13 +450,30 @@
 
                   <!-- Right column: version + options -->
                   <div class="genpatch-meta">
-                    <div class="form-group">
+                                        <div class="form-group" style="margin-bottom: 8px;">
                       <label for="gen-pack-version">Pack Version</label>
-                      <input type="text" id="gen-pack-version" class="custom-input" placeholder="e.g. 1.10.1" value="1.10.1" />
+                      <input type="text" id="gen-pack-version" class="custom-input" placeholder="e.g. 1.10.1" value="1.10.1" style="width: 100%; margin-bottom: 4px;" />
+                      <div style="display: flex; gap: 4px;">
+                        <button type="button" class="mc-btn-primary" id="btn-pack-major" style="padding: 4px 0; font-size: 0.75rem; flex: 1;">+1.0.0</button>
+                        <button type="button" class="mc-btn-primary" id="btn-pack-minor" style="padding: 4px 0; font-size: 0.75rem; flex: 1;">+0.1.0</button>
+                        <button type="button" class="mc-btn-primary" id="btn-pack-patch" style="padding: 4px 0; font-size: 0.75rem; flex: 1;">+0.0.1</button>
+                      </div>
                     </div>
                     <div class="form-group">
                       <label for="gen-patch-version">Patch Version</label>
-                      <input type="text" id="gen-patch-version" class="custom-input" placeholder="e.g. 1.1" value="1.1" />
+                      <input type="text" id="gen-patch-version" class="custom-input" placeholder="e.g. 1.1" value="1.1" style="width: 100%; margin-bottom: 4px;" />
+                      <div style="display: flex; gap: 4px;">
+                        <button type="button" class="mc-btn-primary" id="btn-patch-major" style="padding: 4px 0; font-size: 0.75rem; flex: 1;">+1.0</button>
+                        <button type="button" class="mc-btn-primary" id="btn-patch-minor" style="padding: 4px 0; font-size: 0.75rem; flex: 1;">+0.1</button>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label for="gen-patch-version">Patch Version</label>
+                      <div style="display: flex; gap: 4px;">
+                        <input type="text" id="gen-patch-version" class="custom-input" placeholder="e.g. 1.1" value="1.1" style="flex: 1;" />
+                        <button class="mc-btn-primary" id="btn-dec-patch" style="padding: 0 10px; min-width: 30px;">-</button>
+                        <button class="mc-btn-primary" id="btn-inc-patch" style="padding: 0 10px; min-width: 30px;">+</button>
+                      </div>
                     </div>
                     <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0; margin-top: 8px;">
                       <span style="font-size: 0.85rem; color: #ffffff; font-weight: 500;">Inject Custom Manifest</span>
@@ -628,14 +653,6 @@
                     <option value="alpha">Alpha Version (_a)</option>
                   </select>
                 </div>
-                <div class="form-group">
-                  <label for="rel-default-pack-ver">Default Pack Version (patch_config)</label>
-                  <input type="text" id="rel-default-pack-ver" class="custom-input" placeholder="e.g. 1.10.1" />
-                </div>
-                <div class="form-group">
-                  <label for="rel-changelog">Release Notes / Changelog</label>
-                  <textarea id="rel-changelog" class="custom-textarea" rows="4" placeholder="What changed in this release..."></textarea>
-                </div>
               </div>
 
               <!-- Build Actions -->
@@ -644,46 +661,167 @@
 
                 <div class="release-action-card">
                   <div class="release-action-info">
-                    <strong>Build Installer (MSI / NSIS)</strong>
-                    <span>Runs <code>npm run tauri build</code> and opens the output folder</span>
+                    <strong>Build All (Installers + Portable)</strong>
+                    <span>Builds MSI, NSIS, and Portable exe</span>
                   </div>
-                  <button id="btn-build-release" class="btn btn-gold-3d">Build Release</button>
+                  <button id="btn-build-all" class="btn btn-gold-3d">Build All</button>
                 </div>
 
                 <div class="release-action-card">
                   <div class="release-action-info">
-                    <strong>Open Output Folder</strong>
-                    <span>Opens <code>src-tauri/target/release/bundle</code> in Explorer</span>
+                    <strong>Build Installers Only</strong>
+                    <span>Builds MSI & NSIS</span>
+                  </div>
+                  <button id="btn-build-installers" class="btn btn-secondary">Build Installers</button>
+                </div>
+
+                <div class="release-action-card">
+                  <div class="release-action-info">
+                    <strong>Build Portable Only</strong>
+                    <span>Builds Portable exe</span>
+                  </div>
+                  <button id="btn-build-portable" class="btn btn-secondary">Build Portable</button>
+                </div>
+
+                <div class="release-action-card">
+                  <div class="release-action-info">
+                    <strong>Open Bundle Folder</strong>
+                    <span>Opens the versioned release folder</span>
                   </div>
                   <button id="btn-open-bundle-folder" class="btn btn-secondary">Open Folder</button>
                 </div>
+              </div>
+            </div>
 
-                <div class="release-action-card">
-                  <div class="release-action-info">
-                    <strong>Open Patches Folder</strong>
-                    <span>Opens <code>src-tauri/assets/Patches</code> in Explorer</span>
-                  </div>
-                  <button id="btn-open-patches-folder" class="btn btn-secondary">Open Folder</button>
+            <!-- Build log (Full Width Below Grid) -->
+            <div class="console-section" style="margin-top: 24px;">
+              <div class="console-header">
+                <span>Build Log</span>
+                <div class="console-actions">
+                <button id="btn-copy-build-log" class="btn-icon-action" title="Copy log">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                </button>
+                <button id="btn-clear-build-log" class="btn-icon-action" title="Clear">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                </button>
+              </div>
+              </div>
+              <div class="console-body" id="build-logs" style="height: 160px;">
+                <div class="log-line system">Build output will appear here...</div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- Tab: Settings -->
+        <section class="tab-content" id="tab-app-settings">
+          <div class="card full-card">
+            <h2>⚙️ Application Settings</h2>
+            <div class="settings-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
+              
+              <!-- General Settings -->
+              <div class="settings-group card" style="background: rgba(0,0,0,0.2);">
+                <h3 style="margin-top: 0;">General Options</h3>
+                <div class="form-group" style="margin-bottom: 12px;">
+                  <label for="set-default-mode">Default Patcher Mode</label>
+                  <select id="set-default-mode" class="custom-select">
+                    <option value="marketplace">Marketplace Auto-Detect</option>
+                    <option value="zip">Manual Zip/Mcpack</option>
+                    <option value="custom">Custom Modpack (WIP)</option>
+                  </select>
                 </div>
-
-                <!-- Build log -->
-                <div class="console-section" style="margin-top: 16px;">
-                  <div class="console-header">
-                    <span>Build Log</span>
-                    <div class="console-actions">
-                    <button id="btn-copy-build-log" class="btn-icon-action" title="Copy log">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-                    </button>
-                    <button id="btn-clear-build-log" class="btn-icon-action" title="Clear">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-                    </button>
-                  </div>
-                  </div>
-                  <div class="console-body" id="build-logs" style="height: 160px;">
-                    <div class="log-line system">Build output will appear here...</div>
-                  </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
+                  <span style="font-size: 0.85rem; color: #ffffff;">Enable Advanced Mode UI</span>
+                  <label class="mc-toggle" style="margin-left: 0;">
+                    <input type="checkbox" id="set-advanced-mode" />
+                    <span class="mc-slider"></span>
+                  </label>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
+                  <span style="font-size: 0.85rem; color: #ffffff;">Opt-in to Beta Updates</span>
+                  <label class="mc-toggle" style="margin-left: 0;">
+                    <input type="checkbox" id="set-beta-updates" />
+                    <span class="mc-slider"></span>
+                  </label>
                 </div>
               </div>
+
+              <!-- Patcher Behaviors -->
+              <div class="settings-group card" style="background: rgba(0,0,0,0.2);">
+                <h3 style="margin-top: 0;">Patcher Behaviors</h3>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
+                  <span style="font-size: 0.85rem; color: #ffffff;">Clean Old Patch Remnants</span>
+                  <label class="mc-toggle" style="margin-left: 0;">
+                    <input type="checkbox" id="set-clean-old" checked />
+                    <span class="mc-slider"></span>
+                  </label>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
+                  <span style="font-size: 0.85rem; color: #ffffff;">Extract Brarchives automatically</span>
+                  <label class="mc-toggle" style="margin-left: 0;">
+                    <input type="checkbox" id="set-extract-brarchives" />
+                    <span class="mc-slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Patch Creator -->
+              <div class="settings-group card" style="background: rgba(0,0,0,0.2);">
+                <h3 style="margin-top: 0;">Patch Creator Default Options</h3>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
+                  <span style="font-size: 0.85rem; color: #ffffff;">Inject Custom Manifest</span>
+                  <label class="mc-toggle" style="margin-left: 0;">
+                    <input type="checkbox" id="set-gen-inject-manifest" checked />
+                    <span class="mc-slider"></span>
+                  </label>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
+                  <span style="font-size: 0.85rem; color: #ffffff;">Extract Brarchives for Patch</span>
+                  <label class="mc-toggle" style="margin-left: 0;">
+                    <input type="checkbox" id="set-gen-extract-brarchives" />
+                    <span class="mc-slider"></span>
+                  </label>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
+                  <span style="font-size: 0.85rem; color: #ffffff;">Replace Unchanged JSONs</span>
+                  <label class="mc-toggle" style="margin-left: 0;">
+                    <input type="checkbox" id="set-gen-replace-unchanged" checked />
+                    <span class="mc-slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Bug Reporter -->
+              <div class="settings-group card" style="background: rgba(0,0,0,0.2);">
+                <h3 style="margin-top: 0;">Bug Reporter Defaults</h3>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
+                  <span style="font-size: 0.85rem; color: #ffffff;">Include Application Logs</span>
+                  <label class="mc-toggle" style="margin-left: 0;">
+                    <input type="checkbox" id="set-bug-include-log" checked />
+                    <span class="mc-slider"></span>
+                  </label>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
+                  <span style="font-size: 0.85rem; color: #ffffff;">Include Pack (Large)</span>
+                  <label class="mc-toggle" style="margin-left: 0;">
+                    <input type="checkbox" id="set-bug-include-pack" />
+                    <span class="mc-slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Tests -->
+              <div class="settings-group card" style="background: rgba(0,0,0,0.2); grid-column: span 2;">
+                <h3 style="margin-top: 0;">Diagnostics & Tests</h3>
+                <div style="display: flex; gap: 8px;">
+                  <button class="btn btn-secondary btn-xs" id="btn-test-github-api">Test GitHub API</button>
+                  <button class="btn btn-secondary btn-xs" id="btn-test-backend">Test Backend Connection</button>
+                  <button class="btn btn-secondary btn-xs" id="btn-test-workspace">Test Workspace Paths</button>
+                </div>
+                <p id="api-test-results" style="margin-top: 12px; font-size: 0.85rem; color: #94a3b8; font-family: monospace;"></p>
+              </div>
+
             </div>
           </div>
         </section>
@@ -704,3 +842,4 @@
     </div>
   </body>
 </html>
+
