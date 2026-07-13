@@ -32,6 +32,7 @@ const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 // ---------------------------------------------------------------------------
 
 #[derive(Serialize, Deserialize, Clone, Default)]
+#[serde(default)]
 pub struct TelemetryState {
     /// Random UUID v4 generated locally. Not derived from hardware.
     pub install_id: String,
@@ -135,16 +136,74 @@ pub fn collect_hardware_info(app: tauri::AppHandle) -> Result<serde_json::Value,
 $ErrorActionPreference = 'SilentlyContinue'
 $gpus = @(Get-CimInstance Win32_VideoController | Select-Object Name, DriverVersion, DriverDate, AdapterRAM, CurrentHorizontalResolution, CurrentVerticalResolution, CurrentRefreshRate)
 # AdapterRAM is a uint32 and caps at 4GB; qwMemorySize from the driver registry is accurate.
-$qw = @(Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0*' -Name 'HardwareInformation.qwMemorySize' -ErrorAction SilentlyContinue | ForEach-Object { $_.'HardwareInformation.qwMemorySize' })
+# Read DriverDesc alongside it so each VRAM value can be matched back to the GPU it
+# actually belongs to — Win32_VideoController and the registry are separate,
+# independently-ordered queries, so a positional zip of two flat arrays can silently
+# pair a discrete GPU's name with an integrated GPU's VRAM (or vice versa).
+$driverVram = @(Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0*' -Name 'HardwareInformation.qwMemorySize','DriverDesc' -ErrorAction SilentlyContinue | Select-Object DriverDesc, @{N='VramBytes';E={$_.'HardwareInformation.qwMemorySize'}})
 $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1 Name, NumberOfCores, NumberOfLogicalProcessors
 $os = Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Version, BuildNumber, OSArchitecture
 $cs = Get-CimInstance Win32_ComputerSystem | Select-Object TotalPhysicalMemory
 $mg = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Cryptography' -Name MachineGuid -ErrorAction SilentlyContinue).MachineGuid
-@{ gpus = $gpus; vram_qw_bytes = $qw; cpu = $cpu; os = $os; ram_bytes = $cs.TotalPhysicalMemory; machine_guid = $mg } | ConvertTo-Json -Depth 4
+@{ gpus = $gpus; driver_vram = $driverVram; cpu = $cpu; os = $os; ram_bytes = $cs.TotalPhysicalMemory; machine_guid = $mg } | ConvertTo-Json -Depth 4
 "#;
     let stdout = run_powershell(script)?;
     let mut hw: serde_json::Value = serde_json::from_str(stdout.trim())
         .map_err(|e| format!("Failed to parse hardware info: {}", e))?;
+
+    // Match each GPU to its accurate VRAM by name (rather than by array position —
+    // see comment above), then reorder gpus so the one with the most dedicated VRAM
+    // (almost always the discrete GPU actually used for RTX rendering) comes first
+    // and is flagged "primary". Without this, hybrid systems (e.g. an AMD APU plus a
+    // discrete AMD GPU) could report the integrated GPU as "the" GPU, since WMI does
+    // not order adapters by which one is actually in use.
+    if let Some(obj) = hw.as_object_mut() {
+        let driver_vram = obj.remove("driver_vram");
+        if let Some(gpus_val) = obj.get_mut("gpus") {
+            if let Some(gpus) = gpus_val.as_array_mut() {
+                let vram_entries: Vec<(String, u64)> = driver_vram
+                    .as_ref()
+                    .and_then(|v| v.as_array())
+                    .map(|arr| {
+                        arr.iter()
+                            .filter_map(|e| {
+                                let desc = e.get("DriverDesc")?.as_str()?.to_string();
+                                let vram = e.get("VramBytes")?.as_u64()?;
+                                Some((desc, vram))
+                            })
+                            .collect()
+                    })
+                    .unwrap_or_default();
+
+                for gpu in gpus.iter_mut() {
+                    let name = gpu.get("Name").and_then(|v| v.as_str()).map(str::to_string);
+                    let accurate_vram = name.as_deref().and_then(|name| {
+                        vram_entries
+                            .iter()
+                            .find(|(desc, _)| desc.eq_ignore_ascii_case(name))
+                            .map(|(_, vram)| *vram)
+                    });
+                    if let Some(map) = gpu.as_object_mut() {
+                        if let Some(vram) = accurate_vram {
+                            map.insert("VramBytes".to_string(), serde_json::json!(vram));
+                        }
+                    }
+                }
+
+                gpus.sort_by(|a, b| {
+                    let va = a.get("VramBytes").and_then(|v| v.as_u64()).unwrap_or(0);
+                    let vb = b.get("VramBytes").and_then(|v| v.as_u64()).unwrap_or(0);
+                    vb.cmp(&va)
+                });
+
+                for (i, gpu) in gpus.iter_mut().enumerate() {
+                    if let Some(map) = gpu.as_object_mut() {
+                        map.insert("primary".to_string(), serde_json::json!(i == 0));
+                    }
+                }
+            }
+        }
+    }
 
     // Derive a stable, one-way hardware fingerprint from the MachineGuid so the
     // server can recognize repeat visits from the same PC across reinstalls —

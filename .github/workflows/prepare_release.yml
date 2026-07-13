@@ -31,6 +31,7 @@ on:
           - stable
           - beta
           - alpha
+          - hotfix
 
 jobs:
   create-release:
@@ -62,6 +63,10 @@ jobs:
             TAG="V${VERSION}a"
             TITLE="V${VERSION}a Release of: ${DISPLAY_TYPE} | A&S for RTX ${PACK_VER} | Patch ${PATCH_VER}"
             BADGE="🧪 **Alpha Release** | early testing build, Part of this Programm will not work, use with caution! Report issues on Discord!"
+          elif [ "$IS_BETA" = "hotfix" ]; then
+            TAG="V${VERSION}h"
+            TITLE="V${VERSION}h Hotfix: ${DISPLAY_TYPE} | A&S for RTX ${PACK_VER} | Patch ${PATCH_VER}"
+            BADGE="🩹 **Hotfix** | small fix release, no announcement ping."
           elif [ "$IS_BETA" = "beta" ]; then
             TAG="V${VERSION}b"
             TITLE="V${VERSION}b Release of: ${DISPLAY_TYPE} | A&S for RTX ${PACK_VER} | Patch ${PATCH_VER}"
@@ -116,7 +121,8 @@ jobs:
           script: |
             const fs = require('fs');
             const body = fs.readFileSync('release_body.md', 'utf8');
-            const isPre = '${{ github.event.inputs.prerelease }}' === 'beta' || '${{ github.event.inputs.prerelease }}' === 'alpha';
+            const prereleaseInput = '${{ github.event.inputs.prerelease }}';
+            const isPre = prereleaseInput === 'beta' || prereleaseInput === 'alpha' || prereleaseInput === 'hotfix';
             const tag = '${{ steps.get_version.outputs.tag }}';
             const title = '${{ steps.get_version.outputs.title }}';
 
