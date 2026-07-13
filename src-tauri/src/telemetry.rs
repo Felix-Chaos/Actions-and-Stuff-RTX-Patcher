@@ -182,11 +182,16 @@ $mg = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Cryptography' -Name Mach
                             .iter()
                             .find(|(desc, _)| desc.eq_ignore_ascii_case(name))
                             .map(|(_, vram)| *vram)
-                    });
+                    }).filter(|vram| *vram > 0);
+                    // Fall back to AdapterRAM (uint32, capped at 4GB) when the registry
+                    // lookup found nothing or matched to 0 — a capped-but-real VRAM
+                    // figure still orders correctly against an integrated GPU's much
+                    // smaller (or absent) allocation, whereas leaving VramBytes unset
+                    // would make the sort below treat this GPU as having 0 VRAM.
+                    let adapter_ram = gpu.get("AdapterRAM").and_then(|v| v.as_u64());
+                    let effective_vram = accurate_vram.or(adapter_ram).unwrap_or(0);
                     if let Some(map) = gpu.as_object_mut() {
-                        if let Some(vram) = accurate_vram {
-                            map.insert("VramBytes".to_string(), serde_json::json!(vram));
-                        }
+                        map.insert("VramBytes".to_string(), serde_json::json!(effective_vram));
                     }
                 }
 
