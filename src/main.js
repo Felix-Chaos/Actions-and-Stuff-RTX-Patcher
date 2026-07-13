@@ -1822,6 +1822,84 @@ function setupReleaseBuilder() {
   });
 }
 
+// --- Telemetry & Privacy (DSGVO) -------------------------------------------
+async function setupTelemetry() {
+  const consentToggle = document.getElementById('set-telemetry-consent');
+  const statusEl = document.getElementById('telemetry-settings-status');
+  const modal = document.getElementById('telemetry-consent-modal');
+
+  let state = null;
+  try {
+    state = await invoke('get_telemetry_state');
+  } catch (e) {
+    console.error('Failed to load telemetry state', e);
+    return;
+  }
+
+  const applyConsent = async (consent) => {
+    try {
+      state = await invoke('set_telemetry_consent', { consent });
+      if (consentToggle) consentToggle.checked = consent;
+      if (consent) {
+        // Fire the one-time ping (self-guards: consent + once per version).
+        const res = await invoke('submit_hardware_ping');
+        if (res && res.sent) log('Anonymous hardware ping sent. Thank you for helping!');
+      }
+    } catch (e) {
+      console.error('Telemetry consent update failed', e);
+    }
+  };
+
+  // First run: no decision recorded yet -> show the consent modal.
+  if (state.consent === null || state.consent === undefined) {
+    if (modal) {
+      modal.classList.remove('hidden-group');
+      document.getElementById('btn-consent-accept')?.addEventListener('click', async () => {
+        modal.classList.add('hidden-group');
+        await applyConsent(true);
+      });
+      document.getElementById('btn-consent-decline')?.addEventListener('click', async () => {
+        modal.classList.add('hidden-group');
+        await applyConsent(false);
+      });
+    }
+  } else if (state.consent === true) {
+    if (consentToggle) consentToggle.checked = true;
+    // Re-send silently if this patcher version hasn't pinged yet.
+    invoke('submit_hardware_ping').catch(() => {});
+  }
+
+  consentToggle?.addEventListener('change', async (e) => {
+    await applyConsent(e.target.checked);
+    if (statusEl) statusEl.innerText = e.target.checked
+      ? 'Thanks! Hardware ping enabled (once per version).'
+      : 'Hardware ping disabled. Nothing will be sent automatically.';
+  });
+
+  document.getElementById('btn-view-telemetry-payload')?.addEventListener('click', async () => {
+    try {
+      const payload = await invoke('collect_hardware_info');
+      showModal(JSON.stringify(payload, null, 2), { title: 'Exactly this data would be sent' });
+    } catch (e) {
+      showModal(`Failed to collect hardware info: ${e}`, { title: 'Error' });
+    }
+  });
+
+  document.getElementById('btn-delete-telemetry-data')?.addEventListener('click', async () => {
+    const confirmed = await showModal(
+      'This deletes all telemetry and bug-report data linked to your random install ID from our server, then rotates the ID locally so old data can never be linked to you again. Continue?',
+      { title: 'Delete My Data', confirm: true, okText: 'Delete', cancelText: 'Cancel' }
+    );
+    if (!confirmed) return;
+    try {
+      await invoke('telemetry_delete_my_data');
+      if (statusEl) statusEl.innerText = '✅ Your data has been deleted and your ID rotated.';
+    } catch (e) {
+      if (statusEl) statusEl.innerText = `❌ Deletion failed: ${e}`;
+    }
+  });
+}
+
 async function setupBugReporter() {
   const btnSubmit = document.getElementById('btn-submit-bug');
   if (!btnSubmit) return;
@@ -1838,8 +1916,12 @@ async function setupBugReporter() {
       return;
     }
 
+    const categories = Array.from(document.querySelectorAll('.bug-category:checked')).map(c => c.value);
     const includeLog = document.getElementById('bug-include-log').checked;
     const includePack = document.getElementById('bug-include-pack').checked;
+    const includeContentLog = document.getElementById('bug-include-content-log')?.checked || false;
+    const includeDriverLog = document.getElementById('bug-include-driver-log')?.checked || false;
+    const includeHardware = document.getElementById('bug-include-hardware')?.checked || false;
     const statusEl = document.getElementById('bug-report-status');
 
     statusEl.innerHTML = "Submitting bug report... <span class='status-spinner'>⏳</span>";
@@ -1848,9 +1930,65 @@ async function setupBugReporter() {
 
     let logPath = null;
     let packPath = null;
+    let contentLogZipPath = null;
     let tempZipToClean = null;
 
     try {
+
+      // Prepare the Minecraft content log first: it can require user action
+      // (enable logging -> restart MC), in which case we stop the submission.
+      if (includeContentLog) {
+        statusEl.innerHTML = "Checking Minecraft content log... <span class='status-spinner'>⏳</span>";
+        const clRes = await invoke('prepare_content_log');
+        if (clRes.status === 'ok') {
+          contentLogZipPath = clRes.zip_path;
+        } else {
+          let instruction;
+          if (clRes.status === 'logging_was_off') {
+            instruction = "Minecraft's content logging was turned OFF, so no useful log exists yet.\n\n" +
+              "✅ I have already enabled it in your Minecraft settings for you.\n\n" +
+              "Please:\n" +
+              "1. Restart Minecraft\n" +
+              "2. Join the world where the bug happens\n" +
+              "3. Make sure the broken entity/block is loaded (walk up to it)\n" +
+              "4. Come back and press 'Send Bug Report' again";
+          } else if (clRes.status === 'log_too_small') {
+            instruction = `Your newest content log is only ${clRes.log_size_mb} MB — too small to contain the error details (needs > 5 MB).\n\n` +
+              "Please:\n" +
+              "1. Restart Minecraft\n" +
+              "2. Join the world where the bug happens\n" +
+              "3. Make sure the broken entity/block is loaded (walk up to it) and play a minute\n" +
+              "4. Come back and press 'Send Bug Report' again";
+          } else if (clRes.status === 'log_too_old') {
+            instruction = "Your newest content log is more than an hour old, so it probably doesn't show the current bug.\n\n" +
+              "Please:\n" +
+              "1. Restart Minecraft\n" +
+              "2. Join the world where the bug happens\n" +
+              "3. Make sure the broken entity/block is loaded (walk up to it)\n" +
+              "4. Come back and press 'Send Bug Report' again (within an hour)";
+          } else if (clRes.status === 'log_too_large') {
+            instruction = `Your newest content log is ${clRes.log_size_mb} MB — that's over the 500 MB limit and likely full of unrelated spam.\n\n` +
+              "Please:\n" +
+              "1. Restart Minecraft (this starts a fresh, clean log)\n" +
+              "2. Join the world where the bug happens\n" +
+              "3. Make sure the broken entity/block is loaded (walk up to it), just briefly\n" +
+              "4. Come back and press 'Send Bug Report' again";
+          } else { // no_log
+            instruction = "Content logging is enabled, but no log file exists yet.\n\n" +
+              "Please:\n" +
+              "1. Restart Minecraft\n" +
+              "2. Join the world where the bug happens\n" +
+              "3. Make sure the broken entity/block is loaded (walk up to it)\n" +
+              "4. Come back and press 'Send Bug Report' again\n\n" +
+              "(Or turn off 'Send Minecraft Content Log' to submit without it.)";
+          }
+          statusEl.innerHTML = "⏸️ Report not sent yet — Minecraft needs to generate a content log first.";
+          statusEl.className = "status-hint";
+          btnSubmit.disabled = false;
+          await showModal(instruction, { title: 'One more step: Content Log' });
+          return;
+        }
+      }
 
       if (includeLog) {
         logPath = "patcher.log";
@@ -1890,7 +2028,11 @@ async function setupBugReporter() {
         discordName: discordName,
         description: description,
         logPath: logPath,
-        packPath: packPath
+        packPath: packPath,
+        contentLogZipPath: contentLogZipPath,
+        includeDriverEvents: includeDriverLog,
+        includeHardware: includeHardware,
+        categories: categories
       });
 
       if (res && res.success) {
@@ -2059,6 +2201,9 @@ let appSettings = {
   genReplaceUnchanged: true,
   bugIncludeLog: true,
   bugIncludePack: false,
+  bugIncludeContentLog: true,
+  bugIncludeDriverLog: true,
+  bugIncludeHardware: true,
   sidebarCollapsed: false
 };
 
@@ -2166,6 +2311,12 @@ window.addEventListener('DOMContentLoaded', async () => {
   syncToggle('set-gen-replace-unchanged', 'gen-replace-unchanged', 'genReplaceUnchanged');
   syncToggle('set-bug-include-log', 'bug-include-log', 'bugIncludeLog');
   syncToggle('set-bug-include-pack', 'bug-include-pack', 'bugIncludePack');
+  syncToggle('set-bug-include-content-log', 'bug-include-content-log', 'bugIncludeContentLog');
+  syncToggle('set-bug-include-driver-log', 'bug-include-driver-log', 'bugIncludeDriverLog');
+  syncToggle('set-bug-include-hardware', 'bug-include-hardware', 'bugIncludeHardware');
+
+  // Telemetry consent + privacy controls (DSGVO)
+  setupTelemetry();
 
   // Handle default mode
   const defaultModeSelect = document.getElementById('set-default-mode');

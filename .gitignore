@@ -46,3 +46,5 @@ A-S-Minecraft-RTX-Community-PatcherV2.code-workspace
 find_duplicate_manifests.py
 search_logs.py
 analyze_logs.py
+src-tauri/last_hardware_ping.json
+src-tauri/telemetry.json

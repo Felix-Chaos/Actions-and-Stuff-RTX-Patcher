@@ -8,6 +8,9 @@
   "genExtractBrarchives": false,
   "genReplaceUnchanged": false,
   "bugIncludeLog": true,
-  "bugIncludePack": true,
+  "bugIncludePack": false,
+  "bugIncludeContentLog": false,
+  "bugIncludeDriverLog": true,
+  "bugIncludeHardware": true,
   "sidebarCollapsed": false
 }

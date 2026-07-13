@@ -1674,8 +1674,7 @@ pub fn open_url(url: String) -> Result<(), String> {
 pub async fn fetch_motd() -> Result<serde_json::Value, String> {
     let api_url = std::option_env!("PATCHER_API_URL").unwrap_or("http://localhost:3000");
     let api_key = std::option_env!("PATCHER_API_KEY").unwrap_or("");
-    println!("DEBUG: API URL is '{}', API KEY is '{}'", api_url, api_key);
-    
+
     let client = reqwest::Client::new();
     let res = client.get(&format!("{}/api/patcher/motd", api_url))
         .header("Authorization", format!("Bearer {}", api_key))
@@ -1703,53 +1702,69 @@ fn encode_file_base64(path: &Path) -> Result<String, String> {
     Ok(BASE64_STANDARD.encode(buffer))
 }
 
-fn get_hwid() -> String {
-    #[cfg(target_os = "windows")]
-    {
-        if let Ok(output) = std::process::Command::new("reg")
-            .args(&["query", "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Cryptography", "/v", "MachineGuid"])
-            .output()
-        {
-            let stdout = String::from_utf8_lossy(&output.stdout);
-            if let Some(line) = stdout.lines().find(|l| l.contains("MachineGuid")) {
-                let parts: Vec<&str> = line.split_whitespace().collect();
-                if let Some(guid) = parts.last() {
-                    return guid.to_string();
-                }
-            }
-        }
-    }
-    "unknown_hwid".to_string()
-}
+// get_hwid() removed: it read the Windows MachineGuid, a persistent device
+// identifier. For DSGVO conformity reports are now keyed by the random,
+// locally generated install id from the telemetry module instead.
 
 #[tauri::command]
 pub async fn submit_bug_report(
+    app: tauri::AppHandle,
     discord_name: String,
     description: String,
     log_path: Option<String>,
     pack_path: Option<String>,
+    content_log_zip_path: Option<String>,
+    include_driver_events: Option<bool>,
+    include_hardware: Option<bool>,
+    categories: Option<Vec<String>>,
 ) -> Result<serde_json::Value, String> {
     let api_url = std::option_env!("PATCHER_API_URL").unwrap_or("http://localhost:3000");
     let api_key = std::option_env!("PATCHER_API_KEY").unwrap_or("");
-    let hwid = get_hwid();
-    
+    // DSGVO: identify reports by the random install id, never by MachineGuid.
+    let install_id = crate::telemetry::load_state()
+        .map(|s| s.install_id)
+        .unwrap_or_else(|_| "unknown".to_string());
+
     let mut payload = serde_json::json!({
         "discordName": discord_name,
         "description": description,
-        "hwid": hwid,
+        "hwid": install_id.clone(),
+        "installId": install_id,
         "includeLog": log_path.is_some(),
         "includePack": pack_path.is_some(),
+        "includeContentLog": content_log_zip_path.is_some(),
+        "categories": categories.unwrap_or_default(),
     });
-    
+
     if let Some(ref path) = log_path {
         if let Ok(b64) = encode_file_base64(Path::new(path)) {
             payload.as_object_mut().unwrap().insert("logBase64".to_string(), serde_json::Value::String(b64));
         }
     }
-    
+
     if let Some(ref path) = pack_path {
         if let Ok(b64) = encode_file_base64(Path::new(path)) {
             payload.as_object_mut().unwrap().insert("packBase64".to_string(), serde_json::Value::String(b64));
+        }
+    }
+
+    if let Some(ref path) = content_log_zip_path {
+        if let Ok(b64) = encode_file_base64(Path::new(path)) {
+            payload.as_object_mut().unwrap().insert("contentLogBase64".to_string(), serde_json::Value::String(b64));
+        }
+    }
+
+    if include_driver_events.unwrap_or(false) {
+        if let Ok(events_json) = crate::telemetry::collect_driver_events() {
+            if let Ok(events) = serde_json::from_str::<serde_json::Value>(&events_json) {
+                payload.as_object_mut().unwrap().insert("driverEvents".to_string(), events);
+            }
+        }
+    }
+
+    if include_hardware.unwrap_or(false) {
+        if let Ok(hw) = crate::telemetry::collect_hardware_info(app.clone()) {
+            payload.as_object_mut().unwrap().insert("hardware".to_string(), hw);
         }
     }
     

@@ -1,6 +1,8 @@
 pub mod commands;
+pub mod telemetry;
 pub mod utils;
 use commands::*;
+use telemetry::*;
 
 pub fn run() {
     tauri::Builder::default()
@@ -45,7 +47,14 @@ pub fn run() {
             get_patch_versions,
             save_patch_versions,
             load_settings,
-            save_settings
+            save_settings,
+            get_telemetry_state,
+            set_telemetry_consent,
+            collect_hardware_info,
+            submit_hardware_ping,
+            telemetry_delete_my_data,
+            collect_driver_events,
+            prepare_content_log
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -873,6 +873,56 @@ p {
   transform: translateX(22px);
 }
 
+/* Minecraft Checkbox */
+.mc-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.85rem;
+  color: #e5e7eb;
+}
+
+.mc-checkbox-item input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.mc-checkbox-box {
+  position: relative;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  background-color: #8b8b8b;
+  border: 2px solid #1e1e1f;
+  box-shadow: inset 2px 2px 0px rgba(0,0,0,0.5);
+  transition: background-color .1s;
+}
+
+.mc-checkbox-item:hover .mc-checkbox-box {
+  background-color: #97989b;
+}
+
+.mc-checkbox-item input:checked + .mc-checkbox-box {
+  background-color: #3c8527;
+}
+
+.mc-checkbox-item input:checked + .mc-checkbox-box::after {
+  content: "\2714";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  color: #ffffff;
+}
+
 /* Utilities grid */
 .utils-grid {
   display: grid;

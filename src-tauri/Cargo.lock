@@ -4133,6 +4133,7 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-opener",
  "tauri-plugin-updater",
+ "uuid",
  "walkdir",
  "zip 2.4.2",
 ]

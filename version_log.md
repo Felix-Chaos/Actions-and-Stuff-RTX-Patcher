@@ -1,5 +1,16 @@
-# Version Changelog: v2.2.8
+## [2.2.9]
 
-- **Smart Patcher Detection**: Completely upgraded the system that automatically detects your downloaded Actions & Stuff pack. The app now thoroughly evaluates all installed resource packs and grades them on their file count, folder count, pack icon, and language files. This ensures it always picks the correct pack (even prioritizing the newest one if you have multiples) and prevents you from accidentally patching an invalid or modified folder by showing an error.
-- **Auto-Incrementing Patch Versions**: Added a new Version Increaser feature for patch creators! The app now persistently remembers the latest version of your patch configurations. When you successfully generate a new patch, the version number will now automatically increase (for example, from `1.0` to `1.1`), saving you the hassle of manually tracking versions.
-- **Security Updates**: Rebuilt the application and injected the latest update signatures and addresses to secure the new release.
+### Added
+- Optional, anonymous hardware diagnostics to help us track down rare RTX rendering bugs that only affect specific graphics cards and drivers. You choose whether to enable this on first launch, and can turn it off anytime in Settings.
+- A "View Last Sent Data" button so you can always see exactly what information was sent.
+- A "Delete My Data" button in Settings to permanently erase your diagnostic data on request.
+- Bug reports can now include your Minecraft content log automatically. If logging isn't turned on yet, or the log is too old, too small, or too large, the Patcher now tells you exactly what to do (restart Minecraft, reproduce the issue, and try again).
+- Bug reports can now optionally include recent GPU driver activity, helping us spot graphics driver crashes tied to the bug.
+- A new "Bug Category" selector lets you tag your report with one or more categories (Texture Messup, Texture Purple, DeltaX Problem, No Dynamic Light, Wrong Model for Mob) so issues get triaged faster.
+- Bug reports now include more of your system's specs (CPU, RAM, Windows version, RTX/graphics settings) so our team can reproduce issues more reliably.
+
+### Changed
+- Updated our Privacy Policy with a new section explaining exactly what the optional hardware diagnostics feature collects, why, and how to opt out or delete your data.
+
+### Fixed
+- Removed a leftover debug message that printed internal connection details to the console on startup.
