@@ -1841,7 +1841,7 @@ async function setupTelemetry() {
       state = await invoke('set_telemetry_consent', { consent });
       if (consentToggle) consentToggle.checked = consent;
       if (consent) {
-        // Fire the one-time ping (self-guards: consent + once per version).
+        // Fire the ping (self-guards: consent + only uploads if something changed).
         const res = await invoke('submit_hardware_ping');
         if (res && res.sent) log('Anonymous hardware ping sent. Thank you for helping!');
       }
@@ -1865,14 +1865,14 @@ async function setupTelemetry() {
     }
   } else if (state.consent === true) {
     if (consentToggle) consentToggle.checked = true;
-    // Re-send silently if this patcher version hasn't pinged yet.
+    // Re-check silently on every start; only actually uploads if something changed.
     invoke('submit_hardware_ping').catch(() => {});
   }
 
   consentToggle?.addEventListener('change', async (e) => {
     await applyConsent(e.target.checked);
     if (statusEl) statusEl.innerText = e.target.checked
-      ? 'Thanks! Hardware ping enabled (once per version).'
+      ? 'Thanks! Hardware ping enabled (checked on every start, only uploaded when something changes).'
       : 'Hardware ping disabled. Nothing will be sent automatically.';
   });
 

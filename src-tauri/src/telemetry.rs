@@ -2,12 +2,22 @@
 //
 // Design rules:
 // - NOTHING is sent without explicit user consent (opt-in, stored locally).
-// - Identification is a RANDOM install UUID (no MachineGuid, no hardware fingerprint).
-// - Hardware ping is sent at most once per patcher version.
+// - The primary identifier is still a RANDOM install UUID. Additionally, a
+//   one-way SHA-256 hash of the Windows MachineGuid is sent as `hardware_id`
+//   purely so the server can recognize "this is the same physical machine as
+//   before" across patcher reinstalls/telemetry resets, and avoid counting the
+//   same PC as multiple entries in hardware statistics. The raw MachineGuid
+//   itself is never transmitted, only its hash.
+// - Hardware/RTX info is collected fresh on every app start, but only actually
+//   uploaded if something about it changed since the last successful upload
+//   (compared via a content hash) — this keeps BetterRTX preset / driver /
+//   subpack changes visible without spamming the server on every launch.
 // - Every payload we send is also written to disk next to settings.json so the
 //   user can inspect exactly what left their machine (transparency).
 // - "Delete my data" wipes server-side rows for this install id and rotates the
-//   local id, fulfilling the right to erasure (Art. 17 DSGVO).
+//   local id, fulfilling the right to erasure (Art. 17 DSGVO). Because the
+//   server-side row is actually deleted (not just relabeled), a rotated id
+//   with the same hardware_id still starts a clean, unlinked history.
 
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
@@ -29,8 +39,10 @@ pub struct TelemetryState {
     pub consent: Option<bool>,
     /// Unix ms timestamp of the consent decision.
     pub consent_ts: Option<u64>,
-    /// Patcher version the hardware ping was last sent for.
-    pub hw_sent_for_version: Option<String>,
+    /// Content hash (see `hash_payload_for_change_detection`) of the last
+    /// hardware/RTX payload we successfully uploaded. Used to skip re-sending
+    /// when nothing on the system has actually changed.
+    pub last_sent_hash: Option<String>,
 }
 
 fn telemetry_path() -> Result<PathBuf, String> {
@@ -127,11 +139,27 @@ $qw = @(Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Class\{4d
 $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1 Name, NumberOfCores, NumberOfLogicalProcessors
 $os = Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Version, BuildNumber, OSArchitecture
 $cs = Get-CimInstance Win32_ComputerSystem | Select-Object TotalPhysicalMemory
-@{ gpus = $gpus; vram_qw_bytes = $qw; cpu = $cpu; os = $os; ram_bytes = $cs.TotalPhysicalMemory } | ConvertTo-Json -Depth 4
+$mg = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Cryptography' -Name MachineGuid -ErrorAction SilentlyContinue).MachineGuid
+@{ gpus = $gpus; vram_qw_bytes = $qw; cpu = $cpu; os = $os; ram_bytes = $cs.TotalPhysicalMemory; machine_guid = $mg } | ConvertTo-Json -Depth 4
 "#;
     let stdout = run_powershell(script)?;
-    let hw: serde_json::Value = serde_json::from_str(stdout.trim())
+    let mut hw: serde_json::Value = serde_json::from_str(stdout.trim())
         .map_err(|e| format!("Failed to parse hardware info: {}", e))?;
+
+    // Derive a stable, one-way hardware fingerprint from the MachineGuid so the
+    // server can recognize repeat visits from the same PC across reinstalls —
+    // then strip the raw GUID out; only its hash ever leaves this function.
+    let hardware_id = hw
+        .as_object_mut()
+        .and_then(|obj| obj.remove("machine_guid"))
+        .and_then(|v| v.as_str().map(str::to_string))
+        .filter(|s| !s.is_empty())
+        .map(|guid| {
+            use sha2::{Digest, Sha256};
+            let mut hasher = Sha256::new();
+            hasher.update(guid.as_bytes());
+            hasher.finalize().iter().map(|b| format!("{:02x}", b)).collect::<String>()
+        });
 
     // Detect which Bedrock editions are installed (paths are NOT included, only flags).
     let gdk_installed = std::env::var("APPDATA")
@@ -150,6 +178,7 @@ $cs = Get-CimInstance Win32_ComputerSystem | Select-Object TotalPhysicalMemory
     let payload = serde_json::json!({
         "schema_version": 1,
         "install_id": state.install_id,
+        "hardware_id": hardware_id,
         "patcher_version": app.package_info().version.to_string(),
         "collected_at": now_ms(),
         "hardware": hw,
@@ -225,6 +254,9 @@ fn collect_betterrtx_fingerprint() -> serde_json::Value {
             }
         }
     }
+    // read_dir order is filesystem-dependent; sort so the fingerprint (and its
+    // change-detection hash) doesn't churn when nothing actually changed.
+    stubs.sort_by(|a, b| a["pack_uuid"].as_str().cmp(&b["pack_uuid"].as_str()));
     serde_json::json!({
         "installed": !stubs.is_empty(),
         "pack_count": stubs.len(),
@@ -292,27 +324,65 @@ fn collect_active_subpacks() -> Vec<String> {
     found.into_iter().collect()
 }
 
-/// Sends the one-time hardware ping. Requires consent; sends at most once per
-/// patcher version. Writes the exact payload to last_hardware_ping.json first.
+/// Hashes the parts of a collected payload that reflect actual system state,
+/// excluding fields that always differ between calls (the collection
+/// timestamp), that don't describe the machine itself (the install id), or
+/// that change independently of the machine (the patcher version — bumping
+/// the app version shouldn't by itself trigger a re-upload).
+/// Used to decide whether anything worth re-uploading has changed.
+fn hash_payload_for_change_detection(payload: &serde_json::Value) -> String {
+    use sha2::{Digest, Sha256};
+    let mut clone = payload.clone();
+    if let Some(obj) = clone.as_object_mut() {
+        obj.remove("collected_at");
+        obj.remove("install_id");
+        obj.remove("patcher_version");
+    }
+
+    // Stabilize ordering for fields derived from filesystem enumeration.
+    if let Some(arr) = clone
+        .pointer_mut("/rtx/betterrtx/stubs")
+        .and_then(|v| v.as_array_mut())
+    {
+        arr.sort_by(|a, b| {
+            let ak = a.get("pack_uuid").and_then(|v| v.as_str()).unwrap_or("");
+            let bk = b.get("pack_uuid").and_then(|v| v.as_str()).unwrap_or("");
+            ak.cmp(bk)
+        });
+    }
+
+    let mut hasher = Sha256::new();
+    hasher.update(clone.to_string().as_bytes());
+    hasher.finalize().iter().map(|b| format!("{:02x}", b)).collect()
+}
+
+/// Collects fresh hardware/RTX info (called on every app start) and uploads it
+/// only if something has actually changed since the last successful upload —
+/// this keeps BetterRTX preset/driver/subpack changes visible without sending
+/// an identical ping on every single launch. Requires consent.
+/// Writes the freshly-collected payload to last_hardware_ping.json either way,
+/// so "View Last Sent Data" always reflects the current system.
 #[tauri::command]
 pub async fn submit_hardware_ping(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
     let state = load_state()?;
     if state.consent != Some(true) {
         return Ok(serde_json::json!({ "skipped": "no_consent" }));
     }
-    let version = app.package_info().version.to_string();
-    if state.hw_sent_for_version.as_deref() == Some(version.as_str()) {
-        return Ok(serde_json::json!({ "skipped": "already_sent_for_version" }));
-    }
 
     let payload = collect_hardware_info(app)?;
+    let hash = hash_payload_for_change_detection(&payload);
 
-    // Transparency: persist exactly what we send so the user can inspect it.
+    // Transparency: persist exactly what we'd send so the user can inspect it,
+    // regardless of whether it ends up being uploaded this run.
     if let Ok(root) = std::env::current_dir() {
         let _ = std::fs::write(
             root.join("last_hardware_ping.json"),
             serde_json::to_string_pretty(&payload).unwrap_or_default(),
         );
+    }
+
+    if state.last_sent_hash.as_deref() == Some(hash.as_str()) {
+        return Ok(serde_json::json!({ "skipped": "no_changes" }));
     }
 
     let api_url = std::option_env!("PATCHER_API_URL").unwrap_or("http://localhost:3000");
@@ -331,7 +401,7 @@ pub async fn submit_hardware_ping(app: tauri::AppHandle) -> Result<serde_json::V
     }
 
     let mut new_state = load_state()?;
-    new_state.hw_sent_for_version = Some(version);
+    new_state.last_sent_hash = Some(hash);
     save_state(&new_state)?;
 
     Ok(serde_json::json!({ "sent": true }))
@@ -363,7 +433,7 @@ pub async fn telemetry_delete_my_data() -> Result<serde_json::Value, String> {
         install_id: new_install_id(),
         consent: state.consent,
         consent_ts: state.consent_ts,
-        hw_sent_for_version: None,
+        last_sent_hash: None,
     };
     save_state(&new_state)?;
     Ok(serde_json::json!({ "deleted": true }))

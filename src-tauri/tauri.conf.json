@@ -9,7 +9,7 @@
         "fullscreen": false,
         "height": 650,
         "resizable": false,
-        "title": "Actions & Stuff RTX Patcher v2.2.9-0",
+        "title": "Actions & Stuff RTX Patcher v2.2.10-0",
         "width": 950
       }
     ],
@@ -40,5 +40,5 @@
     }
   },
   "productName": "Actions and Stuff RTX Patcher",
-  "version": "2.2.9-0"
+  "version": "2.2.10-0"
 }

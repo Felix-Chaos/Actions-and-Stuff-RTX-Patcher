@@ -861,15 +861,15 @@
               <div class="settings-group card" style="background: rgba(0,0,0,0.2);">
                 <h3 style="margin-top: 0;">Privacy &amp; Telemetry</h3>
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                  <span style="font-size: 0.85rem; color: #ffffff;">Anonymous Hardware Ping <span style="color: #94a3b8;">(once per version)</span></span>
+                  <span style="font-size: 0.85rem; color: #ffffff;">Anonymous Hardware Ping <span style="color: #94a3b8;">(checked every start, sent only on changes)</span></span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="set-telemetry-consent" />
                     <span class="mc-slider"></span>
                   </label>
                 </div>
                 <p style="font-size: 0.78rem; color: #94a3b8; margin: 8px 0;">
-                  Identified only by a random ID — no name, no serial numbers, no files.
-                  Uploaded logs are auto-deleted after 30 days.
+                  Identified by a random ID plus an anonymous, one-way hash derived from your machine —
+                  no name, no serial numbers, no files. Uploaded logs are auto-deleted after 30 days.
                 </p>
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                   <button class="btn btn-secondary btn-xs" id="btn-view-telemetry-payload">View Last Sent Data</button>
@@ -912,13 +912,13 @@
     <div id="telemetry-consent-modal" class="modal-overlay hidden-group">
       <div class="modal-card" style="max-width: 520px;">
         <h3>Help us fix rare RTX bugs 🛠️</h3>
-        <p style="text-align: left; white-space: normal;">Some rendering bugs only appear on specific GPUs and drivers. To find them, the patcher can send a <b>one-time, anonymous hardware summary</b> per version:</p>
+        <p style="text-align: left; white-space: normal;">Some rendering bugs only appear on specific GPUs and drivers. To find them, the patcher can send an <b>anonymous hardware summary</b>. It's checked every time you launch, but only actually uploaded when something changes (new GPU/driver, BetterRTX preset, etc.) — not on every start:</p>
         <ul style="text-align: left; font-size: 0.85rem; color: #cbd5e1; margin: 0 0 14px 18px; line-height: 1.6;">
           <li>GPU model, driver version &amp; VRAM</li>
           <li>CPU model, RAM size, Windows build</li>
           <li>Minecraft edition (Store / Launcher) &amp; patcher version</li>
         </ul>
-        <p style="text-align: left; font-size: 0.85rem; color: #94a3b8; white-space: normal;"><b>Not collected:</b> your name, files, serial numbers, or anything that identifies you. Data is tied to a <b>random ID</b> you can delete anytime (Settings → "Delete My Data"). Every payload is saved locally as <code>last_hardware_ping.json</code> so you can inspect exactly what was sent. Uploaded bug-report logs are deleted after 30 days.</p>
+        <p style="text-align: left; font-size: 0.85rem; color: #94a3b8; white-space: normal;"><b>Not collected:</b> your name, files, serial numbers, or anything that identifies you. Data is tied to a <b>random ID</b>, plus an anonymous one-way hash derived from your machine so the same PC isn't double-counted after a reinstall — both can be deleted anytime (Settings → "Delete My Data"). Every payload is saved locally as <code>last_hardware_ping.json</code> so you can inspect exactly what was sent. Uploaded bug-report logs are deleted after 30 days.</p>
         <div class="modal-actions">
           <button id="btn-consent-decline" class="btn btn-secondary">No Thanks</button>
           <button id="btn-consent-accept" class="btn btn-primary">Accept &amp; Help</button>

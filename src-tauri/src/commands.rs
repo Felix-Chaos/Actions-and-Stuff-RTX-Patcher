@@ -1024,6 +1024,7 @@ pub fn get_default_paths(app: tauri::AppHandle) -> std::collections::HashMap<Str
         localappdata
     );
     let uwp_premium = format!("{}/premium_cache/resource_packs", uwp_root);
+    let uwp_resource_packs = format!("{}/games/com.mojang/resource_packs", uwp_root);
 
     // Prefer GDK if it exists
     let premium_cache = if std::path::Path::new(&gdk_premium).exists() {
@@ -1036,8 +1037,10 @@ pub fn get_default_paths(app: tauri::AppHandle) -> std::collections::HashMap<Str
 
     let resource_packs = if std::path::Path::new(&gdk_resource_packs).exists() {
         gdk_resource_packs.replace('\\', "/")
+    } else if std::path::Path::new(&uwp_resource_packs).exists() {
+        uwp_resource_packs.replace('\\', "/")
     } else {
-        gdk_resource_packs.replace('\\', "/")
+        gdk_resource_packs.replace('\\', "/") // fallback even if it doesn't exist
     };
 
     let downloads = format!("{}/Downloads", userprofile).replace('\\', "/");
