@@ -1460,6 +1460,15 @@ pub fn run_release_build(app: tauri::AppHandle, build_type: String) -> Result<()
                                                                 serde_json::Value::String(url);
                                                         }
                                                     }
+                                                    // Keep the top-level "version" field in sync too — this is
+                                                    // what the updater plugin actually compares against the
+                                                    // running app's version. Without this, a build that skips
+                                                    // the separate "apply version" step leaves this stale and
+                                                    // the update never shows up as available.
+                                                    updater_val["version"] =
+                                                        serde_json::Value::String(
+                                                            version.to_string(),
+                                                        );
 
                                                     if let Ok(new_content) =
                                                         serde_json::to_string_pretty(&updater_val)
