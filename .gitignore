@@ -48,3 +48,6 @@ search_logs.py
 analyze_logs.py
 src-tauri/last_hardware_ping.json
 src-tauri/telemetry.json
+src-tauri/settings.json
+src-tauri/settings.json
+src-tauri/settings.json

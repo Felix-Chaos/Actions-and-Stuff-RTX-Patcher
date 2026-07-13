@@ -1,6 +1,6 @@
 {
   "defaultMode": "marketplace",
-  "advancedMode": true,
+  "advancedMode": false,
   "betaUpdates": true,
   "cleanOld": true,
   "extractBrarchives": false,
