@@ -68,7 +68,7 @@
 
 [![⬇ Beta](https://img.shields.io/badge/⬇_Beta-f58220?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/tag/V2.0.4b)
 
-[![📖 Tutorial](https://img.shields.io/badge/📖_Tutorial_&_Docs-0969da?style=for-the-badge)](./docs/TUTORIAL.md)
+[![📖 Wiki](https://img.shields.io/badge/📖_Wiki_&_Full_Guide-0969da?style=for-the-badge)](./docs/WIKI.md)
 
 </td>
 </tr>
@@ -103,6 +103,20 @@ Your A&S Copy ──→ xdelta3 + .vcdiff patch ──→ A&S Enhanced for RTX (
   <img src="./docs/showcase/showcase_image_2.jpg" width="32%" />
   <img src="./docs/showcase/showcase_image_4.png" width="32%" />
 </p>
+
+---
+
+## 📖 Wiki / Full Feature Guide
+
+The **Patcher** tab covers the basics, but the app ships a lot more than just Marketplace auto-detect. The **[📖 Wiki](./docs/WIKI.md)** covers:
+
+- 🔍 **How patching actually works** (the `encrypted.vcdiff` / `decrypted.vcdiff` split, and why both exist)
+- 🚀 **All three Patch Modes**: Marketplace (default), Zip / McPack, and Custom Patch, plus what **Advanced Mode** unlocks
+- 📦 **Extract Brarchives**: what the `__brarchive` container format actually is, and the real answer for when you need it (short version: almost never as a regular end user)
+- 🔧 **Building Custom Patches**: the full **Create Patch (VCDIFF)** workflow patch developers use to generate new `.vcdiff` releases, including every input folder and toggle
+- 🧰 **A tool-by-tool reference**: Cleaner, RTX Settings/`options.txt` editor, the Deterministic ZIP Packer, the Extract ZIP/MCPack utility, the Bug Reporter, and the maintainer-only Release Builder
+- ⚙️ **A full App Settings table** explaining what every toggle actually defaults to and controls
+- 🩹 **Troubleshooting** for the most common "something looks broken" and "patch didn't apply" cases
 
 ---
 
