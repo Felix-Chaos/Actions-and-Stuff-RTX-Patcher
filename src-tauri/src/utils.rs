@@ -470,6 +470,22 @@ pub fn resolve_asset_path(app: &tauri::AppHandle, path: &str) -> Result<PathBuf,
     Ok(resource_dir.join(path))
 }
 
+/// Per-user, per-Windows-account directory for local app state that must
+/// never live inside the project/install directory: settings.json,
+/// telemetry.json, last_hardware_ping.json. Using the OS app-data dir
+/// (rather than the process's current working directory) means this can't
+/// end up inside the git repo again, and each Windows user account
+/// naturally gets its own copy instead of sharing one file.
+pub fn user_data_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    let dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("Failed to resolve app data directory: {}", e))?;
+    std::fs::create_dir_all(&dir)
+        .map_err(|e| format!("Failed to create app data directory: {}", e))?;
+    Ok(dir)
+}
+
 pub fn get_existing_dir(path_str: &str) -> Option<std::path::PathBuf> {
     let mut cleaned = path_str.replace('/', "\\");
     // Remove UNC prefix or double slashes

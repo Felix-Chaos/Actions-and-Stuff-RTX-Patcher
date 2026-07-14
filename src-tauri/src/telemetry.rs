@@ -46,9 +46,8 @@ pub struct TelemetryState {
     pub last_sent_hash: Option<String>,
 }
 
-fn telemetry_path() -> Result<PathBuf, String> {
-    let root = std::env::current_dir().map_err(|e| e.to_string())?;
-    Ok(root.join("telemetry.json"))
+fn telemetry_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    Ok(crate::utils::user_data_dir(app)?.join("telemetry.json"))
 }
 
 fn now_ms() -> u64 {
@@ -62,15 +61,15 @@ fn new_install_id() -> String {
     uuid::Uuid::new_v4().to_string()
 }
 
-pub fn load_state() -> Result<TelemetryState, String> {
-    let path = telemetry_path()?;
+pub fn load_state(app: &tauri::AppHandle) -> Result<TelemetryState, String> {
+    let path = telemetry_path(app)?;
     if path.exists() {
         let content = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
         let mut state: TelemetryState =
             serde_json::from_str(&content).unwrap_or_default();
         if state.install_id.is_empty() {
             state.install_id = new_install_id();
-            save_state(&state)?;
+            save_state(app, &state)?;
         }
         Ok(state)
     } else {
@@ -78,28 +77,28 @@ pub fn load_state() -> Result<TelemetryState, String> {
             install_id: new_install_id(),
             ..Default::default()
         };
-        save_state(&state)?;
+        save_state(app, &state)?;
         Ok(state)
     }
 }
 
-fn save_state(state: &TelemetryState) -> Result<(), String> {
-    let path = telemetry_path()?;
+fn save_state(app: &tauri::AppHandle, state: &TelemetryState) -> Result<(), String> {
+    let path = telemetry_path(app)?;
     let content = serde_json::to_string_pretty(state).map_err(|e| e.to_string())?;
     std::fs::write(path, content).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn get_telemetry_state() -> Result<TelemetryState, String> {
-    load_state()
+pub fn get_telemetry_state(app: tauri::AppHandle) -> Result<TelemetryState, String> {
+    load_state(&app)
 }
 
 #[tauri::command]
-pub fn set_telemetry_consent(consent: bool) -> Result<TelemetryState, String> {
-    let mut state = load_state()?;
+pub fn set_telemetry_consent(app: tauri::AppHandle, consent: bool) -> Result<TelemetryState, String> {
+    let mut state = load_state(&app)?;
     state.consent = Some(consent);
     state.consent_ts = Some(now_ms());
-    save_state(&state)?;
+    save_state(&app, &state)?;
     Ok(state)
 }
 
@@ -238,7 +237,7 @@ $mg = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Cryptography' -Name Mach
         })
         .unwrap_or(false);
 
-    let state = load_state()?;
+    let state = load_state(&app)?;
     let payload = serde_json::json!({
         "schema_version": 1,
         "install_id": state.install_id,
@@ -428,19 +427,19 @@ fn hash_payload_for_change_detection(payload: &serde_json::Value) -> String {
 /// so "View Last Sent Data" always reflects the current system.
 #[tauri::command]
 pub async fn submit_hardware_ping(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
-    let state = load_state()?;
+    let state = load_state(&app)?;
     if state.consent != Some(true) {
         return Ok(serde_json::json!({ "skipped": "no_consent" }));
     }
 
-    let payload = collect_hardware_info(app)?;
+    let payload = collect_hardware_info(app.clone())?;
     let hash = hash_payload_for_change_detection(&payload);
 
     // Transparency: persist exactly what we'd send so the user can inspect it,
     // regardless of whether it ends up being uploaded this run.
-    if let Ok(root) = std::env::current_dir() {
+    if let Ok(dir) = crate::utils::user_data_dir(&app) {
         let _ = std::fs::write(
-            root.join("last_hardware_ping.json"),
+            dir.join("last_hardware_ping.json"),
             serde_json::to_string_pretty(&payload).unwrap_or_default(),
         );
     }
@@ -464,9 +463,9 @@ pub async fn submit_hardware_ping(app: tauri::AppHandle) -> Result<serde_json::V
         return Err(format!("Server returned {}", res.status()));
     }
 
-    let mut new_state = load_state()?;
+    let mut new_state = load_state(&app)?;
     new_state.last_sent_hash = Some(hash);
-    save_state(&new_state)?;
+    save_state(&app, &new_state)?;
 
     Ok(serde_json::json!({ "sent": true }))
 }
@@ -475,8 +474,8 @@ pub async fn submit_hardware_ping(app: tauri::AppHandle) -> Result<serde_json::V
 /// to this install id, then rotates the local id so past and future data can
 /// never be linked.
 #[tauri::command]
-pub async fn telemetry_delete_my_data() -> Result<serde_json::Value, String> {
-    let state = load_state()?;
+pub async fn telemetry_delete_my_data(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
+    let state = load_state(&app)?;
     let api_url = std::option_env!("PATCHER_API_URL").unwrap_or("http://localhost:3000");
     let api_key = std::option_env!("PATCHER_API_KEY").unwrap_or("");
     let client = reqwest::Client::new();
@@ -499,7 +498,7 @@ pub async fn telemetry_delete_my_data() -> Result<serde_json::Value, String> {
         consent_ts: state.consent_ts,
         last_sent_hash: None,
     };
-    save_state(&new_state)?;
+    save_state(&app, &new_state)?;
     Ok(serde_json::json!({ "deleted": true }))
 }
 

@@ -46,8 +46,12 @@ A-S-Minecraft-RTX-Community-PatcherV2.code-workspace
 find_duplicate_manifests.py
 search_logs.py
 analyze_logs.py
+
+# Per-user local app state. As of the user_data_dir() change in
+# src-tauri/src/utils.rs, these now live in the OS per-user app-data
+# directory (e.g. %APPDATA%\<app identifier>\), never here — kept ignored
+# as a safety net for older builds / dev runs that still write them
+# next to the src-tauri crate root.
 src-tauri/last_hardware_ping.json
 src-tauri/telemetry.json
-src-tauri/settings.json
-src-tauri/settings.json
 src-tauri/settings.json

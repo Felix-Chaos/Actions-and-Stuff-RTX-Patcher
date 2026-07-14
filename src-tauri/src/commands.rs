@@ -1733,7 +1733,7 @@ pub async fn submit_bug_report(
     let api_url = std::option_env!("PATCHER_API_URL").unwrap_or("http://localhost:3000");
     let api_key = std::option_env!("PATCHER_API_KEY").unwrap_or("");
     // DSGVO: identify reports by the random install id, never by MachineGuid.
-    let install_id = crate::telemetry::load_state()
+    let install_id = crate::telemetry::load_state(&app)
         .map(|s| s.install_id)
         .unwrap_or_else(|_| "unknown".to_string());
 
@@ -1905,9 +1905,8 @@ pub fn save_patch_versions(_app: tauri::AppHandle, pack_version: String, patch_v
 
 
 #[tauri::command]
-pub fn load_settings(_app: tauri::AppHandle) -> Result<String, String> {
-    let project_root = std::env::current_dir().map_err(|e| e.to_string())?;
-    let settings_path = project_root.join("settings.json");
+pub fn load_settings(app: tauri::AppHandle) -> Result<String, String> {
+    let settings_path = user_data_dir(&app)?.join("settings.json");
     if settings_path.exists() {
         std::fs::read_to_string(settings_path).map_err(|e| e.to_string())
     } else {
@@ -1916,8 +1915,7 @@ pub fn load_settings(_app: tauri::AppHandle) -> Result<String, String> {
 }
 
 #[tauri::command]
-pub fn save_settings(_app: tauri::AppHandle, settings: String) -> Result<(), String> {
-    let project_root = std::env::current_dir().map_err(|e| e.to_string())?;
-    let settings_path = project_root.join("settings.json");
+pub fn save_settings(app: tauri::AppHandle, settings: String) -> Result<(), String> {
+    let settings_path = user_data_dir(&app)?.join("settings.json");
     std::fs::write(settings_path, settings).map_err(|e| e.to_string())
 }
