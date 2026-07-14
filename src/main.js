@@ -2198,7 +2198,10 @@ let appSettings = {
   extractBrarchives: false,
   genInjectManifest: true,
   genExtractBrarchives: false,
-  genReplaceUnchanged: true,
+  // Keep this off by default: substituted files stay raw DRM ciphertext with
+  // no accompanying contents.json, so they fail to load once installed
+  // (see prepare_patch_target in commands.rs). Opt-in only, not a footgun default.
+  genReplaceUnchanged: false,
   bugIncludeLog: true,
   bugIncludePack: false,
   bugIncludeContentLog: true,

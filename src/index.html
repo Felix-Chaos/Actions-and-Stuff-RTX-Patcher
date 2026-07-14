@@ -485,9 +485,12 @@
                     <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0; margin-top: 8px;">
                       <span style="font-size: 0.85rem; color: #ffffff; font-weight: 500;">Replace Unchanged</span>
                       <label class="mc-toggle" style="margin-left: 0;">
-                        <input type="checkbox" id="gen-replace-unchanged" checked />
+                        <input type="checkbox" id="gen-replace-unchanged" />
                         <span class="mc-slider"></span>
                       </label>
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--color-warning); padding: 2px 0 4px;">
+                      ⚠️ Ships unchanged assets as raw DRM ciphertext with no contents.json — breaks loading for those files. Off by default; only enable if you've verified it in-game.
                     </div>
                     <div class="genpatch-actions" style="margin-top: 16px;">
                       <button id="btn-run-gen-patch" class="btn btn-gold-3d" style="width: 100%;">Create Patches</button>
@@ -811,9 +814,12 @@
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
                   <span style="font-size: 0.85rem; color: #ffffff;">Replace Unchanged JSONs</span>
                   <label class="mc-toggle" style="margin-left: 0;">
-                    <input type="checkbox" id="set-gen-replace-unchanged" checked />
+                    <input type="checkbox" id="set-gen-replace-unchanged" />
                     <span class="mc-slider"></span>
                   </label>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--color-warning); padding: 2px 0 6px;">
+                  ⚠️ Substituted files stay raw DRM-encrypted with no contents.json — they will fail to load in-game. Leave off unless you've verified decryption works.
                 </div>
               </div>
 
