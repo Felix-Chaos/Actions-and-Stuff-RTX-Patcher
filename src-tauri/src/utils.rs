@@ -512,6 +512,25 @@ pub struct EntryDescriptor {
     pub contents_len: u32,
 }
 
+/// Rejects entry names that would escape the intended extraction directory
+/// (e.g. "..\\..\\evil.dll" or an absolute/drive-rooted path) before they're
+/// joined onto a base path and written to disk.
+pub fn is_safe_relative_entry(name: &str) -> bool {
+    if name.is_empty() {
+        return false;
+    }
+    let path = Path::new(name);
+    if path.is_absolute() {
+        return false;
+    }
+    !path.components().any(|c| {
+        matches!(
+            c,
+            std::path::Component::ParentDir | std::path::Component::Prefix(_)
+        )
+    })
+}
+
 pub fn deserialize_brarchive(data: &[u8]) -> Result<HashMap<String, Vec<u8>>, String> {
     if data.len() < 16 {
         return Err("Data too short to contain header".to_string());
@@ -733,6 +752,17 @@ pub fn extract_brarchives_in_workspace_impl(
             })?;
 
             for (entry_name, content) in entry_map {
+                if !is_safe_relative_entry(&entry_name) {
+                    if let Some(app_handle) = app {
+                        emit_log(
+                            app_handle,
+                            container,
+                            &format!("  [Skipped unsafe entry path] -> {}", entry_name),
+                            "warning",
+                        );
+                    }
+                    continue;
+                }
                 let out_file = extract_dir.join(&entry_name);
                 if content.is_empty() {
                     skipped_placeholders += 1;

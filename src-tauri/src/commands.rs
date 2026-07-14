@@ -2,7 +2,6 @@ use crate::utils::*;
 use std::collections::HashMap;
 use std::io::BufRead;
 #[cfg(target_os = "windows")]
-#[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
 use std::path::{Path, PathBuf};
 use tauri::Manager;
@@ -1668,9 +1667,15 @@ pub async fn inject_custom_manifest_to_target(
     Ok(())
 }
 
-#[cfg_attr(mobile, tauri::mobile_entry_point)]
 #[tauri::command]
 pub fn open_url(url: String) -> Result<(), String> {
+    // `cmd /c start` re-parses the whole command line, so metacharacters like
+    // `&`/`|` in `url` are not fully neutralized by argv quoting alone.
+    // Restricting to http(s) URLs keeps this command from being usable to
+    // launch arbitrary local files/protocol handlers or smuggle shell syntax.
+    if !(url.starts_with("https://") || url.starts_with("http://")) {
+        return Err("Refusing to open a non-http(s) URL".to_string());
+    }
     #[cfg(target_os = "windows")]
     {
         std::process::Command::new("cmd")
