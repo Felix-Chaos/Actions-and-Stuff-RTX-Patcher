@@ -51,6 +51,7 @@ pub fn run() {
             save_settings,
             get_telemetry_state,
             set_telemetry_consent,
+            open_diagnostics_folder,
             collect_hardware_info,
             submit_hardware_ping,
             telemetry_delete_my_data,

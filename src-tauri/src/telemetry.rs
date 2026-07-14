@@ -102,6 +102,15 @@ pub fn set_telemetry_consent(app: tauri::AppHandle, consent: bool) -> Result<Tel
     Ok(state)
 }
 
+/// Opens the per-user app-data folder (settings.json, telemetry.json,
+/// last_hardware_ping.json) directly in Explorer, so the user can inspect
+/// the actual files rather than a giant JSON dump in an in-app modal.
+#[tauri::command]
+pub fn open_diagnostics_folder(app: tauri::AppHandle) -> Result<(), String> {
+    let dir = crate::utils::user_data_dir(&app)?;
+    crate::commands::open_in_explorer(dir.to_string_lossy().to_string())
+}
+
 // ---------------------------------------------------------------------------
 // PowerShell helper
 // ---------------------------------------------------------------------------

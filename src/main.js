@@ -1878,10 +1878,9 @@ async function setupTelemetry() {
 
   document.getElementById('btn-view-telemetry-payload')?.addEventListener('click', async () => {
     try {
-      const payload = await invoke('collect_hardware_info');
-      showModal(JSON.stringify(payload, null, 2), { title: 'Exactly this data would be sent' });
+      await invoke('open_diagnostics_folder');
     } catch (e) {
-      showModal(`Failed to collect hardware info: ${e}`, { title: 'Error' });
+      showModal(`Failed to open diagnostics folder: ${e}`, { title: 'Error' });
     }
   });
 
