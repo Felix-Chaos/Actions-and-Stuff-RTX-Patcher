@@ -19,6 +19,34 @@ pub struct ValidStats {
     pub is_latest: bool,
 }
 
+// Hard identity gate for scan_marketplace_packs: is this folder actually an
+// Actions & Stuff pack at all, as opposed to some other installed pack
+// (including other Oreville Studios products)? Checked once, up front,
+// before any of the scoring below runs. The scoring further down is only
+// ever meant to pick the best-matching *version* among genuine Actions &
+// Stuff candidates — it must never be what decides "is this even Actions &
+// Stuff", since several of its signals (has_lang_file, a manifest version
+// number, a files/dirs count) can coincidentally match an unrelated pack too.
+fn is_actions_and_stuff_pack(path: &Path) -> bool {
+    for lang_rel in ["texts/en_US.lang", "texts/en_US.txt", "en_US.lang", "en_US.txt"] {
+        if let Ok(content) = std::fs::read_to_string(path.join(lang_rel)) {
+            for line in content.lines() {
+                if line.starts_with("pack.name=") && line.contains("Actions & Stuf") {
+                    return true;
+                }
+            }
+        }
+    }
+
+    if let Ok(manifest_content) = std::fs::read_to_string(path.join("manifest.json")) {
+        if manifest_content.contains("22ed17a6-ea7c-5ccd-93b4-b90e86ce0046") {
+            return true;
+        }
+    }
+
+    false
+}
+
 #[tauri::command]
 pub async fn scan_marketplace_packs(
     expected_logo_hash: Option<String>,
@@ -49,6 +77,9 @@ pub async fn scan_marketplace_packs(
             for entry in entries.flatten() {
                 let path = entry.path();
                 if path.is_dir() {
+                    if !is_actions_and_stuff_pack(&path) {
+                        continue;
+                    }
                     let version = get_lang_version(&path).unwrap_or_else(|| "Unknown".to_string());
                     let folder_name = entry.file_name().to_string_lossy().into_owned();
                     let (files_count, dirs_count) = get_folder_stats(&path);
@@ -118,18 +149,12 @@ pub async fn scan_marketplace_packs(
                         }
                     }
                     
-                    // If no expected stats are passed, just give score 1 if manifest matches (legacy fallback for bug reporter)
+                    // If no expected stats are passed, just give score 1 (legacy fallback for
+                    // bug reporter) — the is_actions_and_stuff_pack() gate above already
+                    // confirmed this candidate really is Actions & Stuff, so there's nothing
+                    // left to re-check here.
                     if valid_stats_list.is_none() && expected_logo_hash.is_none() {
-                        let manifest_path = path.join("manifest.json");
-                        if manifest_path.exists() {
-                            if let Ok(manifest_content) = std::fs::read_to_string(&manifest_path) {
-                                if manifest_content.contains("22ed17a6-ea7c-5ccd-93b4-b90e86ce0046")
-                                    || manifest_content.contains("Oreville Studios")
-                                {
-                                    score = 1;
-                                }
-                            }
-                        }
+                        score = 1;
                     }
 
                     // Include if score > 0
@@ -318,7 +343,7 @@ pub async fn install_mcpack(app: tauri::AppHandle, output_file: String) -> Resul
         .file_stem()
         .ok_or_else(|| "Invalid filename".to_string())?;
 
-    let mojang_paths: Vec<PathBuf> = get_mojang_paths()
+    let mojang_paths: Vec<PathBuf> = get_install_target_paths()
         .into_iter()
         .filter(|p| p.exists())
         .collect();
@@ -486,12 +511,14 @@ pub async fn pack_folder(
     app: tauri::AppHandle,
     folder_path: String,
     output_zip: String,
+    exclude_names: Option<Vec<String>>,
 ) -> Result<(), String> {
     pack_folder_impl(
         Some(&app),
         Path::new(&folder_path),
         Path::new(&output_zip),
         "main",
+        &exclude_names.unwrap_or_default(),
     )
 }
 
@@ -564,11 +591,7 @@ pub async fn normalize_extracted_pack(app: tauri::AppHandle, extract_dir: String
         }
         let _ = std::fs::remove_dir_all(d);
     }
-    let resource_dir = app
-        .path()
-        .resource_dir()
-        .map_err(|e| format!("Failed to get resource dir: {}", e))?;
-    let resource_manifest = resource_dir.join("assets/resources/manifest.json");
+    let resource_manifest = resolve_asset_path(&app, "assets/resources/manifest.json")?;
 
     if resource_manifest.exists() {
         emit_log(
@@ -577,8 +600,14 @@ pub async fn normalize_extracted_pack(app: tauri::AppHandle, extract_dir: String
             "Injecting custom manifest.json to ensure compatibility.",
             "info",
         );
-        std::fs::copy(&resource_manifest, dir.join("manifest.json"))
-            .map_err(|e| format!("Failed to copy manifest.json: {}", e))?;
+        // Preserves this pack's own header/module uuid+version (from the
+        // manifest.json still sitting in `dir` right now, before this
+        // overwrites it) — see build_manifest_json's doc comment for why:
+        // it's what lets a "Replace Unchanged" build's still-encrypted
+        // content keep decrypting correctly after this replaces the manifest.
+        let modified_content = build_manifest_json(&resource_manifest, dir, "", "")?;
+        std::fs::write(dir.join("manifest.json"), modified_content)
+            .map_err(|e| format!("Failed to write manifest.json: {}", e))?;
         emit_log(
             &app,
             "main",
@@ -1403,7 +1432,7 @@ pub fn run_release_build(app: tauri::AppHandle, build_type: String) -> Result<()
                                             // Pack staging folder
                                             let zip_dest = release_dir.join(format!("Actions.and.Stuff.RTX.Patcher_{}_portable.zip", version));
                                             emit_log(&app_clone, "build-logs", "Compressing portable release package into ZIP...", "info");
-                                            if let Err(e) = pack_folder_impl(None, &staging_dir, &zip_dest, "build-logs") {
+                                            if let Err(e) = pack_folder_impl(None, &staging_dir, &zip_dest, "build-logs", &[]) {
                                                 emit_log(&app_clone, "build-logs", &format!("Failed to create portable ZIP: {}", e), "error");
                                             } else {
                                                 emit_log(&app_clone, "build-logs", "Portable release package ZIP created successfully.", "info");
@@ -1572,47 +1601,75 @@ pub async fn calculate_patch_stats(folder_path: String) -> Result<PatchStats, St
     })
 }
 
-#[tauri::command]
-pub async fn inject_custom_manifest_to_target(
-    app: tauri::AppHandle,
-    target_dir: String,
-    pack_ver: String,
-    patch_ver: String,
-) -> Result<(), String> {
-    let resource_manifest = resolve_asset_path(&app, "assets/resources/manifest.json")?;
-
-    if !resource_manifest.exists() {
-        return Err("Custom manifest not found in resources".to_string());
-    }
-
-    let content = std::fs::read_to_string(&resource_manifest)
+/// Builds the manifest.json content for a target pack directory: starts from
+/// the bundled custom RTX manifest template (capabilities, subpacks, in-game
+/// settings — all required for RTX features to work at all), but preserves
+/// the ORIGINAL pack's own header/module `uuid` and `version`, read from
+/// `identity_source_dir`'s manifest.json if one exists there (a real
+/// Marketplace-purchased pack's identity). This matters: Marketplace DRM
+/// decryption checks the signed-in account's purchase entitlement against
+/// that identity, so swapping in the custom template's own fixed placeholder
+/// UUIDs instead would make Minecraft unable to decrypt anything left in
+/// encrypted form (see Create Patch's "Replace Unchanged") even though
+/// contents.json/signatures.json themselves are otherwise untouched — the
+/// pack would no longer look like something the player actually owns.
+///
+/// `identity_source_dir` is deliberately a separate parameter from
+/// `target_dir` (where the result gets written): a working "Decrypted Dir"
+/// folder can easily have already had a previous custom manifest written
+/// into it (e.g. by an earlier Create Patch run) and no longer carry the
+/// pack's real purchased identity at all, whereas the raw Encrypted Dir
+/// (the untouched Marketplace cache) always does. Callers should point
+/// `identity_source_dir` at whichever directory is actually guaranteed to
+/// still hold the genuine identity — Create Patch uses the Encrypted Dir for
+/// this; normalize_extracted_pack uses the pack currently being normalized,
+/// since there's no separate reference available at apply time.
+///
+/// If `pack_ver`/`patch_ver` are both non-empty, also brands header.name/
+/// description with the patch version — purely cosmetic, independent of the
+/// identity fields.
+///
+/// Used by both inject_custom_manifest_to_target (Create Patch's reference
+/// source) and normalize_extracted_pack (real end-user packs at apply time) —
+/// they must produce identical bytes for a given input, since one becomes the
+/// baseline decrypted.vcdiff is diffed against and the other is what a real
+/// pack looks like when the patch actually gets applied to it.
+fn build_manifest_json(
+    resource_manifest: &Path,
+    identity_source_dir: &Path,
+    pack_ver: &str,
+    patch_ver: &str,
+) -> Result<String, String> {
+    let content = std::fs::read_to_string(resource_manifest)
         .map_err(|e| format!("Failed to read custom manifest: {}", e))?;
-
     let mut val: serde_json::Value = serde_json::from_str(&content)
         .map_err(|e| format!("Failed to parse custom manifest: {}", e))?;
 
-    if !pack_ver.is_empty() && !patch_ver.is_empty() {
-        if let Some(obj) = val.as_object_mut() {
-            if let Some(header) = obj.get_mut("header") {
-                if let Some(header_obj) = header.as_object_mut() {
-                    let formatted_name = format!(
-                        "§eActions & Stuff §dRTX §b{} §5V{}",
-                        pack_ver.replace("v", ""),
-                        patch_ver
-                    );
-                    header_obj.insert(
-                        "name".to_string(),
-                        serde_json::Value::String(formatted_name),
-                    );
-
-                    if let Some(desc) = header_obj.get("description") {
-                        if let Some(desc_str) = desc.as_str() {
-                            if !desc_str.starts_with("§e") {
-                                let new_desc = format!("§e{}", desc_str);
-                                header_obj.insert(
-                                    "description".to_string(),
-                                    serde_json::Value::String(new_desc),
-                                );
+    if let Ok(existing_content) = std::fs::read_to_string(identity_source_dir.join("manifest.json")) {
+        if let Ok(existing_val) = serde_json::from_str::<serde_json::Value>(&existing_content) {
+            if let Some(orig_header) = existing_val.get("header").and_then(|h| h.as_object()) {
+                if let Some(new_header) = val.get_mut("header").and_then(|h| h.as_object_mut()) {
+                    for key in ["uuid", "version"] {
+                        if let Some(v) = orig_header.get(key) {
+                            new_header.insert(key.to_string(), v.clone());
+                        }
+                    }
+                }
+            }
+            if let Some(orig_modules) = existing_val.get("modules").and_then(|m| m.as_array()) {
+                if let Some(new_modules) = val.get_mut("modules").and_then(|m| m.as_array_mut()) {
+                    for new_mod in new_modules.iter_mut() {
+                        let new_type = new_mod.get("type").and_then(|t| t.as_str()).map(String::from);
+                        let matching_orig = new_type.as_ref().and_then(|nt| {
+                            orig_modules
+                                .iter()
+                                .find(|m| m.get("type").and_then(|t| t.as_str()) == Some(nt.as_str()))
+                        });
+                        if let (Some(matching_orig), Some(new_mod_obj)) = (matching_orig, new_mod.as_object_mut()) {
+                            for key in ["uuid", "version"] {
+                                if let Some(v) = matching_orig.get(key) {
+                                    new_mod_obj.insert(key.to_string(), v.clone());
+                                }
                             }
                         }
                     }
@@ -1621,11 +1678,55 @@ pub async fn inject_custom_manifest_to_target(
         }
     }
 
-    let modified_content = serde_json::to_string_pretty(&val)
-        .map_err(|e| format!("Failed to serialize custom manifest: {}", e))?;
+    if !pack_ver.is_empty() && !patch_ver.is_empty() {
+        if let Some(header_obj) = val.get_mut("header").and_then(|h| h.as_object_mut()) {
+            let formatted_name = format!(
+                "§eActions & Stuff §dRTX §b{} §5V{}",
+                pack_ver.replace("v", ""),
+                patch_ver
+            );
+            header_obj.insert("name".to_string(), serde_json::Value::String(formatted_name));
 
-    let target_path = std::path::Path::new(&target_dir).join("manifest.json");
-    std::fs::write(&target_path, modified_content)
+            if let Some(desc) = header_obj.get("description") {
+                if let Some(desc_str) = desc.as_str() {
+                    if !desc_str.starts_with("§e") {
+                        let new_desc = format!("§e{}", desc_str);
+                        header_obj.insert("description".to_string(), serde_json::Value::String(new_desc));
+                    }
+                }
+            }
+        }
+    }
+
+    serde_json::to_string_pretty(&val).map_err(|e| format!("Failed to serialize custom manifest: {}", e))
+}
+
+#[tauri::command]
+pub async fn inject_custom_manifest_to_target(
+    app: tauri::AppHandle,
+    target_dir: String,
+    pack_ver: String,
+    patch_ver: String,
+    // Where to read the pack's real, purchased identity (header/module
+    // uuid+version) from — should be the raw Encrypted Dir, which (unlike a
+    // working Decrypted Dir) can't have already lost it to a previous custom
+    // manifest injection. Falls back to target_dir itself if omitted, which
+    // only recovers the real identity if target_dir hasn't been touched yet.
+    identity_source_dir: Option<String>,
+) -> Result<(), String> {
+    let resource_manifest = resolve_asset_path(&app, "assets/resources/manifest.json")?;
+
+    if !resource_manifest.exists() {
+        return Err("Custom manifest not found in resources".to_string());
+    }
+
+    let target_path = std::path::Path::new(&target_dir);
+    let identity_path = identity_source_dir
+        .as_deref()
+        .map(std::path::Path::new)
+        .unwrap_or(target_path);
+    let modified_content = build_manifest_json(&resource_manifest, identity_path, &pack_ver, &patch_ver)?;
+    std::fs::write(target_path.join("manifest.json"), modified_content)
         .map_err(|e| format!("Failed to write modified manifest: {}", e))?;
 
     let texts_path = std::path::Path::new(&target_dir).join("texts");
@@ -1726,7 +1827,11 @@ fn encode_file_base64(path: &Path) -> Result<String, String> {
 #[tauri::command]
 pub async fn submit_bug_report(
     app: tauri::AppHandle,
-    discord_name: String,
+    // None/omitted means an anonymous submission (e.g. the one-click "Known
+    // Issue" reporter) — the server then skips linking the report to any
+    // Discord account and just posts it to whichever server is configured
+    // to receive Patcher reports.
+    discord_name: Option<String>,
     description: String,
     log_path: Option<String>,
     pack_path: Option<String>,
@@ -1832,6 +1937,7 @@ pub async fn prepare_patch_target(
     copy_dir_all(rtx_path, tgt_path).map_err(|e| format!("Failed to copy RTX dir: {}", e))?;
     
     let mut unchanged_count = 0;
+    let mut container_swap_count = 0;
 
     if replace_unchanged {
         emit_log(&app, "genpatch-logs", "Comparing and restoring unchanged encrypted assets...", "info");
@@ -1844,28 +1950,175 @@ pub async fn prepare_patch_target(
              patch built with this option.",
             "warning",
         );
+
+        // Single comparison pass: which files are byte-identical between
+        // decrypted and RTX-patched? (Read once here, reused below for both
+        // the container-level and standalone substitution passes, instead of
+        // re-reading every file a second time.)
+        let mut unchanged_files: std::collections::HashSet<String> = std::collections::HashSet::new();
         for entry in walkdir::WalkDir::new(dec_path).into_iter().filter_map(|e| e.ok()) {
             if entry.file_type().is_file() {
                 let relative_path = entry.path().strip_prefix(dec_path).unwrap();
                 let rtx_file = rtx_path.join(relative_path);
-
                 if rtx_file.exists() {
                     let dec_content = std::fs::read(entry.path()).unwrap_or_default();
                     let rtx_content = std::fs::read(&rtx_file).unwrap_or_default();
-
                     if dec_content == rtx_content {
-                        let enc_file = enc_path.join(relative_path);
-                        let tgt_file = tgt_path.join(relative_path);
-
-                        if enc_file.exists() {
-                            if let Some(p) = tgt_file.parent() {
-                                let _ = std::fs::create_dir_all(p);
-                            }
-                            std::fs::copy(&enc_file, &tgt_file).unwrap_or(0);
-                            unchanged_count += 1;
-                        }
+                        unchanged_files.insert(relative_path.to_string_lossy().replace('\\', "/"));
                     }
                 }
+            }
+        }
+
+        // Files that live inside a .brarchive container can't be individually
+        // substituted with encrypted bytes on their own: the encrypted side
+        // never extracts these (see the earlier fix that stopped brarchive
+        // extraction from running against enc_path at all — those files are
+        // still genuine ciphertext). We don't need extraction to have
+        // actually touched decryptedDir/patchedDir this session either:
+        // container membership can be worked out purely from where each
+        // container in the (untouched) encrypted folder WOULD extract to,
+        // matched against whatever already exists at that same relative
+        // folder on the decrypted side — whether that got there via this
+        // session's extraction step, a previous one, or (as is common) a
+        // pack developer's permanently pre-extracted working copy that never
+        // gets repackaged into containers at all.
+        // Pass 1: find every container's virtual (extracted-to) folder. Containers
+        // nest — e.g. textures.brarchive sits alongside textures/entity.brarchive,
+        // textures/entity/zombie.brarchive, etc., each covering progressively
+        // deeper subsets of the same tree — so a plain recursive walk per
+        // container would double-count files under the more specific ones.
+        let mut candidates: Vec<(String, PathBuf)> = Vec::new();
+        let mut enc_brarchive_dirs = Vec::new();
+        let _ = find_brarchive_dirs(enc_path, &mut enc_brarchive_dirs);
+        for brarchive_root in &enc_brarchive_dirs {
+            let pack_context = match brarchive_root.parent() {
+                Some(p) => p,
+                None => continue,
+            };
+            let pack_context_rel = match pack_context.strip_prefix(enc_path) {
+                Ok(p) => p,
+                Err(_) => continue,
+            };
+
+            let mut brarchive_files = Vec::new();
+            if collect_brarchive_files(brarchive_root, &mut brarchive_files).is_err() {
+                continue;
+            }
+            for brarchive_path in brarchive_files {
+                let rel_to_root = match brarchive_path.strip_prefix(brarchive_root) {
+                    Ok(r) => r,
+                    Err(_) => continue,
+                };
+                let rel_str = rel_to_root.to_string_lossy().into_owned();
+                if !rel_str.ends_with(".brarchive") {
+                    continue;
+                }
+                let target_rel_str = &rel_str[..rel_str.len() - 10]; // strip ".brarchive"
+                let dec_virtual_folder = dec_path.join(pack_context_rel).join(target_rel_str);
+                if !dec_virtual_folder.is_dir() {
+                    continue; // nothing on the decrypted side to compare against
+                }
+                let container_rel = match brarchive_path.strip_prefix(enc_path) {
+                    Ok(r) => r.to_string_lossy().replace('\\', "/"),
+                    Err(_) => continue,
+                };
+                candidates.push((container_rel, dec_virtual_folder));
+            }
+        }
+
+        // Pass 2: process deepest (most specific) virtual folders first, so each
+        // file gets "claimed" by the container that actually contains it most
+        // specifically. A shallower/outer container (e.g. plain textures.brarchive)
+        // then only ends up owning whatever's left over once its nested children
+        // have already claimed their own subtrees.
+        candidates.sort_by_key(|(_, folder)| std::cmp::Reverse(folder.components().count()));
+
+        let mut container_members: HashMap<String, Vec<String>> = HashMap::new();
+        let mut file_to_container: HashMap<String, String> = HashMap::new();
+        let mut claimed: std::collections::HashSet<String> = std::collections::HashSet::new();
+        for (container_rel, dec_virtual_folder) in &candidates {
+            for entry in walkdir::WalkDir::new(dec_virtual_folder).into_iter().filter_map(|e| e.ok()) {
+                if entry.file_type().is_file() {
+                    if let Ok(rel) = entry.path().strip_prefix(dec_path) {
+                        let rel_str = rel.to_string_lossy().replace('\\', "/");
+                        if claimed.contains(&rel_str) {
+                            continue; // already owned by a deeper, more specific container
+                        }
+                        claimed.insert(rel_str.clone());
+                        file_to_container.insert(rel_str.clone(), container_rel.clone());
+                        container_members.entry(container_rel.clone()).or_default().push(rel_str);
+                    }
+                }
+            }
+        }
+
+        // Marketplace packs can be inconsistent about this: some content that's
+        // bundled into a .brarchive container ALSO exists as a genuine standalone
+        // loose file at the same path in the encrypted folder (observed directly
+        // in this pack's textures/particle, for example). A per-file standalone
+        // swap is strictly better than a whole-container swap when it's
+        // available — it doesn't force an all-or-nothing decision across every
+        // other file in that container — so container membership alone must
+        // never disqualify a file from the standalone pass below. Only actually
+        // *use* a container swap for containers where it's needed: at least one
+        // member has no standalone encrypted file to fall back on.
+        let mut swapped_containers: std::collections::HashSet<String> = std::collections::HashSet::new();
+        for (container_rel, members) in &container_members {
+            if members.is_empty() || !members.iter().all(|m| unchanged_files.contains(m)) {
+                continue;
+            }
+            let needs_container_swap = members.iter().any(|m| !enc_path.join(m).exists());
+            if !needs_container_swap {
+                continue; // every member can already be restored individually below
+            }
+            let enc_container_file = enc_path.join(container_rel);
+            if !enc_container_file.exists() {
+                continue;
+            }
+            let tgt_container_file = tgt_path.join(container_rel);
+            if let Some(p) = tgt_container_file.parent() {
+                let _ = std::fs::create_dir_all(p);
+            }
+            if std::fs::copy(&enc_container_file, &tgt_container_file).is_ok() {
+                container_swap_count += 1;
+                swapped_containers.insert(container_rel.clone());
+                // Superseded by the container file above — drop the loose
+                // RTX-patched (or already individually-restored) copies so the
+                // target doesn't ship both.
+                for member in members {
+                    let _ = std::fs::remove_file(tgt_path.join(member));
+                }
+            }
+        }
+        if container_swap_count > 0 {
+            emit_log(
+                &app,
+                "genpatch-logs",
+                &format!("Restored {} entire brarchive container(s) as original encrypted data (all contents unchanged).", container_swap_count),
+                "info",
+            );
+        }
+
+        // Standalone substitution for everything else. This deliberately still
+        // includes files that belong to a container (per file_to_container) as
+        // long as that specific container wasn't swapped wholesale above — the
+        // container-membership mapping only tells us where a file's contents
+        // WOULD be if bundled, not that a standalone copy can't also exist.
+        for relative_path in &unchanged_files {
+            if let Some(container_rel) = file_to_container.get(relative_path) {
+                if swapped_containers.contains(container_rel) {
+                    continue; // already restored wholesale as part of its container above
+                }
+            }
+            let enc_file = enc_path.join(relative_path);
+            let tgt_file = tgt_path.join(relative_path);
+            if enc_file.exists() {
+                if let Some(p) = tgt_file.parent() {
+                    let _ = std::fs::create_dir_all(p);
+                }
+                std::fs::copy(&enc_file, &tgt_file).unwrap_or(0);
+                unchanged_count += 1;
             }
         }
         emit_log(&app, "genpatch-logs", &format!("Restored {} unchanged encrypted assets.", unchanged_count), "info");
@@ -1877,7 +2130,7 @@ pub async fn prepare_patch_target(
         // copied at all (dec_path, the decrypted baseline, typically doesn't
         // contain these DRM files, so the main comparison loop above never
         // even considered them).
-        if unchanged_count > 0 {
+        if unchanged_count > 0 || container_swap_count > 0 {
             for meta_file in ["contents.json", "signatures.json"] {
                 let src = enc_path.join(meta_file);
                 if src.exists() {
@@ -1910,7 +2163,15 @@ pub async fn prepare_patch_target(
         emit_log(&app, "genpatch-logs", "Skipping unchanged file replacement...", "info");
     }
 
-    emit_log(&app, "genpatch-logs", &format!("Replaced {} unchanged files with encrypted versions.", unchanged_count), "success");
+    emit_log(
+        &app,
+        "genpatch-logs",
+        &format!(
+            "Replaced {} unchanged file(s) and {} whole brarchive container(s) with encrypted versions.",
+            unchanged_count, container_swap_count
+        ),
+        "success",
+    );
 
     Ok(())
 }

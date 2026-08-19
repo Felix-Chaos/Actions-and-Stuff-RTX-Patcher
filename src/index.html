@@ -576,6 +576,23 @@
               </div>
             </div>
 
+            <!-- Known Issue: NVIDIA Mob Texture Corruption -->
+            <div class="card" style="margin-top: 24px; background: rgba(139, 92, 246, 0.06); border: 1px solid rgba(139, 92, 246, 0.25);">
+              <h3 style="margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">🟣 Known Issue: Wrong/Missing Mob Textures (NVIDIA)</h3>
+              <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
+                Seeing stretched, black, or purple textures on <b>Zombies, Creepers, or Skeletons</b> on an NVIDIA graphics card? We're actively tracking this specific issue. Use the button below to send a fully <b>anonymous</b> report — no Discord account needed.
+              </p>
+              <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 16px;">
+                This automatically includes your hardware info, GPU driver events, and Minecraft content log, since diagnosing this bug needs all three. Unlike a regular bug report, this data is kept until the issue is actually fixed instead of being auto-deleted after 30/90 days.
+              </p>
+              <div class="form-group">
+                <label for="known-issue-description">Anything else to add? <span style="color: var(--text-muted); font-weight: 400;">(optional)</span></label>
+                <textarea id="known-issue-description" class="custom-textarea" rows="2" maxlength="500" placeholder="e.g. which subpack, when it started, etc. (optional)"></textarea>
+              </div>
+              <button id="btn-submit-known-issue" class="btn btn-primary" style="width: 100%;">Report This Issue Anonymously</button>
+              <div id="known-issue-status" style="margin-top: 12px; font-size: 0.85rem; text-align: center;" class="hidden-group"></div>
+            </div>
+
             <!-- Bug Report Section -->
             <div class="card" style="margin-top: 24px; background: rgba(0,0,0,0.2);">
               <h3 style="margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">🐞 Submit a Bug Report</h3>

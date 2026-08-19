@@ -67,12 +67,20 @@ pub fn collect_files(
     Ok(())
 }
 
-// Helper: deterministic ZIP packer
+// Helper: deterministic ZIP packer. `exclude_names` filters out any file
+// whose exact filename matches, at any depth — used so Create Patch's
+// decrypted-source zip (the reference baked into decrypted.vcdiff) can match
+// the same files normalize_extracted_pack strips from a real end-user's pack
+// before applying that patch (contents.json/signatures.json/splashes.json/
+// sounds.json). Without this, the two "source" byte streams never agree and
+// xdelta3 fails with a target window checksum mismatch on ANY pack that
+// still has those files, which a genuine pre-decrypted copy usually does.
 pub fn pack_folder_impl(
     app: Option<&tauri::AppHandle>,
     folder_path: &Path,
     output_zip: &Path,
     container: &str,
+    exclude_names: &[String],
 ) -> Result<(), String> {
     let file = File::create(output_zip).map_err(|e| format!("Failed to create zip: {}", e))?;
     let mut zip = ZipWriter::new(file);
@@ -87,6 +95,14 @@ pub fn pack_folder_impl(
 
     let mut files: Vec<(PathBuf, String)> = Vec::new();
     collect_files(folder_path, folder_path, &mut files)?;
+    if !exclude_names.is_empty() {
+        files.retain(|(path, _)| {
+            path.file_name()
+                .and_then(|n| n.to_str())
+                .map(|name| !exclude_names.iter().any(|e| e == name))
+                .unwrap_or(true)
+        });
+    }
     files.sort_by(|a, b| a.1.cmp(&b.1));
 
     if let Some(app_handle) = app {
@@ -327,6 +343,40 @@ pub fn get_mojang_paths() -> Vec<PathBuf> {
                 }
             }
         }
+    }
+
+    paths.retain(|p| p.exists());
+    paths
+}
+
+// Helper: the actual install targets for a finished pack. Same base locations
+// as get_mojang_paths(), except for per-user Bedrock profiles it only
+// installs to "Shared" — a pack placed there is picked up regardless of
+// which Windows/Xbox profile is signed in, so also installing into every
+// other specific-user folder is redundant (and needlessly multiplies the
+// install size/copy time for however many profiles happen to exist on the
+// machine). get_mojang_paths() itself is left covering every profile folder
+// still, since get_cleanable_packs uses it to find remnants left behind
+// anywhere — including a specific-user folder an older version of this tool
+// installed into before this existed.
+pub fn get_install_target_paths() -> Vec<PathBuf> {
+    let mut paths = Vec::new();
+    let local_app_data = std::env::var("LOCALAPPDATA").ok().map(PathBuf::from);
+    let app_data = std::env::var("APPDATA").ok().map(PathBuf::from);
+
+    if let Some(ref lad) = local_app_data {
+        paths.push(
+            lad.join(r"Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\LocalState\games\com.mojang"),
+        );
+        paths.push(lad.join(
+            r"Packages\Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe\LocalState\games\com.mojang",
+        ));
+    }
+
+    if let Some(ref ad) = app_data {
+        paths.push(ad.join(r"Minecraft Bedrock\games\com.mojang"));
+        paths.push(ad.join(r"Minecraft Bedrock Preview\games\com.mojang"));
+        paths.push(ad.join(r"Minecraft Bedrock\Users\Shared\games\com.mojang"));
     }
 
     paths.retain(|p| p.exists());
@@ -642,15 +692,20 @@ pub fn collect_brarchive_files(current: &Path, files: &mut Vec<PathBuf>) -> Resu
     Ok(())
 }
 
-pub fn remove_brarchive_pointers(dir: &Path) -> Result<(), String> {
+pub fn remove_brarchive_pointers(
+    dir: &Path,
+    exclude: &std::collections::HashSet<PathBuf>,
+) -> Result<(), String> {
     if dir.is_dir() {
         for entry in std::fs::read_dir(dir).map_err(|e| e.to_string())? {
             let entry = entry.map_err(|e| e.to_string())?;
             let path = entry.path();
             if path.is_dir() {
-                remove_brarchive_pointers(&path)?;
+                remove_brarchive_pointers(&path, exclude)?;
             } else if path.is_file() {
-                if path.extension().and_then(|e| e.to_str()) == Some("brarchive") {
+                if path.extension().and_then(|e| e.to_str()) == Some("brarchive")
+                    && !exclude.contains(&path)
+                {
                     let _ = std::fs::remove_file(path);
                 }
             }
@@ -689,6 +744,13 @@ pub fn extract_brarchives_in_workspace_impl(
     let mut brarchives_found = 0;
     let mut extracted_files = 0;
     let mut skipped_placeholders = 0;
+    let mut skipped_errors = 0;
+    // Any .brarchive file that failed to deserialize is left exactly where it
+    // is — see the cleanup loop below for why: it must NOT get swept up by
+    // the generic "remove every .brarchive now that everything's been
+    // extracted" cleanup, or its content is gone for good (not extracted,
+    // and not preserved in its original form either).
+    let mut failed_paths: std::collections::HashSet<PathBuf> = std::collections::HashSet::new();
 
     for brarchive_root in &brarchive_dirs {
         let pack_context = brarchive_root
@@ -740,8 +802,27 @@ pub fn extract_brarchives_in_workspace_impl(
                 continue;
             }
 
-            let entry_map = deserialize_brarchive(&data)
-                .map_err(|e| format!("Error deserializing {}: {}", brarchive_path.display(), e))?;
+            // A single unexpected/malformed .brarchive entry (e.g. a subpack that
+            // ships a differently-versioned or already-processed archive) used to
+            // abort the ENTIRE extraction pass here, which in turn failed the whole
+            // patch-creation run over one file. Skip and log it instead, so the rest
+            // of the workspace still gets extracted normally.
+            let entry_map = match deserialize_brarchive(&data) {
+                Ok(map) => map,
+                Err(e) => {
+                    skipped_errors += 1;
+                    failed_paths.insert(brarchive_path.clone());
+                    if let Some(app_handle) = app {
+                        emit_log(
+                            app_handle,
+                            container,
+                            &format!("  [Skipped unreadable brarchive] -> {} ({})", brarchive_path.display(), e),
+                            "warning",
+                        );
+                    }
+                    continue;
+                }
+            };
 
             std::fs::create_dir_all(&extract_dir).map_err(|e| {
                 format!(
@@ -790,8 +871,45 @@ pub fn extract_brarchives_in_workspace_impl(
         }
     }
 
-    // Remove all __brarchive directories now that everything is extracted
+    // Remove __brarchive directories now that their contents are extracted —
+    // but only the individual .brarchive files that actually deserialized
+    // successfully. A container that failed above (see failed_paths) is left
+    // on disk untouched: it was never extracted, so deleting it here would
+    // destroy the only remaining copy of that content for good.
     for brarchive_root in &brarchive_dirs {
+        let mut files_in_root = Vec::new();
+        if collect_brarchive_files(brarchive_root, &mut files_in_root).is_err() {
+            continue;
+        }
+
+        let mut any_failed_remaining = false;
+        for file_path in &files_in_root {
+            if failed_paths.contains(file_path) {
+                any_failed_remaining = true;
+                continue;
+            }
+            let _ = std::fs::remove_file(file_path);
+        }
+
+        if any_failed_remaining {
+            if let Some(app_handle) = app {
+                emit_log(
+                    app_handle,
+                    container,
+                    &format!(
+                        "Kept raw brarchive folder (preserved {} unreadable archive(s) instead of deleting them): {:?}",
+                        files_in_root.iter().filter(|p| failed_paths.contains(*p)).count(),
+                        brarchive_root.file_name().unwrap_or_default()
+                    ),
+                    "warning",
+                );
+            }
+            // Leave brarchive_root itself in place. Successfully-extracted
+            // files inside it were already removed above; only the
+            // unreadable ones (and now-empty parent dirs, harmlessly) remain.
+            continue;
+        }
+
         if let Some(app_handle) = app {
             if let Some(dir_name) = brarchive_root.file_name() {
                 emit_log(
@@ -805,11 +923,23 @@ pub fn extract_brarchives_in_workspace_impl(
         let _ = robust_cleanup(brarchive_root);
     }
 
-    // Remove loose .brarchive pointer files in the workspace
-    remove_brarchive_pointers(workspace)?;
+    // Remove loose .brarchive pointer files in the workspace, except the ones
+    // that failed to extract above (same reasoning as the loop just above).
+    remove_brarchive_pointers(workspace, &failed_paths)?;
 
     if let Some(app_handle) = app {
-        emit_log(app_handle, container, &format!("Brarchive extraction complete! Extracted {} files from {} archives (skipped {} placeholders).", extracted_files, brarchives_found, skipped_placeholders), "success");
+        let summary = if skipped_errors > 0 {
+            format!(
+                "Brarchive extraction complete! Extracted {} files from {} archives (skipped {} placeholders, {} unreadable — see warnings above).",
+                extracted_files, brarchives_found, skipped_placeholders, skipped_errors
+            )
+        } else {
+            format!(
+                "Brarchive extraction complete! Extracted {} files from {} archives (skipped {} placeholders).",
+                extracted_files, brarchives_found, skipped_placeholders
+            )
+        };
+        emit_log(app_handle, container, &summary, if skipped_errors > 0 { "warning" } else { "success" });
     }
 
     Ok(true)

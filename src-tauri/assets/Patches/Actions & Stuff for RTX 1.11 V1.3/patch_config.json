@@ -1,0 +1,14 @@
+{
+    "packVersion": "v1.11",
+    "patchVersion": "1.3",
+    "marketplace_pack_stats": {
+        "v1": {
+            "files": 12136,
+            "dirs": 165
+        }
+    },
+    "validation": {
+        "logo_hash": "fc16349c69905251070292252658fa98e6640a7268bae434a4ccc93059f05f78",
+        "has_lang_file": true
+    }
+}

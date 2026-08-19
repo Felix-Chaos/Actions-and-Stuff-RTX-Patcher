@@ -662,16 +662,23 @@ function setupUtilities() {
       gLog_fn(`Pack Version: ${packVer}  |  Patch Version: ${patchVer}`);
 
       if (injectManifest) {
+          // identitySourceDir always points at the Encrypted Dir, not whichever
+          // folder is being written to: a working Decrypted/Patched Dir can
+          // easily already carry a custom manifest from a previous run (and
+          // so no longer have the pack's real purchased uuid at all), while
+          // the raw Encrypted Dir — untouched Marketplace cache — always
+          // does. Getting this right is what lets "Replace Unchanged" content
+          // still decrypt correctly after the manifest gets replaced.
           gLog_fn(`  Injecting baseline custom manifest into source directories...`);
           try {
-              await invoke("inject_custom_manifest_to_target", { targetDir: decryptedDir, packVer: "", patchVer: "" });
+              await invoke("inject_custom_manifest_to_target", { targetDir: decryptedDir, packVer: "", patchVer: "", identitySourceDir: encryptedDir });
           } catch (e) {
               gLog_fn(`  ⚠️ Could not inject baseline manifest: ${e}`, "warning");
           }
 
           gLog_fn(`  Injecting versioned custom manifest into patched target...`);
           try {
-              await invoke("inject_custom_manifest_to_target", { targetDir: patchedDir, packVer: packVer, patchVer: patchVer });
+              await invoke("inject_custom_manifest_to_target", { targetDir: patchedDir, packVer: packVer, patchVer: patchVer, identitySourceDir: encryptedDir });
           } catch (e) {
               gLog_fn(`  ⚠️ Could not inject versioned manifest: ${e}`, "warning");
           }
@@ -684,9 +691,17 @@ function setupUtilities() {
       gLog_fn(`  ✓ Encrypted source ZIP ready`);
 
       // Step 2: Compress the Decrypted (vanilla) source → decrypted.vcdiff source
+      // Excludes the same 4 files normalize_extracted_pack strips from a real
+      // end-user's pack before applying decrypted.vcdiff (see the zip-mode
+      // patch flow below). Without this, a Decrypted Dir that still has any
+      // of these (a genuine pre-decrypted copy usually does) bakes them into
+      // the patch's expected source, which then can never byte-match what
+      // normalize_extracted_pack produces at apply time — xdelta3 fails with
+      // a target window checksum mismatch on every single application.
       gLog_fn(`[2/4] Compressing decrypted source: ${decryptedDir}`);
       const decZip = outputDir + "/_temp_source_dec.zip";
-      await invoke("pack_folder", { folderPath: decryptedDir, outputZip: decZip });
+      const NORMALIZED_AWAY_FILES = ["contents.json", "signatures.json", "splashes.json", "sounds.json"];
+      await invoke("pack_folder", { folderPath: decryptedDir, outputZip: decZip, excludeNames: NORMALIZED_AWAY_FILES });
       gLog_fn(`  ✓ Decrypted source ZIP ready`);
 
       // Step 3: Compress patched (target) folder → target ZIP
@@ -700,7 +715,11 @@ function setupUtilities() {
         gLog_fn(`  Extracting Brarchives in source and target...`);
         await invoke("extract_brarchives_in_workspace", { workspace: decryptedDir });
         await invoke("extract_brarchives_in_workspace", { workspace: patchedDir });
-        await invoke("extract_brarchives_in_workspace", { workspace: encryptedDir });
+        // NOT run against encryptedDir: that folder is the raw, still-DRM-encrypted
+        // Marketplace source (already zipped as-is in Step 1 above) — its .brarchive
+        // files are genuine ciphertext at rest, not the plain magic-prefixed
+        // container format this expects, so "extracting" them can never succeed.
+        // Trying to anyway is what caused "Magic Mismatch" errors here.
       }
 
       // Run new replace logic
@@ -1253,33 +1272,31 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
       const baseName = sourcePackPath.split(/[\\/]/).pop() || "source";
       const zipOut = `${tempRoot}/${baseName}_vanilla.zip`;
       let targetFolder = sourcePackPath;
- 
+
+      // Extract Brarchives is intentionally never attempted here, even if the
+      // user has it enabled: `encrypted.vcdiff` (the patch this mode applies)
+      // is always built from the Encrypted Dir zipped completely raw, with no
+      // extraction and no cleanup of any kind (see the matching comment in
+      // Create Patch, Step 1). The live Marketplace cache is the same kind of
+      // still-DRM-encrypted source, so it must be zipped just as raw to stay
+      // byte-identical to what the patch expects. Extraction can't succeed on
+      // genuinely-encrypted containers anyway (confirmed: every real archive
+      // fails with Magic Mismatch), and even the harmless-looking cleanup of
+      // empty placeholder archives changes the file tree just enough to break
+      // xdelta3's checksum match ("target window checksum mismatch").
       if (extractBrarchives) {
-        updateStatus("Extracting Brarchives (Beta)", "Copying and extracting brarchives...", '📦');
-        updateProgress(15);
-        targetFolder = `${tempRoot}/${baseName}_mp_extracted`;
-        log("Staging Marketplace files to extract Brarchives...");
-        log(`  Staging Source: "${sourcePackPath}"`);
-        log(`  Staging Target: "${targetFolder}"`);
-        await invoke("stage_and_extract_brarchives", { sourceDir: sourcePackPath, tempDir: targetFolder });
-        log("Staging and brarchive extraction complete.");
+        log("Brarchive extraction is not applicable in Marketplace mode — the live cache is always still DRM-encrypted, so nothing there can actually be extracted. Skipping, and using the pack as-is.", "warning");
       }
- 
+
       updateStatus("Compressing Pack", "Generating deterministic ZIP of source pack...", '📦');
       updateProgress(25);
-      
+
       log(`Starting deterministic ZIP compression...`);
       log(`  Compressing:  "${targetFolder}"`);
       log(`  Output ZIP:   "${zipOut}"`);
       await invoke("pack_folder", { folderPath: targetFolder, outputZip: zipOut });
       log(`Successfully created deterministic source ZIP: "${zipOut}"`);
- 
-      if (extractBrarchives) {
-        log(`Cleaning up temporary staged folder: "${targetFolder}"`);
-        await invoke("delete_folders", { folders: [targetFolder] });
-        log(`Staged folder deleted.`);
-      }
- 
+
       sourceZipPath = zipOut;
       updateStepState(1, 'completed');
       
@@ -1899,6 +1916,66 @@ async function setupTelemetry() {
   });
 }
 
+// Prepares the Minecraft content log for a bug report, showing step-by-step
+// instructions (and re-enabling the submit button) if Minecraft needs to
+// generate a usable one first (logging was off, log too old/small/large,
+// etc). Returns the zip path on success, or null if the caller should stop
+// submitting — instructions were already shown and the button re-enabled.
+// Shared by the general Bug Reporter and the one-click Known Issue reporter,
+// since both need the exact same "walk the user through fixing this" flow.
+async function prepareContentLogOrInstruct(statusEl, btnSubmit) {
+  statusEl.innerHTML = "Checking Minecraft content log... <span class='status-spinner'>⏳</span>";
+  const clRes = await invoke('prepare_content_log');
+  if (clRes.status === 'ok') {
+    return clRes.zip_path;
+  }
+
+  let instruction;
+  if (clRes.status === 'logging_was_off') {
+    instruction = "Minecraft's content logging was turned OFF, so no useful log exists yet.\n\n" +
+      "✅ I have already enabled it in your Minecraft settings for you.\n\n" +
+      "Please:\n" +
+      "1. Restart Minecraft\n" +
+      "2. Join the world where the bug happens\n" +
+      "3. Make sure the broken entity/block is loaded (walk up to it)\n" +
+      "4. Come back and press 'Send Bug Report' again";
+  } else if (clRes.status === 'log_too_small') {
+    instruction = `Your newest content log is only ${clRes.log_size_mb} MB — too small to contain the error details (needs > 5 MB).\n\n` +
+      "Please:\n" +
+      "1. Restart Minecraft\n" +
+      "2. Join the world where the bug happens\n" +
+      "3. Make sure the broken entity/block is loaded (walk up to it) and play a minute\n" +
+      "4. Come back and press 'Send Bug Report' again";
+  } else if (clRes.status === 'log_too_old') {
+    instruction = "Your newest content log is more than an hour old, so it probably doesn't show the current bug.\n\n" +
+      "Please:\n" +
+      "1. Restart Minecraft\n" +
+      "2. Join the world where the bug happens\n" +
+      "3. Make sure the broken entity/block is loaded (walk up to it)\n" +
+      "4. Come back and press 'Send Bug Report' again (within an hour)";
+  } else if (clRes.status === 'log_too_large') {
+    instruction = `Your newest content log is ${clRes.log_size_mb} MB — that's over the 500 MB limit and likely full of unrelated spam.\n\n` +
+      "Please:\n" +
+      "1. Restart Minecraft (this starts a fresh, clean log)\n" +
+      "2. Join the world where the bug happens\n" +
+      "3. Make sure the broken entity/block is loaded (walk up to it), just briefly\n" +
+      "4. Come back and press 'Send Bug Report' again";
+  } else { // no_log
+    instruction = "Content logging is enabled, but no log file exists yet.\n\n" +
+      "Please:\n" +
+      "1. Restart Minecraft\n" +
+      "2. Join the world where the bug happens\n" +
+      "3. Make sure the broken entity/block is loaded (walk up to it)\n" +
+      "4. Come back and press 'Send Bug Report' again\n\n" +
+      "(Or turn off 'Send Minecraft Content Log' to submit without it.)";
+  }
+  statusEl.innerHTML = "⏸️ Report not sent yet — Minecraft needs to generate a content log first.";
+  statusEl.className = "status-hint";
+  btnSubmit.disabled = false;
+  await showModal(instruction, { title: 'One more step: Content Log' });
+  return null;
+}
+
 async function setupBugReporter() {
   const btnSubmit = document.getElementById('btn-submit-bug');
   if (!btnSubmit) return;
@@ -1937,56 +2014,9 @@ async function setupBugReporter() {
       // Prepare the Minecraft content log first: it can require user action
       // (enable logging -> restart MC), in which case we stop the submission.
       if (includeContentLog) {
-        statusEl.innerHTML = "Checking Minecraft content log... <span class='status-spinner'>⏳</span>";
-        const clRes = await invoke('prepare_content_log');
-        if (clRes.status === 'ok') {
-          contentLogZipPath = clRes.zip_path;
-        } else {
-          let instruction;
-          if (clRes.status === 'logging_was_off') {
-            instruction = "Minecraft's content logging was turned OFF, so no useful log exists yet.\n\n" +
-              "✅ I have already enabled it in your Minecraft settings for you.\n\n" +
-              "Please:\n" +
-              "1. Restart Minecraft\n" +
-              "2. Join the world where the bug happens\n" +
-              "3. Make sure the broken entity/block is loaded (walk up to it)\n" +
-              "4. Come back and press 'Send Bug Report' again";
-          } else if (clRes.status === 'log_too_small') {
-            instruction = `Your newest content log is only ${clRes.log_size_mb} MB — too small to contain the error details (needs > 5 MB).\n\n` +
-              "Please:\n" +
-              "1. Restart Minecraft\n" +
-              "2. Join the world where the bug happens\n" +
-              "3. Make sure the broken entity/block is loaded (walk up to it) and play a minute\n" +
-              "4. Come back and press 'Send Bug Report' again";
-          } else if (clRes.status === 'log_too_old') {
-            instruction = "Your newest content log is more than an hour old, so it probably doesn't show the current bug.\n\n" +
-              "Please:\n" +
-              "1. Restart Minecraft\n" +
-              "2. Join the world where the bug happens\n" +
-              "3. Make sure the broken entity/block is loaded (walk up to it)\n" +
-              "4. Come back and press 'Send Bug Report' again (within an hour)";
-          } else if (clRes.status === 'log_too_large') {
-            instruction = `Your newest content log is ${clRes.log_size_mb} MB — that's over the 500 MB limit and likely full of unrelated spam.\n\n` +
-              "Please:\n" +
-              "1. Restart Minecraft (this starts a fresh, clean log)\n" +
-              "2. Join the world where the bug happens\n" +
-              "3. Make sure the broken entity/block is loaded (walk up to it), just briefly\n" +
-              "4. Come back and press 'Send Bug Report' again";
-          } else { // no_log
-            instruction = "Content logging is enabled, but no log file exists yet.\n\n" +
-              "Please:\n" +
-              "1. Restart Minecraft\n" +
-              "2. Join the world where the bug happens\n" +
-              "3. Make sure the broken entity/block is loaded (walk up to it)\n" +
-              "4. Come back and press 'Send Bug Report' again\n\n" +
-              "(Or turn off 'Send Minecraft Content Log' to submit without it.)";
-          }
-          statusEl.innerHTML = "⏸️ Report not sent yet — Minecraft needs to generate a content log first.";
-          statusEl.className = "status-hint";
-          btnSubmit.disabled = false;
-          await showModal(instruction, { title: 'One more step: Content Log' });
-          return;
-        }
+        const zipPath = await prepareContentLogOrInstruct(statusEl, btnSubmit);
+        if (zipPath === null) return;
+        contentLogZipPath = zipPath;
       }
 
       if (includeLog) {
@@ -2067,6 +2097,57 @@ async function setupBugReporter() {
       if (tempZipToClean) {
         try { await invoke("delete_folders", { folders: [tempZipToClean] }); } catch (e) {}
       }
+    }
+  });
+}
+
+// One-click, fully anonymous report for a specific tracked issue (stretched/
+// black/purple mob textures on NVIDIA cards). Unlike the general Bug
+// Reporter above, no Discord name is asked for at all, and content log +
+// hardware + GPU driver events are always included (not optional toggles),
+// since diagnosing this specific bug needs all three every time. The
+// category tag sent here ("NVIDIA Mob Texture Corruption") is what the
+// server's retention job checks to exempt these reports from the usual
+// 30/90-day auto-deletion until the case is marked resolved.
+const KNOWN_ISSUE_CATEGORY = 'NVIDIA Mob Texture Corruption';
+
+async function setupKnownIssueReporter() {
+  const btnSubmit = document.getElementById('btn-submit-known-issue');
+  if (!btnSubmit) return;
+
+  btnSubmit.addEventListener('click', async () => {
+    const statusEl = document.getElementById('known-issue-status');
+    const description = document.getElementById('known-issue-description')?.value.trim() || '';
+
+    statusEl.innerHTML = "Submitting report... <span class='status-spinner'>⏳</span>";
+    statusEl.className = "status-hint";
+    btnSubmit.disabled = true;
+
+    try {
+      const contentLogZipPath = await prepareContentLogOrInstruct(statusEl, btnSubmit);
+      if (contentLogZipPath === null) return;
+
+      const res = await invoke("submit_bug_report", {
+        discordName: null,
+        description: description,
+        logPath: null,
+        packPath: null,
+        contentLogZipPath: contentLogZipPath,
+        includeDriverEvents: true,
+        includeHardware: true,
+        categories: [KNOWN_ISSUE_CATEGORY],
+      });
+
+      if (res && res.success) {
+        statusEl.innerHTML = `✅ Report submitted anonymously! Case ID: #${res.caseId}<br><br>` +
+          `<span style="font-size: 0.8rem;">This data will be kept until the issue is resolved, not auto-deleted after 30/90 days like a regular report.</span>`;
+        statusEl.className = "status-success";
+      }
+    } catch (err) {
+      statusEl.innerHTML = `❌ Failed to submit: ${err}`;
+      statusEl.className = "status-error";
+    } finally {
+      btnSubmit.disabled = false;
     }
   });
 }
@@ -2428,6 +2509,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   setupUtilities();
   setupReleaseBuilder();
   setupBugReporter();
+  setupKnownIssueReporter();
   await loadMotd();
   await loadOptionsProfiles();
   log("System initialization complete. Ready.");
