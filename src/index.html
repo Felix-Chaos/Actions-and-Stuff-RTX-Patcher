@@ -210,18 +210,6 @@
                     </label>
                   </div>
                 </div>
-
-                <!-- Advanced Checkbox Options -->
-                <div class="checkbox-group advanced-only hidden-group" id="advanced-checkbox-group">
-                  <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                    <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">[Beta] Extract Brarchives</span>
-                    <label class="mc-toggle" style="margin-left: 0;">
-                      <input type="checkbox" id="chk-extract-brarchives" />
-                      <span class="mc-slider"></span>
-                    </label>
-                  </div>
-                  <p class="checkbox-hint">Extracts compressed .brarchive files from the source and patches directly against them.</p>
-                </div>
               </div>
 
               <div class="action-bar">
@@ -474,23 +462,6 @@
                         <input type="checkbox" id="gen-inject-manifest" checked />
                         <span class="mc-slider"></span>
                       </label>
-                    </div>
-                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0; margin-top: 8px;">
-                      <span style="font-size: 0.85rem; color: #ffffff; font-weight: 500;">Extract Brarchives</span>
-                      <label class="mc-toggle" style="margin-left: 0;">
-                        <input type="checkbox" id="gen-extract-brarchives" />
-                        <span class="mc-slider"></span>
-                      </label>
-                    </div>
-                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0; margin-top: 8px;">
-                      <span style="font-size: 0.85rem; color: #ffffff; font-weight: 500;">Replace Unchanged</span>
-                      <label class="mc-toggle" style="margin-left: 0;">
-                        <input type="checkbox" id="gen-replace-unchanged" />
-                        <span class="mc-slider"></span>
-                      </label>
-                    </div>
-                    <div style="font-size: 0.75rem; color: var(--color-warning); padding: 2px 0 4px;">
-                      ⚠️ Ships unchanged assets as raw DRM ciphertext with no contents.json — breaks loading for those files. Off by default; only enable if you've verified it in-game.
                     </div>
                     <div class="genpatch-actions" style="margin-top: 16px;">
                       <button id="btn-run-gen-patch" class="btn btn-gold-3d" style="width: 100%;">Create Patches</button>
@@ -802,13 +773,6 @@
                     <span class="mc-slider"></span>
                   </label>
                 </div>
-                <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                  <span style="font-size: 0.85rem; color: #ffffff;">Extract Brarchives automatically</span>
-                  <label class="mc-toggle" style="margin-left: 0;">
-                    <input type="checkbox" id="set-extract-brarchives" />
-                    <span class="mc-slider"></span>
-                  </label>
-                </div>
               </div>
 
               <!-- Patch Creator -->
@@ -820,23 +784,6 @@
                     <input type="checkbox" id="set-gen-inject-manifest" checked />
                     <span class="mc-slider"></span>
                   </label>
-                </div>
-                <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                  <span style="font-size: 0.85rem; color: #ffffff;">Extract Brarchives for Patch</span>
-                  <label class="mc-toggle" style="margin-left: 0;">
-                    <input type="checkbox" id="set-gen-extract-brarchives" />
-                    <span class="mc-slider"></span>
-                  </label>
-                </div>
-                <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                  <span style="font-size: 0.85rem; color: #ffffff;">Replace Unchanged JSONs</span>
-                  <label class="mc-toggle" style="margin-left: 0;">
-                    <input type="checkbox" id="set-gen-replace-unchanged" />
-                    <span class="mc-slider"></span>
-                  </label>
-                </div>
-                <div style="font-size: 0.75rem; color: var(--color-warning); padding: 2px 0 6px;">
-                  ⚠️ Substituted files stay raw DRM-encrypted with no contents.json — they will fail to load in-game. Leave off unless you've verified decryption works.
                 </div>
               </div>
 

@@ -28,7 +28,7 @@
 - 🔧 Converts the **Actions & Stuff** Marketplace pack into an **RTX-compatible version**
 - 💡 Adds full **BetterRTX lighting**, reflections, and **PBR materials**
 - 📦 Supports **Marketplace auto-detect**, `.zip`, and `.mcpack` input formats
-- 🔒 Does **not redistribute** any original pack assets — your copy, your patch
+- 🔒 Does **not redistribute** any original pack assets, your copy, your patch
 
 ---
 
@@ -44,8 +44,8 @@
 
 | | Repository | Description | Link |
 | :---: | :--- | :--- | :---: |
-| ⚡ | **A&S RTX Patcher** | Main patcher — Marketplace & Zip support, GUI, automated patching | [This Repo](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher) |
-| 📦 | **Archive** | All binary patch files (`.xdelta` / `.vcdiff`) and the legacy V1 patcher source | [Repo →](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher-Archive) |
+| ⚡ | **A&S RTX Patcher** | Main patcher, Marketplace & Zip support, GUI, automated patching | [This Repo](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher) |
+| 📦 | **Archive** | All binary patch files (`.xdelta` / `.vcdiff`) and the legacy V1 patcher source | [Repo](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher-Archive) |
 | 🧰 | **External Tools** | Brarchive extractor and other tools for the patcher | [Repo →](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher-External_Tools) |
 
 ---
@@ -79,19 +79,19 @@
 
 ## 🔍 How It Works
 
-The patcher uses **binary diffing** to transform your own copy of Actions & Stuff into an RTX-compatible version — no original assets are ever distributed.
+The patcher uses **binary diffing** to transform your own copy of Actions & Stuff into an RTX-compatible version. No original assets are ever distributed.
 
 ```
 Your A&S Copy ──→ xdelta3 + .vcdiff patch ──→ A&S Enhanced for RTX (.mcpack)
 ```
 
-1. **Detect** — Locates your installed A&S pack (Marketplace auto-detect or manual selection)
-2. **Extract** — Unpacks the source files from `.brarchive`, `.zip`, or `.mcpack`
-3. **Patch** — Applies binary diffs (`.vcdiff`) via [xdelta3](https://github.com/jmacd/xdelta) to add RTX materials, PBR textures, and lighting fixes
-4. **Package** — Bundles everything into a ready-to-install `.mcpack` with an updated manifest
+1. **Detect**: Locates your installed A&S pack (Marketplace auto-detect or manual selection)
+2. **Extract**: Unpacks the source files from `.brarchive`, `.zip`, or `.mcpack`
+3. **Patch**: Applies binary diffs (`.vcdiff`) via [xdelta3](https://github.com/jmacd/xdelta) to add RTX materials, PBR textures, and lighting fixes
+4. **Package**: Bundles everything into a ready-to-install `.mcpack` with an updated manifest
 
 > [!TIP]
-> The patcher can also auto-adjust your Minecraft video settings for optimal RTX performance — no manual config needed.
+> The patcher can also auto-adjust your Minecraft video settings for optimal RTX performance, no manual config needed.
 
 ---
 
@@ -160,8 +160,8 @@ The **original creator** who made the source files available is **Demente Parker
 
 ## 🧠 Tools Used
 
-- [**xdelta3**](https://github.com/jmacd/xdelta) — Binary patch creation and application
-- [**Blockbench**](https://www.blockbench.net/) — Model editing & RTX material setup
+- [**xdelta3**](https://github.com/jmacd/xdelta): Binary patch creation and application
+- [**Blockbench**](https://www.blockbench.net/): Model editing & RTX material setup
 
 ---
 

@@ -666,9 +666,7 @@ function setupUtilities() {
           // folder is being written to: a working Decrypted/Patched Dir can
           // easily already carry a custom manifest from a previous run (and
           // so no longer have the pack's real purchased uuid at all), while
-          // the raw Encrypted Dir — untouched Marketplace cache — always
-          // does. Getting this right is what lets "Replace Unchanged" content
-          // still decrypt correctly after the manifest gets replaced.
+          // the raw Encrypted Dir — untouched Marketplace cache — always does.
           gLog_fn(`  Injecting baseline custom manifest into source directories...`);
           try {
               await invoke("inject_custom_manifest_to_target", { targetDir: decryptedDir, packVer: "", patchVer: "", identitySourceDir: encryptedDir });
@@ -708,27 +706,10 @@ function setupUtilities() {
       gLog_fn(`[3/4] Preparing patched target: ${patchedDir}`);
       const tgtZip = outputDir + "/_temp_target.zip";
       const tempTargetDir = outputDir + "/_temp_target_dir";
-      
-      const extractBrarchives = document.getElementById('gen-extract-brarchives').checked;
-      const replaceUnchanged = document.getElementById('gen-replace-unchanged').checked;
-      if (extractBrarchives) {
-        gLog_fn(`  Extracting Brarchives in source and target...`);
-        await invoke("extract_brarchives_in_workspace", { workspace: decryptedDir });
-        await invoke("extract_brarchives_in_workspace", { workspace: patchedDir });
-        // NOT run against encryptedDir: that folder is the raw, still-DRM-encrypted
-        // Marketplace source (already zipped as-is in Step 1 above) — its .brarchive
-        // files are genuine ciphertext at rest, not the plain magic-prefixed
-        // container format this expects, so "extracting" them can never succeed.
-        // Trying to anyway is what caused "Magic Mismatch" errors here.
-      }
 
-      // Run new replace logic
       await invoke("prepare_patch_target", {
-        decryptedDir: decryptedDir,
         rtxDir: patchedDir,
-        encryptedDir: encryptedDir,
-        tempTargetDir: tempTargetDir,
-        replaceUnchanged: replaceUnchanged
+        tempTargetDir: tempTargetDir
       });
 
       await invoke("pack_folder", { folderPath: tempTargetDir, outputZip: tgtZip });
@@ -1128,9 +1109,7 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
   const mode = document.querySelector('input[name="patch-mode"]:checked').value;
   const selectionMode = document.getElementById('version-selection-mode').value;
   const cleanOld = document.getElementById('chk-clean-old').checked;
-  const isAdvanced = document.getElementById('chk-advanced-mode').checked;
-  const extractBrarchives = isAdvanced && document.getElementById('chk-extract-brarchives').checked;
-  
+
   // Reset UI
   clearConsole();
   resetSteps();
@@ -1147,8 +1126,7 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
   log(`Starting patch pipeline in [${mode}] mode.`);
   log(`Configuration selection mode: ${selectionMode}`);
   log(`Automatic remnant cleanup option: ${cleanOld ? "Enabled" : "Disabled"}`);
-  log(`Brarchive extraction option: ${extractBrarchives ? "Enabled" : "Disabled"}`);
-  
+
   try {
     let sourceZipPath = "";
     let patchConfigToUse = null;
@@ -1273,21 +1251,6 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
       const zipOut = `${tempRoot}/${baseName}_vanilla.zip`;
       let targetFolder = sourcePackPath;
 
-      // Extract Brarchives is intentionally never attempted here, even if the
-      // user has it enabled: `encrypted.vcdiff` (the patch this mode applies)
-      // is always built from the Encrypted Dir zipped completely raw, with no
-      // extraction and no cleanup of any kind (see the matching comment in
-      // Create Patch, Step 1). The live Marketplace cache is the same kind of
-      // still-DRM-encrypted source, so it must be zipped just as raw to stay
-      // byte-identical to what the patch expects. Extraction can't succeed on
-      // genuinely-encrypted containers anyway (confirmed: every real archive
-      // fails with Magic Mismatch), and even the harmless-looking cleanup of
-      // empty placeholder archives changes the file tree just enough to break
-      // xdelta3's checksum match ("target window checksum mismatch").
-      if (extractBrarchives) {
-        log("Brarchive extraction is not applicable in Marketplace mode — the live cache is always still DRM-encrypted, so nothing there can actually be extracted. Skipping, and using the pack as-is.", "warning");
-      }
-
       updateStatus("Compressing Pack", "Generating deterministic ZIP of source pack...", '📦');
       updateProgress(25);
 
@@ -1334,15 +1297,7 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
       log(`  Target Dir: "${tempExtract}"`);
       await invoke("normalize_extracted_pack", { extractDir: tempExtract });
       log("Normalization and custom manifest injection finished.");
- 
-      if (extractBrarchives) {
-        updateStatus("Extracting Brarchives (Beta)", "Extracting brarchives inside pack context...", '⚙️');
-        updateProgress(25);
-        log(`Recursively scanning for and extracting .brarchive files in: "${tempExtract}"`);
-        await invoke("extract_brarchives_in_workspace", { workspace: tempExtract });
-        log("Nested brarchive extraction complete.");
-      }
-      
+
       const normalizedZip = `${tempRoot}/${baseName}_normalized.zip`;
       updateStatus("Compressing Normalized", "Generating deterministic ZIP of normalized pack...", '⚙️');
       updateProgress(35);
@@ -1379,57 +1334,19 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
       updateStepState(1, 'active');
       
       if (src.endsWith('.zip') || src.endsWith('.mcpack')) {
-        const tempRoot = defaultPaths.temp ? defaultPaths.temp.replace(/\\/g, "/") : ".";
-        const baseName = src.split(/[\\/]/).pop() || "custom";
-        if (extractBrarchives) {
-          updateStatus("Extracting Brarchives (Beta)", "Extracting brarchives inside custom source ZIP...", '📦');
-          updateProgress(15);
-          const tempExtract = `${tempRoot}/${baseName}_custom_extracted`;
-          log(`Extracting custom source ZIP: "${src}" to "${tempExtract}"`);
-          await invoke("extract_archive", { zipPath: src, outputDir: tempExtract });
-          log(`Extracting brarchives recursively inside: "${tempExtract}"`);
-          await invoke("extract_brarchives_in_workspace", { workspace: tempExtract });
-          const customZip = `${tempRoot}/${baseName}_custom_source.zip`;
-          updateStatus("Compressing Custom", "Generating deterministic ZIP...", '📦');
-          updateProgress(30);
-          log(`Creating deterministic zip: "${customZip}" from "${tempExtract}"`);
-          await invoke("pack_folder", { folderPath: tempExtract, outputZip: customZip });
-          log(`Cleaning temporary folder: "${tempExtract}"`);
-          await invoke("delete_folders", { folders: [tempExtract] });
-          sourceZipPath = customZip;
-        } else {
-          updateStatus("Copying Source", "Using source ZIP...", '📦');
-          updateProgress(30);
-          log(`Source is already ZIP. Using directly: "${src}"`);
-          sourceZipPath = src;
-        }
+        updateStatus("Copying Source", "Using source ZIP...", '📦');
+        updateProgress(30);
+        log(`Source is already ZIP. Using directly: "${src}"`);
+        sourceZipPath = src;
       } else {
         const tempRoot = defaultPaths.temp ? defaultPaths.temp.replace(/\\/g, "/") : ".";
         const baseName = src.split(/[\\/]/).pop() || "custom";
-        if (extractBrarchives) {
-          updateStatus("Extracting Brarchives (Beta)", "Copying and extracting custom brarchives...", '📦');
-          updateProgress(15);
-          const targetFolder = `${tempRoot}/${baseName}_custom_staged`;
-          log(`Staging custom source folder to Extract Brarchives:`);
-          log(`  Staging Source: "${src}"`);
-          log(`  Staging Target: "${targetFolder}"`);
-          await invoke("stage_and_extract_brarchives", { sourceDir: src, tempDir: targetFolder });
-          const customZip = `${tempRoot}/${baseName}_custom_source.zip`;
-          updateStatus("Compressing Custom", "Generating deterministic ZIP...", '📦');
-          updateProgress(30);
-          log(`Creating deterministic ZIP: "${customZip}" from "${targetFolder}"`);
-          await invoke("pack_folder", { folderPath: targetFolder, outputZip: customZip });
-          log(`Cleaning temporary folder: "${targetFolder}"`);
-          await invoke("delete_folders", { folders: [targetFolder] });
-          sourceZipPath = customZip;
-        } else {
-          updateStatus("Compressing Custom", "Compressing custom directory...", '📦');
-          updateProgress(30);
-          const customZip = `${tempRoot}/${baseName}_custom_source.zip`;
-          log(`Source is folder. Creating deterministic zip: "${customZip}" from "${src}"`);
-          await invoke("pack_folder", { folderPath: src, outputZip: customZip });
-          sourceZipPath = customZip;
-        }
+        updateStatus("Compressing Custom", "Compressing custom directory...", '📦');
+        updateProgress(30);
+        const customZip = `${tempRoot}/${baseName}_custom_source.zip`;
+        log(`Source is folder. Creating deterministic zip: "${customZip}" from "${src}"`);
+        await invoke("pack_folder", { folderPath: src, outputZip: customZip });
+        sourceZipPath = customZip;
       }
       
       updateStepState(1, 'completed');
@@ -2275,13 +2192,7 @@ let appSettings = {
   advancedMode: false,
   betaUpdates: false,
   cleanOld: true,
-  extractBrarchives: false,
   genInjectManifest: true,
-  genExtractBrarchives: false,
-  // Keep this off by default: substituted files stay raw DRM ciphertext with
-  // no accompanying contents.json, so they fail to load once installed
-  // (see prepare_patch_target in commands.rs). Opt-in only, not a footgun default.
-  genReplaceUnchanged: false,
   bugIncludeLog: true,
   bugIncludePack: false,
   bugIncludeContentLog: true,
@@ -2388,10 +2299,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   syncToggle('set-advanced-mode', 'chk-advanced-mode', 'advancedMode', true);
   syncToggle('set-beta-updates', 'chk-beta-updates', 'betaUpdates', true);
   syncToggle('set-clean-old', 'chk-clean-old', 'cleanOld');
-  syncToggle('set-extract-brarchives', 'chk-extract-brarchives', 'extractBrarchives');
   syncToggle('set-gen-inject-manifest', 'gen-inject-manifest', 'genInjectManifest');
-  syncToggle('set-gen-extract-brarchives', 'gen-extract-brarchives', 'genExtractBrarchives');
-  syncToggle('set-gen-replace-unchanged', 'gen-replace-unchanged', 'genReplaceUnchanged');
   syncToggle('set-bug-include-log', 'bug-include-log', 'bugIncludeLog');
   syncToggle('set-bug-include-pack', 'bug-include-pack', 'bugIncludePack');
   syncToggle('set-bug-include-content-log', 'bug-include-content-log', 'bugIncludeContentLog');

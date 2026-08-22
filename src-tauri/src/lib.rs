@@ -27,7 +27,6 @@ pub fn run() {
             get_cleanable_packs,
             select_directory,
             select_file,
-            stage_and_extract_brarchives,
             extract_brarchives_in_workspace,
             generate_xdelta_patch,
             open_in_explorer,

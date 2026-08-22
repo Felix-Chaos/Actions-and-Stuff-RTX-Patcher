@@ -92,16 +92,11 @@ Lets you manually point at a specific **source** pack (folder or zip), **target*
 
 Some Actions & Stuff source material ships assets bundled inside a custom container format instead of as normal loose files: a `__brarchive` folder containing `*.brarchive` files, each of which is really several real files packed together with a small binary header.
 
-**When you need it:** in practice, mainly when generating a new patch in the [Create Patch tool](#create-patch-vcdiff) with **Replace Unchanged** turned on. That option pulls substitute files straight from the raw, still-encrypted marketplace source, and if any of those live inside a `__brarchive` container, extraction has to run first or the tool won't find them at their expected path. **Replace Unchanged is off by default**, and should stay off unless verified in-game (see the warning under [Create Patch](#create-patch-vcdiff)), so for most patch-generation runs, and for virtually all regular end users applying an existing patch, you don't need to touch this toggle at all.
-
 **What it does:** recursively scans the target folder for `__brarchive` directories, unpacks every `.brarchive` file back into a normal file at the path it's named after (stripping the `.brarchive` suffix), then deletes the now-empty archive containers and any leftover `.brarchive` pointer files.
 
-**Where the toggle exists:**
-- **Patcher tab** → the "Extract Brarchives (Beta)" step runs automatically if **App Settings → Extract Brarchives automatically** is enabled.
-- **Create Patch tool** → its own "Extract Brarchives" toggle, applied to all three of your source/target folders before diffing.
-- **Utilities → Extract Brarchives** → a standalone version you can point at any folder directly, independent of the patching pipeline. Handy if you just want to inspect what's inside a `__brarchive` folder without running a full patch.
+**Where it exists:** **Utilities → Extract Brarchives**, a standalone tool you point at any folder directly. Handy for inspecting what's inside a `__brarchive` folder.
 
-If a folder doesn't have a `__brarchive` anywhere in it, running this is a harmless no-op, which is why it's still marked **Beta** and left off by default rather than something you need to actively avoid.
+If a folder doesn't have a `__brarchive` anywhere in it, running this is a harmless no-op, which is why it's still marked **Beta**.
 
 ---
 
@@ -140,13 +135,11 @@ This is how new patch versions actually get built, for custom/new patches. It's 
 | **3. Source Encrypted Folder** | The same vanilla version, but straight from `premium_cache`, still DRM-encrypted |
 | **Output Directory** | Where the finished `.vcdiff` files and `patch_config.json` get written |
 
-Plus **Pack Version** / **Patch Version** (used to name the output folder and populate `patch_config.json`), and three toggles:
+Plus **Pack Version** / **Patch Version** (used to name the output folder and populate `patch_config.json`), and one toggle:
 
 | Toggle | Effect |
 | :--- | :--- |
 | **Inject Custom Manifest** | Writes the patcher's own `manifest.json` into both the decrypted baseline and the target folder before diffing, so the shipped pack always ends up with the correct custom pack identity |
-| **Extract Brarchives** | See [Extract Brarchives](#-extract-brarchives) above, runs it on all three input folders first |
-| **Replace Unchanged** | ⚠️ **Off by default. Leave it off unless you've verified it in-game.** It substitutes any file that's byte-identical between the decrypted baseline and your target with the *raw DRM-encrypted* original, to shrink the diff. Files substituted this way ship as ciphertext with no guarantee Minecraft can still decrypt them once a custom manifest is in play; enabling it has previously produced patches where a bunch of assets silently failed to load. |
 
 Clicking **Create Patches** produces `encrypted.vcdiff`, `decrypted.vcdiff`, and a `patch_config.json` (pack/patch version + validation stats used by Marketplace auto-detection) in a new `Actions & Stuff for RTX <pack version> V<patch version>` folder under your chosen output directory.
 
@@ -170,8 +163,7 @@ Version bump + build automation for cutting a new patcher release: edit the app 
 | General | Enable Advanced Mode UI | Reveals Zip/Custom patch modes, the Utilities tab, and other advanced controls |
 | General | Opt-in to Beta Updates | Lets the in-app updater offer beta/alpha releases, not just stable |
 | Patcher Behaviors | Clean Old Patch Remnants | Runs the Cleaner scan automatically before every patch |
-| Patcher Behaviors | Extract Brarchives automatically | Runs brarchive extraction automatically during a normal patch run |
-| Patch Creator Defaults | Inject Custom Manifest / Extract Brarchives for Patch / Replace Unchanged JSONs | Default state of the matching toggles in the [Create Patch tool](#create-patch-vcdiff) |
+| Patch Creator Defaults | Inject Custom Manifest | Default state of the matching toggle in the [Create Patch tool](#create-patch-vcdiff) |
 | Bug Reporter Defaults | Include Application Log / Pack / Content Log / Driver Events / Hardware Info | Default state of the matching checkboxes on the bug report form |
 | Privacy | Telemetry consent, Delete My Data | Opt in/out of anonymous hardware pings, and erase your server-side data (rotates your local install ID) |
 
