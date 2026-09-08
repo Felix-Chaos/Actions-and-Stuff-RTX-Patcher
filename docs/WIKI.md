@@ -38,6 +38,7 @@ This guide covers the current Tauri-based patcher (the app that ships as `Action
     - [Create Patch (VCDIFF)](#create-patch-vcdiff)
     - [Extract Brarchives (standalone)](#extract-brarchives-standalone)
   - [💬 Support](#-support)
+  - [📚 Patch Library (maintainers only)](#-patch-library-maintainers-only)
   - [📦 Release Builder (maintainers only)](#-release-builder-maintainers-only)
   - [⚙️ App Settings](#-app-settings-reference)
 - [Troubleshooting](#-troubleshooting)
@@ -151,6 +152,10 @@ Same brarchive extraction described [above](#-extract-brarchives), pointed at an
 
 Discord invite links (community + BetterRTX), and the **Bug Report** form. The bug reporter can optionally attach your application log, the pack you patched, a Minecraft content log (with usernames scrubbed from file paths), recent GPU driver events, and a hardware summary (GPU/CPU/RAM/BetterRTX preset), all opt-in per checkbox, and all tied to a random install ID rather than anything personally identifying. See **App Settings → Privacy** for the underlying telemetry consent controls.
 
+### 📚 Patch Library (maintainers only)
+
+Patches are downloaded from a separate [patch library repo](https://github.com/Felix-Chaos/AS-RTX-Patch-Library) rather than shipped inside the patcher, so a new patch reaches everyone without a patcher update. You can publish one straight from the Create Patch tool. See [PATCH_LIBRARY.md](PATCH_LIBRARY.md).
+
 ### 📦 Release Builder (maintainers only)
 
 Version bump + build automation for cutting a new patcher release: edit the app version, build MSI/NSIS installers and/or a portable `.exe`, and sort the resulting artifacts into a `Releases/vX.Y.Z` folder with the updater manifest signature injected automatically. Not relevant unless you're publishing a new patcher build.
@@ -163,7 +168,11 @@ Version bump + build automation for cutting a new patcher release: edit the app 
 | General | Enable Advanced Mode UI | Reveals Zip/Custom patch modes, the Utilities tab, and other advanced controls |
 | General | Opt-in to Beta Updates | Lets the in-app updater offer beta/alpha releases, not just stable |
 | Patcher Behaviors | Clean Old Patch Remnants | Runs the Cleaner scan automatically before every patch |
+| Patcher Behaviors | Keep only the most recently used patch | After a successful patch, delete other downloaded patches to save space (off by default) |
+| Console | Console height | How tall the execution output console is; you can also drag the grip in its bottom-right corner |
+| Downloaded Patches | Remove / Remove all downloads | Delete cached patch downloads. They are fetched again automatically when next needed; bundled patches are never touched |
 | Patch Creator Defaults | Inject Custom Manifest | Default state of the matching toggle in the [Create Patch tool](#create-patch-vcdiff) |
+| Patch Creator Defaults | Patch library repo folder / Publish after creating | Where to publish new patches, and whether to publish automatically. See [PATCH_LIBRARY.md](PATCH_LIBRARY.md) |
 | Bug Reporter Defaults | Include Application Log / Pack / Content Log / Driver Events / Hardware Info | Default state of the matching checkboxes on the bug report form |
 | Privacy | Telemetry consent, Delete My Data | Opt in/out of anonymous hardware pings, and erase your server-side data (rotates your local install ID) |
 
