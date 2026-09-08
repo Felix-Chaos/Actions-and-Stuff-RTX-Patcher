@@ -618,6 +618,48 @@ p {
   height: 150px;
 }
 
+/* App Settings layout.
+   The groups are .card, which sets overflow:hidden, so anything wider than its
+   column was silently clipped: toggles at the right edge and the console size
+   presets. These groups scroll with the page, so they must not clip at all. */
+.settings-grid {
+  /* Columns adapt instead of forcing two narrow ones on a small window. */
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)) !important;
+  align-items: start;
+  /* The parent .card is a column flexbox, so this grid defaults to shrinking to
+     the card's height instead of overflowing it. That suppressed the scrollbar
+     and left the content clipped rather than scrollable, which is what made the
+     page look cropped. Refusing to shrink lets .full-card scroll properly. */
+  flex-shrink: 0;
+  /* The scrolling card ends flush against its own padding, which made the last
+     group look cut off at the bottom. */
+  padding-bottom: 24px;
+}
+
+.settings-group.card {
+  overflow: visible;
+  min-width: 0;
+  height: auto;
+}
+
+/* Label-and-control rows: wrap rather than push the control out of the card. */
+.settings-group > div {
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+/* Keep toggles and small buttons at their natural size while labels wrap. */
+.settings-group .mc-toggle,
+.settings-group .btn {
+  flex: 0 0 auto;
+}
+
+.settings-group span,
+.settings-group p {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 /* Corner grip for resizing the console: diagonal pixel lines in the bottom
    right, dragged downward to enlarge. */
 .console-section {
