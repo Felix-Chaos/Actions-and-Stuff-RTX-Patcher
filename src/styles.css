@@ -618,6 +618,31 @@ p {
   height: 150px;
 }
 
+/* App Settings groups.
+   These are .card, which sets overflow:hidden, so any row wider than its column
+   was cut off rather than wrapped: the "Tall" preset, the toggles on the right
+   edge, and the Remove buttons. Column count is deliberately left alone. */
+.settings-group.card {
+  min-width: 0;
+}
+
+/* Let label-and-control rows wrap instead of running past the card edge. */
+.settings-group > div {
+  flex-wrap: wrap;
+}
+
+/* The label takes the slack and wraps its text; controls keep their size. */
+.settings-group > div > span:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.settings-group .mc-toggle,
+.settings-group .btn {
+  flex: 0 0 auto;
+}
+
 /* Corner grip for resizing the console: diagonal pixel lines in the bottom
    right, dragged downward to enlarge. */
 .console-section {
