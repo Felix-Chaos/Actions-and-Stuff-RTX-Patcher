@@ -782,6 +782,40 @@ async function refreshCachedPatches() {
   renderDownloadedPatchesSettings();
 }
 
+// patch_config.json stores "v1.11.1" while the pack scanner reports "1.11.1",
+// so versions must be normalised before any comparison.
+function normalizePackVersion(v) {
+  return String(v ?? '').trim().replace(/^v/i, '');
+}
+
+// Does a scanned pack look like the pack this patch config was built against?
+// v1.11 and v1.11.1 share a logo hash, so file and directory counts are the
+// only thing that separates them. Files tolerate a small delta (a user may have
+// added a file); directories must match exactly.
+function candidateMatchesConfig(candidate, config) {
+  if (!candidate || !config) return false;
+  const stats = config.stats || config.marketplace_pack_stats?.v1;
+  if (!stats || (!stats.files && !stats.dirs)) return false;
+
+  const fileMatch = stats.files && candidate.files_count > 0
+    ? Math.abs(stats.files - candidate.files_count) <= 5
+    : true;
+  const dirMatch = stats.dirs && candidate.dirs_count > 0
+    ? stats.dirs === candidate.dirs_count
+    : true;
+  return fileMatch && dirMatch;
+}
+
+// Best available description of the pack being patched. Prefer the scanner's
+// own version string; fall back to a config whose stats match this pack.
+function detectedVersionOf(candidate, fallbackConfig) {
+  if (candidate && candidate.version && candidate.version !== 'Unknown') return candidate.version;
+  const match = patchConfigs.find(c => candidateMatchesConfig(candidate, c));
+  if (match) return match.packVersion;
+  return (fallbackConfig && fallbackConfig.packVersion) || 'Unknown';
+
+}
+
 function resolvePatchConfig(selectionMode, detectedCandidate) {
   // Sort patchConfigs descending by packVersion and then by patchVersion
   const sortedConfigs = [...patchConfigs].sort((a, b) => {
@@ -1545,6 +1579,10 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
   try {
     let sourceZipPath = "";
     let patchConfigToUse = null;
+    // The pack we actually chose to patch, and the folder picked if the user
+    // had to browse manually. Both feed the compression step below.
+    let selectedCandidate = null;
+    let browsedPackPath = "";
     
     // ----------------------------------------
     // STEP 0: SCAN & VERIFY
@@ -1611,14 +1649,30 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
           throw "User cancelled manual browse. Patch aborted.";
         }
         log(`Using manually browsed pack directory: ${browsePath}`);
+        browsedPackPath = browsePath;
         patchConfigToUse = resolvePatchConfig(selectionMode, null);
       } else {
-        const best = candidates[0];
-        log(`Auto-selected candidate pack:`);
+        // In Auto mode the scanner's ranking decides. In Manual mode the user
+        // has already named a version, so patch the pack that actually matches
+        // it - picking the top-ranked pack regardless would silently apply the
+        // patch to a different version and fail xdelta's source checksum.
+        let best = candidates[0];
+        if (selectionMode === 'manual') {
+          const wanted = resolvePatchConfig(selectionMode, null);
+          const match = wanted && candidates.find(c => candidateMatchesConfig(c, wanted));
+          if (match) {
+            best = match;
+          } else if (wanted) {
+            log(`None of the detected packs match the selected patch version (${wanted.packVersion}).`, 'warning');
+          }
+        }
+        selectedCandidate = best;
+
+        log(`Selected candidate pack:`);
         log(`  Path: "${best.path}"`);
         log(`  Version: ${best.version}`);
         log(`  Complexity: ${best.files_count} files and ${best.dirs_count} folders`);
-        
+
         patchConfigToUse = resolvePatchConfig(selectionMode, best);
 
         if (selectionMode === 'auto' && patchConfigToUse && patchConfigToUse.stats) {
@@ -1636,17 +1690,17 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
           }
         }
 
-        // If selection is manual, we check if the selected patch pack version matches the detected pack version
-        // To be safe, if we resolved an exact patchConfigToUse, its packVersion is the best determination of truth
-        let determinedVersion = best.version;
-        if (patchConfigToUse && patchConfigToUse.packVersion) {
-            determinedVersion = patchConfigToUse.packVersion;
-        }
+        // Warn when the manually chosen patch does not match the pack we are
+        // about to patch. This compares against the detected pack: the previous
+        // version overwrote the detected value with the selected one, so the
+        // two sides were always equal and the check never fired.
+        const detectedVersion = detectedVersionOf(best, patchConfigToUse);
 
-        if (selectionMode === 'manual' && patchConfigToUse.packVersion !== determinedVersion) {
-          log(`Warning: Target patch version (${patchConfigToUse.packVersion}) does not match detected pack version (${determinedVersion}).`, 'warning');
+        if (selectionMode === 'manual' && patchConfigToUse &&
+            normalizePackVersion(patchConfigToUse.packVersion) !== normalizePackVersion(detectedVersion)) {
+          log(`Warning: Target patch version (${patchConfigToUse.packVersion}) does not match detected pack version (${detectedVersion}).`, 'warning');
           const proceed = await showConfirm(
-            `Warning: The selected patch version (${patchConfigToUse.packVersion}) differs from your installed pack version (${determinedVersion}).\n\nDo you want to proceed anyway?`,
+            `Warning: The selected patch version (${patchConfigToUse.packVersion}) differs from the installed pack that will be patched (${detectedVersion}).\n\nApplying a patch built for a different version will fail.\n\nDo you want to proceed anyway?`,
             'Version Mismatch'
           );
           if (!proceed) {
@@ -1660,7 +1714,13 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
       // STEP 1: COMPRESSION / NORMALIZATION
       updateStepState(1, 'active');
       
-      const sourcePackPath = candidates.length > 0 ? candidates[0].path : document.getElementById('custom-src').value;
+      // Must follow the candidate actually selected above, not the top-ranked
+      // one, or Manual mode would compress a different pack than it patches.
+      // browsedPackPath covers the manual-browse fallback, whose chosen folder
+      // was previously discarded in favour of an unrelated custom-src field.
+      const sourcePackPath = selectedCandidate
+        ? selectedCandidate.path
+        : (browsedPackPath || document.getElementById('custom-src').value);
       const tempRoot = defaultPaths.temp ? defaultPaths.temp.replace(/\\/g, "/") : ".";
       const baseName = sourcePackPath.split(/[\\/]/).pop() || "source";
       const zipOut = `${tempRoot}/${baseName}_vanilla.zip`;
