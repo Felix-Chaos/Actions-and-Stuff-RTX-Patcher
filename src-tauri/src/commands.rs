@@ -49,6 +49,7 @@ fn is_actions_and_stuff_pack(path: &Path) -> bool {
 
 #[tauri::command]
 pub async fn scan_marketplace_packs(
+    app: tauri::AppHandle,
     expected_logo_hash: Option<String>,
     expected_has_lang_file: Option<bool>,
     valid_stats_list: Option<Vec<ValidStats>>,
@@ -71,13 +72,21 @@ pub async fn scan_marketplace_packs(
 
     for base_path in base_paths {
         if !base_path.exists() {
+            emit_log(&app, "main", &format!("Marketplace scan: no folder at {:?}", base_path), "info");
             continue;
         }
+        emit_log(&app, "main", &format!("Marketplace scan: checking {:?}", base_path), "info");
         if let Ok(entries) = std::fs::read_dir(base_path) {
             for entry in entries.flatten() {
                 let path = entry.path();
                 if path.is_dir() {
                     if !is_actions_and_stuff_pack(&path) {
+                        emit_log(
+                            &app,
+                            "main",
+                            &format!("  [Skipped] {:?}: not an Actions & Stuff pack", entry.file_name()),
+                            "info",
+                        );
                         continue;
                     }
                     let version = get_lang_version(&path).unwrap_or_else(|| "Unknown".to_string());
@@ -175,7 +184,9 @@ pub async fn scan_marketplace_packs(
     }
     
     candidates.sort_by(|a, b| b.score.cmp(&a.score));
-    
+
+    emit_log(&app, "main", &format!("Marketplace scan complete: {} candidate(s) found.", candidates.len()), "info");
+
     // If we have expected stats and no candidate fits, throw error
     if (valid_stats_list.is_some() || expected_logo_hash.is_some()) && candidates.is_empty() {
         return Err("No pack fits the expected stats in premium_cache. Please ensure the official pack is downloaded.".to_string());
@@ -1760,7 +1771,7 @@ pub fn open_url(url: String) -> Result<(), String> {
 #[tauri::command]
 pub async fn fetch_motd() -> Result<serde_json::Value, String> {
     let api_url = std::option_env!("PATCHER_API_URL").unwrap_or("http://localhost:3000");
-    let api_key = std::option_env!("PATCHER_API_KEY").unwrap_or("");
+    let api_key = crate::utils::api_key();
 
     let client = reqwest::Client::new();
     let res = client.get(&format!("{}/api/patcher/motd", api_url))
@@ -1810,7 +1821,7 @@ pub async fn submit_bug_report(
     categories: Option<Vec<String>>,
 ) -> Result<serde_json::Value, String> {
     let api_url = std::option_env!("PATCHER_API_URL").unwrap_or("http://localhost:3000");
-    let api_key = std::option_env!("PATCHER_API_KEY").unwrap_or("");
+    let api_key = crate::utils::api_key();
     // DSGVO: identify reports by the random install id, never by MachineGuid.
     let install_id = crate::telemetry::load_state(&app)
         .map(|s| s.install_id)

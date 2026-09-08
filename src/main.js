@@ -241,8 +241,9 @@ function updateMotdBox() {
   }
 
   if (activeMotd && activeMotd.title) {
-    if (motdTitle) motdTitle.innerText = activeMotd.title;
-    if (motdMessage) motdMessage.innerText = activeMotd.message || "";
+    const toText = (s) => (s || "").replace(/\\n/g, "\n");
+    if (motdTitle) motdTitle.innerText = toText(activeMotd.title);
+    if (motdMessage) motdMessage.innerText = toText(activeMotd.message);
     if (motdContainer) motdContainer.classList.remove('hidden-group');
   } else {
     if (motdContainer) motdContainer.classList.add('hidden-group');
@@ -418,18 +419,28 @@ function resolvePatchConfig(selectionMode, detectedCandidate) {
         return (valid.logo_hash || stats.files) && hashMatch && fileMatch && dirMatch;
       });
 
-      if (exactMatch) return exactMatch;
+      if (exactMatch) {
+        log(`Patch config resolved via stats/logo_hash match: pack ${exactMatch.packVersion} (patch ${exactMatch.patchVersion || "1.0"})`);
+        return exactMatch;
+      }
 
       // 2. Fallback to version string
       if (detectedCandidate.version && detectedCandidate.version !== 'Unknown') {
         const verMatch = sortedConfigs.find(c => c.packVersion === detectedCandidate.version);
-        if (verMatch) return verMatch;
+        if (verMatch) {
+          log(`Patch config resolved via version string fallback: pack ${verMatch.packVersion} (patch ${verMatch.patchVersion || "1.0"})`);
+          return verMatch;
+        }
       }
     } else if (typeof detectedCandidate === 'string' && detectedCandidate !== 'Unknown') {
       const verMatch = sortedConfigs.find(c => c.packVersion === detectedCandidate);
-      if (verMatch) return verMatch;
+      if (verMatch) {
+        log(`Patch config resolved via version string fallback: pack ${verMatch.packVersion} (patch ${verMatch.patchVersion || "1.0"})`);
+        return verMatch;
+      }
     }
     // Default to the highest pack version config
+    log(`Could not confidently match a detected pack to a patch config, defaulting to the newest available (pack ${(sortedConfigs[0] || patchConfigs[0])?.packVersion})`, 'warning');
     return sortedConfigs[0] || patchConfigs[0];
   } else {
     const selAsVal = document.getElementById('select-as-version').value;
@@ -491,7 +502,10 @@ async function bindPickers() {
   
   try {
     defaultPaths = await invoke("get_default_paths");
-  } catch (_) {
+    const edition = (defaultPaths.premium_cache || "").includes("MinecraftUWP") ? "UWP (Microsoft Store)" : "GDK (Roaming)";
+    log(`Detected Minecraft install (edition: ${edition}), premium_cache: ${defaultPaths.premium_cache}, resource_packs: ${defaultPaths.resource_packs}`);
+  } catch (err) {
+    log(`Could not detect default Minecraft install paths: ${err}`, 'warning');
     defaultPaths = {};
   }
 
@@ -901,9 +915,10 @@ function setupUtilities() {
 async function loadOptionsProfiles() {
   try {
     optionsProfiles = await invoke("get_options_paths");
+    log(`Found ${optionsProfiles.length} options.txt profile(s): ${optionsProfiles.map(p => p.label).join(", ") || "none"}`);
     const select = document.getElementById('options-file-select');
     select.innerHTML = '<option value="">-- Choose a Profile --</option>';
-    
+
     optionsProfiles.forEach((profile, index) => {
       const opt = document.createElement('option');
       opt.value = profile.path;
@@ -1723,6 +1738,20 @@ function setupReleaseBuilder() {
       }
     });
   }
+
+  // "What's the difference?" (pseudonymous vs anonymous) links
+  ['btn-pseudonymous-info', 'btn-pseudonymous-info-modal'].forEach((id) => {
+    const btn = document.getElementById(id);
+    if (btn) {
+      btn.addEventListener('click', async () => {
+        try {
+          await invoke("open_url", { url: "https://en.wikipedia.org/wiki/Pseudonymization" });
+        } catch (e) {
+          console.warn("Failed to open URL", e);
+        }
+      });
+    }
+  });
 
   // Support Links
   const btnChaosDiscord = document.getElementById('btn-chaos-discord');
