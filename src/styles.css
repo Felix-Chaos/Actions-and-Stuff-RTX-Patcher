@@ -618,43 +618,50 @@ p {
   height: 150px;
 }
 
-/* Drag handle for resizing the console. Blocky rather than a smooth pill, to
-   sit with the rest of the pixel styling. */
-.console-resize-handle {
-  height: 10px;
-  margin: -4px 0 2px;
-  cursor: ns-resize;
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0.5;
-  transition: opacity 0.12s ease-out;
-  touch-action: none;
+/* Corner grip for resizing the console: diagonal pixel lines in the bottom
+   right, dragged downward to enlarge. */
+.console-section {
+  position: relative;
 }
 
-.console-resize-handle::before {
+.console-resize-grip {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  opacity: 0.45;
+  transition: opacity 0.12s ease-out;
+  touch-action: none;
+  z-index: 2;
+}
+
+.console-resize-grip::before {
   content: "";
-  width: 44px;
-  height: 4px;
-  /* 2px blocks with 2px gaps: a pixel grip, not a rounded bar. */
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 11px;
+  height: 11px;
+  /* Hard stops only, so the lines stay crisp blocks rather than smooth strokes. */
   background-image: repeating-linear-gradient(
-    to right,
-    rgba(255, 255, 255, 0.55) 0,
-    rgba(255, 255, 255, 0.55) 2px,
+    315deg,
+    rgba(255, 255, 255, 0.65) 0,
+    rgba(255, 255, 255, 0.65) 2px,
     transparent 2px,
     transparent 4px
   );
 }
 
-.console-resize-handle:hover,
-.console-resize-handle.dragging {
+.console-resize-grip:hover,
+.console-resize-grip.dragging {
   opacity: 1;
 }
 
-.console-resize-handle.dragging::before {
+.console-resize-grip.dragging::before {
   background-image: repeating-linear-gradient(
-    to right,
+    315deg,
     var(--primary-color) 0,
     var(--primary-color) 2px,
     transparent 2px,
@@ -665,7 +672,7 @@ p {
 /* Keeps the page from selecting text while a drag is in progress. */
 body.console-resizing {
   user-select: none;
-  cursor: ns-resize;
+  cursor: nwse-resize;
 }
 
 /* .btn has no active state of its own, so the selected size preset needs one.
