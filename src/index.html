@@ -160,9 +160,15 @@
                         </select>
                       </div>
                     </div>
-                    <button type="button" id="btn-refresh-patches" class="btn btn-secondary btn-xs" style="margin-top: 4px;" title="Check the patch library for newly released patches">
-                      <i class="fas fa-rotate"></i> Refresh patch list
-                    </button>
+                    <div id="patch-availability-hint" class="status-hint" style="font-size: 0.78rem; margin-top: 6px;"></div>
+                    <div style="display: flex; gap: 6px; margin-top: 4px;">
+                      <button type="button" id="btn-refresh-patches" class="btn btn-secondary btn-xs" title="Check the patch library for newly released patches">
+                        <i class="fas fa-rotate"></i> Refresh patch list
+                      </button>
+                      <button type="button" id="btn-remove-selected-patch" class="btn btn-secondary btn-xs hidden-group" title="Delete this downloaded patch from disk. It will be downloaded again next time it is used.">
+                        <i class="fas fa-trash-can"></i> Remove download
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -779,6 +785,30 @@
                     <input type="checkbox" id="set-clean-old" checked />
                     <span class="mc-slider"></span>
                   </label>
+                </div>
+              </div>
+
+              <!-- Downloaded Patches -->
+              <div class="settings-group card" style="background: rgba(0,0,0,0.2);">
+                <h3 style="margin-top: 0;">Downloaded Patches</h3>
+                <p style="font-size: 0.78rem; color: #9aa0a6; margin-top: 0;">
+                  Patches are downloaded as you use them and kept for offline use. Removing one only frees
+                  disk space &mdash; it is downloaded again automatically next time. Patches bundled with the
+                  app are never removed.
+                </p>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
+                  <span style="font-size: 0.85rem; color: #ffffff;">Keep only the most recently used patch</span>
+                  <label class="mc-toggle" style="margin-left: 0;">
+                    <input type="checkbox" id="set-clean-patch-cache" />
+                    <span class="mc-slider"></span>
+                  </label>
+                </div>
+                <div id="downloaded-patches-list" style="margin-top: 8px;"></div>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px;">
+                  <span id="downloaded-patches-total" style="font-size: 0.75rem; color: #9aa0a6;"></span>
+                  <button type="button" id="btn-clear-patch-cache" class="btn btn-secondary btn-xs" disabled>
+                    <i class="fas fa-trash-can"></i> Remove all downloads
+                  </button>
                 </div>
               </div>
 
