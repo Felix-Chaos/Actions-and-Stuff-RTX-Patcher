@@ -302,19 +302,45 @@ async function loadMotd() {
   }
 }
 
-// Load configs and versions from Rust
+// Load configs and versions from Rust.
+// Safe to call more than once: it only rebuilds the dropdowns. The one-time
+// event wiring lives in wireVersionControls().
 async function loadPatchConfigs() {
   try {
     log("Loading patch configurations...");
-    patchConfigs = await invoke("get_patch_configs");
-    log(`Loaded ${patchConfigs.length} patch configuration profiles.`);
-    
+    const bundled = await invoke("get_patch_configs");
+    log(`Found ${bundled.length} bundled patch configuration profile(s).`);
+
+    // Merge in the remote patch library. Bundled entries win on conflict, so a
+    // patch shipped inside the installer is always preferred over downloading
+    // the same version again.
+    let remote = [];
+    try {
+      const index = await invoke("fetch_patch_index");
+      const bundledKeys = new Set(bundled.map(c => `${c.packVersion}|${c.patchVersion || "1.0"}`));
+      remote = (index.entries || []).filter(
+        e => !bundledKeys.has(`${e.packVersion}|${e.patchVersion || "1.0"}`)
+      );
+      log(`Loaded ${remote.length} downloadable patch entries from the patch library (source: ${index.source}${index.updated ? `, updated ${index.updated}` : ''}).`);
+      if (index.source === 'cache') {
+        log("The patch library could not be reached; using the last known catalogue.", 'warning');
+      } else if (index.source === 'none') {
+        log("No patch library catalogue is available. Only bundled patches can be used.", 'warning');
+      }
+    } catch (err) {
+      log(`Could not load the remote patch library: ${err}`, 'warning');
+    }
+
+    patchConfigs = [...bundled, ...remote];
+    log(`${patchConfigs.length} patch configuration profile(s) available in total.`);
+
     // Extract unique packVersion strings and sort descending
     const uniqueAsVersions = Array.from(new Set(patchConfigs.map(c => c.packVersion)))
       .sort((a, b) => b.localeCompare(a, undefined, { numeric: true, sensitivity: 'base' }));
 
     const asSelect = document.getElementById('select-as-version');
     if (asSelect) {
+      const previous = asSelect.value;
       asSelect.innerHTML = '';
       uniqueAsVersions.forEach(v => {
         const opt = document.createElement('option');
@@ -322,42 +348,68 @@ async function loadPatchConfigs() {
         opt.innerText = `Version ${v}`;
         asSelect.appendChild(opt);
       });
-
-      asSelect.addEventListener('change', (e) => {
-        updatePatchVersionsList(e.target.value);
-      });
+      if (previous && uniqueAsVersions.includes(previous)) asSelect.value = previous;
     }
 
-    if (uniqueAsVersions.length > 0) {
-      updatePatchVersionsList(uniqueAsVersions[0]);
-    }
-
-    // Selection mode toggle buttons switch
-    const btnAuto = document.getElementById('btn-ver-auto');
-    const btnManual = document.getElementById('btn-ver-manual');
-    const verModeInput = document.getElementById('version-selection-mode');
-    const manualOptions = document.getElementById('manual-version-options');
-    
-    if (btnAuto && btnManual && verModeInput && manualOptions) {
-      const toggleMode = (mode) => {
-        verModeInput.value = mode;
-        if (mode === 'auto') {
-          btnAuto.classList.add('active');
-          btnManual.classList.remove('active');
-          manualOptions.classList.add('hidden-group');
-        } else {
-          btnAuto.classList.remove('active');
-          btnManual.classList.add('active');
-          manualOptions.classList.remove('hidden-group');
-        }
-        verModeInput.dispatchEvent(new Event('change'));
-      };
-
-      btnAuto.addEventListener('click', () => toggleMode('auto'));
-      btnManual.addEventListener('click', () => toggleMode('manual'));
+    const selected = asSelect && asSelect.value ? asSelect.value : uniqueAsVersions[0];
+    if (selected) {
+      updatePatchVersionsList(selected);
     }
   } catch (err) {
     log(`Failed to load patch configs: ${err}`, 'error');
+  }
+}
+
+// One-time listener wiring for the version selectors. Kept out of
+// loadPatchConfigs so refreshing the catalogue cannot double-bind handlers.
+function wireVersionControls() {
+  const asSelect = document.getElementById('select-as-version');
+  if (asSelect) {
+    asSelect.addEventListener('change', (e) => {
+      updatePatchVersionsList(e.target.value);
+    });
+  }
+
+  // Selection mode toggle buttons switch
+  const btnAuto = document.getElementById('btn-ver-auto');
+  const btnManual = document.getElementById('btn-ver-manual');
+  const verModeInput = document.getElementById('version-selection-mode');
+  const manualOptions = document.getElementById('manual-version-options');
+
+  if (btnAuto && btnManual && verModeInput && manualOptions) {
+    const toggleMode = (mode) => {
+      verModeInput.value = mode;
+      if (mode === 'auto') {
+        btnAuto.classList.add('active');
+        btnManual.classList.remove('active');
+        manualOptions.classList.add('hidden-group');
+      } else {
+        btnAuto.classList.remove('active');
+        btnManual.classList.add('active');
+        manualOptions.classList.remove('hidden-group');
+      }
+      verModeInput.dispatchEvent(new Event('change'));
+    };
+
+    btnAuto.addEventListener('click', () => toggleMode('auto'));
+    btnManual.addEventListener('click', () => toggleMode('manual'));
+  }
+
+  // Manual refresh, so a patch published minutes ago can be picked up without
+  // restarting the app.
+  const btnRefresh = document.getElementById('btn-refresh-patches');
+  if (btnRefresh) {
+    btnRefresh.addEventListener('click', async () => {
+      btnRefresh.disabled = true;
+      const original = btnRefresh.innerHTML;
+      btnRefresh.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+      try {
+        await loadPatchConfigs();
+      } finally {
+        btnRefresh.disabled = false;
+        btnRefresh.innerHTML = original;
+      }
+    });
   }
 }
 
@@ -2505,6 +2557,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     console.error("Failed to fetch patch versions:", err);
   }
 
+  wireVersionControls();
   await loadPatchConfigs();
   await bindPickers();
   setupUtilities();
