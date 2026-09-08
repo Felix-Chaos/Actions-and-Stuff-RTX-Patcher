@@ -1,3 +1,16 @@
+## [2.2.14]
+
+### Added
+- Added support for Actions & Stuff RTX 1.11.1.
+- The in-app status message (MOTD) can now display multi-line text.
+
+### Changed
+- Improved in-app logging during Minecraft installation and Marketplace pack detection, making it easier to see why a pack wasn't picked up automatically.
+- Clarified the hardware-ping privacy notice: it is now labeled "Pseudonymous Hardware Ping" with a link explaining what that means and why it differs from fully anonymous data.
+
+### Security
+- The bundled API key used for server communication is no longer stored as a plain-text string in the compiled app.
+
 ## [2.2.13]
 
 ### Fixed
