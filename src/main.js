@@ -148,7 +148,7 @@ function updateStepState(stepId, state) {
 }
 
 function resetSteps() {
-  for (let i = 0; i <= 4; i++) {
+  for (let i = 0; i <= 5; i++) {
     updateStepState(i, 'idle');
   }
 }
@@ -358,6 +358,54 @@ async function loadPatchConfigs() {
     }
   } catch (err) {
     log(`Failed to load patch configs: ${err}`, 'error');
+  }
+}
+
+// Fetches one patch variant from the remote patch library into the local
+// cache, reporting live progress. Returns the absolute path on disk, which
+// run_xdelta_patch accepts unchanged. A cached, verified copy returns almost
+// immediately and emits no progress events.
+async function downloadPatchVariant(config, patchKey, variant) {
+  const slug = config.slug;
+  if (!slug) throw "Remote patch entry is missing its id (slug).";
+
+  const totalMb = variant.size ? (variant.size / 1048576).toFixed(1) : "?";
+  log(`Patch file for pack ${config.packVersion} (patch ${config.patchVersion || "1.0"}) is not bundled; fetching it from the patch library.`);
+  log(`  Variant: ${patchKey}  |  Size: ${totalMb} MB`);
+  updateStatus("Preparing Patch File", `Downloading ${patchKey} patch (${totalMb} MB)...`, '⬇️');
+
+  let unlisten = null;
+  try {
+    unlisten = await listen('patch-download-progress', (event) => {
+      const p = event.payload || {};
+      if (p.slug !== slug || p.variant !== patchKey) return;
+      const total = p.total_bytes || variant.size || 0;
+      const doneMb = (p.bytes_downloaded / 1048576).toFixed(1);
+      if (total > 0) {
+        const pct = Math.min(100, (p.bytes_downloaded / total) * 100);
+        // The download spans the 55-75% band of the overall pipeline.
+        updateProgress(55 + (pct * 0.20));
+        updateStatus("Preparing Patch File", `Downloading ${patchKey} patch: ${doneMb} / ${totalMb} MB (${pct.toFixed(0)}%)`, '⬇️');
+      } else {
+        updateStatus("Preparing Patch File", `Downloading ${patchKey} patch: ${doneMb} MB`, '⬇️');
+      }
+    });
+
+    const path = await invoke("ensure_patch_downloaded", {
+      slug,
+      variant: patchKey,
+      url: variant.url,
+      sha256: variant.sha256 || "",
+      size: variant.size || 0
+    });
+
+    updateProgress(75);
+    log(`Patch file ready: "${path}"`, 'success');
+    return path;
+  } finally {
+    if (unlisten) {
+      try { unlisten(); } catch (_) {}
+    }
   }
 }
 
@@ -1388,14 +1436,15 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
     }
     updateStepState(2, 'completed');
     
-    // STEP 3: APPLY RTX PATCH
+    // STEP 3: ENSURE THE PATCH FILE IS AVAILABLE (download it if it is remote)
     updateStepState(3, 'active');
-    updateStatus("Applying RTX Patch", "Running high-performance XDelta decoder...", '⚡');
-    updateProgress(65);
-    
+    updateStatus("Preparing Patch File", "Locating the patch for your pack...", '📦');
+    updateProgress(55);
+
     let patchFilePath = "";
     let finalOutputPath = "";
-    
+    let usedPatchSlug = null;
+
     if (mode === 'custom') {
       patchFilePath = document.getElementById('custom-patch').value;
       finalOutputPath = document.getElementById('custom-tgt').value;
@@ -1403,37 +1452,52 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
       if (!patchConfigToUse) {
         throw "No valid patch configuration found to match targets.";
       }
-      
+
       const isEncrypted = mode === 'marketplace';
       const patchKey = isEncrypted ? 'encrypted' : 'decrypted';
-      
-      let relPatch = patchConfigToUse.patches && patchConfigToUse.patches[patchKey]
-        ? patchConfigToUse.patches[patchKey]
-        : `assets/Patches/${patchConfigToUse.folder_name}/${isEncrypted ? 'encrypted.vcdiff' : 'decrypted.vcdiff'}`;
-        
-      patchFilePath = relPatch;
-      
+      const variant = patchConfigToUse.patches && patchConfigToUse.patches[patchKey];
+
+      if (variant && typeof variant === 'object' && variant.url) {
+        // Remote entry from the patch library: fetch it into the local cache.
+        // run_xdelta_patch takes the absolute cache path unchanged.
+        patchFilePath = await downloadPatchVariant(patchConfigToUse, patchKey, variant);
+        usedPatchSlug = patchConfigToUse.slug || null;
+      } else if (variant) {
+        // Explicit path override in a patch_config.json.
+        patchFilePath = variant;
+      } else {
+        // Bundled patch shipped inside the installer.
+        patchFilePath = `assets/Patches/${patchConfigToUse.folder_name}/${isEncrypted ? 'encrypted.vcdiff' : 'decrypted.vcdiff'}`;
+      }
+
       const sourcePackPath = sourceZipPath;
       const idx = sourcePackPath.lastIndexOf('.');
-      finalOutputPath = idx !== -1 
+      finalOutputPath = idx !== -1
         ? `${sourcePackPath.substring(0, idx)}_RTX_Patched.zip`
         : `${sourcePackPath}_RTX_Patched.zip`;
     }
-    
+
+    updateStepState(3, 'completed');
+
+    // STEP 4: APPLY RTX PATCH
+    updateStepState(4, 'active');
+    updateStatus("Applying RTX Patch", "Running high-performance XDelta decoder...", '⚡');
+    updateProgress(80);
+
     log(`APPLYING PATCH FILE:`);
     log(`  Patch:  "${patchFilePath}"`);
     log(`  Source: "${sourceZipPath}"`);
     log(`  Output: "${finalOutputPath}"`);
     log("Running XDelta patch execution...");
-    
+
     await invoke("run_xdelta_patch", {
       sourceZip: sourceZipPath,
       patchFile: patchFilePath,
       outputFile: finalOutputPath
     });
-    
+
     log("Patch application completed successfully!", 'success');
-    updateStepState(3, 'completed');
+    updateStepState(4, 'completed');
     
     // Clean intermediate zip
     if (mode === 'marketplace' || mode === 'zip' || (mode === 'custom' && !document.getElementById('custom-src').value.endsWith('.zip'))) {
@@ -1442,8 +1506,8 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
       log("Temporary source ZIP cleaned.");
     }
     
-    // STEP 4: IMPORT PACK
-    updateStepState(4, 'active');
+    // STEP 5: IMPORT PACK
+    updateStepState(5, 'active');
     updateStatus("Patch Done", "Ready to import into Minecraft!", '🎉');
     updateProgress(100);
     
@@ -1477,7 +1541,7 @@ document.getElementById('btn-install-pack').addEventListener('click', async () =
     log(`Launching installer for: ${finalPatchedPath}`);
     const actualMcpack = await invoke("install_mcpack", { outputFile: finalPatchedPath });
     log(`Successfully installed pack to: ${actualMcpack}`, 'success');
-    updateStepState(4, 'completed');
+    updateStepState(5, 'completed');
     btn.classList.add('hidden-group');
   } catch (err) {
     log(`Install failed: ${err}`, 'error');
