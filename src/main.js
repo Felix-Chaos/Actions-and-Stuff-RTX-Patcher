@@ -428,9 +428,9 @@ function setupConsoleResize() {
   let latest = 0;
 
   const onMove = (e) => {
-    // Dragging up grows the console, which is the direction that feels right
-    // for a panel anchored to the bottom of the layout.
-    latest = applyConsoleHeight(startHeight + (startY - e.clientY));
+    // The grip sits on the bottom edge, so the console follows the cursor:
+    // dragging down enlarges it.
+    latest = applyConsoleHeight(startHeight + (e.clientY - startY));
     updateConsoleHeightReadout(latest);
   };
 
