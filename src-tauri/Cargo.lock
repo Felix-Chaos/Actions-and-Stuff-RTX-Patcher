@@ -4124,6 +4124,7 @@ version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
  "dotenvy",
+ "futures-util",
  "reqwest",
  "rfd",
  "serde",
