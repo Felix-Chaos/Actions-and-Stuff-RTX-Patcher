@@ -83,6 +83,9 @@ window.alert = function(msg) {
 
 // Global State
 let patchConfigs = [];
+// Slugs of patches downloaded into this user's cache, plus their sizes.
+let cachedPatchSlugs = new Set();
+let cachedPatchInfo = [];
 let optionsProfiles = [];
 let selectedOptionsPath = "";
 let defaultPaths = {};
@@ -360,6 +363,63 @@ async function loadPatchConfigs() {
   }
 }
 
+// Renders the "Downloaded Patches" list in Settings: one row per cached
+// patch with its size and a Remove button, plus a total.
+function renderDownloadedPatchesSettings() {
+  const list = document.getElementById('downloaded-patches-list');
+  const total = document.getElementById('downloaded-patches-total');
+  const btnClear = document.getElementById('btn-clear-patch-cache');
+  if (!list) return;
+
+  if (cachedPatchInfo.length === 0) {
+    list.innerHTML = '<div class="placeholder-text" style="font-size: 0.8rem;">No patches downloaded yet. Patches are downloaded automatically when you use them.</div>';
+    if (total) total.innerText = '';
+    if (btnClear) btnClear.disabled = true;
+    return;
+  }
+
+  if (btnClear) btnClear.disabled = false;
+  list.innerHTML = '';
+
+  cachedPatchInfo.forEach(entry => {
+    // Map the cache id back to a human name where the catalogue still knows it.
+    const config = patchConfigs.find(c => c.slug === entry.slug);
+    const label = config
+      ? `${config.packVersion} &mdash; Patch v${config.patchVersion || "1.0"}`
+      : entry.slug;
+
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);';
+    row.innerHTML = `
+      <div style="min-width:0;">
+        <div style="font-size:0.85rem;color:#ffffff;">${label}</div>
+        <div style="font-size:0.72rem;color:#9aa0a6;">${entry.variants.join(', ')} &middot; ${(entry.size / 1048576).toFixed(1)} MB</div>
+      </div>
+      <button type="button" class="btn btn-secondary btn-xs" data-slug="${entry.slug}">Remove</button>
+    `;
+    row.querySelector('button').addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      btn.innerText = 'Removing...';
+      try {
+        const freed = await invoke("delete_cached_patch", { slug: entry.slug });
+        log(`Removed downloaded patch ${entry.slug} (${(freed / 1048576).toFixed(1)} MB freed).`, 'success');
+        await refreshCachedPatches();
+      } catch (err) {
+        log(`Could not remove the downloaded patch: ${err}`, 'error');
+        btn.disabled = false;
+        btn.innerText = 'Remove';
+      }
+    });
+    list.appendChild(row);
+  });
+
+  const bytes = cachedPatchInfo.reduce((sum, e) => sum + e.size, 0);
+  if (total) {
+    total.innerText = `${cachedPatchInfo.length} patch${cachedPatchInfo.length === 1 ? '' : 'es'} downloaded · ${(bytes / 1048576).toFixed(1)} MB total`;
+  }
+}
+
 // One-time listener wiring for the version selectors. Kept out of
 // loadPatchConfigs so refreshing the catalogue cannot double-bind handlers.
 function wireVersionControls() {
@@ -395,6 +455,12 @@ function wireVersionControls() {
     btnManual.addEventListener('click', () => toggleMode('manual'));
   }
 
+  // Keep the availability hint in step with the selected patch version.
+  const patchSelect = document.getElementById('select-patch-version');
+  if (patchSelect) {
+    patchSelect.addEventListener('change', () => updateSelectedPatchAvailability());
+  }
+
   // Manual refresh, so a patch published minutes ago can be picked up without
   // restarting the app.
   const btnRefresh = document.getElementById('btn-refresh-patches');
@@ -405,9 +471,58 @@ function wireVersionControls() {
       btnRefresh.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
       try {
         await loadPatchConfigs();
+        await refreshCachedPatches();
       } finally {
         btnRefresh.disabled = false;
         btnRefresh.innerHTML = original;
+      }
+    });
+  }
+
+  // Remove just the patch currently selected in the version list.
+  const btnRemoveSelected = document.getElementById('btn-remove-selected-patch');
+  if (btnRemoveSelected) {
+    btnRemoveSelected.addEventListener('click', async () => {
+      const slug = btnRemoveSelected.dataset.slug;
+      if (!slug) return;
+      btnRemoveSelected.disabled = true;
+      try {
+        const freed = await invoke("delete_cached_patch", { slug });
+        log(`Removed downloaded patch ${slug} (${(freed / 1048576).toFixed(1)} MB freed). It will be downloaded again next time it is used.`, 'success');
+        await refreshCachedPatches();
+      } catch (err) {
+        log(`Could not remove the downloaded patch: ${err}`, 'error');
+      } finally {
+        btnRemoveSelected.disabled = false;
+      }
+    });
+  }
+
+  // Remove every downloaded patch (Settings).
+  const btnClearCache = document.getElementById('btn-clear-patch-cache');
+  if (btnClearCache) {
+    btnClearCache.addEventListener('click', async () => {
+      if (cachedPatchInfo.length === 0) return;
+      const bytes = cachedPatchInfo.reduce((sum, e) => sum + e.size, 0);
+      const ok = confirm(
+        `Remove all ${cachedPatchInfo.length} downloaded patch(es)?\n\n` +
+        `This frees ${(bytes / 1048576).toFixed(1)} MB. Patches bundled with the app are not affected, ` +
+        `and any removed patch is downloaded again automatically the next time you use it.`
+      );
+      if (!ok) return;
+
+      btnClearCache.disabled = true;
+      const original = btnClearCache.innerHTML;
+      btnClearCache.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Removing...';
+      try {
+        const [removed, freed] = await invoke("clear_patch_cache");
+        log(`Removed ${removed} downloaded patch(es), freeing ${(freed / 1048576).toFixed(1)} MB.`, 'success');
+        await refreshCachedPatches();
+      } catch (err) {
+        log(`Could not clear the downloaded patches: ${err}`, 'error');
+      } finally {
+        btnClearCache.innerHTML = original;
+        btnClearCache.disabled = cachedPatchInfo.length === 0;
       }
     });
   }
@@ -436,7 +551,8 @@ async function downloadPatchVariant(config, patchKey, variant) {
       if (total > 0) {
         const pct = Math.min(100, (p.bytes_downloaded / total) * 100);
         // The download spans the 55-75% band of the overall pipeline.
-        updateProgress(55 + (pct * 0.20));
+        // updateProgress writes the number straight into the label, so round it.
+        updateProgress(Math.round(55 + (pct * 0.20)));
         updateStatus("Preparing Patch File", `Downloading ${patchKey} patch: ${doneMb} / ${totalMb} MB (${pct.toFixed(0)}%)`, '⬇️');
       } else {
         updateStatus("Preparing Patch File", `Downloading ${patchKey} patch: ${doneMb} MB`, '⬇️');
@@ -472,14 +588,92 @@ function updatePatchVersionsList(asVersion) {
       return verB.localeCompare(verA, undefined, { numeric: true, sensitivity: 'base' });
     });
 
+  const previous = patchSelect.value;
   patchSelect.innerHTML = '<option value="latest">Latest (Recommended)</option>';
   matching.forEach(c => {
     const ver = c.patchVersion || "1.0";
     const opt = document.createElement('option');
     opt.value = ver;
-    opt.innerText = `Patch v${ver}`;
+    opt.innerText = `Patch v${ver} ${patchAvailabilityLabel(c)}`;
     patchSelect.appendChild(opt);
   });
+  if (previous && Array.from(patchSelect.options).some(o => o.value === previous)) {
+    patchSelect.value = previous;
+  }
+
+  updateSelectedPatchAvailability();
+}
+
+// Whether a config needs no download: either shipped in the installer, or
+// already sitting in this user's patch cache.
+function isPatchDownloaded(config) {
+  if (!config) return false;
+  const hasRemote = config.patches && Object.values(config.patches).some(v => v && typeof v === 'object' && v.url);
+  if (!hasRemote) return true; // bundled with the app
+  return !!(config.slug && cachedPatchSlugs.has(config.slug));
+}
+
+function patchAvailabilityLabel(config) {
+  const hasRemote = config.patches && Object.values(config.patches).some(v => v && typeof v === 'object' && v.url);
+  if (!hasRemote) return '— bundled';
+  if (config.slug && cachedPatchSlugs.has(config.slug)) return '— downloaded';
+  const bytes = Math.max(...Object.values(config.patches).map(v => (v && v.size) || 0));
+  return bytes ? `— download ${(bytes / 1048576).toFixed(0)} MB` : '— not downloaded';
+}
+
+// Reflects the currently selected version in the availability hint and the
+// per-version remove button.
+function updateSelectedPatchAvailability() {
+  const hint = document.getElementById('patch-availability-hint');
+  const btnRemove = document.getElementById('btn-remove-selected-patch');
+  if (!hint && !btnRemove) return;
+
+  const asSel = document.getElementById('select-as-version');
+  const patchSel = document.getElementById('select-patch-version');
+  if (!asSel || !patchSel) return;
+
+  const matching = patchConfigs.filter(c => c.packVersion === asSel.value)
+    .sort((a, b) => (b.patchVersion || "1.0").localeCompare(a.patchVersion || "1.0", undefined, { numeric: true, sensitivity: 'base' }));
+  const config = patchSel.value === 'latest'
+    ? matching[0]
+    : matching.find(c => (c.patchVersion || "1.0") === patchSel.value) || matching[0];
+
+  if (hint) {
+    if (!config) {
+      hint.innerText = '';
+    } else if (isPatchDownloaded(config)) {
+      const bundled = !(config.patches && Object.values(config.patches).some(v => v && typeof v === 'object' && v.url));
+      hint.innerHTML = bundled
+        ? '<span style="color:#7ed17e;">&#10003; Included with the app</span>'
+        : '<span style="color:#7ed17e;">&#10003; Downloaded &mdash; ready to use offline</span>';
+    } else {
+      const bytes = Math.max(...Object.values(config.patches || {}).map(v => (v && v.size) || 0));
+      hint.innerHTML = `<span style="color:#e0b050;">&#8681; Will be downloaded${bytes ? ` (${(bytes / 1048576).toFixed(0)} MB)` : ''}</span>`;
+    }
+  }
+
+  if (btnRemove) {
+    const removable = !!(config && config.slug && cachedPatchSlugs.has(config.slug));
+    btnRemove.classList.toggle('hidden-group', !removable);
+    btnRemove.dataset.slug = removable ? config.slug : '';
+  }
+}
+
+// Refreshes the cached-patch set from disk, then repaints anything that shows
+// download state.
+async function refreshCachedPatches() {
+  try {
+    const cached = await invoke("list_cached_patches");
+    cachedPatchSlugs = new Set(cached.map(c => c.slug));
+    cachedPatchInfo = cached;
+  } catch (err) {
+    console.error("Failed to list downloaded patches", err);
+    cachedPatchSlugs = new Set();
+    cachedPatchInfo = [];
+  }
+  const asSel = document.getElementById('select-as-version');
+  if (asSel && asSel.value) updatePatchVersionsList(asSel.value);
+  renderDownloadedPatchesSettings();
 }
 
 function resolvePatchConfig(selectionMode, detectedCandidate) {
@@ -1550,6 +1744,18 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
 
     log("Patch application completed successfully!", 'success');
     updateStepState(4, 'completed');
+
+    // Housekeeping only: never allowed to fail the run, since the patch is
+    // already applied by this point.
+    try {
+      if (appSettings.autoCleanPatchCache && usedPatchSlug) {
+        const removed = await invoke("prune_patch_cache", { keepSlug: usedPatchSlug });
+        if (removed > 0) log(`Removed ${removed} older downloaded patch(es) to save space.`);
+      }
+      await refreshCachedPatches();
+    } catch (err) {
+      log(`Could not tidy the downloaded patches: ${err}`, 'warning');
+    }
     
     // Clean intermediate zip
     if (mode === 'marketplace' || mode === 'zip' || (mode === 'custom' && !document.getElementById('custom-src').value.endsWith('.zip'))) {
@@ -2337,6 +2543,7 @@ let appSettings = {
   advancedMode: false,
   betaUpdates: false,
   cleanOld: true,
+  autoCleanPatchCache: false,
   genInjectManifest: true,
   bugIncludeLog: true,
   bugIncludePack: false,
@@ -2443,6 +2650,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   // Sync settings tabs to main UI tabs
   syncToggle('set-advanced-mode', 'chk-advanced-mode', 'advancedMode', true);
   syncToggle('set-beta-updates', 'chk-beta-updates', 'betaUpdates', true);
+  syncToggle('set-clean-patch-cache', null, 'autoCleanPatchCache');
   syncToggle('set-clean-old', 'chk-clean-old', 'cleanOld');
   syncToggle('set-gen-inject-manifest', 'gen-inject-manifest', 'genInjectManifest');
   syncToggle('set-bug-include-log', 'bug-include-log', 'bugIncludeLog');
@@ -2559,6 +2767,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   wireVersionControls();
   await loadPatchConfigs();
+  await refreshCachedPatches();
   await bindPickers();
   setupUtilities();
   setupReleaseBuilder();
