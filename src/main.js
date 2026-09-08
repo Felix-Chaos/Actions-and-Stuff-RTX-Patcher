@@ -1572,67 +1572,184 @@ document.getElementById('btn-best-settings').addEventListener('click', () => {
 // Cleaner panel setup
 let cleanablePacksPaths = [];
 
+// Paths the user has ticked for deletion. Everything found starts selected.
+let cleanSelectedPaths = new Set();
+
+function cleanerSelectedList() {
+  return cleanablePacksPaths.filter(p => cleanSelectedPaths.has(p));
+}
+
+function updateCleanerButtons() {
+  const selected = cleanerSelectedList().length;
+  const total = cleanablePacksPaths.length;
+  const btnSelected = document.getElementById('btn-run-cleaner');
+  const btnAll = document.getElementById('btn-clean-delete-all');
+
+  if (btnSelected) {
+    btnSelected.disabled = selected === 0;
+    btnSelected.innerText = selected > 0 ? `Delete Selected (${selected})` : 'Delete Selected';
+  }
+  if (btnAll) {
+    btnAll.disabled = total === 0;
+    btnAll.innerText = total > 0 ? `Delete All (${total})` : 'Delete All';
+  }
+
+  ['btn-clean-select-all', 'btn-clean-select-none'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('hidden-group', total === 0);
+  });
+
+  const countTag = document.getElementById('clean-results-count');
+  if (countTag) {
+    countTag.innerText = total === 0
+      ? '0 found'
+      : `${selected} of ${total} selected`;
+  }
+}
+
+function renderCleanerResults() {
+  const list = document.getElementById('clean-results-list');
+  if (!list) return;
+  list.innerHTML = '';
+
+  if (cleanablePacksPaths.length === 0) {
+    list.innerHTML = '<div class="placeholder-text">No old Actions &amp; Stuff packs found. Your folders are clean!</div>';
+    updateCleanerButtons();
+    return;
+  }
+
+  cleanablePacksPaths.forEach(p => {
+    const parts = p.split(/[\\/]/);
+    const name = parts[parts.length - 1] || p;
+
+    const item = document.createElement('div');
+    item.className = 'clean-item';
+    item.style.cssText = 'display:flex;align-items:center;gap:10px;';
+
+    const box = document.createElement('input');
+    box.type = 'checkbox';
+    box.checked = cleanSelectedPaths.has(p);
+    box.style.cssText = 'flex:0 0 auto;cursor:pointer;';
+    box.addEventListener('change', () => {
+      if (box.checked) cleanSelectedPaths.add(p); else cleanSelectedPaths.delete(p);
+      updateCleanerButtons();
+    });
+
+    const text = document.createElement('div');
+    text.style.cssText = 'min-width:0;flex:1;cursor:pointer;';
+    text.innerHTML = `<div style="font-size:0.85rem;color:#ffffff;">${name}</div>`;
+    const pathSpan = document.createElement('div');
+    pathSpan.className = 'clean-item-path';
+    pathSpan.style.maxWidth = '100%';
+    pathSpan.innerText = p;
+    pathSpan.title = p;
+    text.appendChild(pathSpan);
+    // Clicking the row toggles it, which is easier to hit than the checkbox.
+    text.addEventListener('click', () => { box.checked = !box.checked; box.dispatchEvent(new Event('change')); });
+
+    item.appendChild(box);
+    item.appendChild(text);
+    list.appendChild(item);
+  });
+
+  updateCleanerButtons();
+}
+
+async function runCleanerScan({ quiet = false } = {}) {
+  if (!quiet) log("Scanning Minecraft folders for old RTX packs...");
+  cleanablePacksPaths = await invoke("get_cleanable_packs");
+  cleanSelectedPaths = new Set(cleanablePacksPaths); // default to everything selected
+  renderCleanerResults();
+  if (!quiet) {
+    log(cleanablePacksPaths.length === 0
+      ? "Scan finished. Clean state verified."
+      : `Scan finished. Found ${cleanablePacksPaths.length} cleanable paths.`);
+  }
+}
+
+function setCleanProgress(done, total, label) {
+  const wrap = document.getElementById('clean-progress-wrap');
+  const fill = document.getElementById('clean-progress-fill');
+  const text = document.getElementById('clean-progress-text');
+  if (!wrap || !fill || !text) return;
+  wrap.classList.remove('hidden-group');
+  fill.style.width = `${total ? Math.round((done / total) * 100) : 0}%`;
+  text.innerText = label;
+}
+
+// Deletes one folder at a time so the bar reflects real progress. delete_folders
+// takes a list, but a single call gives no feedback until every folder is gone,
+// and these can hold thousands of files each.
+async function deleteCleanerPaths(paths, description) {
+  const confirmDelete = await showConfirm(
+    `Delete ${paths.length} folder(s)?\n\n${description}\n\nThis cannot be undone. You can re-patch and reinstall afterwards.`,
+    'Confirm Deletion'
+  );
+  if (!confirmDelete) return;
+
+  const buttons = ['btn-scan-cleaner', 'btn-run-cleaner', 'btn-clean-delete-all', 'btn-clean-select-all', 'btn-clean-select-none']
+    .map(id => document.getElementById(id)).filter(Boolean);
+  buttons.forEach(b => { b.disabled = true; });
+
+  let deleted = 0;
+  let failed = 0;
+  try {
+    log(`Deleting ${paths.length} folder(s)...`);
+    setCleanProgress(0, paths.length, `Preparing to delete ${paths.length} folder(s)...`);
+
+    for (let i = 0; i < paths.length; i++) {
+      const name = paths[i].split(/[\\/]/).pop() || paths[i];
+      setCleanProgress(i, paths.length, `Deleting ${i + 1} of ${paths.length}: ${name}`);
+      try {
+        const count = await invoke("delete_folders", { folders: [paths[i]] });
+        if (count > 0) { deleted++; } else { failed++; log(`Could not delete: ${paths[i]}`, 'warning'); }
+      } catch (err) {
+        failed++;
+        log(`Failed to delete "${paths[i]}": ${err}`, 'error');
+      }
+    }
+
+    setCleanProgress(paths.length, paths.length, `Done. Deleted ${deleted} folder(s)${failed ? `, ${failed} could not be removed` : ''}.`);
+    log(`Cleaner: deleted ${deleted} folder(s)${failed ? `, ${failed} failed` : ''}.`, failed ? 'warning' : 'success');
+  } finally {
+    buttons.forEach(b => { b.disabled = false; });
+    // Re-scan so the list reflects what is actually left, including anything
+    // that could not be removed because Minecraft still had it open.
+    await runCleanerScan({ quiet: true });
+    setTimeout(() => {
+      const wrap = document.getElementById('clean-progress-wrap');
+      if (wrap) wrap.classList.add('hidden-group');
+    }, 4000);
+  }
+}
+
 document.getElementById('btn-scan-cleaner').addEventListener('click', async () => {
   try {
-    log("Scanning Minecraft folders for old RTX packs...");
-    cleanablePacksPaths = await invoke("get_cleanable_packs");
-    
-    const countTag = document.getElementById('clean-results-count');
-    countTag.innerText = `${cleanablePacksPaths.length} found`;
-    
-    const list = document.getElementById('clean-results-list');
-    list.innerHTML = '';
-    
-    if (cleanablePacksPaths.length === 0) {
-      list.innerHTML = '<div class="placeholder-text">No old Actions & Stuff packs found. Your folders are clean!</div>';
-      document.getElementById('btn-run-cleaner').disabled = true;
-      log("Scan finished. Clean state verified.");
-    } else {
-      cleanablePacksPaths.forEach(p => {
-        const item = document.createElement('div');
-        item.className = 'clean-item';
-        
-        const pathSpan = document.createElement('span');
-        pathSpan.className = 'clean-item-path';
-        pathSpan.innerText = p;
-        item.appendChild(pathSpan);
-        
-        const labelSpan = document.createElement('span');
-        const parts = p.split(/[\\\/]/);
-        labelSpan.innerText = parts[parts.length - 1] || p;
-        item.appendChild(labelSpan);
-        
-        list.appendChild(item);
-      });
-      document.getElementById('btn-run-cleaner').disabled = false;
-      log(`Scan finished. Found ${cleanablePacksPaths.length} cleanable paths.`);
-    }
+    await runCleanerScan();
   } catch (err) {
     log(`Scan failed: ${err}`, 'error');
   }
 });
 
-document.getElementById('btn-run-cleaner').addEventListener('click', async () => {
+document.getElementById('btn-clean-select-all').addEventListener('click', () => {
+  cleanSelectedPaths = new Set(cleanablePacksPaths);
+  renderCleanerResults();
+});
+
+document.getElementById('btn-clean-select-none').addEventListener('click', () => {
+  cleanSelectedPaths.clear();
+  renderCleanerResults();
+});
+
+document.getElementById('btn-clean-delete-all').addEventListener('click', async () => {
   if (cleanablePacksPaths.length === 0) return;
-  const confirmDelete = await showConfirm(
-    `Are you sure you want to delete all ${cleanablePacksPaths.length} located folders?`,
-    'Confirm Deletion'
-  );
-  if (!confirmDelete) return;
-  
-  try {
-    log("Deleting located folders...");
-    const deletedCount = await invoke("delete_folders", { folders: cleanablePacksPaths });
-    log(`Cleaner: Successfully deleted ${deletedCount} folders.`, 'success');
-    alert(`Clean up complete! Deleted ${deletedCount} folder(s).`);
-    
-    document.getElementById('clean-results-list').innerHTML = '<div class="placeholder-text">Click Scan Folders to begin search...</div>';
-    document.getElementById('clean-results-count').innerText = '0 found';
-    document.getElementById('btn-run-cleaner').disabled = true;
-  } catch (err) {
-    log(`Deletion error: ${err}`, 'error');
-    alert(`Clean up failed:\n${err}`);
-  }
+  await deleteCleanerPaths([...cleanablePacksPaths], 'Every patched pack found by the scan will be removed.');
+});
+
+document.getElementById('btn-run-cleaner').addEventListener('click', async () => {
+  const selected = cleanerSelectedList();
+  if (selected.length === 0) return;
+  await deleteCleanerPaths(selected, 'Only the folders you ticked will be removed.');
 });
 
 // CORE PATCHER PIPELINE

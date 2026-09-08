@@ -311,14 +311,28 @@
             
             <div class="action-panel">
               <button id="btn-scan-cleaner" class="btn btn-secondary">Scan Folders</button>
-              <button id="btn-run-cleaner" class="btn btn-danger" disabled>Delete Selected Files</button>
+              <button id="btn-run-cleaner" class="btn btn-danger" disabled>Delete Selected</button>
+              <button id="btn-clean-delete-all" class="btn btn-danger" disabled>Delete All</button>
             </div>
 
             <div class="clean-results-container">
               <div class="results-header">
                 <span>Scan Results:</span>
-                <span id="clean-results-count" class="count-tag">0 found</span>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <button type="button" id="btn-clean-select-all" class="btn btn-secondary btn-xs hidden-group">Select all</button>
+                  <button type="button" id="btn-clean-select-none" class="btn btn-secondary btn-xs hidden-group">Select none</button>
+                  <span id="clean-results-count" class="count-tag">0 found</span>
+                </div>
               </div>
+
+              <!-- Deletion progress, hidden until a delete actually starts -->
+              <div id="clean-progress-wrap" class="hidden-group" style="margin: 10px 0 6px;">
+                <div class="progress-bar-container">
+                  <div class="progress-bar-fill" id="clean-progress-fill" style="width: 0%"></div>
+                </div>
+                <div id="clean-progress-text" style="font-size: 0.78rem; color: #9aa0a6;"></div>
+              </div>
+
               <div class="results-list" id="clean-results-list">
                 <div class="placeholder-text">Click Scan Folders to begin search...</div>
               </div>
