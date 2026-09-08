@@ -491,8 +491,16 @@
                         <span class="mc-slider"></span>
                       </label>
                     </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
+                      <span style="font-size: 0.85rem; color: #ffffff; font-weight: 500;">Publish to Patch Library</span>
+                      <label class="mc-toggle" style="margin-left: 0;">
+                        <input type="checkbox" id="gen-publish-library" />
+                        <span class="mc-slider"></span>
+                      </label>
+                    </div>
                     <div class="genpatch-actions" style="margin-top: 16px;">
                       <button id="btn-run-gen-patch" class="btn btn-gold-3d" style="width: 100%;">Create Patches</button>
+                      <button id="btn-publish-last-patch" class="btn btn-secondary hidden-group" style="width: 100%; margin-top: 8px;">Publish to Library</button>
                     </div>
                     <div class="genpatch-status" id="genpatch-status" style="margin-top: 12px; display: none;">
                       <div id="genpatch-status-text" class="status-hint"></div>
@@ -853,6 +861,26 @@
                   <span style="font-size: 0.85rem; color: #ffffff;">Inject Custom Manifest</span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="set-gen-inject-manifest" checked />
+                    <span class="mc-slider"></span>
+                  </label>
+                </div>
+
+                <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 12px 0;" />
+                <p style="font-size: 0.78rem; color: #9aa0a6; margin: 0 0 8px;">
+                  Publishing copies a created patch into your local clone of the patch library and pushes it.
+                  Everyone gets it within a minute, with no patcher update. Requires git to be set up.
+                </p>
+                <div class="form-group" style="margin-bottom: 8px;">
+                  <label for="set-patch-library-dir">Patch library repo folder</label>
+                  <div class="file-picker-group">
+                    <input type="text" id="set-patch-library-dir" placeholder="No folder selected" readonly />
+                    <button id="btn-browse-patch-library" class="btn btn-secondary">Browse...</button>
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
+                  <span style="font-size: 0.85rem; color: #ffffff;">Publish after creating a patch</span>
+                  <label class="mc-toggle" style="margin-left: 0;">
+                    <input type="checkbox" id="set-publish-after-create" />
                     <span class="mc-slider"></span>
                   </label>
                 </div>

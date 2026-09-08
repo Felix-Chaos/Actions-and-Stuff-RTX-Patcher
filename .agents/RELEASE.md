@@ -86,8 +86,11 @@ that the release ships without them:
 
 - `docs/PATCH_LIBRARY.md`, the human runbook for publishing a patch. The library repo's
   own `README.md` covers the same ground, so this is a duplicate-for-convenience.
-- Publishing a patch directly from the Patch Creator UI. Today, publishing means copying
-  the generated folder into the library repo's `Patches/` and pushing.
+
+Publishing from the Patch Creator UI **is** done: set the library repo folder in
+App Settings, then either enable "Publish to Patch Library" before creating a patch or
+use the "Publish to Library" button afterwards. It copies the folder into `Patches/`,
+commits and pushes; CI in the library repo does the rest.
 
 ---
 

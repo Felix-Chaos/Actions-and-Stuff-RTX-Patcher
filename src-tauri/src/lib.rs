@@ -63,7 +63,8 @@ pub fn run() {
             prune_patch_cache,
             list_cached_patches,
             delete_cached_patch,
-            clear_patch_cache
+            clear_patch_cache,
+            publish_patch_to_library
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

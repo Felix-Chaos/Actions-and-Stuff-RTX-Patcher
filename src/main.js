@@ -68,8 +68,10 @@ function showModal(message, options = {}) {
   });
 }
 
+// Returns the promise so callers can await dismissal. Existing fire-and-forget
+// callers are unaffected.
 function showAlert(message, title = 'Notification') {
-  showModal(message, { title, confirm: false });
+  return showModal(message, { title, confirm: false });
 }
 
 async function showConfirm(message, title = 'Confirm') {
@@ -313,6 +315,74 @@ async function loadMotd() {
       }
     }
   }
+}
+
+// Folder of the most recently created patch, so it can be published without
+// regenerating it.
+let lastCreatedPatchFolder = "";
+
+// Copies a created patch folder into the patch library clone and pushes it.
+// CI there does the hashing, upload and catalogue rebuild, so a push is all it
+// takes for every installed patcher to offer the patch.
+async function publishPatchToLibrary(patchFolder, { packVer, patchVer } = {}) {
+  const gLog = (msg, type = 'info') => logTo('genpatch-logs', msg, type);
+  const libraryDir = appSettings.patchLibraryDir;
+
+  if (!libraryDir) {
+    gLog("No patch library folder is set. Choose it in App Settings under Patch Creator.", 'warning');
+    await showAlert(
+      "Set your patch library repo folder first.\n\nApp Settings, Patch Creator Default Options, Patch library repo folder.",
+      'Publishing not configured'
+    );
+    return false;
+  }
+
+  const name = patchFolder.split(/[\\/]/).pop() || patchFolder;
+  const proceed = await showConfirm(
+    `Publish "${name}" to the patch library?\n\n` +
+    `Repo: ${libraryDir}\n\n` +
+    `This pushes the patch. Everyone using the patcher will be offered it within a minute, with no patcher update.`,
+    'Publish patch'
+  );
+  if (!proceed) return false;
+
+  const message = packVer && patchVer
+    ? `Publish Actions & Stuff for RTX ${packVer} v${patchVer}`
+    : `Publish ${name}`;
+
+  const attempt = async (overwrite) => invoke("publish_patch_to_library", {
+    libraryDir, patchFolder, message, overwrite
+  });
+
+  try {
+    await attempt(false);
+  } catch (err) {
+    const text = String(err);
+    if (!text.includes("ALREADY_EXISTS")) {
+      gLog(`Publishing failed: ${text}`, 'error');
+      await showAlert(`Publishing failed:\n\n${text}`, 'Publish failed');
+      return false;
+    }
+    // Already in the library: republishing replaces the payloads, which is a
+    // real thing to want after rebuilding a patch, but never silent.
+    const replace = await showConfirm(
+      `"${name}" is already in the patch library.\n\nReplace it with the version you just built?`,
+      'Already published'
+    );
+    if (!replace) { gLog("Publishing cancelled; the existing entry was kept.", 'warning'); return false; }
+    try {
+      await attempt(true);
+    } catch (err2) {
+      gLog(`Publishing failed: ${err2}`, 'error');
+      await showAlert(`Publishing failed:\n\n${err2}`, 'Publish failed');
+      return false;
+    }
+  }
+
+  gLog(`Published "${name}" to the patch library.`, 'success');
+  // The new patch is live, so make it visible here too.
+  try { await loadPatchConfigs({ quiet: true }); await refreshCachedPatches(); } catch (_) {}
+  return true;
 }
 
 // Catalogue auto-refresh. A patch published while the app is open should show
@@ -1304,6 +1374,21 @@ function setupUtilities() {
         await invoke("save_patch_versions", { packVersion: packVer, patchVersion: patchVer });
       } catch (err) {
         console.error("Failed to save patch version:", err);
+      }
+
+      // The patch exists on disk and is good from here on, so nothing below is
+      // allowed to report the creation itself as failed.
+      lastCreatedPatchFolder = finalOutputDir;
+      const btnPublish = document.getElementById('btn-publish-last-patch');
+      if (btnPublish) btnPublish.classList.remove('hidden-group');
+
+      const wantsPublish = document.getElementById('gen-publish-library');
+      if (wantsPublish && wantsPublish.checked) {
+        try {
+          await publishPatchToLibrary(finalOutputDir, { packVer, patchVer });
+        } catch (err) {
+          gLog_fn(`Publishing failed, but the patch files are fine: ${err}`, 'warning');
+        }
       }
 
       // Open output folder in Explorer
@@ -2912,6 +2997,8 @@ let appSettings = {
   cleanOld: true,
   autoCleanPatchCache: false,
   consoleHeight: 150,
+  patchLibraryDir: '',
+  publishAfterCreate: false,
   genInjectManifest: true,
   bugIncludeLog: true,
   bugIncludePack: false,
@@ -3019,6 +3106,43 @@ window.addEventListener('DOMContentLoaded', async () => {
   syncToggle('set-advanced-mode', 'chk-advanced-mode', 'advancedMode', true);
   syncToggle('set-beta-updates', 'chk-beta-updates', 'betaUpdates', true);
   syncToggle('set-clean-patch-cache', null, 'autoCleanPatchCache');
+  syncToggle('set-publish-after-create', 'gen-publish-library', 'publishAfterCreate');
+
+  // Patch library folder picker, reusing the same select_directory command as
+  // every other Browse button.
+  const libDirInput = document.getElementById('set-patch-library-dir');
+  if (libDirInput) libDirInput.value = appSettings.patchLibraryDir || '';
+  const btnBrowseLib = document.getElementById('btn-browse-patch-library');
+  if (btnBrowseLib) {
+    btnBrowseLib.addEventListener('click', async () => {
+      try {
+        const dir = await invoke("select_directory", { title: "Select your local clone of the patch library repo" });
+        if (!dir) return;
+        if (libDirInput) libDirInput.value = dir;
+        await updateSetting('patchLibraryDir', dir);
+        log(`Patch library folder set to: ${dir}`);
+      } catch (err) {
+        log(`Could not set the patch library folder: ${err}`, 'error');
+      }
+    });
+  }
+
+  // Publish the most recently created patch without rebuilding it.
+  const btnPublishLast = document.getElementById('btn-publish-last-patch');
+  if (btnPublishLast) {
+    btnPublishLast.addEventListener('click', async () => {
+      if (!lastCreatedPatchFolder) return;
+      btnPublishLast.disabled = true;
+      const original = btnPublishLast.innerHTML;
+      btnPublishLast.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Publishing...';
+      try {
+        await publishPatchToLibrary(lastCreatedPatchFolder);
+      } finally {
+        btnPublishLast.disabled = false;
+        btnPublishLast.innerHTML = original;
+      }
+    });
+  }
   syncToggle('set-clean-old', 'chk-clean-old', 'cleanOld');
   syncToggle('set-gen-inject-manifest', 'gen-inject-manifest', 'genInjectManifest');
   syncToggle('set-bug-include-log', 'bug-include-log', 'bugIncludeLog');
