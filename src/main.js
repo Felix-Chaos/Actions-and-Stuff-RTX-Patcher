@@ -81,6 +81,16 @@ window.alert = function(msg) {
   showAlert(msg);
 };
 
+// window.confirm cannot be redirected to the in-app modal, because it must
+// return synchronously while the modal resolves a promise. Anything reaching
+// this has to be rewritten as `await showConfirm(...)`; deny in the meantime,
+// so a stray call can never silently approve a destructive action.
+window.confirm = function(msg) {
+  console.error("window.confirm is not supported in this app - use `await showConfirm(...)` instead. Denied:", msg);
+  showAlert(msg, 'Confirm');
+  return false;
+};
+
 // Global State
 let patchConfigs = [];
 // Slugs of patches downloaded into this user's cache, plus their sizes.
@@ -504,10 +514,11 @@ function wireVersionControls() {
     btnClearCache.addEventListener('click', async () => {
       if (cachedPatchInfo.length === 0) return;
       const bytes = cachedPatchInfo.reduce((sum, e) => sum + e.size, 0);
-      const ok = confirm(
+      const ok = await showConfirm(
         `Remove all ${cachedPatchInfo.length} downloaded patch(es)?\n\n` +
         `This frees ${(bytes / 1048576).toFixed(1)} MB. Patches bundled with the app are not affected, ` +
-        `and any removed patch is downloaded again automatically the next time you use it.`
+        `and any removed patch is downloaded again automatically the next time you use it.`,
+        'Remove downloaded patches'
       );
       if (!ok) return;
 
