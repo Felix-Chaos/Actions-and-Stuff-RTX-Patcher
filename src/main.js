@@ -490,7 +490,7 @@ function renderDownloadedPatchesSettings() {
     // Map the cache id back to a human name where the catalogue still knows it.
     const config = patchConfigs.find(c => c.slug === entry.slug);
     const label = config
-      ? `${config.packVersion} &mdash; Patch v${config.patchVersion || "1.0"}`
+      ? `${config.packVersion}, Patch v${config.patchVersion || "1.0"}`
       : entry.slug;
 
     const row = document.createElement('div');
@@ -721,10 +721,10 @@ function isPatchDownloaded(config) {
 
 function patchAvailabilityLabel(config) {
   const hasRemote = config.patches && Object.values(config.patches).some(v => v && typeof v === 'object' && v.url);
-  if (!hasRemote) return '— bundled';
-  if (config.slug && cachedPatchSlugs.has(config.slug)) return '— downloaded';
+  if (!hasRemote) return '\u{1F4E6}';
+  if (config.slug && cachedPatchSlugs.has(config.slug)) return '\u2705';
   const bytes = Math.max(...Object.values(config.patches).map(v => (v && v.size) || 0));
-  return bytes ? `— download ${(bytes / 1048576).toFixed(0)} MB` : '— not downloaded';
+  return bytes ? `\u2B07\uFE0F ${(bytes / 1048576).toFixed(0)} MB` : '\u2B07\uFE0F';
 }
 
 // Reflects the currently selected version in the availability hint and the
@@ -750,11 +750,11 @@ function updateSelectedPatchAvailability() {
     } else if (isPatchDownloaded(config)) {
       const bundled = !(config.patches && Object.values(config.patches).some(v => v && typeof v === 'object' && v.url));
       hint.innerHTML = bundled
-        ? '<span style="color:#7ed17e;">&#10003; Included with the app</span>'
-        : '<span style="color:#7ed17e;">&#10003; Downloaded &mdash; ready to use offline</span>';
+        ? '<span style="color:#7ed17e;">\u{1F4E6} Included with the app</span>'
+        : '<span style="color:#7ed17e;">\u2705 Downloaded, ready to use offline</span>';
     } else {
       const bytes = Math.max(...Object.values(config.patches || {}).map(v => (v && v.size) || 0));
-      hint.innerHTML = `<span style="color:#e0b050;">&#8681; Will be downloaded${bytes ? ` (${(bytes / 1048576).toFixed(0)} MB)` : ''}</span>`;
+      hint.innerHTML = `<span style="color:#e0b050;">\u2B07\uFE0F Will be downloaded${bytes ? ` (${(bytes / 1048576).toFixed(0)} MB)` : ''}</span>`;
     }
   }
 
@@ -1742,7 +1742,7 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
       // Use pre-selected file from the Zip mode file picker
       let selectedZip = document.getElementById('zip-input-file') ? document.getElementById('zip-input-file').value : '';
       if (!selectedZip) {
-        log("No file pre-selected — prompting picker...");
+        log("No file pre-selected, prompting picker...");
         selectedZip = await invoke("select_file", {
           title: "Select Minecraft Resource Pack to Patch",
           filter: "Minecraft Packs (*.zip *.mcpack)|*.zip;*.mcpack"
@@ -2374,7 +2374,7 @@ async function prepareContentLogOrInstruct(statusEl, btnSubmit) {
       "3. Make sure the broken entity/block is loaded (walk up to it)\n" +
       "4. Come back and press 'Send Bug Report' again";
   } else if (clRes.status === 'log_too_small') {
-    instruction = `Your newest content log is only ${clRes.log_size_mb} MB — too small to contain the error details (needs > 5 MB).\n\n` +
+    instruction = `Your newest content log is only ${clRes.log_size_mb} MB, too small to contain the error details (needs > 5 MB).\n\n` +
       "Please:\n" +
       "1. Restart Minecraft\n" +
       "2. Join the world where the bug happens\n" +
@@ -2388,7 +2388,7 @@ async function prepareContentLogOrInstruct(statusEl, btnSubmit) {
       "3. Make sure the broken entity/block is loaded (walk up to it)\n" +
       "4. Come back and press 'Send Bug Report' again (within an hour)";
   } else if (clRes.status === 'log_too_large') {
-    instruction = `Your newest content log is ${clRes.log_size_mb} MB — that's over the 500 MB limit and likely full of unrelated spam.\n\n` +
+    instruction = `Your newest content log is ${clRes.log_size_mb} MB, which is over the 500 MB limit and likely full of unrelated spam.\n\n` +
       "Please:\n" +
       "1. Restart Minecraft (this starts a fresh, clean log)\n" +
       "2. Join the world where the bug happens\n" +
@@ -2403,7 +2403,7 @@ async function prepareContentLogOrInstruct(statusEl, btnSubmit) {
       "4. Come back and press 'Send Bug Report' again\n\n" +
       "(Or turn off 'Send Minecraft Content Log' to submit without it.)";
   }
-  statusEl.innerHTML = "⏸️ Report not sent yet — Minecraft needs to generate a content log first.";
+  statusEl.innerHTML = "⏸️ Report not sent yet. Minecraft needs to generate a content log first.";
   statusEl.className = "status-hint";
   btnSubmit.disabled = false;
   await showModal(instruction, { title: 'One more step: Content Log' });
