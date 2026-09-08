@@ -458,7 +458,7 @@ pub async fn submit_hardware_ping(app: tauri::AppHandle) -> Result<serde_json::V
     }
 
     let api_url = std::option_env!("PATCHER_API_URL").unwrap_or("http://localhost:3000");
-    let api_key = std::option_env!("PATCHER_API_KEY").unwrap_or("");
+    let api_key = crate::utils::api_key();
     let client = reqwest::Client::new();
     let res = client
         .post(&format!("{}/api/patcher/hardware", api_url))
@@ -486,7 +486,7 @@ pub async fn submit_hardware_ping(app: tauri::AppHandle) -> Result<serde_json::V
 pub async fn telemetry_delete_my_data(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
     let state = load_state(&app)?;
     let api_url = std::option_env!("PATCHER_API_URL").unwrap_or("http://localhost:3000");
-    let api_key = std::option_env!("PATCHER_API_KEY").unwrap_or("");
+    let api_key = crate::utils::api_key();
     let client = reqwest::Client::new();
     let res = client
         .post(&format!("{}/api/patcher/delete-my-data", api_url))

@@ -14,6 +14,29 @@ pub struct LogPayload {
     pub log_type: String,
 }
 
+// Reconstructs the API key from the XOR-obfuscated PATCHER_API_KEY_ENC/
+// PATCHER_API_KEY_MASK build-time env vars (see build.rs) instead of
+// embedding it as a plain string literal; see build.rs's emit_obfuscated_key
+// doc comment for what this does and doesn't protect against.
+pub fn api_key() -> String {
+    let (Some(enc), Some(mask)) = (
+        option_env!("PATCHER_API_KEY_ENC"),
+        option_env!("PATCHER_API_KEY_MASK"),
+    ) else {
+        return String::new();
+    };
+    let parse = |s: &str| -> Vec<u8> { s.split(',').filter_map(|b| b.parse().ok()).collect() };
+    let (cipher, mask) = (parse(enc), parse(mask));
+    if mask.is_empty() {
+        return String::new();
+    }
+    cipher
+        .iter()
+        .enumerate()
+        .map(|(i, b)| (b ^ mask[i % mask.len()]) as char)
+        .collect()
+}
+
 pub fn emit_log(app: &tauri::AppHandle, container: &str, msg: &str, log_type: &str) {
     let _ = app.emit(
         "app-log",
