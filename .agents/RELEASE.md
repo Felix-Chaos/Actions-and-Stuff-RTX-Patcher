@@ -149,6 +149,53 @@ the new release asset, and its `signature`.
 Take the signature from the build output. Never paste it into `version_log.md` or into
 any chat reply.
 
+## 6b. One-time: clear the hardware telemetry database
+
+**Do this once, as part of shipping 2.3.0. It is not a recurring step.**
+
+### Why
+
+Hardware pings carried a `AdapterRAM` field taken from WMI's `Win32_VideoController`.
+That property is a **uint32**, so it saturates at ~4 GiB: a 16 GB card reported
+`4293918720`. The accurate figure was already collected alongside it as `VramBytes`
+(read from `HardwareInformation.qwMemorySize` in the driver registry), but because the
+capped field was still present and looked authoritative, VRAM was read from it.
+
+Every row written under `schema_version: 1` therefore has an unreliable VRAM figure, and
+there is no way to repair them: a stored `4293918720` could be a genuine 4 GB card or a
+saturated 24 GB one, and the row does not say which. Filtering or correcting is not
+possible, so the rows have to go.
+
+From `schema_version: 2` onward, `AdapterRAM` is not sent at all, and each GPU carries:
+
+| Field | Meaning |
+| :--- | :--- |
+| `VramBytes` | The VRAM figure to use. The only one. |
+| `VramSource` | `registry` = accurate. `wmi_capped` = the 4 GiB-capped fallback, treat as a lower bound. `unknown` = neither available. |
+
+### How
+
+Clearing the table also resets every install's `last_sent_hash` relationship, but that is
+handled client-side: each patcher re-sends on its next launch because its stored hash no
+longer matches a server row. **No user action is needed and nothing is lost permanently**
+beyond the bad VRAM numbers.
+
+1. Take a backup of the hardware/ping table first, in case a count needs checking later.
+2. Delete every row in the hardware ping table (all installs, not a filtered subset:
+   v1 rows cannot be identified as wrong by value alone).
+3. Leave install ids and consent records alone. Only the hardware/ping data is affected.
+4. Confirm the table is empty, then launch a patcher build with the fix and confirm one
+   fresh row appears with `schema_version: 2`, no `AdapterRAM`, and a `VramBytes` that
+   matches the machine's real VRAM.
+
+> [!NOTE]
+> The exact command depends on the backend behind `PATCHER_API_URL`, which is not in this
+> repo. Do it through whatever admin path that service provides. Never paste connection
+> strings or credentials into the changelog, a commit message, or a chat reply.
+
+Order matters: clear the database **after** the release is published, so the first rows
+written back are already v2. Clearing it first just refills it with v1 rows.
+
 ## 7. Post-release checks
 
 - Install the published build on a clean machine (or a VM) and confirm the installer is
