@@ -282,7 +282,8 @@
               </div>
 
               <!-- Console output toggle -->
-              <div class="console-section">
+              <div class="console-section" id="main-console-section">
+                <div class="console-resize-handle" id="console-resize-handle" title="Drag to resize the console. Double-click to reset."></div>
                 <div class="console-header">
                   <span>Execution Output</span>
                   <div class="console-actions">
@@ -786,6 +787,25 @@
                     <span class="mc-slider"></span>
                   </label>
                 </div>
+              </div>
+
+              <!-- Console -->
+              <div class="settings-group card" style="background: rgba(0,0,0,0.2);">
+                <h3 style="margin-top: 0;">Console</h3>
+                <p style="font-size: 0.78rem; color: #9aa0a6; margin-top: 0;">
+                  Set how tall the execution output console is. You can also drag the grip above the console
+                  itself, or double-click it to reset.
+                </p>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0;">
+                  <span style="font-size: 0.85rem; color: #ffffff;">Console height</span>
+                  <div style="display: flex; gap: 4px;">
+                    <button type="button" class="btn btn-secondary btn-xs console-size-preset" data-height="110">Small</button>
+                    <button type="button" class="btn btn-secondary btn-xs console-size-preset" data-height="150">Medium</button>
+                    <button type="button" class="btn btn-secondary btn-xs console-size-preset" data-height="260">Large</button>
+                    <button type="button" class="btn btn-secondary btn-xs console-size-preset" data-height="400">Tall</button>
+                  </div>
+                </div>
+                <div id="console-height-readout" style="font-size: 0.75rem; color: #9aa0a6;"></div>
               </div>
 
               <!-- Downloaded Patches -->

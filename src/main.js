@@ -373,6 +373,101 @@ async function loadPatchConfigs() {
   }
 }
 
+// Console resizing. The section has a fixed height in CSS; dragging the handle
+// overrides it and the choice is persisted like any other setting.
+const CONSOLE_HEIGHT_DEFAULT = 150;
+const CONSOLE_HEIGHT_MIN = 80;
+
+function consoleHeightMax() {
+  // Leave room for the rest of the panel on short windows.
+  return Math.max(CONSOLE_HEIGHT_MIN, Math.round(window.innerHeight * 0.7));
+}
+
+function applyConsoleHeight(px) {
+  const section = document.getElementById('main-console-section');
+  if (!section) return CONSOLE_HEIGHT_DEFAULT;
+  const clamped = Math.min(consoleHeightMax(), Math.max(CONSOLE_HEIGHT_MIN, Math.round(px)));
+  section.style.height = `${clamped}px`;
+  return clamped;
+}
+
+function updateConsoleHeightReadout(px) {
+  const readout = document.getElementById('console-height-readout');
+  if (readout) readout.innerText = `Currently ${px}px.`;
+  document.querySelectorAll('.console-size-preset').forEach(btn => {
+    btn.classList.toggle('active', Number(btn.dataset.height) === px);
+  });
+}
+
+function setConsoleHeight(px, persist = true) {
+  const applied = applyConsoleHeight(px);
+  updateConsoleHeightReadout(applied);
+  if (persist && applied !== appSettings.consoleHeight) {
+    appSettings.consoleHeight = applied;
+    saveSettings();
+  }
+  return applied;
+}
+
+function setupConsoleResize() {
+  const handle = document.getElementById('console-resize-handle');
+  const section = document.getElementById('main-console-section');
+
+  // The presets live in Settings and must work even if the console markup
+  // changes, so they are wired independently of the drag handle.
+  document.querySelectorAll('.console-size-preset').forEach(btn => {
+    btn.addEventListener('click', () => setConsoleHeight(Number(btn.dataset.height)));
+  });
+
+  if (!handle || !section) return;
+
+  updateConsoleHeightReadout(applyConsoleHeight(appSettings.consoleHeight || CONSOLE_HEIGHT_DEFAULT));
+
+  let startY = 0;
+  let startHeight = 0;
+  let latest = 0;
+
+  const onMove = (e) => {
+    // Dragging up grows the console, which is the direction that feels right
+    // for a panel anchored to the bottom of the layout.
+    latest = applyConsoleHeight(startHeight + (startY - e.clientY));
+    updateConsoleHeightReadout(latest);
+  };
+
+  const onUp = () => {
+    document.removeEventListener('pointermove', onMove);
+    document.removeEventListener('pointerup', onUp);
+    handle.classList.remove('dragging');
+    document.body.classList.remove('console-resizing');
+    if (latest && latest !== appSettings.consoleHeight) {
+      appSettings.consoleHeight = latest;
+      saveSettings();
+    }
+    updateConsoleHeightReadout(latest);
+  };
+
+  handle.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    startY = e.clientY;
+    startHeight = section.getBoundingClientRect().height;
+    latest = startHeight;
+    handle.classList.add('dragging');
+    document.body.classList.add('console-resizing');
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  });
+
+  handle.addEventListener('dblclick', () => {
+    setConsoleHeight(CONSOLE_HEIGHT_DEFAULT);
+    log(`Console height reset to ${CONSOLE_HEIGHT_DEFAULT}px.`);
+  });
+
+  // A saved height can exceed the window after a resize or a screen change.
+  window.addEventListener('resize', () => {
+    if (appSettings.consoleHeight) applyConsoleHeight(appSettings.consoleHeight);
+  });
+}
+
 // Renders the "Downloaded Patches" list in Settings: one row per cached
 // patch with its size and a Remove button, plus a total.
 function renderDownloadedPatchesSettings() {
@@ -2555,6 +2650,7 @@ let appSettings = {
   betaUpdates: false,
   cleanOld: true,
   autoCleanPatchCache: false,
+  consoleHeight: 150,
   genInjectManifest: true,
   bugIncludeLog: true,
   bugIncludePack: false,
@@ -2776,6 +2872,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     console.error("Failed to fetch patch versions:", err);
   }
 
+  setupConsoleResize();
   wireVersionControls();
   await loadPatchConfigs();
   await refreshCachedPatches();
