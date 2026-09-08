@@ -315,14 +315,83 @@ async function loadMotd() {
   }
 }
 
+// Catalogue auto-refresh. A patch published while the app is open should show
+// up on its own, but the catalogue must not be re-fetched on every stray focus
+// event, and never mid-run.
+const CATALOGUE_POLL_MS = 15 * 60 * 1000;   // periodic check while the app is open
+const CATALOGUE_MIN_GAP_MS = 60 * 1000;     // floor between any two automatic checks
+let lastCatalogueStamp = null;
+let lastCatalogueCheck = 0;
+let knownPatchKeys = null;
+let catalogueRefreshInFlight = false;
+
+function patchConfigsKeys(configs) {
+  return configs.map(c => `${c.packVersion}|${c.patchVersion || "1.0"}`);
+}
+
+// Briefly highlights the version controls so a change is noticed even if the
+// console is scrolled away.
+function flashPatchListUpdated(count) {
+  const hint = document.getElementById('patch-availability-hint');
+  if (!hint) return;
+  hint.innerHTML = `<span style="color:#7ed17e;">✨ ${count} new patch${count === 1 ? '' : 'es'} available</span>`;
+  // Hand the hint back to the normal availability text after a moment.
+  setTimeout(() => {
+    if (hint.innerHTML.includes('new patch')) updateSelectedPatchAvailability();
+  }, 6000);
+}
+
+function patchRunInProgress() {
+  const btn = document.getElementById('btn-start-patch');
+  return !!(btn && btn.disabled);
+}
+
+// Re-checks the catalogue if enough time has passed. Silent by design: it logs
+// only when something actually changed.
+async function autoRefreshCatalogue(reason) {
+  if (catalogueRefreshInFlight) return;
+  if (patchRunInProgress()) return;                       // never disturb a running patch
+  if (Date.now() - lastCatalogueCheck < CATALOGUE_MIN_GAP_MS) return;
+
+  catalogueRefreshInFlight = true;
+  lastCatalogueCheck = Date.now();
+  const before = lastCatalogueStamp;
+  try {
+    await loadPatchConfigs({ quiet: true });
+    await refreshCachedPatches();
+    if (before !== lastCatalogueStamp) {
+      console.log(`Patch catalogue refreshed (${reason}); updated ${lastCatalogueStamp}`);
+    }
+  } catch (err) {
+    console.error("Automatic catalogue refresh failed", err);
+  } finally {
+    catalogueRefreshInFlight = false;
+  }
+}
+
+function setupCatalogueAutoRefresh() {
+  // Coming back to the window is the moment a newly published patch is most
+  // likely to matter, and it costs one small request.
+  window.addEventListener('focus', () => autoRefreshCatalogue('window focus'));
+
+  // Opening the Patcher tab, for a long-running window that never loses focus.
+  document.querySelectorAll('.nav-tab[data-tab="patcher"]').forEach(tab => {
+    tab.addEventListener('click', () => autoRefreshCatalogue('patcher tab'));
+  });
+
+  setInterval(() => autoRefreshCatalogue('periodic'), CATALOGUE_POLL_MS);
+}
+
 // Load configs and versions from Rust.
 // Safe to call more than once: it only rebuilds the dropdowns. The one-time
 // event wiring lives in wireVersionControls().
-async function loadPatchConfigs() {
+async function loadPatchConfigs({ quiet = false } = {}) {
+  const say = (msg, type) => { if (!quiet) log(msg, type); };
+  let newlyAdded = 0;
   try {
-    log("Loading patch configurations...");
+    say("Loading patch configurations...");
     const bundled = await invoke("get_patch_configs");
-    log(`Found ${bundled.length} bundled patch configuration profile(s).`);
+    say(`Found ${bundled.length} bundled patch configuration profile(s).`);
 
     // Merge in the remote patch library. Bundled entries win on conflict, so a
     // patch shipped inside the installer is always preferred over downloading
@@ -334,18 +403,30 @@ async function loadPatchConfigs() {
       remote = (index.entries || []).filter(
         e => !bundledKeys.has(`${e.packVersion}|${e.patchVersion || "1.0"}`)
       );
-      log(`Loaded ${remote.length} downloadable patch entries from the patch library (source: ${index.source}${index.updated ? `, updated ${index.updated}` : ''}).`);
+      say(`Loaded ${remote.length} downloadable patch entries from the patch library (source: ${index.source}${index.updated ? `, updated ${index.updated}` : ''}).`);
       if (index.source === 'cache') {
-        log("The patch library could not be reached; using the last known catalogue.", 'warning');
+        say("The patch library could not be reached; using the last known catalogue.", 'warning');
       } else if (index.source === 'none') {
-        log("No patch library catalogue is available. Only bundled patches can be used.", 'warning');
+        say("No patch library catalogue is available. Only bundled patches can be used.", 'warning');
       }
+      lastCatalogueStamp = index.updated || null;
     } catch (err) {
-      log(`Could not load the remote patch library: ${err}`, 'warning');
+      say(`Could not load the remote patch library: ${err}`, 'warning');
     }
 
+    // Announce anything that appeared since the last look, so a patch released
+    // while the app is open is visible without the user hunting for it.
+    const seenBefore = knownPatchKeys;
+    const nowKeys = new Set(patchConfigsKeys([...bundled, ...remote]));
+    if (seenBefore) {
+      const added = [...nowKeys].filter(k => !seenBefore.has(k));
+      added.forEach(k => log(`New patch available: ${k.replace('|', ' patch ')}`, 'success'));
+      newlyAdded = added.length;
+    }
+    knownPatchKeys = nowKeys;
+
     patchConfigs = [...bundled, ...remote];
-    log(`${patchConfigs.length} patch configuration profile(s) available in total.`);
+    say(`${patchConfigs.length} patch configuration profile(s) available in total.`);
 
     // Extract unique packVersion strings and sort descending
     const uniqueAsVersions = Array.from(new Set(patchConfigs.map(c => c.packVersion)))
@@ -368,6 +449,9 @@ async function loadPatchConfigs() {
     if (selected) {
       updatePatchVersionsList(selected);
     }
+
+    // After the rebuild, so the notice is not immediately overwritten by it.
+    if (newlyAdded) flashPatchListUpdated(newlyAdded);
   } catch (err) {
     log(`Failed to load patch configs: ${err}`, 'error');
   }
@@ -2936,6 +3020,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   wireVersionControls();
   await loadPatchConfigs();
   await refreshCachedPatches();
+  setupCatalogueAutoRefresh();
   await bindPickers();
   setupUtilities();
   setupReleaseBuilder();
