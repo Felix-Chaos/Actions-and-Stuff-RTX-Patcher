@@ -357,6 +357,192 @@ fn emit_progress(app: &tauri::AppHandle, slug: &str, variant: &str, done: u64, t
     );
 }
 
+// ---------------------------------------------------------------------------
+// Publishing a freshly created patch to the patch library.
+//
+// The Patch Creator already writes exactly the folder shape the library
+// consumes (encrypted.vcdiff, decrypted.vcdiff, patch_config.json), so
+// publishing is a copy plus a commit. Git is used rather than the GitHub API
+// deliberately: this is maintainer-only tooling behind Advanced Mode, and the
+// maintainer already has git credentials configured, so no token needs to be
+// stored in the app.
+// ---------------------------------------------------------------------------
+
+/// Marker the frontend looks for to offer a "republish and overwrite?" prompt
+/// instead of showing a raw error.
+pub const ALREADY_EXISTS: &str = "ALREADY_EXISTS";
+
+const PATCH_FILES: [&str; 3] = ["patch_config.json", "encrypted.vcdiff", "decrypted.vcdiff"];
+
+/// Runs one git command in `dir`, echoing what it did to the Patch Creator log.
+fn run_git(app: &tauri::AppHandle, dir: &Path, args: &[&str]) -> Result<String, String> {
+    let mut cmd = std::process::Command::new("git");
+    cmd.current_dir(dir).args(args);
+
+    // * CREATE_NO_WINDOW, same as the xdelta invocation: no console flash.
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000);
+    }
+
+    let out = cmd
+        .output()
+        .map_err(|e| format!("Could not run git (is it installed and on PATH?): {}", e))?;
+
+    let stdout = String::from_utf8_lossy(&out.stdout).trim().to_string();
+    let stderr = String::from_utf8_lossy(&out.stderr).trim().to_string();
+
+    if !stdout.is_empty() {
+        emit_log(app, "genpatch-logs", &format!("  git: {}", stdout), "info");
+    }
+    // ! git writes ordinary progress to stderr, so this is not necessarily an error.
+    if !stderr.is_empty() {
+        emit_log(app, "genpatch-logs", &format!("  git: {}", stderr), "info");
+    }
+
+    if !out.status.success() {
+        return Err(format!(
+            "git {} failed: {}",
+            args.join(" "),
+            if stderr.is_empty() { stdout } else { stderr }
+        ));
+    }
+    Ok(stdout)
+}
+
+/// Recursive directory copy. std has no equivalent, and the payloads are large
+/// enough that streaming a file at a time matters.
+fn copy_dir_all(src: &Path, dst: &Path) -> std::io::Result<()> {
+    std::fs::create_dir_all(dst)?;
+    for entry in std::fs::read_dir(src)? {
+        let entry = entry?;
+        let from = entry.path();
+        let to = dst.join(entry.file_name());
+        if entry.file_type()?.is_dir() {
+            copy_dir_all(&from, &to)?;
+        } else {
+            std::fs::copy(&from, &to)?;
+        }
+    }
+    Ok(())
+}
+
+/// Copies a created patch folder into the patch library repo and pushes it.
+///
+/// CI in that repo hashes the payloads, uploads them and regenerates the
+/// catalogue, so a successful push is all that is needed for every installed
+/// patcher to offer the patch. Nothing here touches the patcher's own release
+/// flow.
+///
+/// Refuses rather than guessing when anything looks off: a directory that is
+/// not a git work tree, a library with no `Patches/`, a source folder missing
+/// one of its three files, an entry that already exists (unless `overwrite`),
+/// or a work tree carrying unrelated changes that a commit would sweep up.
+#[tauri::command]
+pub async fn publish_patch_to_library(
+    app: tauri::AppHandle,
+    library_dir: String,
+    patch_folder: String,
+    message: String,
+    overwrite: bool,
+) -> Result<String, String> {
+    let lib = Path::new(&library_dir);
+    let src = Path::new(&patch_folder);
+
+    if !lib.is_dir() {
+        return Err(format!("Patch library folder does not exist: {}", library_dir));
+    }
+    if !src.is_dir() {
+        return Err(format!("Patch folder does not exist: {}", patch_folder));
+    }
+
+    // ! Never create a repo implicitly - an accidental path must fail loudly.
+    let inside = run_git(&app, lib, &["rev-parse", "--is-inside-work-tree"])?;
+    if inside.trim() != "true" {
+        return Err(format!("{} is not a git repository.", library_dir));
+    }
+
+    let patches_dir = lib.join("Patches");
+    if !patches_dir.is_dir() {
+        return Err(format!(
+            "{} has no Patches folder, so it does not look like the patch library.",
+            library_dir
+        ));
+    }
+
+    for f in PATCH_FILES {
+        if !src.join(f).exists() {
+            return Err(format!("Patch folder is missing {}.", f));
+        }
+    }
+
+    let name = src
+        .file_name()
+        .ok_or_else(|| "Could not read the patch folder name.".to_string())?
+        .to_string_lossy()
+        .to_string();
+    let rel = format!("Patches/{}", name);
+    let dest = patches_dir.join(&name);
+
+    if dest.exists() && !overwrite {
+        return Err(format!("{}: \"{}\" is already published.", ALREADY_EXISTS, name));
+    }
+
+    // ! A publish commit must contain only this patch. Anything else in the
+    // ! work tree means the user has work in progress there.
+    let status = run_git(&app, lib, &["status", "--porcelain"])?;
+    let stray: Vec<&str> = status
+        .lines()
+        .map(|l| l.trim_end())
+        .filter(|l| !l.is_empty())
+        .filter(|l| {
+            let path = l.get(3..).unwrap_or("").trim_matches('"');
+            !path.starts_with(&rel)
+        })
+        .collect();
+    if !stray.is_empty() {
+        return Err(format!(
+            "The patch library has unrelated uncommitted changes, so publishing was stopped:\n{}\n\nCommit or discard them first.",
+            stray.join("\n")
+        ));
+    }
+
+    emit_log(
+        &app,
+        "genpatch-logs",
+        &format!("Publishing \"{}\" to the patch library...", name),
+        "info",
+    );
+
+    if dest.exists() {
+        emit_log(&app, "genpatch-logs", "  Replacing the existing entry...", "warning");
+        std::fs::remove_dir_all(&dest)
+            .map_err(|e| format!("Could not replace the existing entry: {}", e))?;
+    }
+
+    copy_dir_all(src, &dest).map_err(|e| format!("Could not copy the patch into the library: {}", e))?;
+    emit_log(&app, "genpatch-logs", &format!("  Copied into {}", rel), "info");
+
+    run_git(&app, lib, &["add", "--", &rel])?;
+    let commit_msg = if message.trim().is_empty() {
+        format!("Publish {}", name)
+    } else {
+        message
+    };
+    run_git(&app, lib, &["commit", "-m", &commit_msg])?;
+    run_git(&app, lib, &["push"])?;
+
+    emit_log(
+        &app,
+        "genpatch-logs",
+        "Published. The patch library will build and publish it within a minute; every installed patcher will offer it without an update.",
+        "success",
+    );
+
+    Ok(name)
+}
+
 /// One downloaded patch in the local cache.
 #[derive(Serialize)]
 pub struct CachedPatch {
