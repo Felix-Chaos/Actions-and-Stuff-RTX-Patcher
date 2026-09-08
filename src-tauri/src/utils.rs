@@ -418,13 +418,22 @@ pub fn scan_cleanable_packs_in_mojang(mojang_path: &Path) -> Vec<PathBuf> {
         "actions & stuff rtx",
     ];
 
+    // Packs this tool installs are named after the source pack plus the suffix
+    // below. In Marketplace mode the source is the premium_cache folder, whose
+    // name is an opaque id such as "AU7QHn5iDa0=", so the prefixes above never
+    // match and the patcher could not recognise its own output. Matching the
+    // suffix catches those regardless of how the source folder was named.
+    const PATCHED_SUFFIX: &str = "_rtx_patched";
+
     let check_dir_and_collect = |dir_path: &Path, results: &mut Vec<PathBuf>| {
         if let Ok(entries) = std::fs::read_dir(dir_path) {
             for entry in entries.flatten() {
                 if entry.path().is_dir() {
                     if let Some(name) = entry.file_name().to_str() {
                         let lower_name = name.to_lowercase();
-                        if prefixes.iter().any(|prefix| lower_name.starts_with(prefix)) {
+                        let matches = prefixes.iter().any(|prefix| lower_name.starts_with(prefix))
+                            || lower_name.contains(PATCHED_SUFFIX);
+                        if matches {
                             results.push(entry.path());
                         }
                     }
