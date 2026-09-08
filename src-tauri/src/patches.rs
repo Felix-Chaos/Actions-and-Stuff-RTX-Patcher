@@ -357,6 +357,135 @@ fn emit_progress(app: &tauri::AppHandle, slug: &str, variant: &str, done: u64, t
     );
 }
 
+/// One downloaded patch in the local cache.
+#[derive(Serialize)]
+pub struct CachedPatch {
+    pub slug: String,
+    pub variants: Vec<String>,
+    pub size: u64,
+}
+
+fn dir_size(path: &Path) -> u64 {
+    let mut total = 0;
+    if let Ok(entries) = std::fs::read_dir(path) {
+        for entry in entries.flatten() {
+            match entry.metadata() {
+                Ok(m) if m.is_file() => total += m.len(),
+                Ok(m) if m.is_dir() => total += dir_size(&entry.path()),
+                _ => {}
+            }
+        }
+    }
+    total
+}
+
+/// Lists the patches currently downloaded to this user's cache, so the UI can
+/// show what is available offline and offer to remove individual entries.
+#[tauri::command]
+pub async fn list_cached_patches(app: tauri::AppHandle) -> Result<Vec<CachedPatch>, String> {
+    let root = cache_root(&app)?;
+    if !root.exists() {
+        return Ok(Vec::new());
+    }
+
+    let mut out = Vec::new();
+    for entry in std::fs::read_dir(&root)
+        .map_err(|e| format!("Failed to read the patch cache: {}", e))?
+        .flatten()
+    {
+        let path = entry.path();
+        if !path.is_dir() {
+            continue;
+        }
+
+        let mut variants = Vec::new();
+        for variant in ["encrypted", "decrypted"] {
+            if path.join(format!("{}.vcdiff", variant)).exists() {
+                variants.push(variant.to_string());
+            }
+        }
+        if variants.is_empty() {
+            continue;
+        }
+
+        out.push(CachedPatch {
+            slug: entry.file_name().to_string_lossy().to_string(),
+            variants,
+            size: dir_size(&path),
+        });
+    }
+
+    out.sort_by(|a, b| a.slug.cmp(&b.slug));
+    Ok(out)
+}
+
+/// Removes one downloaded patch from the cache. Returns the bytes freed.
+#[tauri::command]
+pub async fn delete_cached_patch(app: tauri::AppHandle, slug: String) -> Result<u64, String> {
+    if slug.is_empty() || slug.contains(['/', '\\', ':']) || slug.starts_with('.') {
+        return Err(format!("Refusing to delete an unsafe patch id: {}", slug));
+    }
+
+    let dir = cache_root(&app)?.join(&slug);
+    if !dir.is_dir() {
+        return Ok(0);
+    }
+
+    let freed = dir_size(&dir);
+    std::fs::remove_dir_all(&dir)
+        .map_err(|e| format!("Failed to remove the downloaded patch {}: {}", slug, e))?;
+    emit_log(
+        &app,
+        "main",
+        &format!("Removed the downloaded patch {} ({:.1} MB freed).", slug, freed as f64 / 1_048_576.0),
+        "info",
+    );
+    Ok(freed)
+}
+
+/// Removes every downloaded patch. Returns (entries removed, bytes freed).
+/// Bundled patches live in the install directory and are never touched.
+#[tauri::command]
+pub async fn clear_patch_cache(app: tauri::AppHandle) -> Result<(u32, u64), String> {
+    let root = cache_root(&app)?;
+    if !root.exists() {
+        return Ok((0, 0));
+    }
+
+    let mut removed = 0u32;
+    let mut freed = 0u64;
+    for entry in std::fs::read_dir(&root)
+        .map_err(|e| format!("Failed to read the patch cache: {}", e))?
+        .flatten()
+    {
+        let path = entry.path();
+        if !path.is_dir() {
+            continue;
+        }
+        let size = dir_size(&path);
+        match std::fs::remove_dir_all(&path) {
+            Ok(()) => {
+                removed += 1;
+                freed += size;
+            }
+            Err(e) => emit_log(
+                &app,
+                "main",
+                &format!("Could not remove {}: {}", entry.file_name().to_string_lossy(), e),
+                "warning",
+            ),
+        }
+    }
+
+    emit_log(
+        &app,
+        "main",
+        &format!("Removed {} downloaded patch(es), freeing {:.1} MB.", removed, freed as f64 / 1_048_576.0),
+        "success",
+    );
+    Ok((removed, freed))
+}
+
 /// Removes every cached patch except `keep_slug`. Called after a successful
 /// patch run when the user has the cleanup setting enabled.
 #[tauri::command]
