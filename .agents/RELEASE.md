@@ -79,18 +79,13 @@ cd src-tauri && cargo check && cargo clippy && cargo fmt --check
 
 Per `AGENTS.md`, never commit Rust that has not been checked.
 
-### 1e. Known-incomplete work
+### 1e. Feature work is complete
 
-These were planned but are **not** done. Either finish them or confirm with the user
-that the release ships without them:
+Everything planned for this release is done: on-demand downloads, the merged catalogue
+with auto-refresh, download management in App Settings, publishing from the Patch
+Creator, and `docs/PATCH_LIBRARY.md`.
 
-- `docs/PATCH_LIBRARY.md`, the human runbook for publishing a patch. The library repo's
-  own `README.md` covers the same ground, so this is a duplicate-for-convenience.
-
-Publishing from the Patch Creator UI **is** done: set the library repo folder in
-App Settings, then either enable "Publish to Patch Library" before creating a patch or
-use the "Publish to Library" button afterwards. It copies the folder into `Patches/`,
-commits and pushes; CI in the library repo does the rest.
+The only outstanding gate is **1a**, trimming the bundled patches.
 
 ---
 

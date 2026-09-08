@@ -47,6 +47,7 @@
 | ⚡ | **A&S RTX Patcher** | Main patcher, Marketplace & Zip support, GUI, automated patching | [This Repo](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher) |
 | 📦 | **Archive** | All binary patch files (`.xdelta` / `.vcdiff`) and the legacy V1 patcher source | [Repo](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher-Archive) |
 | 🧰 | **External Tools** | Brarchive extractor and other tools for the patcher | [Repo →](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher-External_Tools) |
+| 📚 | **Patch Library** | The patch catalogue the patcher downloads from. New patches ship from here, with no patcher update | [Repo →](https://github.com/Felix-Chaos/AS-RTX-Patch-Library) |
 
 ---
 
