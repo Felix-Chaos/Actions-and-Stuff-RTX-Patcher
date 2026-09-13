@@ -374,98 +374,98 @@
         <!-- Tab: Utilities -->
         <section class="tab-content" id="tab-utils">
           <div class="card full-card">
-            <h2>🛠️ Standalone Utilities</h2>
-            <p>Select a utility tool to execute specialized tasks without running the main patcher pipeline.</p>
+            <h2 data-i18n="tabUtils.title">🛠️ Standalone Utilities</h2>
+            <p data-i18n="tabUtils.description">Select a utility tool to execute specialized tasks without running the main patcher pipeline.</p>
             
             <div class="form-group utils-selector-group hidden-group" style="max-width: 320px; margin-bottom: 20px;">
-              <label for="utils-tool-select">Select Utility Tool:</label>
+              <label for="utils-tool-select" data-i18n="tabUtils.selectTool">Select Utility Tool:</label>
               <select id="utils-tool-select" class="custom-select">
-                <option value="pack">Deterministic ZIP Packer</option>
-                <option value="extract">Extract ZIP / MCPack</option>
-                <option value="genpatch">Create Patch (VCDIFF)</option>
-                <option value="brarchive">Extract Brarchives</option>
+                <option value="pack" data-i18n="tabUtils.pack.title">Deterministic ZIP Packer</option>
+                <option value="extract" data-i18n="tabUtils.extract.title">Extract ZIP / MCPack</option>
+                <option value="genpatch" data-i18n="tabUtils.genpatch.title">Create Patch (VCDIFF)</option>
+                <option value="brarchive" data-i18n="tabUtils.brarchive.title">Extract Brarchives</option>
               </select>
             </div>
 
             <div class="utils-container">
               <!-- Utility 1: Pack Folder -->
               <div class="util-card" id="util-card-pack">
-                <h3>Deterministic ZIP Packer</h3>
-                <p>Creates a zip archive with fixed timestamps (Jan 1, 1980) and no compression (stored). Ideal for patch generators.</p>
+                <h3 data-i18n="tabUtils.pack.title">Deterministic ZIP Packer</h3>
+                <p data-i18n="tabUtils.pack.description">Creates a zip archive with fixed timestamps (Jan 1, 1980) and no compression (stored). Ideal for patch generators.</p>
                 
                 <div class="form-group">
-                  <label>Folder to Pack:</label>
+                  <label data-i18n="tabUtils.pack.folderLabel">Folder to Pack:</label>
                   <div class="file-picker-group">
-                    <input type="text" id="pack-src-folder" placeholder="No folder selected" readonly />
-                    <button id="btn-pack-src-browse" class="btn btn-secondary">Browse...</button>
+                    <input type="text" id="pack-src-folder" placeholder="No folder selected" data-i18n-placeholder="common.noFolderSelected" readonly />
+                    <button id="btn-pack-src-browse" class="btn btn-secondary" data-i18n="common.browse">Browse...</button>
                   </div>
                 </div>
                 <div class="form-group">
-                  <label>Save Zip / McPack Location:</label>
+                  <label data-i18n="tabUtils.pack.saveLocationLabel">Save Zip / McPack Location:</label>
                   <div class="file-picker-group">
-                    <input type="text" id="pack-dst-file" placeholder="No output zip selected" readonly />
-                    <button id="btn-pack-dst-browse" class="btn btn-secondary">Browse...</button>
+                    <input type="text" id="pack-dst-file" placeholder="No output zip selected" data-i18n-placeholder="tabUtils.pack.noOutputZip" readonly />
+                    <button id="btn-pack-dst-browse" class="btn btn-secondary" data-i18n="common.browse">Browse...</button>
                   </div>
                 </div>
-                <button id="btn-run-pack" class="btn btn-primary">Compress Deterministically</button>
+                <button id="btn-run-pack" class="btn btn-primary" data-i18n="tabUtils.pack.compressBtn">Compress Deterministically</button>
               </div>
 
               <!-- Utility 2: Extract Archive -->
               <div class="util-card hidden-group" id="util-card-extract">
-                <h3>Extract ZIP / MCPack</h3>
-                <p>Extracts any archive file to a destination directory, resolving double-nested folders automatically.</p>
+                <h3 data-i18n="tabUtils.extract.title">Extract ZIP / MCPack</h3>
+                <p data-i18n="tabUtils.extract.description">Extracts any archive file to a destination directory, resolving double-nested folders automatically.</p>
                 
                 <div class="form-group">
-                  <label>Archive file:</label>
+                  <label data-i18n="tabUtils.extract.archiveFileLabel">Archive file:</label>
                   <div class="file-picker-group">
-                    <input type="text" id="extract-src-file" placeholder="No zip file selected" readonly />
-                    <button id="btn-extract-src-browse" class="btn btn-secondary">Browse...</button>
+                    <input type="text" id="extract-src-file" placeholder="No zip file selected" data-i18n-placeholder="tabUtils.extract.noZipFileSelected" readonly />
+                    <button id="btn-extract-src-browse" class="btn btn-secondary" data-i18n="common.browse">Browse...</button>
                   </div>
                 </div>
                 <div class="form-group">
-                  <label>Destination Folder:</label>
+                  <label data-i18n="tabUtils.extract.destFolderLabel">Destination Folder:</label>
                   <div class="file-picker-group">
-                    <input type="text" id="extract-dst-folder" placeholder="No destination selected" readonly />
-                    <button id="btn-extract-dst-browse" class="btn btn-secondary">Browse...</button>
+                    <input type="text" id="extract-dst-folder" placeholder="No destination selected" data-i18n-placeholder="tabUtils.extract.noDestSelected" readonly />
+                    <button id="btn-extract-dst-browse" class="btn btn-secondary" data-i18n="common.browse">Browse...</button>
                   </div>
                 </div>
-                <button id="btn-run-extract" class="btn btn-primary">Extract Files</button>
+                <button id="btn-run-extract" class="btn btn-primary" data-i18n="tabUtils.extract.extractBtn">Extract Files</button>
               </div>
 
               <!-- Utility 3: Generate VCDIFF Patch (V2-style) -->
               <div class="util-card hidden-group" id="util-card-genpatch">
-                <h3>Create Patch (VCDIFF)</h3>
-                <p>Generates encrypted and decrypted .vcdiff patch files from source and patched pack directories. Matches the V2 patch creator workflow.</p>
+                <h3 data-i18n="tabUtils.genpatch.title">Create Patch (VCDIFF)</h3>
+                <p data-i18n="tabUtils.genpatch.description">Generates encrypted and decrypted .vcdiff patch files from source and patched pack directories. Matches the V2 patch creator workflow.</p>
 
                 <div class="genpatch-grid">
                   <!-- Left column: folder inputs -->
                   <div class="genpatch-inputs">
                     <div class="form-group">
-                      <label>1. Target Folder <span class="label-hint">(your modified/patched version)</span></label>
+                      <label data-i18n-html="tabUtils.genpatch.targetFolderLabel">1. Target Folder <span class="label-hint">(your modified/patched version)</span></label>
                       <div class="file-picker-group">
-                        <input type="text" id="gen-patched-dir" placeholder="No folder selected" readonly />
-                        <button id="btn-gen-patched-browse" class="btn btn-secondary">Browse...</button>
+                        <input type="text" id="gen-patched-dir" placeholder="No folder selected" data-i18n-placeholder="common.noFolderSelected" readonly />
+                        <button id="btn-gen-patched-browse" class="btn btn-secondary" data-i18n="common.browse">Browse...</button>
                       </div>
                     </div>
                     <div class="form-group">
-                      <label>2. Source Decrypted Folder <span class="label-hint">(vanilla baseline)</span></label>
+                      <label data-i18n-html="tabUtils.genpatch.decryptedFolderLabel">2. Source Decrypted Folder <span class="label-hint">(vanilla baseline)</span></label>
                       <div class="file-picker-group">
-                        <input type="text" id="gen-decrypted-dir" placeholder="No folder selected" readonly />
-                        <button id="btn-gen-decrypted-browse" class="btn btn-secondary">Browse...</button>
+                        <input type="text" id="gen-decrypted-dir" placeholder="No folder selected" data-i18n-placeholder="common.noFolderSelected" readonly />
+                        <button id="btn-gen-decrypted-browse" class="btn btn-secondary" data-i18n="common.browse">Browse...</button>
                       </div>
                     </div>
                     <div class="form-group">
-                      <label>3. Source Encrypted Folder <span class="label-hint">(premium cache / marketplace)</span></label>
+                      <label data-i18n-html="tabUtils.genpatch.encryptedFolderLabel">3. Source Encrypted Folder <span class="label-hint">(premium cache / marketplace)</span></label>
                       <div class="file-picker-group">
-                        <input type="text" id="gen-encrypted-dir" placeholder="No folder selected" readonly />
-                        <button id="btn-gen-encrypted-browse" class="btn btn-secondary">Browse...</button>
+                        <input type="text" id="gen-encrypted-dir" placeholder="No folder selected" data-i18n-placeholder="common.noFolderSelected" readonly />
+                        <button id="btn-gen-encrypted-browse" class="btn btn-secondary" data-i18n="common.browse">Browse...</button>
                       </div>
                     </div>
                     <div class="form-group">
-                      <label>Output Directory <span class="label-hint">(where .vcdiff files are saved)</span></label>
+                      <label data-i18n-html="tabUtils.genpatch.outputDirLabel">Output Directory <span class="label-hint">(where .vcdiff files are saved)</span></label>
                       <div class="file-picker-group">
-                        <input type="text" id="gen-output-dir" placeholder="No output directory selected" readonly />
-                        <button id="btn-gen-output-browse" class="btn btn-secondary">Browse...</button>
+                        <input type="text" id="gen-output-dir" placeholder="No output directory selected" data-i18n-placeholder="tabUtils.genpatch.noOutputDirSelected" readonly />
+                        <button id="btn-gen-output-browse" class="btn btn-secondary" data-i18n="common.browse">Browse...</button>
                       </div>
                     </div>
                   </div>
@@ -473,8 +473,8 @@
                   <!-- Right column: version + options -->
                   <div class="genpatch-meta">
                                         <div class="form-group" style="margin-bottom: 8px;">
-                      <label for="gen-pack-version">Pack Version</label>
-                      <input type="text" id="gen-pack-version" class="custom-input" placeholder="e.g. 1.10.1" value="1.10.1" style="width: 100%; margin-bottom: 4px;" />
+                      <label for="gen-pack-version" data-i18n="tabUtils.genpatch.packVersionLabel">Pack Version</label>
+                      <input type="text" id="gen-pack-version" class="custom-input" placeholder="e.g. 1.10.1" data-i18n-placeholder="tabUtils.genpatch.packVersionPlaceholder" value="1.10.1" style="width: 100%; margin-bottom: 4px;" />
                       <div style="display: flex; gap: 4px;">
                         <button type="button" class="btn btn-secondary btn-xs" id="btn-pack-major" style="flex: 1;">+1.0.0</button>
                         <button type="button" class="btn btn-secondary btn-xs" id="btn-pack-minor" style="flex: 1;">+0.1.0</button>
@@ -482,30 +482,30 @@
                       </div>
                     </div>
                     <div class="form-group">
-                      <label for="gen-patch-version">Patch Version</label>
-                      <input type="text" id="gen-patch-version" class="custom-input" placeholder="e.g. 1.1" value="1.1" style="width: 100%; margin-bottom: 4px;" />
+                      <label for="gen-patch-version" data-i18n="tabUtils.genpatch.patchVersionLabel">Patch Version</label>
+                      <input type="text" id="gen-patch-version" class="custom-input" placeholder="e.g. 1.1" data-i18n-placeholder="tabUtils.genpatch.patchVersionPlaceholder" value="1.1" style="width: 100%; margin-bottom: 4px;" />
                       <div style="display: flex; gap: 4px;">
                         <button type="button" class="btn btn-secondary btn-xs" id="btn-patch-major" style="flex: 1;">+1.0</button>
                         <button type="button" class="btn btn-secondary btn-xs" id="btn-patch-minor" style="flex: 1;">+0.1</button>
                       </div>
                     </div>
                     <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0; margin-top: 8px;">
-                      <span style="font-size: 0.85rem; color: #ffffff; font-weight: 500;">Inject Custom Manifest</span>
+                      <span style="font-size: 0.85rem; color: #ffffff; font-weight: 500;" data-i18n="tabUtils.genpatch.injectManifest">Inject Custom Manifest</span>
                       <label class="mc-toggle" style="margin-left: 0;">
                         <input type="checkbox" id="gen-inject-manifest" checked />
                         <span class="mc-slider"></span>
                       </label>
                     </div>
                     <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                      <span style="font-size: 0.85rem; color: #ffffff; font-weight: 500;">Publish to Patch Library</span>
+                      <span style="font-size: 0.85rem; color: #ffffff; font-weight: 500;" data-i18n="tabUtils.genpatch.publishToLibrary">Publish to Patch Library</span>
                       <label class="mc-toggle" style="margin-left: 0;">
                         <input type="checkbox" id="gen-publish-library" />
                         <span class="mc-slider"></span>
                       </label>
                     </div>
                     <div class="genpatch-actions" style="margin-top: 16px;">
-                      <button id="btn-run-gen-patch" class="btn btn-gold-3d" style="width: 100%;">Create Patches</button>
-                      <button id="btn-publish-last-patch" class="btn btn-secondary hidden-group" style="width: 100%; margin-top: 8px;">Publish to Library</button>
+                      <button id="btn-run-gen-patch" class="btn btn-gold-3d" style="width: 100%;" data-i18n="tabUtils.genpatch.createPatchesBtn">Create Patches</button>
+                      <button id="btn-publish-last-patch" class="btn btn-secondary hidden-group" style="width: 100%; margin-top: 8px;" data-i18n="tabUtils.genpatch.publishBtn">Publish to Library</button>
                     </div>
                     <div class="genpatch-status" id="genpatch-status" style="margin-top: 12px; display: none;">
                       <div id="genpatch-status-text" class="status-hint"></div>
@@ -516,12 +516,12 @@
                 <!-- Log output inside genpatch -->
                 <div class="console-section" style="margin-top: 16px;">
                   <div class="console-header">
-                    <span>Patch Creator Log</span>
+                    <span data-i18n="tabUtils.genpatch.console.heading">Patch Creator Log</span>
                     <div class="console-actions">
-                    <button id="btn-copy-genpatch-log" class="btn-icon-action" title="Copy log">
+                    <button id="btn-copy-genpatch-log" class="btn-icon-action" title="Copy log" data-i18n-title="tabUtils.genpatch.console.copyTooltip">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                     </button>
-                    <button id="btn-clear-genpatch-log" class="btn-icon-action" title="Clear">
+                    <button id="btn-clear-genpatch-log" class="btn-icon-action" title="Clear" data-i18n-title="tabUtils.genpatch.console.clearTooltip">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                     </button>
                   </div>
@@ -534,17 +534,17 @@
 
               <!-- Utility 4: Standalone Brarchive Extractor -->
               <div class="util-card hidden-group" id="util-card-brarchive">
-                <h3>Extract Brarchives</h3>
-                <p>Recursively scans a workspace directory, deserializes and unpacks <code>.brarchive</code> contents, and cleans up temp pointer files.</p>
+                <h3 data-i18n="tabUtils.brarchive.title">Extract Brarchives</h3>
+                <p data-i18n-html="tabUtils.brarchive.description">Recursively scans a workspace directory, deserializes and unpacks <code>.brarchive</code> contents, and cleans up temp pointer files.</p>
                 
                 <div class="form-group">
-                  <label>Workspace / Target Folder:</label>
+                  <label data-i18n="tabUtils.brarchive.workspaceLabel">Workspace / Target Folder:</label>
                   <div class="file-picker-group">
-                    <input type="text" id="util-br-folder" placeholder="No workspace folder selected" readonly />
-                    <button id="btn-util-br-browse" class="btn btn-secondary">Browse...</button>
+                    <input type="text" id="util-br-folder" placeholder="No workspace folder selected" data-i18n-placeholder="tabUtils.brarchive.noFolderSelected" readonly />
+                    <button id="btn-util-br-browse" class="btn btn-secondary" data-i18n="common.browse">Browse...</button>
                   </div>
                 </div>
-                <button id="btn-run-util-br" class="btn btn-primary">Extract Brarchives in Folder</button>
+                <button id="btn-run-util-br" class="btn btn-primary" data-i18n="tabUtils.brarchive.extractBtn">Extract Brarchives in Folder</button>
               </div>
             </div>
           </div>

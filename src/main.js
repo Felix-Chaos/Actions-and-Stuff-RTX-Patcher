@@ -1255,7 +1255,7 @@ function setupUtilities() {
     const dst = document.getElementById('pack-dst-file').value;
     
     if (!src || !dst) {
-      alert("Please select both source folder and destination path.");
+      await showAlert(t('tabUtils.pack.alerts.missingPaths'));
       return;
     }
     
@@ -1263,10 +1263,10 @@ function setupUtilities() {
       log(`Starting deterministic pack of: ${src}`);
       await invoke("pack_folder", { folderPath: src, outputZip: dst });
       log(`Successfully created deterministic pack at ${dst}`, 'success');
-      alert(`Pack created successfully at:\n${dst}`);
+      await showAlert(t('tabUtils.pack.alerts.success', { path: dst }));
     } catch (err) {
       log(`Packing failed: ${err}`, 'error');
-      alert(`Packing failed:\n${err}`);
+      await showAlert(t('tabUtils.pack.alerts.failed', { error: err }));
     }
   });
 
@@ -1275,7 +1275,7 @@ function setupUtilities() {
     const dst = document.getElementById('extract-dst-folder').value;
     
     if (!src || !dst) {
-      alert("Please select both source archive and destination folder.");
+      await showAlert(t('tabUtils.extract.alerts.missingPaths'));
       return;
     }
     
@@ -1283,10 +1283,10 @@ function setupUtilities() {
       log(`Extracting: ${src} to ${dst}`);
       await invoke("extract_archive", { zipPath: src, outputDir: dst });
       log(`Successfully extracted files to ${dst}`, 'success');
-      alert(`Extraction complete!`);
+      await showAlert(t('tabUtils.extract.alerts.success'));
     } catch (err) {
       log(`Extraction failed: ${err}`, 'error');
-      alert(`Extraction failed:\n${err}`);
+      await showAlert(t('tabUtils.extract.alerts.failed', { error: err }));
     }
   });
 
@@ -1301,7 +1301,7 @@ function setupUtilities() {
     const injectManifest = document.getElementById('gen-inject-manifest').checked;
 
     if (!patchedDir || !decryptedDir || !encryptedDir || !outputDir) {
-      alert("Please fill in all four folder paths before creating patches.");
+      await showAlert(t('tabUtils.genpatch.alerts.missingPaths'));
       return;
     }
 
@@ -1447,7 +1447,7 @@ function setupUtilities() {
 
     } catch (err) {
       gLog_fn(`❌ Patch creation failed: ${err}`, 'error');
-      alert(`Patch creation failed:\n${err}`);
+      await showAlert(t('tabUtils.genpatch.alerts.failed', { error: err }));
     } finally {
       document.getElementById('btn-run-gen-patch').disabled = false;
     }
@@ -1464,7 +1464,7 @@ function setupUtilities() {
   document.getElementById('btn-run-util-br').addEventListener('click', async () => {
     const folder = document.getElementById('util-br-folder').value;
     if (!folder) {
-      alert("Please select a target folder.");
+      await showAlert(t('tabUtils.brarchive.alerts.missingFolder'));
       return;
     }
     
@@ -1473,14 +1473,14 @@ function setupUtilities() {
       const found = await invoke("extract_brarchives_in_workspace", { workspace: folder });
       if (found) {
         log(`Successfully extracted brarchives inside ${folder}`, 'success');
-        alert("Brarchive extraction completed successfully!");
+        await showAlert(t('tabUtils.brarchive.alerts.success'));
       } else {
         log(`No brarchives found to extract in: ${folder}`, 'warning');
-        alert("Completed: No __brarchive folders found to extract.");
+        await showAlert(t('tabUtils.brarchive.alerts.noneFound'));
       }
     } catch (err) {
       log(`Brarchive extraction failed: ${err}`, 'error');
-      alert(`Extraction failed:\n${err}`);
+      await showAlert(t('tabUtils.brarchive.alerts.failed', { error: err }));
     }
   });
 
