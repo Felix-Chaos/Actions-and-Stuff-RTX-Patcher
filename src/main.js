@@ -1,5 +1,7 @@
 // JavaScript Controller for Actions & Stuff RTX Patcher v3
 
+import { initI18n, setLocale, getLocale, getLocales, t, tPlural } from './i18n/index.js';
+
 // Destructure invoke and listen from Tauri Core
 const { invoke, Channel } = window.__TAURI__ ? window.__TAURI__.core : { invoke: () => Promise.reject("Tauri not available"), Channel: class {} };
 const { listen } = window.__TAURI__ ? window.__TAURI__.event : { listen: () => {} };
@@ -3005,7 +3007,8 @@ let appSettings = {
   bugIncludeContentLog: true,
   bugIncludeDriverLog: true,
   bugIncludeHardware: true,
-  sidebarCollapsed: false
+  sidebarCollapsed: false,
+  language: 'en'
 };
 
 async function loadSettings() {
@@ -3034,7 +3037,11 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   // Load user settings
   await loadSettings();
-  
+
+  // * Must run before any settings-dependent UI is wired up: the handlers below
+  // * read labels out of an already-translated DOM.
+  await initI18n(appSettings.language);
+
   const updateSetting = async (key, val) => {
     appSettings[key] = val;
     await saveSettings();
@@ -3101,6 +3108,38 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
     if (trigger && el2) el2.dispatchEvent(new Event('change'));
   };
+
+  // Select counterpart of syncToggle: mirrors two <select> elements onto one
+  // setting, persists the change, and runs an optional side effect.
+  const syncSelect = (id1, id2, key, onChange) => {
+    const els = [document.getElementById(id1), document.getElementById(id2)].filter(Boolean);
+    els.forEach(el => {
+      el.value = appSettings[key];
+      el.addEventListener('change', async e => {
+        const val = e.target.value;
+        els.forEach(other => { if (other !== e.target) other.value = val; });
+        await updateSetting(key, val);
+        if (onChange) await onChange(val);
+      });
+    });
+  };
+
+  // Language pickers. Both dropdowns are filled from the i18n registry rather
+  // than from hardcoded <option> markup, so adding a language needs no change
+  // here -- see src/i18n/registry.js.
+  ['sel-language', 'set-language'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = '';
+    for (const { code, label } of getLocales()) {
+      const opt = document.createElement('option');
+      opt.value = code;
+      opt.textContent = label;
+      el.appendChild(opt);
+    }
+    el.value = getLocale();
+  });
+  syncSelect('sel-language', 'set-language', 'language', code => setLocale(code));
 
   // Sync settings tabs to main UI tabs
   syncToggle('set-advanced-mode', 'chk-advanced-mode', 'advancedMode', true);
