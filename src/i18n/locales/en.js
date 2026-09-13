@@ -24,8 +24,34 @@ export default {
       accept: 'Enable Reporting',
     },
   },
+  nav: {
+    patcher: 'Patcher',
+    cleaner: 'Cleaner',
+    rtxSettings: 'RTX Settings',
+    utils: {
+      label: 'Utilities',
+      pack: 'ZIP Packer',
+      extract: 'Extract ZIP',
+      genpatch: 'Create Patch',
+      brarchive: 'Ext Brarchives',
+    },
+    support: 'Support',
+    release: 'Release',
+    appSettings: 'App Settings',
+  },
   sidebar: {
+    toggle: 'Toggle Sidebar',
+    advancedMode: 'Advanced Mode',
+    betaUpdates: 'Beta Updates',
     language: 'Language',
+    update: {
+      checking: 'Checking...',
+      upToDate: 'Up to Date',
+      available: 'v{version} Available',
+      updateNow: 'Update Now',
+      updating: 'Updating...',
+      checkFailed: 'Check Failed',
+    },
   },
   tabAppSettings: {
     language: {

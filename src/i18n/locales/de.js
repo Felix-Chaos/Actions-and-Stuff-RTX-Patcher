@@ -20,8 +20,34 @@ export default {
       accept: 'Berichterstattung aktivieren',
     },
   },
+  nav: {
+    patcher: 'Patcher',
+    cleaner: 'Cleaner',
+    rtxSettings: 'RTX-Einstellungen',
+    utils: {
+      label: 'Tools',
+      pack: 'ZIP-Packer',
+      extract: 'ZIP entpacken',
+      genpatch: 'Patch erstellen',
+      brarchive: 'Brarchive entpacken',
+    },
+    support: 'Support',
+    release: 'Release',
+    appSettings: 'App-Einstellungen',
+  },
   sidebar: {
+    toggle: 'Seitenleiste ein-/ausklappen',
+    advancedMode: 'Erweiterter Modus',
+    betaUpdates: 'Beta-Updates',
     language: 'Sprache',
+    update: {
+      checking: 'Wird geprüft...',
+      upToDate: 'Aktuell',
+      available: 'v{version} verfügbar',
+      updateNow: 'Jetzt aktualisieren',
+      updating: 'Wird aktualisiert...',
+      checkFailed: 'Prüfung fehlgeschlagen',
+    },
   },
   tabAppSettings: {
     language: {

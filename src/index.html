@@ -15,7 +15,7 @@
       
       <!-- Top Titlebar / Header -->
       <header class="app-header">
-        <button id="btn-toggle-sidebar" class="sidebar-float-toggle btn btn-secondary btn-xs" title="Toggle Sidebar">
+        <button id="btn-toggle-sidebar" class="sidebar-float-toggle btn btn-secondary btn-xs" data-i18n-title="sidebar.toggle" title="Toggle Sidebar">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
         </button>
         <div class="logo-area">
@@ -25,60 +25,60 @@
           </div>
           <div class="logo-badges">
             <span class="version-badge" id="app-version-badge">v3.0</span>
-            <span id="update-badge" class="update-badge state-checking">Checking...</span>
+            <span id="update-badge" class="update-badge state-checking" data-i18n="sidebar.update.checking">Checking...</span>
           </div>
-          <button id="btn-update-now" class="btn btn-primary btn-xs hidden-group" style="margin-top: 8px; font-size: 0.75rem; padding: 4px 8px; width: 100%;">Update Now</button>
+          <button id="btn-update-now" class="btn btn-primary btn-xs hidden-group" style="margin-top: 8px; font-size: 0.75rem; padding: 4px 8px; width: 100%;" data-i18n="sidebar.update.updateNow">Update Now</button>
         </div>
         <nav class="app-nav">
           <button class="nav-tab active" data-tab="patcher">
-            <span class="tab-icon">⚡</span> <span class="tab-text">Patcher</span>
+            <span class="tab-icon">⚡</span> <span class="tab-text" data-i18n="nav.patcher">Patcher</span>
           </button>
           <button class="nav-tab" data-tab="cleaner">
-            <span class="tab-icon">🧹</span> <span class="tab-text">Cleaner</span>
+            <span class="tab-icon">🧹</span> <span class="tab-text" data-i18n="nav.cleaner">Cleaner</span>
           </button>
           <button class="nav-tab" data-tab="settings">
-            <span class="tab-icon">🎛️</span> <span class="tab-text">RTX Settings</span>
+            <span class="tab-icon">🎛️</span> <span class="tab-text" data-i18n="nav.rtxSettings">RTX Settings</span>
           </button>
           <div class="nav-dropdown" id="nav-utils-dropdown">
             <button class="nav-tab nav-dropdown-toggle" data-tab="utils" type="button">
-              <span class="tab-icon">🛠️</span> <span class="tab-text">Utilities</span>
+              <span class="tab-icon">🛠️</span> <span class="tab-text" data-i18n="nav.utils.label">Utilities</span>
               <span class="dropdown-arrow">▼</span>
             </button>
             <div class="nav-dropdown-items">
               <button class="nav-subtab" data-util="pack" type="button">
-                <span class="subtab-dot">•</span> <span class="tab-text">ZIP Packer</span>
+                <span class="subtab-dot">•</span> <span class="tab-text" data-i18n="nav.utils.pack">ZIP Packer</span>
               </button>
               <button class="nav-subtab" data-util="extract" type="button">
-                <span class="subtab-dot">•</span> <span class="tab-text">Extract ZIP</span>
+                <span class="subtab-dot">•</span> <span class="tab-text" data-i18n="nav.utils.extract">Extract ZIP</span>
               </button>
               <button class="nav-subtab" data-util="genpatch" type="button">
-                <span class="subtab-dot">•</span> <span class="tab-text">Create Patch</span>
+                <span class="subtab-dot">•</span> <span class="tab-text" data-i18n="nav.utils.genpatch">Create Patch</span>
               </button>
               <button class="nav-subtab" data-util="brarchive" type="button">
-                <span class="subtab-dot">•</span> <span class="tab-text">Ext Brarchives</span>
+                <span class="subtab-dot">•</span> <span class="tab-text" data-i18n="nav.utils.brarchive">Ext Brarchives</span>
               </button>
             </div>
           </div>
           <button class="nav-tab" data-tab="support">
-            <span class="tab-icon">💬</span> <span class="tab-text">Support</span>
+            <span class="tab-icon">💬</span> <span class="tab-text" data-i18n="nav.support">Support</span>
           </button>
           <button class="nav-tab" data-tab="release">
-            <span class="tab-icon">📦</span> <span class="tab-text">Release</span>
+            <span class="tab-icon">📦</span> <span class="tab-text" data-i18n="nav.release">Release</span>
           </button>
           <button class="nav-tab" data-tab="app-settings">
-            <span class="tab-icon">⚙️</span> <span class="tab-text">App Settings</span>
+            <span class="tab-icon">⚙️</span> <span class="tab-text" data-i18n="nav.appSettings">App Settings</span>
           </button>
         </nav>
         <div class="sidebar-footer">
           <div class="advanced-toggle-container">
-            <span class="toggle-label">Advanced Mode</span>
+            <span class="toggle-label" data-i18n="sidebar.advancedMode">Advanced Mode</span>
             <label class="mc-toggle" style="margin-left: 0;">
               <input type="checkbox" id="chk-advanced-mode" />
               <span class="mc-slider"></span>
             </label>
           </div>
           <div class="advanced-toggle-container" style="margin-top: 8px;">
-            <span class="toggle-label">Beta Updates</span>
+            <span class="toggle-label" data-i18n="sidebar.betaUpdates">Beta Updates</span>
             <label class="mc-toggle" style="margin-left: 0;">
               <input type="checkbox" id="chk-beta-updates" />
               <span class="mc-slider"></span>
