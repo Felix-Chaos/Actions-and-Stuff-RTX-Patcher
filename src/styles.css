@@ -343,10 +343,15 @@ p {
 .file-picker-group {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
+/* ! min-width:0 is load-bearing: a text input's automatic minimum is roughly
+   ! 174px, which refuses to shrink and pushes the picker button out of narrow
+   ! panels. The basis lets it drop to a second line before that happens. */
 .file-picker-group input {
-  flex: 1;
+  flex: 1 1 140px;
+  min-width: 0;
   background: rgba(15, 23, 35, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: var(--text-main);
@@ -523,11 +528,14 @@ p {
   margin-top: auto;
   display: flex;
   justify-content: center;
+  flex-wrap: wrap;
 }
 
+/* Wide by preference, but a hard 260px floor made two buttons overflow a narrow
+   window. min() lets the floor give way rather than the card. */
 .action-bar button {
   width: auto;
-  min-width: 260px;
+  min-width: min(260px, 100%);
 }
 
 /* Progress / Steps Panel */
@@ -700,17 +708,6 @@ p {
   min-width: 0;
 }
 
-/* The folder picker is a path field next to a Browse button. Its input carries
-   flex:1 with an automatic minimum, which refuses to shrink and set the widest
-   min-content in the whole grid. Let it shrink, and let the pair wrap. */
-.settings-group .file-picker-group {
-  flex-wrap: wrap;
-}
-
-.settings-group .file-picker-group input {
-  flex: 1 1 140px;
-  min-width: 0;
-}
 
 /* Corner grip for resizing the console: diagonal pixel lines in the bottom
    right, dragged downward to enlarge. */
@@ -1900,4 +1897,26 @@ input:checked + .slider:before {
   padding: 4px 8px;
   font-size: 0.8rem;
   max-width: 110px;
+}
+
+/* Icon-only variant of .btn: the folder picker buttons. Their label moved into
+   the tooltip and aria-label, so the box must stay square instead of being
+   sized by text that is no longer there. */
+.btn-square {
+  padding: 8px 10px 10px 10px;
+  flex: 0 0 auto;
+  line-height: 0;
+}
+
+/* Pixel art: no smoothing, and scaled by whole pixels so the grid stays sharp. */
+.pixel-icon {
+  display: block;
+  shape-rendering: crispEdges;
+  image-rendering: pixelated;
+}
+
+/* The press effect on .btn shifts padding; keep the icon travelling with it. */
+.btn-square:active {
+  padding-top: 10px;
+  padding-bottom: 8px;
 }
