@@ -2,25 +2,47 @@
 
 import { initI18n, setLocale, getLocale, getLocales, onLocaleChange, t, tPlural } from './i18n/index.js';
 
-// The update badge carries an interpolated version number, so applyTranslations
-// cannot re-render it from a data-i18n key alone. Remember the version and
-// rebuild the label whenever the language changes.
+// applyTranslations only reaches text annotated in index.html. Anything a
+// function writes into the DOM at runtime keeps the language it was rendered
+// in until that function runs again, so those regions are rebuilt here.
+//
+// * Re-render from state already in memory only. Nothing here may touch the
+// * network or the backend: switching language stays instant and works offline.
 onLocaleChange(() => {
-  const badge = document.getElementById('update-badge');
-  if (badge?.dataset.updateVersion) {
-    badge.innerText = t('sidebar.update.available', { version: badge.dataset.updateVersion });
-  }
-  const asSel = document.getElementById('select-as-version');
-  if (asSel) {
-    Array.from(asSel.options).forEach(opt => {
-      opt.innerText = t('tabPatcher.version.versionOption', { version: opt.value });
-    });
-    if (asSel.value) {
-      updatePatchVersionsList(asSel.value);
+  // ? Each region is guarded on its own. One that is not built yet, or throws,
+  // ? must not leave the rest of the page stuck in the previous language.
+  const regions = [
+    // The update badge interpolates a version number, so it cannot be restored
+    // from a data-i18n key alone; it remembers the version instead.
+    () => {
+      const badge = document.getElementById('update-badge');
+      if (badge?.dataset.updateVersion) {
+        badge.innerText = t('sidebar.update.available', { version: badge.dataset.updateVersion });
+      }
+    },
+    () => {
+      const asSel = document.getElementById('select-as-version');
+      if (!asSel) return;
+      Array.from(asSel.options).forEach(opt => {
+        opt.innerText = t('tabPatcher.version.versionOption', { version: opt.value });
+      });
+      if (asSel.value) updatePatchVersionsList(asSel.value);
+    },
+    () => updateMotdBox(),
+    () => updateSelectedPatchAvailability(),
+    () => renderDownloadedPatchesSettings(),
+    () => renderCleanerResults(),
+    () => updateCleanerButtons(),
+    () => updateConsoleHeightReadout(appSettings.consoleHeight),
+  ];
+
+  for (const region of regions) {
+    try {
+      region();
+    } catch (e) {
+      console.warn('[i18n] re-render failed:', e);
     }
   }
-  renderDownloadedPatchesSettings();
-  updateCleanerButtons();
 });
 
 // Destructure invoke and listen from Tauri Core
@@ -2304,7 +2326,7 @@ document.getElementById('btn-install-pack').addEventListener('click', async () =
   const btn = document.getElementById('btn-install-pack');
   const originalText = btn.innerHTML;
   btn.disabled = true;
-  btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Installing...`;
+  btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('tabPatcher.installing')}`;
 
   try {
     log(`Launching installer for: ${finalPatchedPath}`);
@@ -3226,7 +3248,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       if (!lastCreatedPatchFolder) return;
       btnPublishLast.disabled = true;
       const original = btnPublishLast.innerHTML;
-      btnPublishLast.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Publishing...';
+      btnPublishLast.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('tabUtils.genpatch.publishing')}`;
       try {
         await publishPatchToLibrary(lastCreatedPatchFolder);
       } finally {
