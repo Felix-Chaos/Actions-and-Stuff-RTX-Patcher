@@ -2369,7 +2369,7 @@ document.getElementById('btn-patch-back').addEventListener('click', () => {
   document.querySelector('.progress-panel').classList.add('hidden-group');
   document.querySelector('.controls-panel').classList.remove('hidden-group');
   document.getElementById('btn-report-bug-quick').classList.add('hidden-group');
-  updateStatus("Ready to Patch", "Configure options and click Apply", '💤');
+  updateStatus(t('tabPatcher.status.readyTitle'), t('tabPatcher.status.readySubtitle'), '💤');
   updateProgress(0);
   resetSteps();
 });
@@ -2441,7 +2441,7 @@ function setupReleaseBuilder() {
     const currentVer = versionBadge.innerText.replace('v', '').trim();
     const parsed = parseVersion(currentVer);
     updateVerInputs(parsed);
-    if (relHint) relHint.innerText = `Current: ${versionBadge.innerText}`;
+    if (relHint) relHint.innerText = t('tabRelease.versionEditor.current', { version: versionBadge.innerText });
   }
 
   // Increment buttons listeners
@@ -2482,14 +2482,14 @@ function setupReleaseBuilder() {
   if (btnApplyVer) {
     btnApplyVer.addEventListener('click', async () => {
       const newVer = relVerInput ? relVerInput.value.trim() : '';
-      if (!newVer) { alert("Please enter a version number."); return; }
+      if (!newVer) { await showAlert(t('tabRelease.alerts.enterVersion')); return; }
       try {
         await invoke("update_app_version", { version: newVer });
-        if (relHint) relHint.innerText = `Current: v${newVer} (saved)`;
+        if (relHint) relHint.innerText = t('tabRelease.versionEditor.currentSaved', { version: `v${newVer}` });
         if (versionBadge) versionBadge.innerText = `v${newVer}`;
       } catch (err) {
         bLog(`Failed to update app version: ${err}`, 'error');
-        alert(`Failed to update app version:\n${err}`);
+        await showAlert(t('tabRelease.alerts.updateVersionFailed', { error: err }));
       }
     });
   }
@@ -2505,8 +2505,13 @@ function setupReleaseBuilder() {
         const exists = await invoke("check_build_exists", { version: currentVersion });
         if (exists) {
           const result = await showModal(
-            `A release build for version v${currentVersion} already exists in the output folder.\n\nDo you want to overwrite it?`,
-            { title: 'Build Already Exists', confirm: true, okText: 'Overwrite', cancelText: 'Cancel' }
+            t('tabRelease.confirmOverwrite.message', { version: currentVersion }),
+            {
+              title: t('tabRelease.confirmOverwrite.title'),
+              confirm: true,
+              okText: t('tabRelease.confirmOverwrite.overwriteBtn'),
+              cancelText: t('common.cancel')
+            }
           );
           if (!result) {
             return;
@@ -2528,7 +2533,7 @@ function setupReleaseBuilder() {
       await invoke("run_release_build", { buildType: buildType });
     } catch (err) {
       buildLog.innerHTML += `<div class="log-line error">Failed to run build: ${err}</div>`;
-      alert(`Failed to run release build:\n${err}`);
+      await showAlert(t('tabRelease.alerts.buildFailed', { error: err }));
     } finally {
       if (btnBuildAll) btnBuildAll.disabled = false;
       if (btnBuildInstallers) btnBuildInstallers.disabled = false;
@@ -2554,7 +2559,7 @@ function setupReleaseBuilder() {
         await invoke("open_project_dir", { name: "bundle" });
       } catch (err) {
         log(`Failed to open bundle folder: ${err}`, 'error');
-        alert(`Failed to open bundle folder:\n${err}`);
+        await showAlert(t('tabRelease.alerts.openBundleFailed', { error: err }));
       }
     });
   }
@@ -2567,7 +2572,7 @@ function setupReleaseBuilder() {
         await invoke("open_project_dir", { name: "patches" });
       } catch (err) {
         log(`Failed to open patches folder: ${err}`, 'error');
-        alert(`Failed to open patches folder:\n${err}`);
+        await showAlert(t('tabRelease.alerts.openPatchesFailed', { error: err }));
       }
     });
   }
