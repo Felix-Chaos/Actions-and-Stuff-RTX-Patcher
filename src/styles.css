@@ -1902,9 +1902,15 @@ input:checked + .slider:before {
 /* Icon-only variant of .btn: the folder picker buttons. Their label moved into
    the tooltip and aria-label, so the box must stay square instead of being
    sized by text that is no longer there. */
-.btn-square {
+/* Written as button.btn-square, not .btn-square: card rules like
+   `.util-card button { width: 100% }` are meant for the action button at the
+   bottom of a card but also match these. Matching their specificity, later in
+   the file, is what keeps the picker from stretching across its own row. */
+button.btn-square {
   padding: 8px 10px 10px 10px;
   flex: 0 0 auto;
+  width: auto;
+  margin-top: 0;
   line-height: 0;
 }
 
@@ -1916,7 +1922,7 @@ input:checked + .slider:before {
 }
 
 /* The press effect on .btn shifts padding; keep the icon travelling with it. */
-.btn-square:active {
+button.btn-square:active {
   padding-top: 10px;
   padding-bottom: 8px;
 }
