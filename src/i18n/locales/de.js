@@ -3,6 +3,79 @@ export default {
   common: {
     cancel: 'Abbrechen',
     ok: 'OK',
+    browse: 'Durchsuchen...',
+  },
+  tabPatcher: {
+    heading: 'Patch-Modus wählen',
+    mode: {
+      marketplace: {
+        title: 'Marketplace',
+        desc: 'Patcht dein gekauftes Marketplace-Pack direkt aus dem Premium-Cache',
+      },
+      zip: {
+        title: 'Zip / McPack',
+        desc: 'Eine externe Minecraft-Pack-Datei normalisieren und patchen',
+      },
+      custom: {
+        title: 'Benutzerdefinierter Patch',
+        desc: 'Quell-, Ziel- und .vcdiff-Patch-Dateien manuell auswählen',
+      },
+      advancedHint: 'Aktiviere den erweiterten Modus, um diese Funktion zu nutzen',
+    },
+    disclaimer: '<strong>Haftungsausschluss:</strong> Eine gültige Actions & Stuff-Lizenz ist für die legale Nutzung dieses Patchers erforderlich!',
+    version: {
+      modeLabel: 'Versionsauswahl-Modus:',
+      autoDetect: 'Automatisch erkennen',
+      manualSelect: 'Manuell auswählen',
+      asVersion: 'A&S-Version:',
+      patchVersion: 'Patch-Version:',
+      refreshPatches: '<i class="fas fa-rotate"></i> Patch-Liste aktualisieren',
+      refreshPatchesTooltip: 'Die Patch-Bibliothek nach neu veröffentlichten Patches durchsuchen',
+      removeDownload: '<i class="fas fa-trash-can"></i> Download entfernen',
+      removeDownloadTooltip: 'Diesen heruntergeladenen Patch von der Festplatte löschen. Er wird bei der nächsten Verwendung erneut heruntergeladen.',
+    },
+    zipMode: {
+      inputFile: 'Eingabedatei (.zip / .mcpack):',
+      noFileSelected: 'Keine Datei ausgewählt',
+    },
+    customMode: {
+      sourceLabel: 'Quelle (Ordner / ZIP):',
+      noSourceSelected: 'Keine Quelle ausgewählt',
+      targetLabel: 'Zieldatei (.mcpack / .zip):',
+      noTargetSelected: 'Kein Ziel ausgewählt',
+      copyPath: 'Pfad in die Zwischenablage kopieren',
+      patchLabel: 'Patch-Datei (.vcdiff):',
+      noPatchSelected: 'Kein Patch ausgewählt',
+    },
+    options: {
+      cleanOld: 'Ältere gepatchte Versionen automatisch löschen',
+    },
+    actions: {
+      applyPatch: 'RTX-Patch anwenden',
+      installPack: 'Pack installieren',
+      copyLog: '📋 Log kopieren',
+      reportBug: '🐞 Fehler melden',
+      backToSelection: 'Zurück zur Auswahl',
+    },
+    status: {
+      heading: 'Patch-Status',
+      readyTitle: 'Bereit zum Patchen',
+      readySubtitle: 'Optionen anpassen und auf Anwenden klicken',
+    },
+    steps: {
+      scan: 'Quellinhalte scannen / prüfen',
+      normalize: 'Deterministische Komprimierung & Normalisierung',
+      cleanOld: 'Ältere Versionen bereinigen',
+      ensurePatch: 'Sicherstellen, dass die Patch-Datei verfügbar ist',
+      executePatch: 'XDelta-RTX-Patch ausführen',
+      importPack: 'Minecraft-Pack importieren',
+    },
+    console: {
+      heading: 'Ausgabe',
+      copyTooltip: 'Log in die Zwischenablage kopieren',
+      clearTooltip: 'Konsole leeren',
+      resizeGripTooltip: 'Nach unten ziehen, um die Konsole zu vergrößern. Doppelklick zum Zurücksetzen.',
+    },
   },
   modal: {
     notificationTitle: 'Benachrichtigung',

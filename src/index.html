@@ -100,7 +100,7 @@
           <div class="split-view">
             <!-- Left Side: Controls -->
             <div class="controls-panel card">
-              <h2>Select Patch Mode</h2>
+              <h2 data-i18n="tabPatcher.heading">Select Patch Mode</h2>
               <div id="motd-container" class="motd-box hidden-group" style="background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); padding: 12px; border-radius: 8px; margin-bottom: 16px;">
                 <h3 id="motd-title" style="color: #fbbf24; margin: 0 0 4px 0; font-size: 1rem; white-space: pre-line;">Status</h3>
                 <p id="motd-message" style="margin: 0; font-size: 0.85rem; color: #e2e8f0; white-space: pre-line;"></p>
@@ -110,24 +110,24 @@
                   <input type="radio" name="patch-mode" value="marketplace" checked />
                   <span class="radio-card">
                     <span class="mode-icon">🏪</span>
-                    <span class="mode-title">Marketplace</span>
-                    <span class="mode-desc">Patches your purchased Marketplace pack directly from premium cache</span>
+                    <span class="mode-title" data-i18n="tabPatcher.mode.marketplace.title">Marketplace</span>
+                    <span class="mode-desc" data-i18n="tabPatcher.mode.marketplace.desc">Patches your purchased Marketplace pack directly from premium cache</span>
                   </span>
                 </label>
-                <label class="mode-radio disabled-mode" id="mode-zip-label" title="Enable Advanced Mode to use this feature">
+                <label class="mode-radio disabled-mode" id="mode-zip-label" data-i18n-title="tabPatcher.mode.advancedHint" title="Enable Advanced Mode to use this feature">
                   <input type="radio" name="patch-mode" value="zip" id="radio-mode-zip" disabled />
                   <span class="radio-card">
                     <span class="mode-icon">📂</span>
-                    <span class="mode-title">Zip / McPack</span>
-                    <span class="mode-desc">Normalize and patch an external Minecraft pack file</span>
+                    <span class="mode-title" data-i18n="tabPatcher.mode.zip.title">Zip / McPack</span>
+                    <span class="mode-desc" data-i18n="tabPatcher.mode.zip.desc">Normalize and patch an external Minecraft pack file</span>
                   </span>
                 </label>
-                <label class="mode-radio disabled-mode" id="mode-custom-label" title="Enable Advanced Mode to use this feature">
+                <label class="mode-radio disabled-mode" id="mode-custom-label" data-i18n-title="tabPatcher.mode.advancedHint" title="Enable Advanced Mode to use this feature">
                   <input type="radio" name="patch-mode" value="custom" id="radio-mode-custom" disabled />
                   <span class="radio-card">
                     <span class="mode-icon">🔧</span>
-                    <span class="mode-title">Custom Patch</span>
-                    <span class="mode-desc">Select specific source, target, and .vcdiff patch files manually</span>
+                    <span class="mode-title" data-i18n="tabPatcher.mode.custom.title">Custom Patch</span>
+                    <span class="mode-desc" data-i18n="tabPatcher.mode.custom.desc">Select specific source, target, and .vcdiff patch files manually</span>
                   </span>
                 </label>
               </div>
@@ -135,31 +135,31 @@
               <!-- Disclaimer -->
               <div class="disclaimer-box hidden-group">
                 <span class="disclaimer-icon">⚠️</span>
-                <span class="disclaimer-text"><strong>Disclaimer:</strong> A valid Actions &amp; Stuff license is required for legal usage of this patcher!</span>
+                <span class="disclaimer-text" data-i18n-html="tabPatcher.disclaimer"><strong>Disclaimer:</strong> A valid Actions &amp; Stuff license is required for legal usage of this patcher!</span>
               </div>
 
               <!-- Config options contextually shown -->
               <div class="patch-options-section">
                 <!-- Version Selection (For Marketplace/Zip) -->
                 <div class="form-group" id="version-select-group">
-                  <label>Version Selection Mode:</label>
+                  <label data-i18n="tabPatcher.version.modeLabel">Version Selection Mode:</label>
                   <div class="text-switch-container">
                     <input type="hidden" id="version-selection-mode" value="auto" />
-                    <button type="button" class="switch-option active" id="btn-ver-auto" data-value="auto">Auto-detect</button>
-                    <button type="button" class="switch-option" id="btn-ver-manual" data-value="manual">Manual Select</button>
+                    <button type="button" class="switch-option active" id="btn-ver-auto" data-value="auto" data-i18n="tabPatcher.version.autoDetect">Auto-detect</button>
+                    <button type="button" class="switch-option" id="btn-ver-manual" data-value="manual" data-i18n="tabPatcher.version.manualSelect">Manual Select</button>
                   </div>
 
                   <!-- Manual Sub-options (hidden initially) -->
                   <div id="manual-version-options" class="hidden-group">
                     <div class="manual-version-row">
                       <div class="form-group flex-1">
-                        <label for="select-as-version">A&amp;S Version:</label>
+                        <label for="select-as-version" data-i18n="tabPatcher.version.asVersion">A&amp;S Version:</label>
                         <select id="select-as-version" class="custom-select">
                           <!-- Populated dynamically -->
                         </select>
                       </div>
                       <div class="form-group flex-1">
-                        <label for="select-patch-version">Patch Version:</label>
+                        <label for="select-patch-version" data-i18n="tabPatcher.version.patchVersion">Patch Version:</label>
                         <select id="select-patch-version" class="custom-select">
                           <!-- Populated dynamically based on A&S version -->
                         </select>
@@ -167,10 +167,10 @@
                     </div>
                     <div id="patch-availability-hint" class="status-hint" style="font-size: 0.78rem; margin-top: 6px;"></div>
                     <div style="display: flex; gap: 6px; margin-top: 4px;">
-                      <button type="button" id="btn-refresh-patches" class="btn btn-secondary btn-xs" title="Check the patch library for newly released patches">
+                      <button type="button" id="btn-refresh-patches" class="btn btn-secondary btn-xs" data-i18n-html="tabPatcher.version.refreshPatches" data-i18n-title="tabPatcher.version.refreshPatchesTooltip" title="Check the patch library for newly released patches">
                         <i class="fas fa-rotate"></i> Refresh patch list
                       </button>
-                      <button type="button" id="btn-remove-selected-patch" class="btn btn-secondary btn-xs hidden-group" title="Delete this downloaded patch from disk. It will be downloaded again next time it is used.">
+                      <button type="button" id="btn-remove-selected-patch" class="btn btn-secondary btn-xs hidden-group" data-i18n-html="tabPatcher.version.removeDownload" data-i18n-title="tabPatcher.version.removeDownloadTooltip" title="Delete this downloaded patch from disk. It will be downloaded again next time it is used.">
                         <i class="fas fa-trash-can"></i> Remove download
                       </button>
                     </div>
@@ -179,37 +179,37 @@
 
                 <!-- Zip/McPack file picker (shown only in zip mode) -->
                 <div id="zip-file-group" class="form-group hidden-group">
-                  <label>Input File (.zip / .mcpack):</label>
+                  <label data-i18n="tabPatcher.zipMode.inputFile">Input File (.zip / .mcpack):</label>
                   <div class="file-picker-group">
-                    <input type="text" id="zip-input-file" placeholder="No file selected" readonly />
-                    <button id="btn-browse-zip-input" class="btn btn-secondary">Browse...</button>
+                    <input type="text" id="zip-input-file" data-i18n-placeholder="tabPatcher.zipMode.noFileSelected" placeholder="No file selected" readonly />
+                    <button id="btn-browse-zip-input" class="btn btn-secondary" data-i18n="common.browse">Browse...</button>
                   </div>
                 </div>
 
                 <!-- Custom Patch inputs -->
                 <div id="custom-inputs-group" class="hidden-group">
                   <div class="form-group">
-                    <label>Source (Folder / ZIP):</label>
+                    <label data-i18n="tabPatcher.customMode.sourceLabel">Source (Folder / ZIP):</label>
                     <div class="file-picker-group">
-                      <input type="text" id="custom-src" placeholder="No source selected" readonly />
-                      <button id="btn-browse-src" class="btn btn-secondary">Browse...</button>
+                      <input type="text" id="custom-src" data-i18n-placeholder="tabPatcher.customMode.noSourceSelected" placeholder="No source selected" readonly />
+                      <button id="btn-browse-src" class="btn btn-secondary" data-i18n="common.browse">Browse...</button>
                     </div>
                   </div>
                   <div class="form-group">
-                    <label>Target File (.mcpack / .zip):</label>
+                    <label data-i18n="tabPatcher.customMode.targetLabel">Target File (.mcpack / .zip):</label>
                     <div class="file-picker-group">
-                      <input type="text" id="custom-tgt" placeholder="No target selected" readonly />
-                      <button id="btn-copy-tgt" class="btn-icon-action" title="Copy path to clipboard" style="padding: 8px;">
+                      <input type="text" id="custom-tgt" data-i18n-placeholder="tabPatcher.customMode.noTargetSelected" placeholder="No target selected" readonly />
+                      <button id="btn-copy-tgt" class="btn-icon-action" data-i18n-title="tabPatcher.customMode.copyPath" title="Copy path to clipboard" style="padding: 8px;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                       </button>
-                      <button id="btn-browse-tgt" class="btn btn-secondary">Browse...</button>
+                      <button id="btn-browse-tgt" class="btn btn-secondary" data-i18n="common.browse">Browse...</button>
                     </div>
                   </div>
                   <div class="form-group">
-                    <label>Patch File (.vcdiff):</label>
+                    <label data-i18n="tabPatcher.customMode.patchLabel">Patch File (.vcdiff):</label>
                     <div class="file-picker-group">
-                      <input type="text" id="custom-patch" placeholder="No patch selected" readonly />
-                      <button id="btn-browse-patch" class="btn btn-secondary">Browse...</button>
+                      <input type="text" id="custom-patch" data-i18n-placeholder="tabPatcher.customMode.noPatchSelected" placeholder="No patch selected" readonly />
+                      <button id="btn-browse-patch" class="btn btn-secondary" data-i18n="common.browse">Browse...</button>
                     </div>
                   </div>
                 </div>
@@ -217,7 +217,7 @@
                 <!-- Common Checkbox Options -->
                 <div class="checkbox-group" id="common-checkbox-group">
                   <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                    <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Delete older patched versions automatically</span>
+                    <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;" data-i18n="tabPatcher.options.cleanOld">Delete older patched versions automatically</span>
                     <label class="mc-toggle" style="margin-left: 0;">
                       <input type="checkbox" id="chk-clean-old" checked />
                       <span class="mc-slider"></span>
@@ -227,20 +227,20 @@
               </div>
 
               <div class="action-bar">
-                <button id="btn-start-patch" class="btn btn-gold-3d">Apply RTX Patch</button>
+                <button id="btn-start-patch" class="btn btn-gold-3d" data-i18n="tabPatcher.actions.applyPatch">Apply RTX Patch</button>
               </div>
             </div>
 
             <!-- Right Side: Process Step Feedback -->
             <div class="progress-panel card hidden-group">
-              <h2>Patch Status</h2>
+              <h2 data-i18n="tabPatcher.status.heading">Patch Status</h2>
               
               <!-- Simple Status Summary -->
               <div class="status-summary">
                 <div class="status-icon" id="status-spinner">💤</div>
                 <div class="status-text-container">
-                  <div class="status-title" id="status-title-text">Ready to Patch</div>
-                  <div class="status-subtitle" id="status-subtitle-text">Configure options and click Apply</div>
+                  <div class="status-title" id="status-title-text" data-i18n="tabPatcher.status.readyTitle">Ready to Patch</div>
+                  <div class="status-subtitle" id="status-subtitle-text" data-i18n="tabPatcher.status.readySubtitle">Configure options and click Apply</div>
                 </div>
               </div>
 
@@ -254,47 +254,47 @@
               <div class="steps-checklist">
                 <div class="step-item" id="step-0">
                   <span class="step-indicator">⚪</span>
-                  <span class="step-label">Scan / Verify source contents</span>
+                  <span class="step-label" data-i18n="tabPatcher.steps.scan">Scan / Verify source contents</span>
                 </div>
                 <div class="step-item" id="step-1">
                   <span class="step-indicator">⚪</span>
-                  <span class="step-label">Deterministic compression &amp; normalization</span>
+                  <span class="step-label" data-i18n="tabPatcher.steps.normalize">Deterministic compression &amp; normalization</span>
                 </div>
                 <div class="step-item" id="step-2">
                   <span class="step-indicator">⚪</span>
-                  <span class="step-label">Clean older versions</span>
+                  <span class="step-label" data-i18n="tabPatcher.steps.cleanOld">Clean older versions</span>
                 </div>
                 <div class="step-item" id="step-3">
                   <span class="step-indicator">⚪</span>
-                  <span class="step-label">Ensure patch file is available</span>
+                  <span class="step-label" data-i18n="tabPatcher.steps.ensurePatch">Ensure patch file is available</span>
                 </div>
                 <div class="step-item" id="step-4">
                   <span class="step-indicator">⚪</span>
-                  <span class="step-label">Execute XDelta RTX patch</span>
+                  <span class="step-label" data-i18n="tabPatcher.steps.executePatch">Execute XDelta RTX patch</span>
                 </div>
                 <div class="step-item" id="step-5">
                   <span class="step-indicator">⚪</span>
-                  <span class="step-label">Import Minecraft Pack</span>
+                  <span class="step-label" data-i18n="tabPatcher.steps.importPack">Import Minecraft Pack</span>
                 </div>
               </div>
 
               <!-- Post-patch action buttons -->
               <div id="progress-actions-container" class="progress-actions hidden-group">
-                <button id="btn-install-pack" class="btn btn-success hidden-group">Install Pack</button>
-                <button id="btn-copy-log-large" class="btn btn-secondary hidden-group" title="Copy log to clipboard">📋 Copy Log</button>
-                <button id="btn-report-bug-quick" class="btn btn-danger hidden-group">🐞 Report Bug</button>
-                <button id="btn-patch-back" class="btn btn-secondary">Back to Selection</button>
+                <button id="btn-install-pack" class="btn btn-success hidden-group" data-i18n="tabPatcher.actions.installPack">Install Pack</button>
+                <button id="btn-copy-log-large" class="btn btn-secondary hidden-group" data-i18n="tabPatcher.actions.copyLog" data-i18n-title="tabPatcher.console.copyTooltip" title="Copy log to clipboard">📋 Copy Log</button>
+                <button id="btn-report-bug-quick" class="btn btn-danger hidden-group" data-i18n="tabPatcher.actions.reportBug">🐞 Report Bug</button>
+                <button id="btn-patch-back" class="btn btn-secondary" data-i18n="tabPatcher.actions.backToSelection">Back to Selection</button>
               </div>
 
               <!-- Console output toggle -->
               <div class="console-section" id="main-console-section">
                 <div class="console-header">
-                  <span>Execution Output</span>
+                  <span data-i18n="tabPatcher.console.heading">Execution Output</span>
                   <div class="console-actions">
-                    <button id="btn-copy-log" class="btn-icon-action" title="Copy log to clipboard">
+                    <button id="btn-copy-log" class="btn-icon-action" data-i18n-title="tabPatcher.console.copyTooltip" title="Copy log to clipboard">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                     </button>
-                    <button id="btn-clear-console" class="btn-icon-action" title="Clear console">
+                    <button id="btn-clear-console" class="btn-icon-action" data-i18n-title="tabPatcher.console.clearTooltip" title="Clear console">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                     </button>
                   </div>
@@ -302,7 +302,7 @@
                 <div class="console-body" id="console-logs">
                   <div class="log-line system">Waiting for process start...</div>
                 </div>
-                <div class="console-resize-grip" id="console-resize-handle" title="Drag down to enlarge the console. Double-click to reset."></div>
+                <div class="console-resize-grip" id="console-resize-handle" data-i18n-title="tabPatcher.console.resizeGripTooltip" title="Drag down to enlarge the console. Double-click to reset."></div>
               </div>
             </div>
           </div>
