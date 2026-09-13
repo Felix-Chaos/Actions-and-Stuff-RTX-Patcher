@@ -1823,3 +1823,12 @@ input:checked + .slider:before {
 .custom-input, .custom-textarea {
   user-select: text;
 }
+
+/* Language picker in the sidebar footer. The row reuses
+   .advanced-toggle-container, so it also inherits the collapsed-sidebar hiding
+   rule above; this only shrinks the select to fit the narrow column. */
+.sidebar-language-select {
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  max-width: 110px;
+}
