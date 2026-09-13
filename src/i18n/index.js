@@ -102,6 +102,13 @@ export function applyTranslations(root = document) {
   root.querySelectorAll('[data-i18n]').forEach(el => {
     el.textContent = t(el.getAttribute('data-i18n'));
   });
+  // For prose that carries inline formatting (<b>, <code>, <br>). The value
+  // comes from our own locale files, never from user input or the network.
+  // ! Never put this on an element containing a button, input, or anything
+  // ! main.js binds a listener to: rewriting innerHTML destroys those nodes.
+  root.querySelectorAll('[data-i18n-html]').forEach(el => {
+    el.innerHTML = t(el.getAttribute('data-i18n-html'));
+  });
   root.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
     el.setAttribute('placeholder', t(el.getAttribute('data-i18n-placeholder')));
   });

@@ -981,11 +981,11 @@
     <!-- Custom Modal Dialog -->
     <div id="custom-modal" class="modal-overlay hidden-group">
       <div class="modal-card">
-        <h3 id="modal-title">Notification</h3>
+        <h3 id="modal-title" data-i18n="modal.notificationTitle">Notification</h3>
         <p id="modal-message">Message goes here</p>
         <div class="modal-actions">
-          <button id="btn-modal-cancel" class="btn btn-secondary hidden-group">Cancel</button>
-          <button id="btn-modal-ok" class="btn btn-primary">OK</button>
+          <button id="btn-modal-cancel" class="btn btn-secondary hidden-group" data-i18n="common.cancel">Cancel</button>
+          <button id="btn-modal-ok" class="btn btn-primary" data-i18n="common.ok">OK</button>
         </div>
       </div>
     </div>
@@ -993,17 +993,19 @@
     <!-- Telemetry Consent Modal (DSGVO / GDPR) -->
     <div id="telemetry-consent-modal" class="modal-overlay hidden-group">
       <div class="modal-card" style="max-width: 520px;">
-        <h3>Help Us Diagnose Rare RTX Issues</h3>
-        <p style="text-align: left; white-space: normal;">Certain rendering issues occur only on specific GPU and driver combinations. With your consent, the patcher can submit a <b>pseudonymous hardware summary</b> (<button type="button" id="btn-pseudonymous-info-modal" style="background: none; border: none; padding: 0; color: #7dd3fc; text-decoration: underline; cursor: pointer; font-size: inherit;">what's the difference?</button>) to help identify these cases. Reporting is opt-in and is requested once, on first launch. Afterward, your hardware is checked on every launch, and a new submission is sent only when the result differs from the previous one, for example after a GPU, driver, or BetterRTX preset change:</p>
+        <h3 data-i18n="modal.telemetryConsent.title">Help Us Diagnose Rare RTX Issues</h3>
+        <!-- Split around the button: data-i18n-html rewrites innerHTML, which
+             would destroy the button element and its click handler. -->
+        <p style="text-align: left; white-space: normal;"><span data-i18n-html="modal.telemetryConsent.intro">Certain rendering issues occur only on specific GPU and driver combinations. With your consent, the patcher can submit a <b>pseudonymous hardware summary</b></span> (<button type="button" id="btn-pseudonymous-info-modal" style="background: none; border: none; padding: 0; color: #7dd3fc; text-decoration: underline; cursor: pointer; font-size: inherit;" data-i18n="modal.telemetryConsent.whatsTheDifference">what's the difference?</button>) <span data-i18n-html="modal.telemetryConsent.introAfter">to help identify these cases. Reporting is opt-in and is requested once, on first launch. Afterward, your hardware is checked on every launch, and a new submission is sent only when the result differs from the previous one, for example after a GPU, driver, or BetterRTX preset change:</span></p>
         <ul style="text-align: left; font-size: 0.85rem; color: #cbd5e1; margin: 0 0 14px 18px; line-height: 1.6;">
-          <li>GPU model, driver version &amp; VRAM</li>
-          <li>CPU model, RAM size, Windows build</li>
-          <li>Minecraft edition (Store / Launcher) &amp; patcher version</li>
+          <li data-i18n="modal.telemetryConsent.point1">GPU model, driver version &amp; VRAM</li>
+          <li data-i18n="modal.telemetryConsent.point2">CPU model, RAM size, Windows build</li>
+          <li data-i18n="modal.telemetryConsent.point3">Minecraft edition (Store / Launcher) &amp; patcher version</li>
         </ul>
-        <p style="text-align: left; font-size: 0.85rem; color: #94a3b8; white-space: normal;"><b>Not collected:</b> your name, files, or serial numbers. Each submission is identified by a randomly generated <b>installation ID</b> and a one-way hash derived from your machine, used solely to recognize repeat submissions from the same installation so it is not counted twice after a reinstall. Because these identifiers persist and link submissions over time, this is described as pseudonymous rather than anonymous. Both identifiers can be deleted at any time from Settings under "Delete My Data," which also removes the corresponding record from the server. Every payload is additionally saved locally as <code>last_hardware_ping.json</code> for review. Uploaded bug-report logs are deleted after 30 days.</p>
+        <p style="text-align: left; font-size: 0.85rem; color: #94a3b8; white-space: normal;" data-i18n-html="modal.telemetryConsent.notCollected"><b>Not collected:</b> your name, files, or serial numbers. Each submission is identified by a randomly generated <b>installation ID</b> and a one-way hash derived from your machine, used solely to recognize repeat submissions from the same installation so it is not counted twice after a reinstall. Because these identifiers persist and link submissions over time, this is described as pseudonymous rather than anonymous. Both identifiers can be deleted at any time from Settings under "Delete My Data," which also removes the corresponding record from the server. Every payload is additionally saved locally as <code>last_hardware_ping.json</code> for review. Uploaded bug-report logs are deleted after 30 days.</p>
         <div class="modal-actions">
-          <button id="btn-consent-decline" class="btn btn-secondary">Decline</button>
-          <button id="btn-consent-accept" class="btn btn-primary">Enable Reporting</button>
+          <button id="btn-consent-decline" class="btn btn-secondary" data-i18n="modal.telemetryConsent.decline">Decline</button>
+          <button id="btn-consent-accept" class="btn btn-primary" data-i18n="modal.telemetryConsent.accept">Enable Reporting</button>
         </div>
       </div>
     </div>
