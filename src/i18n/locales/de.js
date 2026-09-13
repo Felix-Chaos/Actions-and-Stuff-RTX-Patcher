@@ -124,6 +124,82 @@ export default {
       resizeGripTooltip: 'Nach unten ziehen, um die Konsole zu vergrößern. Doppelklick zum Zurücksetzen.',
     },
   },
+  tabCleaner: {
+    title: '🧹 Alte Patches scannen & bereinigen',
+    description: 'Findet und löscht übrig gebliebene Actions & Stuff-Pack-Ordner aus Minecraft-Resourcepack- und Weltordnern, um deine Installation sauber zu halten.',
+    actions: {
+      scan: 'Ordner scannen',
+      deleteSelected: 'Ausgewählte löschen',
+      deleteSelectedCount: {
+        one: 'Ausgewählte löschen ({count})',
+        other: 'Ausgewählte löschen ({count})',
+      },
+      deleteAll: 'Alle löschen',
+      deleteAllCount: {
+        one: 'Alle löschen ({count})',
+        other: 'Alle löschen ({count})',
+      },
+      selectAll: 'Alle auswählen',
+      selectNone: 'Keine auswählen',
+    },
+    results: {
+      title: 'Scan-Ergebnisse:',
+      noneFound: '0 gefunden',
+      selectedOfTotal: '{selected} von {total} ausgewählt',
+      placeholder: 'Klicke auf „Ordner scannen“, um die Suche zu starten...',
+      clean: 'Keine alten Actions & Stuff-Packs gefunden. Deine Ordner sind sauber!',
+    },
+    confirm: {
+      title: 'Löschen bestätigen',
+      message: {
+        one: '{count} Ordner löschen?\n\n{description}\n\nDies kann nicht rückgängig gemacht werden. Du kannst danach erneut patchen und installieren.',
+        other: '{count} Ordner löschen?\n\n{description}\n\nDies kann nicht rückgängig gemacht werden. Du kannst danach erneut patchen und installieren.',
+      },
+      descAll: 'Alle beim Scan gefundenen gepatchten Packs werden entfernt.',
+      descSelected: 'Nur die ausgewählten Ordner werden entfernt.',
+    },
+    progress: {
+      preparing: {
+        one: 'Löschen von {count} Ordner wird vorbereitet...',
+        other: 'Löschen von {count} Ordnern wird vorbereitet...',
+      },
+      deleting: 'Lösche {current} von {total}: {name}',
+      done: {
+        one: 'Fertig. {count} Ordner gelöscht.',
+        other: 'Fertig. {count} Ordner gelöscht.',
+      },
+      doneWithFailures: {
+        one: 'Fertig. {count} Ordner gelöscht, {failed} konnte(n) nicht entfernt werden.',
+        other: 'Fertig. {count} Ordner gelöscht, {failed} konnte(n) nicht entfernt werden.',
+      },
+    },
+  },
+  tabRtxSettings: {
+    title: '⚙️ options.txt direkt bearbeiten',
+    description: 'Minecraft-Grafikkonfigurationsdateien direkt anpassen, um Raytracing, Upscaling und andere visuelle Optionen zu erzwingen.',
+    profileLabel: 'Ziel-options.txt-Profil:',
+    loadingProfiles: 'Profile werden geladen...',
+    chooseProfile: '-- Profil wählen --',
+    placeholder: 'Wähle ein options.txt-Profil, um die Einstellungen zu laden...',
+    actions: {
+      setBest: 'Optimale Einstellungen festlegen',
+      apply: 'Einstellungen anwenden',
+    },
+    fields: {
+      raytracing: 'Raytracing',
+      upscaling: 'Upscaling / DLSS',
+      viewDistance: 'Raytracing-Sichtweite (Chunks)',
+      maxFramerate: 'Maximale Framerate',
+      vsync: 'VSync',
+      blockDithering: 'Block-Dithering',
+      mobDithering: 'Mob-Dithering',
+    },
+    alerts: {
+      saveSuccess: 'Einstellungen erfolgreich angewendet!',
+      saveError: 'Fehler beim Speichern der Einstellungen:\n{error}',
+      bestLoaded: 'Optimale Einstellungen im Editor festgelegt! Klicke auf „Einstellungen anwenden“, um sie zu speichern.',
+    },
+  },
   modal: {
     notificationTitle: 'Benachrichtigung',
     confirmTitle: 'Bestätigen',
