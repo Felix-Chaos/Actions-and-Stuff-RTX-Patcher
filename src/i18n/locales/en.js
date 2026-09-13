@@ -7,6 +7,79 @@ export default {
   common: {
     cancel: 'Cancel',
     ok: 'OK',
+    browse: 'Browse...',
+  },
+  tabPatcher: {
+    heading: 'Select Patch Mode',
+    mode: {
+      marketplace: {
+        title: 'Marketplace',
+        desc: 'Patches your purchased Marketplace pack directly from premium cache',
+      },
+      zip: {
+        title: 'Zip / McPack',
+        desc: 'Normalize and patch an external Minecraft pack file',
+      },
+      custom: {
+        title: 'Custom Patch',
+        desc: 'Select specific source, target, and .vcdiff patch files manually',
+      },
+      advancedHint: 'Enable Advanced Mode to use this feature',
+    },
+    disclaimer: '<strong>Disclaimer:</strong> A valid Actions & Stuff license is required for legal usage of this patcher!',
+    version: {
+      modeLabel: 'Version Selection Mode:',
+      autoDetect: 'Auto-detect',
+      manualSelect: 'Manual Select',
+      asVersion: 'A&S Version:',
+      patchVersion: 'Patch Version:',
+      refreshPatches: '<i class="fas fa-rotate"></i> Refresh patch list',
+      refreshPatchesTooltip: 'Check the patch library for newly released patches',
+      removeDownload: '<i class="fas fa-trash-can"></i> Remove download',
+      removeDownloadTooltip: 'Delete this downloaded patch from disk. It will be downloaded again next time it is used.',
+    },
+    zipMode: {
+      inputFile: 'Input File (.zip / .mcpack):',
+      noFileSelected: 'No file selected',
+    },
+    customMode: {
+      sourceLabel: 'Source (Folder / ZIP):',
+      noSourceSelected: 'No source selected',
+      targetLabel: 'Target File (.mcpack / .zip):',
+      noTargetSelected: 'No target selected',
+      copyPath: 'Copy path to clipboard',
+      patchLabel: 'Patch File (.vcdiff):',
+      noPatchSelected: 'No patch selected',
+    },
+    options: {
+      cleanOld: 'Delete older patched versions automatically',
+    },
+    actions: {
+      applyPatch: 'Apply RTX Patch',
+      installPack: 'Install Pack',
+      copyLog: '📋 Copy Log',
+      reportBug: '🐞 Report Bug',
+      backToSelection: 'Back to Selection',
+    },
+    status: {
+      heading: 'Patch Status',
+      readyTitle: 'Ready to Patch',
+      readySubtitle: 'Configure options and click Apply',
+    },
+    steps: {
+      scan: 'Scan / Verify source contents',
+      normalize: 'Deterministic compression & normalization',
+      cleanOld: 'Clean older versions',
+      ensurePatch: 'Ensure patch file is available',
+      executePatch: 'Execute XDelta RTX patch',
+      importPack: 'Import Minecraft Pack',
+    },
+    console: {
+      heading: 'Execution Output',
+      copyTooltip: 'Copy log to clipboard',
+      clearTooltip: 'Clear console',
+      resizeGripTooltip: 'Drag down to enlarge the console. Double-click to reset.',
+    },
   },
   modal: {
     notificationTitle: 'Notification',
