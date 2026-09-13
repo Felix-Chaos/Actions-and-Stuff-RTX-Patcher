@@ -342,6 +342,9 @@ async function loadMotd() {
     }
   } catch (err) {
     console.warn("Could not fetch MOTD:", err);
+    // ! motdContainer belongs to updateMotdBox, not to this function. Reading it
+    // ! here threw a ReferenceError that aborted the whole offline branch below.
+    const motdContainer = document.getElementById('motd-container');
     if (motdContainer) motdContainer.classList.add('hidden-group'); // Hide from main page
     
     if (offlineContainer && offlineTitle) {
