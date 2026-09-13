@@ -118,4 +118,8 @@ export function applyTranslations(root = document) {
   root.querySelectorAll('[data-i18n-alt]').forEach(el => {
     el.setAttribute('alt', t(el.getAttribute('data-i18n-alt')));
   });
+  // * Icon-only controls carry their name here instead of as visible text.
+  root.querySelectorAll('[data-i18n-aria-label]').forEach(el => {
+    el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria-label')));
+  });
 }
