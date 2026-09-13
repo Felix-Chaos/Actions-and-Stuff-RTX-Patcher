@@ -679,23 +679,23 @@
         <!-- Tab: Release Builder -->
         <section class="tab-content" id="tab-release">
           <div class="card full-card">
-            <h2>📦 Release Builder</h2>
-            <p>Edit version metadata and build a distributable release of the patcher.</p>
+            <h2 data-i18n="tabRelease.title">📦 Release Builder</h2>
+            <p data-i18n="tabRelease.description">Edit version metadata and build a distributable release of the patcher.</p>
 
             <div class="release-grid">
               <!-- Version Editor -->
               <div class="release-section">
-                <h3>Version Editor</h3>
+                <h3 data-i18n="tabRelease.versionEditor.title">Version Editor</h3>
                 <div class="form-group">
-                  <label for="rel-app-version">App Version (tauri.conf.json)</label>
+                  <label for="rel-app-version" data-i18n="tabRelease.versionEditor.appVersionLabel">App Version (tauri.conf.json)</label>
                   <div class="file-picker-group">
-                    <input type="text" id="rel-app-version" class="custom-input" placeholder="e.g. 3.0.1" />
-                    <button id="btn-apply-version" class="btn btn-secondary">Apply</button>
+                    <input type="text" id="rel-app-version" class="custom-input" placeholder="e.g. 3.0.1" data-i18n-placeholder="tabRelease.versionEditor.placeholder" />
+                    <button id="btn-apply-version" class="btn btn-secondary" data-i18n="tabRelease.versionEditor.applyBtn">Apply</button>
                   </div>
-                  <span class="field-hint" id="rel-version-hint">Loading current version...</span>
+                  <span class="field-hint" id="rel-version-hint" data-i18n="tabRelease.versionEditor.loadingVersion">Loading current version...</span>
                 </div>
                 <div class="form-group">
-                  <label>Version Adjustments:</label>
+                  <label data-i18n="tabRelease.versionEditor.adjustmentsLabel">Version Adjustments:</label>
                   <div style="display: flex; gap: 8px;">
                     <button type="button" id="btn-inc-major" class="btn btn-secondary btn-xs" style="padding: 4px 8px; font-size: 0.7rem; min-width: 50px;">+1.0.0</button>
                     <button type="button" id="btn-inc-minor" class="btn btn-secondary btn-xs" style="padding: 4px 8px; font-size: 0.7rem; min-width: 50px;">+0.1.0</button>
@@ -703,49 +703,49 @@
                   </div>
                 </div>
                 <div class="form-group" style="margin-top: 0; margin-bottom: 12px;">
-                  <label for="select-release-type" style="font-weight: 600; font-size: 0.85rem; color: var(--text-light); margin-bottom: 6px; display: block;">Release Type</label>
+                  <label for="select-release-type" style="font-weight: 600; font-size: 0.85rem; color: var(--text-light); margin-bottom: 6px; display: block;" data-i18n="tabRelease.versionEditor.releaseTypeLabel">Release Type</label>
                   <select id="select-release-type" class="custom-select">
-                    <option value="stable">Stable</option>
-                    <option value="beta">Beta Version (_b)</option>
-                    <option value="alpha">Alpha Version (_a)</option>
+                    <option value="stable" data-i18n="tabRelease.versionEditor.types.stable">Stable</option>
+                    <option value="beta" data-i18n="tabRelease.versionEditor.types.beta">Beta Version (_b)</option>
+                    <option value="alpha" data-i18n="tabRelease.versionEditor.types.alpha">Alpha Version (_a)</option>
                   </select>
                 </div>
               </div>
 
               <!-- Build Actions -->
               <div class="release-section">
-                <h3>Build Actions</h3>
+                <h3 data-i18n="tabRelease.buildActions.title">Build Actions</h3>
 
                 <div class="release-action-card">
                   <div class="release-action-info">
-                    <strong>Build All (Installers + Portable)</strong>
-                    <span>Builds MSI, NSIS, and Portable exe</span>
+                    <strong data-i18n="tabRelease.buildActions.buildAllTitle">Build All (Installers + Portable)</strong>
+                    <span data-i18n="tabRelease.buildActions.buildAllDesc">Builds MSI, NSIS, and Portable exe</span>
                   </div>
-                  <button id="btn-build-all" class="btn btn-gold-3d">Build All</button>
+                  <button id="btn-build-all" class="btn btn-gold-3d" data-i18n="tabRelease.buildActions.buildAllBtn">Build All</button>
                 </div>
 
                 <div class="release-action-card">
                   <div class="release-action-info">
-                    <strong>Build Installers Only</strong>
-                    <span>Builds MSI & NSIS</span>
+                    <strong data-i18n="tabRelease.buildActions.buildInstallersTitle">Build Installers Only</strong>
+                    <span data-i18n="tabRelease.buildActions.buildInstallersDesc">Builds MSI & NSIS</span>
                   </div>
-                  <button id="btn-build-installers" class="btn btn-secondary">Build Installers</button>
+                  <button id="btn-build-installers" class="btn btn-secondary" data-i18n="tabRelease.buildActions.buildInstallersBtn">Build Installers</button>
                 </div>
 
                 <div class="release-action-card">
                   <div class="release-action-info">
-                    <strong>Build Portable Only</strong>
-                    <span>Builds Portable exe</span>
+                    <strong data-i18n="tabRelease.buildActions.buildPortableTitle">Build Portable Only</strong>
+                    <span data-i18n="tabRelease.buildActions.buildPortableDesc">Builds Portable exe</span>
                   </div>
-                  <button id="btn-build-portable" class="btn btn-secondary">Build Portable</button>
+                  <button id="btn-build-portable" class="btn btn-secondary" data-i18n="tabRelease.buildActions.buildPortableBtn">Build Portable</button>
                 </div>
 
                 <div class="release-action-card">
                   <div class="release-action-info">
-                    <strong>Open Bundle Folder</strong>
-                    <span>Opens the versioned release folder</span>
+                    <strong data-i18n="tabRelease.buildActions.openBundleTitle">Open Bundle Folder</strong>
+                    <span data-i18n="tabRelease.buildActions.openBundleDesc">Opens the versioned release folder</span>
                   </div>
-                  <button id="btn-open-bundle-folder" class="btn btn-secondary">Open Folder</button>
+                  <button id="btn-open-bundle-folder" class="btn btn-secondary" data-i18n="tabRelease.buildActions.openBundleBtn">Open Folder</button>
                 </div>
               </div>
             </div>
@@ -753,12 +753,12 @@
             <!-- Build log (Full Width Below Grid) -->
             <div class="console-section" style="margin-top: 24px;">
               <div class="console-header">
-                <span>Build Log</span>
+                <span data-i18n="tabRelease.console.heading">Build Log</span>
                 <div class="console-actions">
-                <button id="btn-copy-build-log" class="btn-icon-action" title="Copy log">
+                <button id="btn-copy-build-log" class="btn-icon-action" title="Copy log" data-i18n-title="tabRelease.console.copyTooltip">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                 </button>
-                <button id="btn-clear-build-log" class="btn-icon-action" title="Clear">
+                <button id="btn-clear-build-log" class="btn-icon-action" title="Clear" data-i18n-title="tabRelease.console.clearTooltip">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                 </button>
               </div>
