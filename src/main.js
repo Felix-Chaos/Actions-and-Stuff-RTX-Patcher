@@ -10,6 +10,16 @@ onLocaleChange(() => {
   if (badge?.dataset.updateVersion) {
     badge.innerText = t('sidebar.update.available', { version: badge.dataset.updateVersion });
   }
+  const asSel = document.getElementById('select-as-version');
+  if (asSel) {
+    Array.from(asSel.options).forEach(opt => {
+      opt.innerText = t('tabPatcher.version.versionOption', { version: opt.value });
+    });
+    if (asSel.value) {
+      updatePatchVersionsList(asSel.value);
+    }
+  }
+  renderDownloadedPatchesSettings();
 });
 
 // Destructure invoke and listen from Tauri Core
@@ -292,8 +302,8 @@ async function loadMotd() {
         try {
           const isDev = await invoke("is_dev_build");
           if (isDev) {
-            if (offlineTitle) offlineTitle.innerText = "Service Offline UI Preview (Dev Mode)";
-            if (offlineMessage) offlineMessage.innerText = "This is just a preview of the offline box. The API is actually ONLINE right now.";
+            if (offlineTitle) offlineTitle.innerText = t('tabPatcher.motd.offlineDevPreviewTitle');
+            if (offlineMessage) offlineMessage.innerText = t('tabPatcher.motd.offlineDevPreviewMessage');
             offlineContainer.classList.remove('hidden-group');
           } else {
             offlineContainer.classList.add('hidden-group');
@@ -315,8 +325,8 @@ async function loadMotd() {
       try {
         const isDev = await invoke("is_dev_build");
         if (isDev) {
-          offlineTitle.innerText = "Service Offline (Dev Mode)";
-          if (offlineMessage) offlineMessage.innerText = "Could not connect to the Chaos dev backend. This box is only visible in Dev Mode.";
+          offlineTitle.innerText = t('tabPatcher.motd.offlineDevTitle');
+          if (offlineMessage) offlineMessage.innerText = t('tabPatcher.motd.offlineDevMessage');
           offlineContainer.classList.remove('hidden-group');
         } else {
           // Completely remove/hide the text in release version
@@ -343,18 +353,16 @@ async function publishPatchToLibrary(patchFolder, { packVer, patchVer } = {}) {
   if (!libraryDir) {
     gLog("No patch library folder is set. Choose it in App Settings under Patch Creator.", 'warning');
     await showAlert(
-      "Set your patch library repo folder first.\n\nApp Settings, Patch Creator Default Options, Patch library repo folder.",
-      'Publishing not configured'
+      t('tabPatcher.publish.noLibraryFolderMessage'),
+      t('tabPatcher.publish.noLibraryFolderTitle')
     );
     return false;
   }
 
   const name = patchFolder.split(/[\\/]/).pop() || patchFolder;
   const proceed = await showConfirm(
-    `Publish "${name}" to the patch library?\n\n` +
-    `Repo: ${libraryDir}\n\n` +
-    `This pushes the patch. Everyone using the patcher will be offered it within a minute, with no patcher update.`,
-    'Publish patch'
+    t('tabPatcher.publish.confirmMessage', { name, repo: libraryDir }),
+    t('tabPatcher.publish.confirmTitle')
   );
   if (!proceed) return false;
 
@@ -372,21 +380,27 @@ async function publishPatchToLibrary(patchFolder, { packVer, patchVer } = {}) {
     const text = String(err);
     if (!text.includes("ALREADY_EXISTS")) {
       gLog(`Publishing failed: ${text}`, 'error');
-      await showAlert(`Publishing failed:\n\n${text}`, 'Publish failed');
+      await showAlert(
+        t('tabPatcher.publish.failedMessage', { error: text }),
+        t('tabPatcher.publish.failedTitle')
+      );
       return false;
     }
     // Already in the library: republishing replaces the payloads, which is a
     // real thing to want after rebuilding a patch, but never silent.
     const replace = await showConfirm(
-      `"${name}" is already in the patch library.\n\nReplace it with the version you just built?`,
-      'Already published'
+      t('tabPatcher.publish.alreadyPublishedMessage', { name }),
+      t('tabPatcher.publish.alreadyPublishedTitle')
     );
     if (!replace) { gLog("Publishing cancelled; the existing entry was kept.", 'warning'); return false; }
     try {
       await attempt(true);
     } catch (err2) {
       gLog(`Publishing failed: ${err2}`, 'error');
-      await showAlert(`Publishing failed:\n\n${err2}`, 'Publish failed');
+      await showAlert(
+        t('tabPatcher.publish.failedMessage', { error: err2 }),
+        t('tabPatcher.publish.failedTitle')
+      );
       return false;
     }
   }
@@ -416,10 +430,15 @@ function patchConfigsKeys(configs) {
 function flashPatchListUpdated(count) {
   const hint = document.getElementById('patch-availability-hint');
   if (!hint) return;
-  hint.innerHTML = `<span style="color:#7ed17e;">✨ ${count} new patch${count === 1 ? '' : 'es'} available</span>`;
+  const msg = tPlural('tabPatcher.version.newPatchesAvailable', count);
+  hint.dataset.flash = 'true';
+  hint.innerHTML = `<span style="color:#7ed17e;">${msg}</span>`;
   // Hand the hint back to the normal availability text after a moment.
   setTimeout(() => {
-    if (hint.innerHTML.includes('new patch')) updateSelectedPatchAvailability();
+    if (hint.dataset.flash) {
+      delete hint.dataset.flash;
+      updateSelectedPatchAvailability();
+    }
   }, 6000);
 }
 
@@ -521,7 +540,7 @@ async function loadPatchConfigs({ quiet = false } = {}) {
       uniqueAsVersions.forEach(v => {
         const opt = document.createElement('option');
         opt.value = v;
-        opt.innerText = `Version ${v}`;
+        opt.innerText = t('tabPatcher.version.versionOption', { version: v });
         asSelect.appendChild(opt);
       });
       if (previous && uniqueAsVersions.includes(previous)) asSelect.value = previous;
@@ -643,7 +662,7 @@ function renderDownloadedPatchesSettings() {
   if (!list) return;
 
   if (cachedPatchInfo.length === 0) {
-    list.innerHTML = '<div class="placeholder-text" style="font-size: 0.8rem;">No patches downloaded yet. Patches are downloaded automatically when you use them.</div>';
+    list.innerHTML = `<div class="placeholder-text" style="font-size: 0.8rem;">${t('tabPatcher.cache.empty')}</div>`;
     if (total) total.innerText = '';
     if (btnClear) btnClear.disabled = true;
     return;
@@ -656,7 +675,7 @@ function renderDownloadedPatchesSettings() {
     // Map the cache id back to a human name where the catalogue still knows it.
     const config = patchConfigs.find(c => c.slug === entry.slug);
     const label = config
-      ? `${config.packVersion}, Patch v${config.patchVersion || "1.0"}`
+      ? t('tabPatcher.cache.patchLabel', { packVersion: config.packVersion, patchVersion: config.patchVersion || "1.0" })
       : entry.slug;
 
     const row = document.createElement('div');
@@ -666,12 +685,12 @@ function renderDownloadedPatchesSettings() {
         <div style="font-size:0.85rem;color:#ffffff;">${label}</div>
         <div style="font-size:0.72rem;color:#9aa0a6;">${entry.variants.join(', ')} &middot; ${(entry.size / 1048576).toFixed(1)} MB</div>
       </div>
-      <button type="button" class="btn btn-secondary btn-xs" data-slug="${entry.slug}">Remove</button>
+      <button type="button" class="btn btn-secondary btn-xs" data-slug="${entry.slug}">${t('tabPatcher.cache.remove')}</button>
     `;
     row.querySelector('button').addEventListener('click', async (e) => {
       const btn = e.currentTarget;
       btn.disabled = true;
-      btn.innerText = 'Removing...';
+      btn.innerText = t('tabPatcher.cache.removing');
       try {
         const freed = await invoke("delete_cached_patch", { slug: entry.slug });
         log(`Removed downloaded patch ${entry.slug} (${(freed / 1048576).toFixed(1)} MB freed).`, 'success');
@@ -679,7 +698,7 @@ function renderDownloadedPatchesSettings() {
       } catch (err) {
         log(`Could not remove the downloaded patch: ${err}`, 'error');
         btn.disabled = false;
-        btn.innerText = 'Remove';
+        btn.innerText = t('tabPatcher.cache.remove');
       }
     });
     list.appendChild(row);
@@ -687,7 +706,8 @@ function renderDownloadedPatchesSettings() {
 
   const bytes = cachedPatchInfo.reduce((sum, e) => sum + e.size, 0);
   if (total) {
-    total.innerText = `${cachedPatchInfo.length} patch${cachedPatchInfo.length === 1 ? '' : 'es'} downloaded · ${(bytes / 1048576).toFixed(1)} MB total`;
+    const mb = (bytes / 1048576).toFixed(1);
+    total.innerText = tPlural('tabPatcher.cache.summary', cachedPatchInfo.length, { mb });
   }
 }
 
@@ -739,7 +759,7 @@ function wireVersionControls() {
     btnRefresh.addEventListener('click', async () => {
       btnRefresh.disabled = true;
       const original = btnRefresh.innerHTML;
-      btnRefresh.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+      btnRefresh.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('tabPatcher.version.refreshing')}`;
       try {
         await loadPatchConfigs();
         await refreshCachedPatches();
@@ -775,17 +795,16 @@ function wireVersionControls() {
     btnClearCache.addEventListener('click', async () => {
       if (cachedPatchInfo.length === 0) return;
       const bytes = cachedPatchInfo.reduce((sum, e) => sum + e.size, 0);
+      const mb = (bytes / 1048576).toFixed(1);
       const ok = await showConfirm(
-        `Remove all ${cachedPatchInfo.length} downloaded patch(es)?\n\n` +
-        `This frees ${(bytes / 1048576).toFixed(1)} MB. Patches bundled with the app are not affected, ` +
-        `and any removed patch is downloaded again automatically the next time you use it.`,
-        'Remove downloaded patches'
+        tPlural('tabPatcher.cache.clearConfirmMessage', cachedPatchInfo.length, { mb }),
+        t('tabPatcher.cache.clearConfirmTitle')
       );
       if (!ok) return;
 
       btnClearCache.disabled = true;
       const original = btnClearCache.innerHTML;
-      btnClearCache.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Removing...';
+      btnClearCache.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('tabPatcher.cache.removing')}`;
       try {
         const [removed, freed] = await invoke("clear_patch_cache");
         log(`Removed ${removed} downloaded patch(es), freeing ${(freed / 1048576).toFixed(1)} MB.`, 'success');
@@ -811,7 +830,11 @@ async function downloadPatchVariant(config, patchKey, variant) {
   const totalMb = variant.size ? (variant.size / 1048576).toFixed(1) : "?";
   log(`Patch file for pack ${config.packVersion} (patch ${config.patchVersion || "1.0"}) is not bundled; fetching it from the patch library.`);
   log(`  Variant: ${patchKey}  |  Size: ${totalMb} MB`);
-  updateStatus("Preparing Patch File", `Downloading ${patchKey} patch (${totalMb} MB)...`, '⬇️');
+  updateStatus(
+    t('tabPatcher.status.preparingTitle'),
+    t('tabPatcher.status.downloading', { patch: patchKey, total: totalMb }),
+    '⬇️'
+  );
 
   let unlisten = null;
   try {
@@ -825,9 +848,17 @@ async function downloadPatchVariant(config, patchKey, variant) {
         // The download spans the 55-75% band of the overall pipeline.
         // updateProgress writes the number straight into the label, so round it.
         updateProgress(Math.round(55 + (pct * 0.20)));
-        updateStatus("Preparing Patch File", `Downloading ${patchKey} patch: ${doneMb} / ${totalMb} MB (${pct.toFixed(0)}%)`, '⬇️');
+        updateStatus(
+          t('tabPatcher.status.preparingTitle'),
+          t('tabPatcher.status.downloadingProgress', { patch: patchKey, done: doneMb, total: totalMb, percent: pct.toFixed(0) }),
+          '⬇️'
+        );
       } else {
-        updateStatus("Preparing Patch File", `Downloading ${patchKey} patch: ${doneMb} MB`, '⬇️');
+        updateStatus(
+          t('tabPatcher.status.preparingTitle'),
+          t('tabPatcher.status.downloadingProgressIndeterminate', { patch: patchKey, done: doneMb }),
+          '⬇️'
+        );
       }
     });
 
@@ -861,12 +892,12 @@ function updatePatchVersionsList(asVersion) {
     });
 
   const previous = patchSelect.value;
-  patchSelect.innerHTML = '<option value="latest">Latest (Recommended)</option>';
+  patchSelect.innerHTML = `<option value="latest">${t('tabPatcher.version.latestRecommended')}</option>`;
   matching.forEach(c => {
     const ver = c.patchVersion || "1.0";
     const opt = document.createElement('option');
     opt.value = ver;
-    opt.innerText = `Patch v${ver} ${patchAvailabilityLabel(c)}`;
+    opt.innerText = `${t('tabPatcher.version.patchItem', { version: ver })} ${patchAvailabilityLabel(c)}`;
     patchSelect.appendChild(opt);
   });
   if (previous && Array.from(patchSelect.options).some(o => o.value === previous)) {
@@ -912,15 +943,22 @@ function updateSelectedPatchAvailability() {
 
   if (hint) {
     if (!config) {
+      delete hint.dataset.flash;
       hint.innerText = '';
     } else if (isPatchDownloaded(config)) {
+      delete hint.dataset.flash;
       const bundled = !(config.patches && Object.values(config.patches).some(v => v && typeof v === 'object' && v.url));
       hint.innerHTML = bundled
-        ? '<span style="color:#7ed17e;">\u{1F4E6} Included with the app</span>'
-        : '<span style="color:#7ed17e;">\u2705 Downloaded, ready to use offline</span>';
+        ? `<span style="color:#7ed17e;">${t('tabPatcher.version.includedWithApp')}</span>`
+        : `<span style="color:#7ed17e;">${t('tabPatcher.version.downloadedOffline')}</span>`;
     } else {
+      delete hint.dataset.flash;
       const bytes = Math.max(...Object.values(config.patches || {}).map(v => (v && v.size) || 0));
-      hint.innerHTML = `<span style="color:#e0b050;">\u2B07\uFE0F Will be downloaded${bytes ? ` (${(bytes / 1048576).toFixed(0)} MB)` : ''}</span>`;
+      const mb = bytes ? (bytes / 1048576).toFixed(0) : null;
+      const text = mb
+        ? t('tabPatcher.version.willBeDownloadedSize', { mb })
+        : t('tabPatcher.version.willBeDownloaded');
+      hint.innerHTML = `<span style="color:#e0b050;">${text}</span>`;
     }
   }
 
