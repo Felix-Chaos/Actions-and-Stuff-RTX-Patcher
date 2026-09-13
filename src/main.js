@@ -2668,29 +2668,34 @@ async function setupTelemetry() {
   consentToggle?.addEventListener('change', async (e) => {
     await applyConsent(e.target.checked);
     if (statusEl) statusEl.innerText = e.target.checked
-      ? 'Thanks! Hardware ping enabled (checked on every start, only uploaded when something changes).'
-      : 'Hardware ping disabled. Nothing will be sent automatically.';
+      ? t('tabSupport.telemetry.enabledStatus')
+      : t('tabSupport.telemetry.disabledStatus');
   });
 
   document.getElementById('btn-view-telemetry-payload')?.addEventListener('click', async () => {
     try {
       await invoke('open_diagnostics_folder');
     } catch (e) {
-      showModal(`Failed to open diagnostics folder: ${e}`, { title: 'Error' });
+      showModal(t('tabSupport.telemetry.openDiagnosticsError', { error: e }), { title: t('tabSupport.telemetry.errorTitle') });
     }
   });
 
   document.getElementById('btn-delete-telemetry-data')?.addEventListener('click', async () => {
     const confirmed = await showModal(
-      'This deletes all telemetry and bug-report data linked to your random install ID from our server, then rotates the ID locally so old data can never be linked to you again. Continue?',
-      { title: 'Delete My Data', confirm: true, okText: 'Delete', cancelText: 'Cancel' }
+      t('tabSupport.telemetry.deleteConfirmMessage'),
+      {
+        title: t('tabSupport.telemetry.deleteConfirmTitle'),
+        confirm: true,
+        okText: t('tabSupport.telemetry.deleteBtn'),
+        cancelText: t('common.cancel')
+      }
     );
     if (!confirmed) return;
     try {
       await invoke('telemetry_delete_my_data');
-      if (statusEl) statusEl.innerText = '✅ Your data has been deleted and your ID rotated.';
+      if (statusEl) statusEl.innerText = t('tabSupport.telemetry.deleteSuccess');
     } catch (e) {
-      if (statusEl) statusEl.innerText = `❌ Deletion failed: ${e}`;
+      if (statusEl) statusEl.innerText = t('tabSupport.telemetry.deleteError', { error: e });
     }
   });
 }
@@ -2703,7 +2708,7 @@ async function setupTelemetry() {
 // Shared by the general Bug Reporter and the one-click Known Issue reporter,
 // since both need the exact same "walk the user through fixing this" flow.
 async function prepareContentLogOrInstruct(statusEl, btnSubmit) {
-  statusEl.innerHTML = "Checking Minecraft content log... <span class='status-spinner'>⏳</span>";
+  statusEl.innerHTML = `${t('tabSupport.contentLog.checking')} <span class='status-spinner'>⏳</span>`;
   const clRes = await invoke('prepare_content_log');
   if (clRes.status === 'ok') {
     return clRes.zip_path;
@@ -2711,47 +2716,20 @@ async function prepareContentLogOrInstruct(statusEl, btnSubmit) {
 
   let instruction;
   if (clRes.status === 'logging_was_off') {
-    instruction = "Minecraft's content logging was turned OFF, so no useful log exists yet.\n\n" +
-      "✅ I have already enabled it in your Minecraft settings for you.\n\n" +
-      "Please:\n" +
-      "1. Restart Minecraft\n" +
-      "2. Join the world where the bug happens\n" +
-      "3. Make sure the broken entity/block is loaded (walk up to it)\n" +
-      "4. Come back and press 'Send Bug Report' again";
+    instruction = t('tabSupport.contentLog.instructions.loggingOff');
   } else if (clRes.status === 'log_too_small') {
-    instruction = `Your newest content log is only ${clRes.log_size_mb} MB, too small to contain the error details (needs > 5 MB).\n\n` +
-      "Please:\n" +
-      "1. Restart Minecraft\n" +
-      "2. Join the world where the bug happens\n" +
-      "3. Make sure the broken entity/block is loaded (walk up to it) and play a minute\n" +
-      "4. Come back and press 'Send Bug Report' again";
+    instruction = t('tabSupport.contentLog.instructions.tooSmall', { size: clRes.log_size_mb });
   } else if (clRes.status === 'log_too_old') {
-    instruction = "Your newest content log is more than an hour old, so it probably doesn't show the current bug.\n\n" +
-      "Please:\n" +
-      "1. Restart Minecraft\n" +
-      "2. Join the world where the bug happens\n" +
-      "3. Make sure the broken entity/block is loaded (walk up to it)\n" +
-      "4. Come back and press 'Send Bug Report' again (within an hour)";
+    instruction = t('tabSupport.contentLog.instructions.tooOld');
   } else if (clRes.status === 'log_too_large') {
-    instruction = `Your newest content log is ${clRes.log_size_mb} MB, which is over the 500 MB limit and likely full of unrelated spam.\n\n` +
-      "Please:\n" +
-      "1. Restart Minecraft (this starts a fresh, clean log)\n" +
-      "2. Join the world where the bug happens\n" +
-      "3. Make sure the broken entity/block is loaded (walk up to it), just briefly\n" +
-      "4. Come back and press 'Send Bug Report' again";
+    instruction = t('tabSupport.contentLog.instructions.tooLarge', { size: clRes.log_size_mb });
   } else { // no_log
-    instruction = "Content logging is enabled, but no log file exists yet.\n\n" +
-      "Please:\n" +
-      "1. Restart Minecraft\n" +
-      "2. Join the world where the bug happens\n" +
-      "3. Make sure the broken entity/block is loaded (walk up to it)\n" +
-      "4. Come back and press 'Send Bug Report' again\n\n" +
-      "(Or turn off 'Send Minecraft Content Log' to submit without it.)";
+    instruction = t('tabSupport.contentLog.instructions.noLog');
   }
-  statusEl.innerHTML = "⏸️ Report not sent yet. Minecraft needs to generate a content log first.";
+  statusEl.innerText = t('tabSupport.contentLog.notSentStatus');
   statusEl.className = "status-hint";
   btnSubmit.disabled = false;
-  await showModal(instruction, { title: 'One more step: Content Log' });
+  await showModal(instruction, { title: t('tabSupport.contentLog.modalTitle') });
   return null;
 }
 
@@ -2762,12 +2740,12 @@ async function setupBugReporter() {
   btnSubmit.addEventListener('click', async () => {
     const discordName = document.getElementById('bug-discord-name').value.trim();
     if (!discordName) {
-      alert("Please enter your Discord username.");
+      showAlert(t('tabSupport.bugReport.alerts.enterDiscord'));
       return;
     }
 
     if (discordName.includes(' ')) {
-      alert("Discord usernames/IDs cannot contain spaces.\nIf you are using your display name/nickname, please use your actual Discord username (which contains no spaces) or your 18-digit Discord User ID instead.");
+      showAlert(t('tabSupport.bugReport.alerts.noSpacesDiscord'));
       return;
     }
 
@@ -2779,7 +2757,7 @@ async function setupBugReporter() {
     const includeHardware = document.getElementById('bug-include-hardware')?.checked || false;
     const statusEl = document.getElementById('bug-report-status');
 
-    statusEl.innerHTML = "Submitting bug report... <span class='status-spinner'>⏳</span>";
+    statusEl.innerHTML = `${t('tabSupport.bugReport.status.submitting')} <span class='status-spinner'>⏳</span>`;
     statusEl.className = "status-hint";
     btnSubmit.disabled = true;
 
@@ -2811,7 +2789,7 @@ async function setupBugReporter() {
         if (mode === 'zip') {
           packPath = document.getElementById('zip-input-file').value;
         } else if (mode === 'marketplace') {
-          statusEl.innerHTML = "Zipping Marketplace Pack... <span class='status-spinner'>⏳</span>";
+          statusEl.innerHTML = `${t('tabSupport.bugReport.status.zippingMarketplace')} <span class='status-spinner'>⏳</span>`;
           let expectedLogoHash = null;
           let expectedHasLangFile = null;
           let validStatsList = null;
@@ -2844,24 +2822,24 @@ async function setupBugReporter() {
       });
 
       if (res && res.success) {
-        let msg = `✅ Bug Report submitted successfully! Case ID: #${res.caseId}`;
+        let msg = t('tabSupport.bugReport.status.success', { caseId: res.caseId });
         if (res.replacedOld) {
-            msg += `<br><br><span style="color: #fbbf24; font-size: 0.8rem;">Note: You already had a recent issue submitted. Your previous pack file has been replaced to save space.</span>`;
+            msg += `<br><br><span style="color: #fbbf24; font-size: 0.8rem;">${t('tabSupport.bugReport.status.replacedOldNote')}</span>`;
         }
         statusEl.innerHTML = msg;
         statusEl.className = "status-success";
       }
 
     } catch (err) {
-      statusEl.innerHTML = `❌ Failed to submit: ${err}`;
+      statusEl.innerText = t('tabSupport.bugReport.status.failed', { error: err });
       statusEl.className = "status-error";
 
       if (err.includes("User not found")) {
-        showModal(err + "\nWould you like to join the Chaos dev project server now?", {
-          title: "Join Server Required",
+        showModal(t('tabSupport.bugReport.alerts.userNotFound', { error: err }), {
+          title: t('tabSupport.bugReport.alerts.joinServerTitle'),
           confirm: true,
-          okText: "Join Discord",
-          cancelText: "Cancel"
+          okText: t('tabSupport.bugReport.alerts.joinDiscordBtn'),
+          cancelText: t('common.cancel')
         }).then(async (joined) => {
           if (joined) {
             await invoke("open_url", { url: "https://discord.gg/YrMMmN2kc7" });
@@ -2898,7 +2876,7 @@ async function setupKnownIssueReporter() {
     const statusEl = document.getElementById('known-issue-status');
     const description = document.getElementById('known-issue-description')?.value.trim() || '';
 
-    statusEl.innerHTML = "Submitting report... <span class='status-spinner'>⏳</span>";
+    statusEl.innerHTML = `${t('tabSupport.knownIssue.status.submitting')} <span class='status-spinner'>⏳</span>`;
     statusEl.className = "status-hint";
     btnSubmit.disabled = true;
 
@@ -2918,12 +2896,12 @@ async function setupKnownIssueReporter() {
       });
 
       if (res && res.success) {
-        statusEl.innerHTML = `✅ Report submitted anonymously! Case ID: #${res.caseId}<br><br>` +
-          `<span style="font-size: 0.8rem;">This data will be kept until the issue is resolved, not auto-deleted after 30/90 days like a regular report.</span>`;
+        statusEl.innerHTML = `${t('tabSupport.knownIssue.status.success', { caseId: res.caseId })}<br><br>` +
+          `<span style="font-size: 0.8rem;">${t('tabSupport.knownIssue.status.retentionNotice')}</span>`;
         statusEl.className = "status-success";
       }
     } catch (err) {
-      statusEl.innerHTML = `❌ Failed to submit: ${err}`;
+      statusEl.innerText = t('tabSupport.knownIssue.status.failed', { error: err });
       statusEl.className = "status-error";
     } finally {
       btnSubmit.disabled = false;

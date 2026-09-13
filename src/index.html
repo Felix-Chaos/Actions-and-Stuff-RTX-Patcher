@@ -553,7 +553,7 @@
         <!-- Tab: Support -->
         <section class="tab-content" id="tab-support">
           <div class="card full-card" style="display: block;">
-            <h2>💬 Support & Community</h2>
+            <h2 data-i18n="tabSupport.title">💬 Support & Community</h2>
             
             <!-- Offline MOTD Box (only shown here when API is down) -->
             <div id="motd-offline-container" class="motd-box hidden-group" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); padding: 12px; border-radius: 8px; margin-bottom: 16px;">
@@ -561,90 +561,90 @@
               <p id="motd-offline-message" style="margin: 0; font-size: 0.85rem; color: #e2e8f0; white-space: pre-line;"></p>
             </div>
 
-            <p>Need help or want to join the community? Check out the servers below.</p>
+            <p data-i18n="tabSupport.description">Need help or want to join the community? Check out the servers below.</p>
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
               <div class="util-card">
                 <img src="assets/chaos_dev_banner.png" alt="Chaos dev" style="width: 100%; height: 120px; object-fit: cover; border-radius: 6px; margin-bottom: 12px; border: 1px solid rgba(255, 255, 255, 0.06); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);" />
-                <h3 style="margin-bottom: 4px;">Chaos dev Projects Server <span class="badge" style="background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; margin-left: 8px;">Recommended</span></h3>
+                <h3 style="margin-bottom: 4px;" data-i18n-html="tabSupport.chaosServer.title">Chaos dev Projects Server <span class="badge" style="background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; margin-left: 8px;">Recommended</span></h3>
                 <div class="server-tags" style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;">
-                  <span class="badge" style="background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.3); color: #93c5fd; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 600;">Patcher</span>
-                  <span class="badge" style="background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 600;">Patches</span>
-                  <span class="badge" style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.3); color: #6ee7b7; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 600;">Other Projects</span>
+                  <span class="badge" style="background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.3); color: #93c5fd; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 600;" data-i18n="tabSupport.tags.patcher">Patcher</span>
+                  <span class="badge" style="background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 600;" data-i18n="tabSupport.tags.patches">Patches</span>
+                  <span class="badge" style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.3); color: #6ee7b7; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 600;" data-i18n="tabSupport.tags.otherProjects">Other Projects</span>
                 </div>
-                <p>The official server for Actions & Stuff RTX Patcher development and updates. The 3D printing and gaming community is also on there!</p>
-                <button id="btn-chaos-discord" class="btn btn-gold-3d" style="margin-top: 12px; width: 100%;">Join Discord Server</button>
+                <p data-i18n="tabSupport.chaosServer.desc">The official server for Actions & Stuff RTX Patcher development and updates. The 3D printing and gaming community is also on there!</p>
+                <button id="btn-chaos-discord" class="btn btn-gold-3d" style="margin-top: 12px; width: 100%;" data-i18n="tabSupport.joinDiscord">Join Discord Server</button>
               </div>
               
               <div class="util-card">
                 <img src="assets/betterrtx_banner.png" alt="BetterRTX" style="width: 100%; height: 120px; object-fit: cover; border-radius: 6px; margin-bottom: 12px; border: 1px solid rgba(255, 255, 255, 0.06); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);" />
-                <h3 style="margin-bottom: 4px;">BetterRTX Discord Server</h3>
+                <h3 style="margin-bottom: 4px;" data-i18n="tabSupport.betterRtxServer.title">BetterRTX Discord Server</h3>
                 <div class="server-tags" style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;">
-                  <span class="badge" style="background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.3); color: #c4b5fd; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 600;">Better RTX</span>
-                  <span class="badge" style="background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 600;">RTX Related issues</span>
+                  <span class="badge" style="background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.3); color: #c4b5fd; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 600;" data-i18n="tabSupport.tags.betterRtx">Better RTX</span>
+                  <span class="badge" style="background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 600;" data-i18n="tabSupport.tags.rtxIssues">RTX Related issues</span>
                 </div>
-                <p>The central hub for all things Minecraft RTX and BetterRTX development.</p>
-                <button id="btn-betterrtx-discord" class="btn btn-secondary" style="margin-top: 12px; width: 100%;">Join Discord Server</button>
+                <p data-i18n="tabSupport.betterRtxServer.desc">The central hub for all things Minecraft RTX and BetterRTX development.</p>
+                <button id="btn-betterrtx-discord" class="btn btn-secondary" style="margin-top: 12px; width: 100%;" data-i18n="tabSupport.joinDiscord">Join Discord Server</button>
               </div>
             </div>
 
             <!-- Bug Report Section -->
             <div class="card" style="margin-top: 24px; background: rgba(0,0,0,0.2);">
-              <h3 style="margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">🐞 Submit a Bug Report</h3>
-              <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">Send an automated bug report directly to our developer team via Discord. A case number will be generated for tracking.</p>
+              <h3 style="margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;" data-i18n="tabSupport.bugReport.title">🐞 Submit a Bug Report</h3>
+              <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;" data-i18n="tabSupport.bugReport.desc">Send an automated bug report directly to our developer team via Discord. A case number will be generated for tracking.</p>
               
               <div class="form-group">
-                <label for="bug-discord-name">Your Discord Username (e.g. user#1234)</label>
-                <input type="text" id="bug-discord-name" class="custom-input" placeholder="We need this to link the report to you" />
+                <label for="bug-discord-name" data-i18n="tabSupport.bugReport.discordLabel">Your Discord Username (e.g. user#1234)</label>
+                <input type="text" id="bug-discord-name" class="custom-input" placeholder="We need this to link the report to you" data-i18n-placeholder="tabSupport.bugReport.discordPlaceholder" />
               </div>
 
               <div class="form-group">
-                <label for="bug-description">Bug Description</label>
-                <textarea id="bug-description" class="custom-textarea" rows="3" maxlength="500" placeholder="Please describe what went wrong (max 500 characters)"></textarea>
+                <label for="bug-description" data-i18n="tabSupport.bugReport.descLabel">Bug Description</label>
+                <textarea id="bug-description" class="custom-textarea" rows="3" maxlength="500" placeholder="Please describe what went wrong (max 500 characters)" data-i18n-placeholder="tabSupport.bugReport.descPlaceholder"></textarea>
               </div>
 
               <div class="form-group">
-                <label>Bug Category <span style="color: var(--text-muted); font-weight: 400;">(select all that apply)</span></label>
+                <label data-i18n-html="tabSupport.bugReport.categoryLabel">Bug Category <span style="color: var(--text-muted); font-weight: 400;">(select all that apply)</span></label>
                 <div id="bug-categories" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; margin-top: 8px;">
-                  <label class="mc-checkbox-item"><input type="checkbox" class="bug-category" value="Texture Messup" /><span class="mc-checkbox-box"></span> Texture Messup</label>
-                  <label class="mc-checkbox-item"><input type="checkbox" class="bug-category" value="Texture Purple" /><span class="mc-checkbox-box"></span> Texture Purple</label>
-                  <label class="mc-checkbox-item"><input type="checkbox" class="bug-category" value="DeltaX Problem" /><span class="mc-checkbox-box"></span> DeltaX Problem</label>
-                  <label class="mc-checkbox-item"><input type="checkbox" class="bug-category" value="No dynamic light" /><span class="mc-checkbox-box"></span> No dynamic light</label>
-                  <label class="mc-checkbox-item"><input type="checkbox" class="bug-category" value="Wrong Model for mob" /><span class="mc-checkbox-box"></span> Wrong Model for mob</label>
+                  <label class="mc-checkbox-item"><input type="checkbox" class="bug-category" value="Texture Messup" /><span class="mc-checkbox-box"></span> <span data-i18n="tabSupport.bugReport.categories.textureMessup">Texture Messup</span></label>
+                  <label class="mc-checkbox-item"><input type="checkbox" class="bug-category" value="Texture Purple" /><span class="mc-checkbox-box"></span> <span data-i18n="tabSupport.bugReport.categories.texturePurple">Texture Purple</span></label>
+                  <label class="mc-checkbox-item"><input type="checkbox" class="bug-category" value="DeltaX Problem" /><span class="mc-checkbox-box"></span> <span data-i18n="tabSupport.bugReport.categories.deltaXProblem">DeltaX Problem</span></label>
+                  <label class="mc-checkbox-item"><input type="checkbox" class="bug-category" value="No dynamic light" /><span class="mc-checkbox-box"></span> <span data-i18n="tabSupport.bugReport.categories.noDynamicLight">No dynamic light</span></label>
+                  <label class="mc-checkbox-item"><input type="checkbox" class="bug-category" value="Wrong Model for mob" /><span class="mc-checkbox-box"></span> <span data-i18n="tabSupport.bugReport.categories.wrongModelMob">Wrong Model for mob</span></label>
                 </div>
               </div>
 
               <div class="checkbox-group" style="margin-bottom: 16px; background: rgba(0,0,0,0.1); padding: 12px; border-radius: 6px;">
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                  <span style="font-size: 0.85rem; font-weight: 500;">Include Application Log</span>
+                  <span style="font-size: 0.85rem; font-weight: 500;" data-i18n="tabSupport.bugReport.includeAppLog">Include Application Log</span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="bug-include-log" checked />
                     <span class="mc-slider"></span>
                   </label>
                 </div>
                 <div id="bug-pack-toggle-row" style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0; margin-top: 8px;">
-                  <span style="font-size: 0.85rem; font-weight: 500;">Include Pack (Marketplace Cache / Zip)</span>
+                  <span style="font-size: 0.85rem; font-weight: 500;" data-i18n="tabSupport.bugReport.includePack">Include Pack (Marketplace Cache / Zip)</span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="bug-include-pack" />
                     <span class="mc-slider"></span>
                   </label>
                 </div>
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0; margin-top: 8px;">
-                  <span style="font-size: 0.85rem; font-weight: 500;">Send Minecraft Content Log <span style="color: var(--text-muted); font-weight: 400;">(recommended for rendering bugs)</span></span>
+                  <span style="font-size: 0.85rem; font-weight: 500;" data-i18n-html="tabSupport.bugReport.includeContentLog">Send Minecraft Content Log <span style="color: var(--text-muted); font-weight: 400;">(recommended for rendering bugs)</span></span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="bug-include-content-log" checked />
                     <span class="mc-slider"></span>
                   </label>
                 </div>
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0; margin-top: 8px;">
-                  <span style="font-size: 0.85rem; font-weight: 500;">Include GPU Driver Events <span style="color: var(--text-muted); font-weight: 400;">(last 7 days, display driver only)</span></span>
+                  <span style="font-size: 0.85rem; font-weight: 500;" data-i18n-html="tabSupport.bugReport.includeDriverLog">Include GPU Driver Events <span style="color: var(--text-muted); font-weight: 400;">(last 7 days, display driver only)</span></span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="bug-include-driver-log" checked />
                     <span class="mc-slider"></span>
                   </label>
                 </div>
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0; margin-top: 8px;">
-                  <span style="font-size: 0.85rem; font-weight: 500;">Include Hardware Info <span style="color: var(--text-muted); font-weight: 400;">(GPU, driver, RAM, BetterRTX version &amp; RTX settings)</span></span>
+                  <span style="font-size: 0.85rem; font-weight: 500;" data-i18n-html="tabSupport.bugReport.includeHardware">Include Hardware Info <span style="color: var(--text-muted); font-weight: 400;">(GPU, driver, RAM, BetterRTX version &amp; RTX settings)</span></span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="bug-include-hardware" checked />
                     <span class="mc-slider"></span>
@@ -652,24 +652,24 @@
                 </div>
               </div>
 
-              <button id="btn-submit-bug" class="btn btn-primary" style="width: 100%;">Send Bug Report</button>
+              <button id="btn-submit-bug" class="btn btn-primary" style="width: 100%;" data-i18n="tabSupport.bugReport.submitBtn">Send Bug Report</button>
               <div id="bug-report-status" style="margin-top: 12px; font-size: 0.85rem; text-align: center;" class="hidden-group"></div>
             </div>
 
             <!-- Known Issue: NVIDIA Mob Texture Corruption -->
             <div class="card" style="margin-top: 24px; background: rgba(139, 92, 246, 0.06); border: 1px solid rgba(139, 92, 246, 0.25);">
-              <h3 style="margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">🟣 Known Issue: Wrong/Missing Mob Textures (NVIDIA)</h3>
-              <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
+              <h3 style="margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;" data-i18n="tabSupport.knownIssue.title">🟣 Known Issue: Wrong/Missing Mob Textures (NVIDIA)</h3>
+              <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;" data-i18n-html="tabSupport.knownIssue.desc">
                 Seeing stretched, black, or purple textures on <b>Zombies, Creepers, or Skeletons</b> on an NVIDIA graphics card? We're actively tracking this specific issue. Use the button below to send a fully <b>anonymous</b> report, no Discord account needed.
               </p>
-              <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 16px;">
+              <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 16px;" data-i18n="tabSupport.knownIssue.details">
                 This automatically includes your hardware info, GPU driver events, and Minecraft content log, since diagnosing this bug needs all three. Unlike a regular bug report, this data is kept until the issue is actually fixed instead of being auto-deleted after 30/90 days.
               </p>
               <div class="form-group">
-                <label for="known-issue-description">Anything else to add? <span style="color: var(--text-muted); font-weight: 400;">(optional)</span></label>
-                <textarea id="known-issue-description" class="custom-textarea" rows="2" maxlength="500" placeholder="e.g. which subpack, when it started, etc. (optional)"></textarea>
+                <label for="known-issue-description" data-i18n-html="tabSupport.knownIssue.notesLabel">Anything else to add? <span style="color: var(--text-muted); font-weight: 400;">(optional)</span></label>
+                <textarea id="known-issue-description" class="custom-textarea" rows="2" maxlength="500" placeholder="e.g. which subpack, when it started, etc. (optional)" data-i18n-placeholder="tabSupport.knownIssue.notesPlaceholder"></textarea>
               </div>
-              <button id="btn-submit-known-issue" class="btn btn-primary" style="width: 100%;">Report This Issue Anonymously</button>
+              <button id="btn-submit-known-issue" class="btn btn-primary" style="width: 100%;" data-i18n="tabSupport.knownIssue.submitBtn">Report This Issue Anonymously</button>
               <div id="known-issue-status" style="margin-top: 12px; font-size: 0.85rem; text-align: center;" class="hidden-group"></div>
             </div>
 
