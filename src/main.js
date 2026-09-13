@@ -1,6 +1,16 @@
 // JavaScript Controller for Actions & Stuff RTX Patcher v3
 
-import { initI18n, setLocale, getLocale, getLocales, t, tPlural } from './i18n/index.js';
+import { initI18n, setLocale, getLocale, getLocales, onLocaleChange, t, tPlural } from './i18n/index.js';
+
+// The update badge carries an interpolated version number, so applyTranslations
+// cannot re-render it from a data-i18n key alone. Remember the version and
+// rebuild the label whenever the language changes.
+onLocaleChange(() => {
+  const badge = document.getElementById('update-badge');
+  if (badge?.dataset.updateVersion) {
+    badge.innerText = t('sidebar.update.available', { version: badge.dataset.updateVersion });
+  }
+});
 
 // Destructure invoke and listen from Tauri Core
 const { invoke, Channel } = window.__TAURI__ ? window.__TAURI__.core : { invoke: () => Promise.reject("Tauri not available"), Channel: class {} };
@@ -2882,7 +2892,9 @@ async function checkForUpdates() {
   if (!badge) return;
 
   badge.className = "update-badge state-checking";
-  badge.innerText = "Checking...";
+  delete badge.dataset.updateVersion;
+  badge.setAttribute('data-i18n', 'sidebar.update.checking');
+  badge.innerText = t('sidebar.update.checking');
 
   const allowBetaUpdates = localStorage.getItem('allow-beta-updates') === 'true';
   const isAdvanced = document.getElementById('chk-advanced-mode')?.checked;
@@ -2908,7 +2920,9 @@ async function checkForUpdates() {
       if (isBetaUpdate && !allowBetaUpdates) {
         log(`Software update v${userFacingVersion} is a Beta version, and Beta updates are disabled.`);
         badge.className = "update-badge state-uptodate";
-        badge.innerText = "Up to Date";
+        delete badge.dataset.updateVersion;
+      badge.setAttribute('data-i18n', 'sidebar.update.upToDate');
+        badge.innerText = t('sidebar.update.upToDate');
         btn.classList.add('hidden-group');
         return;
       }
@@ -2917,14 +2931,18 @@ async function checkForUpdates() {
       if (isAlphaUpdate && (!allowBetaUpdates || !isAdvanced)) {
         log(`Software update v${userFacingVersion} is an Alpha version. It requires both Beta updates and Advanced Mode to be enabled.`);
         badge.className = "update-badge state-uptodate";
-        badge.innerText = "Up to Date";
+        delete badge.dataset.updateVersion;
+      badge.setAttribute('data-i18n', 'sidebar.update.upToDate');
+        badge.innerText = t('sidebar.update.upToDate');
         btn.classList.add('hidden-group');
         return;
       }
 
       log(`New update available: v${userFacingVersion}`);
       badge.className = "update-badge state-available";
-      badge.innerText = `v${userFacingVersion} Available`;
+      badge.removeAttribute('data-i18n');
+      badge.dataset.updateVersion = userFacingVersion;
+      badge.innerText = t('sidebar.update.available', { version: userFacingVersion });
       btn.classList.remove('hidden-group');
       
       btn.onclick = async () => {
@@ -2946,7 +2964,8 @@ async function checkForUpdates() {
         if (!confirmed) return;
 
         btn.disabled = true;
-        btn.innerText = "Updating...";
+        btn.setAttribute('data-i18n', 'sidebar.update.updating');
+        btn.innerText = t('sidebar.update.updating');
         log("Downloading and installing update...");
         try {
           if (!update.rid) {
@@ -2974,19 +2993,23 @@ async function checkForUpdates() {
           log(`Update installation failed: ${err}`, 'error');
           alert(`Update installation failed:\n${err}`);
           btn.disabled = false;
-          btn.innerText = "Update Now";
+          btn.setAttribute('data-i18n', 'sidebar.update.updateNow');
+          btn.innerText = t('sidebar.update.updateNow');
         }
       };
     } else {
       log("Software is up to date.");
       badge.className = "update-badge state-uptodate";
-      badge.innerText = "Up to Date";
+      delete badge.dataset.updateVersion;
+      badge.setAttribute('data-i18n', 'sidebar.update.upToDate');
+      badge.innerText = t('sidebar.update.upToDate');
       btn.classList.add('hidden-group');
     }
   } catch (err) {
     log(`Update check failed: ${err}`, 'warning');
     badge.className = "update-badge state-error";
-    badge.innerText = "Check Failed";
+    badge.setAttribute('data-i18n', 'sidebar.update.checkFailed');
+    badge.innerText = t('sidebar.update.checkFailed');
     btn.classList.add('hidden-group');
   }
 }
