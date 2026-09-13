@@ -579,7 +579,7 @@ function applyConsoleHeight(px) {
 
 function updateConsoleHeightReadout(px) {
   const readout = document.getElementById('console-height-readout');
-  if (readout) readout.innerText = `Currently ${px}px.`;
+  if (readout) readout.innerText = t('tabAppSettings.console.currently', { px });
   document.querySelectorAll('.console-size-preset').forEach(btn => {
     btn.classList.toggle('active', Number(btn.dataset.height) === px);
   });
@@ -3272,20 +3272,20 @@ window.addEventListener('DOMContentLoaded', async () => {
     const resEl = document.getElementById('api-test-results');
     if (!resEl) return;
     resEl.style.color = '#e2e8f0';
-    resEl.textContent = 'Testing GitHub API...';
+    resEl.textContent = t('tabAppSettings.diagnostics.testingGithub');
     try {
       const resp = await fetch('https://api.github.com/repos/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/latest');
       if (resp.ok) {
         const data = await resp.json();
         resEl.style.color = '#4ade80';
-        resEl.textContent = `✅ Online. Latest release: ${data.tag_name}`;
+        resEl.textContent = t('tabAppSettings.diagnostics.githubOnline', { tag: data.tag_name });
       } else {
         resEl.style.color = '#ef4444';
-        resEl.textContent = `❌ API returned status: ${resp.status}`;
+        resEl.textContent = t('tabAppSettings.diagnostics.githubStatusError', { status: resp.status });
       }
     } catch(e) {
       resEl.style.color = '#ef4444';
-      resEl.textContent = `❌ Fetch failed: ${e.message}`;
+      resEl.textContent = t('tabAppSettings.diagnostics.githubFetchFailed', { error: e.message });
     }
   });
 
@@ -3293,14 +3293,14 @@ window.addEventListener('DOMContentLoaded', async () => {
     const resEl = document.getElementById('api-test-results');
     if (!resEl) return;
     resEl.style.color = '#e2e8f0';
-    resEl.textContent = 'Pinging Rust Backend...';
+    resEl.textContent = t('tabAppSettings.diagnostics.pingingBackend');
     try {
       const resp = await invoke("greet", { name: "Test" });
       resEl.style.color = '#4ade80';
-      resEl.textContent = `✅ Rust backend is responding: ${resp}`;
+      resEl.textContent = t('tabAppSettings.diagnostics.backendResponding', { response: resp });
     } catch(e) {
       resEl.style.color = '#ef4444';
-      resEl.textContent = `❌ Backend error: ${e}`;
+      resEl.textContent = t('tabAppSettings.diagnostics.backendError', { error: e });
     }
   });
 
@@ -3308,15 +3308,17 @@ window.addEventListener('DOMContentLoaded', async () => {
     const resEl = document.getElementById('api-test-results');
     if (!resEl) return;
     resEl.style.color = '#e2e8f0';
-    resEl.textContent = 'Testing Workspace Paths...';
+    resEl.textContent = t('tabAppSettings.diagnostics.testingWorkspace');
     try {
       const paths = await invoke("get_default_paths");
       const foundPath = paths.premium_cache || paths.mc_resource_packs || paths.premiumCache || paths.mcResourcePacks;
       resEl.style.color = '#4ade80';
-      resEl.textContent = `✅ Found Workspace: ${foundPath || 'Unknown, check advanced options'}`;
+      resEl.textContent = t('tabAppSettings.diagnostics.workspaceFound', {
+        path: foundPath || t('tabAppSettings.diagnostics.workspaceUnknown'),
+      });
     } catch(e) {
       resEl.style.color = '#ef4444';
-      resEl.textContent = `❌ Workspace error: ${e}`;
+      resEl.textContent = t('tabAppSettings.diagnostics.workspaceError', { error: e });
     }
   });
 

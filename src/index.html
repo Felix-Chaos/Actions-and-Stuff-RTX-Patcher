@@ -774,12 +774,12 @@
         <!-- Tab: Settings -->
         <section class="tab-content" id="tab-app-settings">
           <div class="card full-card">
-            <h2>⚙️ Application Settings</h2>
+            <h2 data-i18n="tabAppSettings.title">⚙️ Application Settings</h2>
             <div class="settings-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
               
               <!-- General Settings -->
               <div class="settings-group card" style="background: rgba(0,0,0,0.2);">
-                <h3 style="margin-top: 0;">General Options</h3>
+                <h3 style="margin-top: 0;" data-i18n="tabAppSettings.general.heading">General Options</h3>
                 <div class="form-group" style="margin-bottom: 12px;">
                   <label for="set-language" data-i18n="tabAppSettings.language.label">Language</label>
                   <!-- Options are filled from the i18n registry at runtime. -->
@@ -787,22 +787,22 @@
                   <small style="display: block; margin-top: 4px; font-size: 0.75rem; opacity: 0.7;" data-i18n="tabAppSettings.language.hint">Log and console output stays in English.</small>
                 </div>
                 <div class="form-group" style="margin-bottom: 12px;">
-                  <label for="set-default-mode">Default Patcher Mode</label>
+                  <label for="set-default-mode" data-i18n="tabAppSettings.defaultPatcherMode.label">Default Patcher Mode</label>
                   <select id="set-default-mode" class="custom-select">
-                    <option value="marketplace">Marketplace Auto-Detect</option>
-                    <option value="zip">Manual Zip/Mcpack</option>
-                    <option value="custom">Custom Modpack (WIP)</option>
+                    <option value="marketplace" data-i18n="tabAppSettings.defaultPatcherMode.marketplace">Marketplace Auto-Detect</option>
+                    <option value="zip" data-i18n="tabAppSettings.defaultPatcherMode.zip">Manual Zip/Mcpack</option>
+                    <option value="custom" data-i18n="tabAppSettings.defaultPatcherMode.custom">Custom Modpack (WIP)</option>
                   </select>
                 </div>
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                  <span style="font-size: 0.85rem; color: #ffffff;">Enable Advanced Mode UI</span>
+                  <span style="font-size: 0.85rem; color: #ffffff;" data-i18n="tabAppSettings.general.enableAdvancedMode">Enable Advanced Mode UI</span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="set-advanced-mode" />
                     <span class="mc-slider"></span>
                   </label>
                 </div>
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                  <span style="font-size: 0.85rem; color: #ffffff;">Opt-in to Beta Updates</span>
+                  <span style="font-size: 0.85rem; color: #ffffff;" data-i18n="tabAppSettings.general.optInBetaUpdates">Opt-in to Beta Updates</span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="set-beta-updates" />
                     <span class="mc-slider"></span>
@@ -812,9 +812,9 @@
 
               <!-- Patcher Behaviors -->
               <div class="settings-group card" style="background: rgba(0,0,0,0.2);">
-                <h3 style="margin-top: 0;">Patcher Behaviors</h3>
+                <h3 style="margin-top: 0;" data-i18n="tabAppSettings.patcherBehaviors.heading">Patcher Behaviors</h3>
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                  <span style="font-size: 0.85rem; color: #ffffff;">Clean Old Patch Remnants</span>
+                  <span style="font-size: 0.85rem; color: #ffffff;" data-i18n="tabAppSettings.patcherBehaviors.cleanOldRemnants">Clean Old Patch Remnants</span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="set-clean-old" checked />
                     <span class="mc-slider"></span>
@@ -824,18 +824,15 @@
 
               <!-- Console -->
               <div class="settings-group card" style="background: rgba(0,0,0,0.2);">
-                <h3 style="margin-top: 0;">Console</h3>
-                <p style="font-size: 0.78rem; color: #9aa0a6; margin-top: 0;">
-                  Set how tall the execution output console is. You can also drag the grip above the console
-                  itself, or double-click it to reset.
-                </p>
+                <h3 style="margin-top: 0;" data-i18n="tabAppSettings.console.heading">Console</h3>
+                <p style="font-size: 0.78rem; color: #9aa0a6; margin-top: 0;" data-i18n="tabAppSettings.console.description">Set how tall the execution output console is. You can also drag the grip above the console itself, or double-click it to reset.</p>
                 <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0;">
-                  <span style="font-size: 0.85rem; color: #ffffff;">Console height</span>
+                  <span style="font-size: 0.85rem; color: #ffffff;" data-i18n="tabAppSettings.console.heightLabel">Console height</span>
                   <div style="display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end;">
-                    <button type="button" class="btn btn-secondary btn-xs console-size-preset" data-height="110">Small</button>
-                    <button type="button" class="btn btn-secondary btn-xs console-size-preset" data-height="150">Medium</button>
-                    <button type="button" class="btn btn-secondary btn-xs console-size-preset" data-height="260">Large</button>
-                    <button type="button" class="btn btn-secondary btn-xs console-size-preset" data-height="400">Tall</button>
+                    <button type="button" class="btn btn-secondary btn-xs console-size-preset" data-height="110" data-i18n="tabAppSettings.console.presetSmall">Small</button>
+                    <button type="button" class="btn btn-secondary btn-xs console-size-preset" data-height="150" data-i18n="tabAppSettings.console.presetMedium">Medium</button>
+                    <button type="button" class="btn btn-secondary btn-xs console-size-preset" data-height="260" data-i18n="tabAppSettings.console.presetLarge">Large</button>
+                    <button type="button" class="btn btn-secondary btn-xs console-size-preset" data-height="400" data-i18n="tabAppSettings.console.presetTall">Tall</button>
                   </div>
                 </div>
                 <div id="console-height-readout" style="font-size: 0.75rem; color: #9aa0a6;"></div>
@@ -843,14 +840,10 @@
 
               <!-- Downloaded Patches -->
               <div class="settings-group card" style="background: rgba(0,0,0,0.2);">
-                <h3 style="margin-top: 0;">Downloaded Patches</h3>
-                <p style="font-size: 0.78rem; color: #9aa0a6; margin-top: 0;">
-                  Patches are downloaded as you use them and kept for offline use. Removing one only frees
-                  disk space; it is downloaded again automatically next time. Patches bundled with the
-                  app are never removed.
-                </p>
+                <h3 style="margin-top: 0;" data-i18n="tabAppSettings.downloadedPatches.heading">Downloaded Patches</h3>
+                <p style="font-size: 0.78rem; color: #9aa0a6; margin-top: 0;" data-i18n="tabAppSettings.downloadedPatches.description">Patches are downloaded as you use them and kept for offline use. Removing one only frees disk space; it is downloaded again automatically next time. Patches bundled with the app are never removed.</p>
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                  <span style="font-size: 0.85rem; color: #ffffff;">Keep only the most recently used patch</span>
+                  <span style="font-size: 0.85rem; color: #ffffff;" data-i18n="tabAppSettings.downloadedPatches.keepOnlyRecent">Keep only the most recently used patch</span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="set-clean-patch-cache" />
                     <span class="mc-slider"></span>
@@ -859,7 +852,7 @@
                 <div id="downloaded-patches-list" style="margin-top: 8px;"></div>
                 <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px;">
                   <span id="downloaded-patches-total" style="font-size: 0.75rem; color: #9aa0a6;"></span>
-                  <button type="button" id="btn-clear-patch-cache" class="btn btn-secondary btn-xs" disabled>
+                  <button type="button" id="btn-clear-patch-cache" class="btn btn-secondary btn-xs" disabled data-i18n-html="tabAppSettings.downloadedPatches.removeAll">
                     <i class="fas fa-trash-can"></i> Remove all downloads
                   </button>
                 </div>
@@ -867,9 +860,9 @@
 
               <!-- Patch Creator -->
               <div class="settings-group card" style="background: rgba(0,0,0,0.2);">
-                <h3 style="margin-top: 0;">Patch Creator Default Options</h3>
+                <h3 style="margin-top: 0;" data-i18n="tabAppSettings.patchCreator.heading">Patch Creator Default Options</h3>
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                  <span style="font-size: 0.85rem; color: #ffffff;">Inject Custom Manifest</span>
+                  <span style="font-size: 0.85rem; color: #ffffff;" data-i18n="tabUtils.genpatch.injectManifest">Inject Custom Manifest</span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="set-gen-inject-manifest" checked />
                     <span class="mc-slider"></span>
@@ -877,19 +870,16 @@
                 </div>
 
                 <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 12px 0;" />
-                <p style="font-size: 0.78rem; color: #9aa0a6; margin: 0 0 8px;">
-                  Publishing copies a created patch into your local clone of the patch library and pushes it.
-                  Everyone gets it within a minute, with no patcher update. Requires git to be set up.
-                </p>
+                <p style="font-size: 0.78rem; color: #9aa0a6; margin: 0 0 8px;" data-i18n="tabAppSettings.patchCreator.description">Publishing copies a created patch into your local clone of the patch library and pushes it. Everyone gets it within a minute, with no patcher update. Requires git to be set up.</p>
                 <div class="form-group" style="margin-bottom: 8px;">
-                  <label for="set-patch-library-dir">Patch library repo folder</label>
+                  <label for="set-patch-library-dir" data-i18n="tabAppSettings.patchCreator.repoFolderLabel">Patch library repo folder</label>
                   <div class="file-picker-group">
-                    <input type="text" id="set-patch-library-dir" placeholder="No folder selected" readonly />
-                    <button id="btn-browse-patch-library" class="btn btn-secondary">Browse...</button>
+                    <input type="text" id="set-patch-library-dir" placeholder="No folder selected" data-i18n-placeholder="common.noFolderSelected" readonly />
+                    <button id="btn-browse-patch-library" class="btn btn-secondary" data-i18n="common.browse">Browse...</button>
                   </div>
                 </div>
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                  <span style="font-size: 0.85rem; color: #ffffff;">Publish after creating a patch</span>
+                  <span style="font-size: 0.85rem; color: #ffffff;" data-i18n="tabAppSettings.patchCreator.publishAfterCreate">Publish after creating a patch</span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="set-publish-after-create" />
                     <span class="mc-slider"></span>
@@ -899,37 +889,37 @@
 
               <!-- Bug Reporter -->
               <div class="settings-group card" style="background: rgba(0,0,0,0.2);">
-                <h3 style="margin-top: 0;">Bug Reporter Defaults</h3>
+                <h3 style="margin-top: 0;" data-i18n="tabAppSettings.bugReporter.heading">Bug Reporter Defaults</h3>
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                  <span style="font-size: 0.85rem; color: #ffffff;">Include Application Logs</span>
+                  <span style="font-size: 0.85rem; color: #ffffff;" data-i18n="tabAppSettings.bugReporter.includeLogs">Include Application Logs</span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="set-bug-include-log" checked />
                     <span class="mc-slider"></span>
                   </label>
                 </div>
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                  <span style="font-size: 0.85rem; color: #ffffff;">Include Pack (Large)</span>
+                  <span style="font-size: 0.85rem; color: #ffffff;" data-i18n="tabAppSettings.bugReporter.includePack">Include Pack (Large)</span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="set-bug-include-pack" />
                     <span class="mc-slider"></span>
                   </label>
                 </div>
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                  <span style="font-size: 0.85rem; color: #ffffff;">Send Minecraft Content Log</span>
+                  <span style="font-size: 0.85rem; color: #ffffff;" data-i18n="tabAppSettings.bugReporter.sendContentLog">Send Minecraft Content Log</span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="set-bug-include-content-log" checked />
                     <span class="mc-slider"></span>
                   </label>
                 </div>
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                  <span style="font-size: 0.85rem; color: #ffffff;">Include GPU Driver Events</span>
+                  <span style="font-size: 0.85rem; color: #ffffff;" data-i18n="tabAppSettings.bugReporter.includeDriverEvents">Include GPU Driver Events</span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="set-bug-include-driver-log" checked />
                     <span class="mc-slider"></span>
                   </label>
                 </div>
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                  <span style="font-size: 0.85rem; color: #ffffff;">Include Hardware Info</span>
+                  <span style="font-size: 0.85rem; color: #ffffff;" data-i18n="tabAppSettings.bugReporter.includeHardwareInfo">Include Hardware Info</span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="set-bug-include-hardware" checked />
                     <span class="mc-slider"></span>
@@ -939,34 +929,32 @@
 
               <!-- Privacy & Telemetry (DSGVO) -->
               <div class="settings-group card" style="background: rgba(0,0,0,0.2);">
-                <h3 style="margin-top: 0;">Privacy &amp; Telemetry</h3>
+                <h3 style="margin-top: 0;" data-i18n="tabAppSettings.privacy.heading">Privacy &amp; Telemetry</h3>
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                  <span style="font-size: 0.85rem; color: #ffffff;">Pseudonymous Hardware Ping <span style="color: #94a3b8;">(checked every start, sent only on changes)</span></span>
+                  <span style="font-size: 0.85rem; color: #ffffff;" data-i18n-html="tabAppSettings.privacy.pingLabel">Pseudonymous Hardware Ping <span style="color: #94a3b8;">(checked every start, sent only on changes)</span></span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="set-telemetry-consent" />
                     <span class="mc-slider"></span>
                   </label>
                 </div>
                 <p style="font-size: 0.78rem; color: #94a3b8; margin: 8px 0;">
-                  This data is <b>pseudonymous</b>, not anonymous
-                  (<button type="button" id="btn-pseudonymous-info" style="background: none; border: none; padding: 0; color: #7dd3fc; text-decoration: underline; cursor: pointer; font-size: inherit;">what's the difference?</button>),
-                  since submissions are linked by a persistent identifier. Reporting is opt-in from first launch; afterward, a submission is sent only when your hardware hash changes, not on every launch.
-                  Uploaded logs are deleted automatically after 30 days.
+                  <span data-i18n-html="tabAppSettings.privacy.notice">This data is <b>pseudonymous</b>, not anonymous</span>
+                  (<button type="button" id="btn-pseudonymous-info" style="background: none; border: none; padding: 0; color: #7dd3fc; text-decoration: underline; cursor: pointer; font-size: inherit;" data-i18n="modal.telemetryConsent.whatsTheDifference">what's the difference?</button>)<span data-i18n="tabAppSettings.privacy.noticeAfter">, since submissions are linked by a persistent identifier. Reporting is opt-in from first launch; afterward, a submission is sent only when your hardware hash changes, not on every launch. Uploaded logs are deleted automatically after 30 days.</span>
                 </p>
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                  <button class="btn btn-secondary btn-xs" id="btn-view-telemetry-payload">Open Diagnostics Folder</button>
-                  <button class="btn btn-secondary btn-xs" id="btn-delete-telemetry-data" style="color: #f87171;">Delete My Data</button>
+                  <button class="btn btn-secondary btn-xs" id="btn-view-telemetry-payload" data-i18n="tabAppSettings.privacy.openDiagnosticsFolder">Open Diagnostics Folder</button>
+                  <button class="btn btn-secondary btn-xs" id="btn-delete-telemetry-data" style="color: #f87171;" data-i18n="tabSupport.telemetry.deleteConfirmTitle">Delete My Data</button>
                 </div>
                 <p id="telemetry-settings-status" style="margin-top: 8px; font-size: 0.8rem; color: #94a3b8;"></p>
               </div>
 
               <!-- Tests -->
               <div class="settings-group card" style="background: rgba(0,0,0,0.2); grid-column: span 2;">
-                <h3 style="margin-top: 0;">Diagnostics & Tests</h3>
+                <h3 style="margin-top: 0;" data-i18n="tabAppSettings.diagnostics.heading">Diagnostics & Tests</h3>
                 <div style="display: flex; gap: 8px;">
-                  <button class="btn btn-secondary btn-xs" id="btn-test-github-api">Test GitHub API</button>
-                  <button class="btn btn-secondary btn-xs" id="btn-test-backend">Test Backend Connection</button>
-                  <button class="btn btn-secondary btn-xs" id="btn-test-workspace">Test Workspace Paths</button>
+                  <button class="btn btn-secondary btn-xs" id="btn-test-github-api" data-i18n="tabAppSettings.diagnostics.testGithubBtn">Test GitHub API</button>
+                  <button class="btn btn-secondary btn-xs" id="btn-test-backend" data-i18n="tabAppSettings.diagnostics.testBackendBtn">Test Backend Connection</button>
+                  <button class="btn btn-secondary btn-xs" id="btn-test-workspace" data-i18n="tabAppSettings.diagnostics.testWorkspaceBtn">Test Workspace Paths</button>
                 </div>
                 <p id="api-test-results" style="margin-top: 12px; font-size: 0.85rem; color: #94a3b8; font-family: monospace;"></p>
               </div>
