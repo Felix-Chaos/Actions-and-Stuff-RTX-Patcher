@@ -20,10 +20,10 @@ if (window.__TAURI__) {
 
 function showModal(message, options = {}) {
   const {
-    title = 'Notification',
+    title = t('modal.notificationTitle'),
     confirm = false,
-    okText = 'OK',
-    cancelText = 'Cancel'
+    okText = t('common.ok'),
+    cancelText = t('common.cancel')
   } = options;
 
   return new Promise((resolve) => {
@@ -72,11 +72,11 @@ function showModal(message, options = {}) {
 
 // Returns the promise so callers can await dismissal. Existing fire-and-forget
 // callers are unaffected.
-function showAlert(message, title = 'Notification') {
+function showAlert(message, title = t('modal.notificationTitle')) {
   return showModal(message, { title, confirm: false });
 }
 
-async function showConfirm(message, title = 'Confirm') {
+async function showConfirm(message, title = t('modal.confirmTitle')) {
   return showModal(message, { title, confirm: true });
 }
 
@@ -91,7 +91,7 @@ window.alert = function(msg) {
 // so a stray call can never silently approve a destructive action.
 window.confirm = function(msg) {
   console.error("window.confirm is not supported in this app - use `await showConfirm(...)` instead. Denied:", msg);
-  showAlert(msg, 'Confirm');
+  showAlert(msg, t('modal.confirmTitle'));
   return false;
 };
 
