@@ -311,22 +311,22 @@
         <!-- Tab: Cleaner -->
         <section class="tab-content" id="tab-cleaner">
           <div class="card full-card">
-            <h2>🧹 Scan &amp; Clean Old Patches</h2>
-            <p>Locates and deletes leftover Actions &amp; Stuff pack directories from Minecraft resource pack and world folders to keep your installation clean.</p>
+            <h2 data-i18n="tabCleaner.title">🧹 Scan &amp; Clean Old Patches</h2>
+            <p data-i18n="tabCleaner.description">Locates and deletes leftover Actions &amp; Stuff pack directories from Minecraft resource pack and world folders to keep your installation clean.</p>
             
             <div class="action-panel">
-              <button id="btn-scan-cleaner" class="btn btn-secondary">Scan Folders</button>
-              <button id="btn-run-cleaner" class="btn btn-danger" disabled>Delete Selected</button>
-              <button id="btn-clean-delete-all" class="btn btn-danger" disabled>Delete All</button>
+              <button id="btn-scan-cleaner" class="btn btn-secondary" data-i18n="tabCleaner.actions.scan">Scan Folders</button>
+              <button id="btn-run-cleaner" class="btn btn-danger" disabled data-i18n="tabCleaner.actions.deleteSelected">Delete Selected</button>
+              <button id="btn-clean-delete-all" class="btn btn-danger" disabled data-i18n="tabCleaner.actions.deleteAll">Delete All</button>
             </div>
 
             <div class="clean-results-container">
               <div class="results-header">
-                <span>Scan Results:</span>
+                <span data-i18n="tabCleaner.results.title">Scan Results:</span>
                 <div style="display: flex; align-items: center; gap: 8px;">
-                  <button type="button" id="btn-clean-select-all" class="btn btn-secondary btn-xs hidden-group">Select all</button>
-                  <button type="button" id="btn-clean-select-none" class="btn btn-secondary btn-xs hidden-group">Select none</button>
-                  <span id="clean-results-count" class="count-tag">0 found</span>
+                  <button type="button" id="btn-clean-select-all" class="btn btn-secondary btn-xs hidden-group" data-i18n="tabCleaner.actions.selectAll">Select all</button>
+                  <button type="button" id="btn-clean-select-none" class="btn btn-secondary btn-xs hidden-group" data-i18n="tabCleaner.actions.selectNone">Select none</button>
+                  <span id="clean-results-count" class="count-tag" data-i18n="tabCleaner.results.noneFound">0 found</span>
                 </div>
               </div>
 
@@ -339,7 +339,7 @@
               </div>
 
               <div class="results-list" id="clean-results-list">
-                <div class="placeholder-text">Click Scan Folders to begin search...</div>
+                <div class="placeholder-text" data-i18n="tabCleaner.results.placeholder">Click Scan Folders to begin search...</div>
               </div>
             </div>
           </div>
@@ -349,24 +349,24 @@
         <!-- Tab: RTX Settings -->
         <section class="tab-content" id="tab-settings">
           <div class="card full-card">
-            <h2>⚙️ Edit options.txt directly</h2>
-            <p>Directly modify Minecraft graphics configuration files to force Ray Tracing, Upscaling, and other premium visual toggles.</p>
+            <h2 data-i18n="tabRtxSettings.title">⚙️ Edit options.txt directly</h2>
+            <p data-i18n="tabRtxSettings.description">Directly modify Minecraft graphics configuration files to force Ray Tracing, Upscaling, and other premium visual toggles.</p>
 
             <div class="form-group options-file-selector">
-              <label for="options-file-select">Target options.txt Profile:</label>
+              <label for="options-file-select" data-i18n="tabRtxSettings.profileLabel">Target options.txt Profile:</label>
               <select id="options-file-select" class="custom-select">
-                <option value="">Loading profiles...</option>
+                <option value="" data-i18n="tabRtxSettings.loadingProfiles">Loading profiles...</option>
               </select>
             </div>
 
             <div class="options-grid" id="rtx-settings-grid">
               <!-- Dynamically populated options inputs -->
-              <div class="placeholder-text">Select an options.txt profile to read settings...</div>
+              <div class="placeholder-text" data-i18n="tabRtxSettings.placeholder">Select an options.txt profile to read settings...</div>
             </div>
 
             <div class="action-bar" style="gap: 12px;">
-              <button id="btn-best-settings" class="btn btn-secondary" disabled>Set Best Settings</button>
-              <button id="btn-save-settings" class="btn btn-primary" disabled>Apply Settings</button>
+              <button id="btn-best-settings" class="btn btn-secondary" disabled data-i18n="tabRtxSettings.actions.setBest">Set Best Settings</button>
+              <button id="btn-save-settings" class="btn btn-primary" disabled data-i18n="tabRtxSettings.actions.apply">Apply Settings</button>
             </div>
           </div>
         </section>

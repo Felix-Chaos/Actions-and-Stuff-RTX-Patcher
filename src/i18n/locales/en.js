@@ -128,6 +128,82 @@ export default {
       resizeGripTooltip: 'Drag down to enlarge the console. Double-click to reset.',
     },
   },
+  tabCleaner: {
+    title: '🧹 Scan & Clean Old Patches',
+    description: 'Locates and deletes leftover Actions & Stuff pack directories from Minecraft resource pack and world folders to keep your installation clean.',
+    actions: {
+      scan: 'Scan Folders',
+      deleteSelected: 'Delete Selected',
+      deleteSelectedCount: {
+        one: 'Delete Selected ({count})',
+        other: 'Delete Selected ({count})',
+      },
+      deleteAll: 'Delete All',
+      deleteAllCount: {
+        one: 'Delete All ({count})',
+        other: 'Delete All ({count})',
+      },
+      selectAll: 'Select all',
+      selectNone: 'Select none',
+    },
+    results: {
+      title: 'Scan Results:',
+      noneFound: '0 found',
+      selectedOfTotal: '{selected} of {total} selected',
+      placeholder: 'Click Scan Folders to begin search...',
+      clean: 'No old Actions & Stuff packs found. Your folders are clean!',
+    },
+    confirm: {
+      title: 'Confirm Deletion',
+      message: {
+        one: 'Delete {count} folder?\n\n{description}\n\nThis cannot be undone. You can re-patch and reinstall afterwards.',
+        other: 'Delete {count} folders?\n\n{description}\n\nThis cannot be undone. You can re-patch and reinstall afterwards.',
+      },
+      descAll: 'Every patched pack found by the scan will be removed.',
+      descSelected: 'Only the folders you ticked will be removed.',
+    },
+    progress: {
+      preparing: {
+        one: 'Preparing to delete {count} folder...',
+        other: 'Preparing to delete {count} folders...',
+      },
+      deleting: 'Deleting {current} of {total}: {name}',
+      done: {
+        one: 'Done. Deleted {count} folder.',
+        other: 'Done. Deleted {count} folders.',
+      },
+      doneWithFailures: {
+        one: 'Done. Deleted {count} folder, {failed} could not be removed.',
+        other: 'Done. Deleted {count} folders, {failed} could not be removed.',
+      },
+    },
+  },
+  tabRtxSettings: {
+    title: '⚙️ Edit options.txt directly',
+    description: 'Directly modify Minecraft graphics configuration files to force Ray Tracing, Upscaling, and other premium visual toggles.',
+    profileLabel: 'Target options.txt Profile:',
+    loadingProfiles: 'Loading profiles...',
+    chooseProfile: '-- Choose a Profile --',
+    placeholder: 'Select an options.txt profile to read settings...',
+    actions: {
+      setBest: 'Set Best Settings',
+      apply: 'Apply Settings',
+    },
+    fields: {
+      raytracing: 'Ray Tracing',
+      upscaling: 'Upscaling / DLSS',
+      viewDistance: 'Ray Tracing View Distance (Chunks)',
+      maxFramerate: 'Max Framerate',
+      vsync: 'VSync',
+      blockDithering: 'Block Dithering',
+      mobDithering: 'Mob Dithering',
+    },
+    alerts: {
+      saveSuccess: 'Settings applied successfully!',
+      saveError: 'Failed to save settings:\n{error}',
+      bestLoaded: "Best settings set in the editor! Click 'Apply Settings' to save them.",
+    },
+  },
   modal: {
     notificationTitle: 'Notification',
     confirmTitle: 'Confirm',

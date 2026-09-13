@@ -20,6 +20,7 @@ onLocaleChange(() => {
     }
   }
   renderDownloadedPatchesSettings();
+  updateCleanerButtons();
 });
 
 // Destructure invoke and listen from Tauri Core
@@ -1570,7 +1571,7 @@ async function loadOptionsProfiles() {
     optionsProfiles = await invoke("get_options_paths");
     log(`Found ${optionsProfiles.length} options.txt profile(s): ${optionsProfiles.map(p => p.label).join(", ") || "none"}`);
     const select = document.getElementById('options-file-select');
-    select.innerHTML = '<option value="">-- Choose a Profile --</option>';
+    select.innerHTML = `<option value="" data-i18n="tabRtxSettings.chooseProfile">${t('tabRtxSettings.chooseProfile')}</option>`;
 
     optionsProfiles.forEach((profile, index) => {
       const opt = document.createElement('option');
@@ -1584,7 +1585,7 @@ async function loadOptionsProfiles() {
       if (selectedOptionsPath) {
         await loadOptionsData(selectedOptionsPath);
       } else {
-        document.getElementById('rtx-settings-grid').innerHTML = '<div class="placeholder-text">Select an options.txt profile to read settings...</div>';
+        document.getElementById('rtx-settings-grid').innerHTML = `<div class="placeholder-text" data-i18n="tabRtxSettings.placeholder">${t('tabRtxSettings.placeholder')}</div>`;
         document.getElementById('btn-save-settings').disabled = true;
         document.getElementById('btn-best-settings').disabled = true;
       }
@@ -1600,13 +1601,13 @@ async function loadOptionsData(path) {
     const data = await invoke("read_options", { path });
     
     const rtxKeys = {
-      'gfx_raytracing': { label: 'Ray Tracing', type: 'bool' },
-      'gfx_upscaling': { label: 'Upscaling / DLSS', type: 'bool' },
-      'raytracing_viewdistance': { label: 'Ray Tracing View Distance (Chunks)', type: 'number' },
-      'gfx_max_framerate': { label: 'Max Framerate', type: 'number' },
-      'gfx_vsync': { label: 'VSync', type: 'bool' },
-      'enable_dithering_blocks': { label: 'Block Dithering', type: 'bool' },
-      'enable_dithering_mobs': { label: 'Mob Dithering', type: 'bool' }
+      'gfx_raytracing': { labelKey: 'tabRtxSettings.fields.raytracing', type: 'bool' },
+      'gfx_upscaling': { labelKey: 'tabRtxSettings.fields.upscaling', type: 'bool' },
+      'raytracing_viewdistance': { labelKey: 'tabRtxSettings.fields.viewDistance', type: 'number' },
+      'gfx_max_framerate': { labelKey: 'tabRtxSettings.fields.maxFramerate', type: 'number' },
+      'gfx_vsync': { labelKey: 'tabRtxSettings.fields.vsync', type: 'bool' },
+      'enable_dithering_blocks': { labelKey: 'tabRtxSettings.fields.blockDithering', type: 'bool' },
+      'enable_dithering_mobs': { labelKey: 'tabRtxSettings.fields.mobDithering', type: 'bool' }
     };
     
     const grid = document.getElementById('rtx-settings-grid');
@@ -1621,7 +1622,8 @@ async function loadOptionsData(path) {
       
       const labelSpan = document.createElement('span');
       labelSpan.className = 'option-name';
-      labelSpan.innerText = cfg.label;
+      labelSpan.dataset.i18n = cfg.labelKey;
+      labelSpan.innerText = t(cfg.labelKey);
       field.appendChild(labelSpan);
       
       const controlDiv = document.createElement('div');
@@ -1679,14 +1681,14 @@ document.getElementById('btn-save-settings').addEventListener('click', async () 
     log(`Saving configuration edits...`);
     await invoke("write_options", { path: selectedOptionsPath, changes });
     log(`Successfully updated options.txt config!`, 'success');
-    alert("Settings applied successfully!");
+    await showAlert(t('tabRtxSettings.alerts.saveSuccess'));
   } catch (err) {
     log(`Failed to write settings: ${err}`, 'error');
-    alert(`Failed to save settings:\n${err}`);
+    await showAlert(t('tabRtxSettings.alerts.saveError', { error: err }));
   }
 });
 
-document.getElementById('btn-best-settings').addEventListener('click', () => {
+document.getElementById('btn-best-settings').addEventListener('click', async () => {
   const rt = document.querySelector('input[data-key="gfx_raytracing"]');
   const dlss = document.querySelector('input[data-key="gfx_upscaling"]');
   const vd = document.querySelector('input[data-key="raytracing_viewdistance"]');
@@ -1700,7 +1702,7 @@ document.getElementById('btn-best-settings').addEventListener('click', () => {
   if (dm) dm.checked = false;
   
   log("Automatically loaded best RTX settings into the editor. Click 'Apply Settings' to write them to options.txt.", "info");
-  alert("Best settings set in the editor! Click 'Apply Settings' to save them.");
+  await showAlert(t('tabRtxSettings.alerts.bestLoaded'));
 });
 
 
@@ -1722,11 +1724,15 @@ function updateCleanerButtons() {
 
   if (btnSelected) {
     btnSelected.disabled = selected === 0;
-    btnSelected.innerText = selected > 0 ? `Delete Selected (${selected})` : 'Delete Selected';
+    btnSelected.innerText = selected > 0
+      ? tPlural('tabCleaner.actions.deleteSelectedCount', selected)
+      : t('tabCleaner.actions.deleteSelected');
   }
   if (btnAll) {
     btnAll.disabled = total === 0;
-    btnAll.innerText = total > 0 ? `Delete All (${total})` : 'Delete All';
+    btnAll.innerText = total > 0
+      ? tPlural('tabCleaner.actions.deleteAllCount', total)
+      : t('tabCleaner.actions.deleteAll');
   }
 
   ['btn-clean-select-all', 'btn-clean-select-none'].forEach(id => {
@@ -1737,8 +1743,8 @@ function updateCleanerButtons() {
   const countTag = document.getElementById('clean-results-count');
   if (countTag) {
     countTag.innerText = total === 0
-      ? '0 found'
-      : `${selected} of ${total} selected`;
+      ? t('tabCleaner.results.noneFound')
+      : t('tabCleaner.results.selectedOfTotal', { selected, total });
   }
 }
 
@@ -1748,7 +1754,7 @@ function renderCleanerResults() {
   list.innerHTML = '';
 
   if (cleanablePacksPaths.length === 0) {
-    list.innerHTML = '<div class="placeholder-text">No old Actions &amp; Stuff packs found. Your folders are clean!</div>';
+    list.innerHTML = `<div class="placeholder-text" data-i18n="tabCleaner.results.clean">${t('tabCleaner.results.clean')}</div>`;
     updateCleanerButtons();
     return;
   }
@@ -1817,8 +1823,8 @@ function setCleanProgress(done, total, label) {
 // and these can hold thousands of files each.
 async function deleteCleanerPaths(paths, description) {
   const confirmDelete = await showConfirm(
-    `Delete ${paths.length} folder(s)?\n\n${description}\n\nThis cannot be undone. You can re-patch and reinstall afterwards.`,
-    'Confirm Deletion'
+    tPlural('tabCleaner.confirm.message', paths.length, { description }),
+    t('tabCleaner.confirm.title')
   );
   if (!confirmDelete) return;
 
@@ -1830,11 +1836,11 @@ async function deleteCleanerPaths(paths, description) {
   let failed = 0;
   try {
     log(`Deleting ${paths.length} folder(s)...`);
-    setCleanProgress(0, paths.length, `Preparing to delete ${paths.length} folder(s)...`);
+    setCleanProgress(0, paths.length, tPlural('tabCleaner.progress.preparing', paths.length));
 
     for (let i = 0; i < paths.length; i++) {
       const name = paths[i].split(/[\\/]/).pop() || paths[i];
-      setCleanProgress(i, paths.length, `Deleting ${i + 1} of ${paths.length}: ${name}`);
+      setCleanProgress(i, paths.length, t('tabCleaner.progress.deleting', { current: i + 1, total: paths.length, name }));
       try {
         const count = await invoke("delete_folders", { folders: [paths[i]] });
         if (count > 0) { deleted++; } else { failed++; log(`Could not delete: ${paths[i]}`, 'warning'); }
@@ -1844,7 +1850,10 @@ async function deleteCleanerPaths(paths, description) {
       }
     }
 
-    setCleanProgress(paths.length, paths.length, `Done. Deleted ${deleted} folder(s)${failed ? `, ${failed} could not be removed` : ''}.`);
+    const doneLabel = failed
+      ? tPlural('tabCleaner.progress.doneWithFailures', deleted, { failed })
+      : tPlural('tabCleaner.progress.done', deleted);
+    setCleanProgress(paths.length, paths.length, doneLabel);
     log(`Cleaner: deleted ${deleted} folder(s)${failed ? `, ${failed} failed` : ''}.`, failed ? 'warning' : 'success');
   } finally {
     buttons.forEach(b => { b.disabled = false; });
@@ -1878,13 +1887,13 @@ document.getElementById('btn-clean-select-none').addEventListener('click', () =>
 
 document.getElementById('btn-clean-delete-all').addEventListener('click', async () => {
   if (cleanablePacksPaths.length === 0) return;
-  await deleteCleanerPaths([...cleanablePacksPaths], 'Every patched pack found by the scan will be removed.');
+  await deleteCleanerPaths([...cleanablePacksPaths], t('tabCleaner.confirm.descAll'));
 });
 
 document.getElementById('btn-run-cleaner').addEventListener('click', async () => {
   const selected = cleanerSelectedList();
   if (selected.length === 0) return;
-  await deleteCleanerPaths(selected, 'Only the folders you ticked will be removed.');
+  await deleteCleanerPaths(selected, t('tabCleaner.confirm.descSelected'));
 });
 
 // CORE PATCHER PIPELINE
