@@ -622,25 +622,94 @@ p {
    These are .card, which sets overflow:hidden, so any row wider than its column
    was cut off rather than wrapped: the "Tall" preset, the toggles on the right
    edge, and the Remove buttons. Column count is deliberately left alone. */
-.settings-group.card {
-  min-width: 0;
+/* App Settings layout.
+
+   Translated labels run 20-30% longer than the English ones they replaced, and
+   German compounds are single unbreakable words, so every rule here is about
+   giving text somewhere to go instead of letting it escape its card. */
+/* minmax(0, 1fr), not 1fr: a plain 1fr keeps an automatic minimum, so one card
+   with a wide row grows past its share and squeezes the other column to almost
+   nothing. The explicit 0 minimum keeps both halves equal. */
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
 }
 
-/* Let label-and-control rows wrap instead of running past the card edge. */
-.settings-group > div {
+/* A card that runs the full width of the grid. */
+.settings-group-wide {
+  grid-column: span 2;
+}
+
+/* Two columns of long-form text need room. Below that, one column beats two
+   cramped ones.
+   ! The span must be reset with it. Left at span 2 over a single-column grid,
+   ! it forces an implicit second column sized to its content, which squeezes
+   ! the real column down to almost nothing. */
+@media (max-width: 1100px) {
+  .settings-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-group-wide {
+    grid-column: auto;
+  }
+}
+
+/* Grid and flex items default to min-width:auto, which refuses to shrink below
+   their content and is what pushes long labels past the card edge. */
+.settings-group.card {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Every label-and-control row wraps, however deeply it is nested. The console
+   size presets sit one level down, which the old direct-child rule missed. */
+.settings-group div[style*="display: flex"] {
   flex-wrap: wrap;
 }
 
-/* The label takes the slack and wraps its text; controls keep their size. */
-.settings-group > div > span:first-child {
+/* The label takes the slack and wraps; <label> counts too, not just <span>. */
+.settings-group div[style*="display: flex"] > span:first-child,
+.settings-group div[style*="display: flex"] > label:first-child {
   flex: 1 1 auto;
   min-width: 0;
   overflow-wrap: anywhere;
 }
 
-.settings-group .mc-toggle,
-.settings-group .btn {
+/* The toggle is a fixed 48px switch and must never be squeezed. */
+.settings-group .mc-toggle {
   flex: 0 0 auto;
+}
+
+/* Buttons may shrink and wrap their own label. Holding them at their natural
+   width is what pushed the diagnostics and test rows out of the card. */
+.settings-group .btn {
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+/* A select must not be sized by its longest option. */
+.settings-group .custom-select,
+.settings-group .custom-input {
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* The folder picker is a path field next to a Browse button. Its input carries
+   flex:1 with an automatic minimum, which refuses to shrink and set the widest
+   min-content in the whole grid. Let it shrink, and let the pair wrap. */
+.settings-group .file-picker-group {
+  flex-wrap: wrap;
+}
+
+.settings-group .file-picker-group input {
+  flex: 1 1 140px;
+  min-width: 0;
 }
 
 /* Corner grip for resizing the console: diagonal pixel lines in the bottom

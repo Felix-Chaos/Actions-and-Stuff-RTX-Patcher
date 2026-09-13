@@ -775,7 +775,9 @@
         <section class="tab-content" id="tab-app-settings">
           <div class="card full-card">
             <h2 data-i18n="tabAppSettings.title">⚙️ Application Settings</h2>
-            <div class="settings-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
+            <!-- Layout lives in styles.css so it can collapse to one column
+                 on narrow windows; an inline style could not be overridden. -->
+            <div class="settings-grid">
               
               <!-- General Settings -->
               <div class="settings-group card" style="background: rgba(0,0,0,0.2);">
@@ -949,7 +951,9 @@
               </div>
 
               <!-- Tests -->
-              <div class="settings-group card" style="background: rgba(0,0,0,0.2); grid-column: span 2;">
+              <!-- Spans both columns. As a class, not an inline style, so the
+                   single-column layout can reset it. -->
+              <div class="settings-group card settings-group-wide" style="background: rgba(0,0,0,0.2);">
                 <h3 style="margin-top: 0;" data-i18n="tabAppSettings.diagnostics.heading">Diagnostics & Tests</h3>
                 <div style="display: flex; gap: 8px;">
                   <button class="btn btn-secondary btn-xs" id="btn-test-github-api" data-i18n="tabAppSettings.diagnostics.testGithubBtn">Test GitHub API</button>
