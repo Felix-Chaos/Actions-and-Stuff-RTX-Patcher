@@ -7,6 +7,7 @@ export default {
     noFolderSelected: 'Kein Ordner ausgewählt',
   },
   tabPatcher: {
+    installing: 'Wird installiert...',
     heading: 'Patch-Modus wählen',
     mode: {
       marketplace: {
@@ -233,6 +234,7 @@ export default {
       },
     },
     genpatch: {
+      publishing: 'Wird veröffentlicht...',
       title: 'Patch erstellen (VCDIFF)',
       description: 'Erstellt verschlüsselte und entschlüsselte .vcdiff-Patch-Dateien aus Quell- und gepatchten Pack-Verzeichnissen. Entspricht dem V2-Patch-Creator-Workflow.',
       targetFolderLabel: '1. Zielordner <span class="label-hint">(deine modifizierte/gepatchte Version)</span>',

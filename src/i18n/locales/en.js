@@ -11,6 +11,7 @@ export default {
     noFolderSelected: 'No folder selected',
   },
   tabPatcher: {
+    installing: 'Installing...',
     heading: 'Select Patch Mode',
     mode: {
       marketplace: {
@@ -237,6 +238,7 @@ export default {
       },
     },
     genpatch: {
+      publishing: 'Publishing...',
       title: 'Create Patch (VCDIFF)',
       description: 'Generates encrypted and decrypted .vcdiff patch files from source and patched pack directories. Matches the V2 patch creator workflow.',
       targetFolderLabel: '1. Target Folder <span class="label-hint">(your modified/patched version)</span>',
