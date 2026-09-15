@@ -1,34 +1,46 @@
-// A&S RTX Patcher site: release lookup, channel switch, showcase player, lightbox and nav.
+// A&S RTX Patcher site: nav, scroll spy, release lookup, channel switch, showcase player,
+// lightbox and the wiki's mode tabs. Every feature checks its elements exist, so the same
+// script serves index.html and wiki.html.
 (() => {
   const REPO = "Felix-Chaos/Actions-and-Stuff-RTX-Patcher";
   const RELEASES_URL = `https://github.com/${REPO}/releases`;
   const CACHE_KEY = "asrtx-releases";
   const CACHE_TTL = 30 * 60 * 1000;
+  const hasObserver = "IntersectionObserver" in window;
 
   /* ---------- Mobile navigation ---------- */
   const toggle = document.querySelector(".nav__toggle");
   const menu = document.getElementById("nav-menu");
-  const setMenu = (open) => {
-    menu.classList.toggle("is-open", open);
-    toggle.setAttribute("aria-expanded", String(open));
-    toggle.setAttribute("aria-label", open ? "Close menu" : "Open menu");
-  };
-  toggle.addEventListener("click", () => setMenu(!menu.classList.contains("is-open")));
-  menu.addEventListener("click", (e) => { if (e.target.closest("a")) setMenu(false); });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") setMenu(false); });
+  if (toggle && menu) {
+    const setMenu = (open) => {
+      menu.classList.toggle("is-open", open);
+      toggle.setAttribute("aria-expanded", String(open));
+      toggle.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+    };
+    toggle.addEventListener("click", () => setMenu(!menu.classList.contains("is-open")));
+    menu.addEventListener("click", (e) => { if (e.target.closest("a")) setMenu(false); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") setMenu(false); });
+  }
 
-  /* ---------- Active nav tab while scrolling ---------- */
-  const navTabs = [...document.querySelectorAll('.nav-tab[href^="#"]')];
-  const sections = navTabs.map((a) => document.querySelector(a.getAttribute("href"))).filter(Boolean);
-  if ("IntersectionObserver" in window) {
+  /* ---------- Scroll spy: highlight the link of the section in view ---------- */
+  const spyOn = (links, { rootMargin, onChange } = {}) => {
+    const targets = links.map((a) => document.querySelector(a.getAttribute("href"))).filter(Boolean);
+    if (!hasObserver || !targets.length) return;
     const spy = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (!entry.isIntersecting) return;
-        navTabs.forEach((a) => a.classList.toggle("active", a.getAttribute("href") === `#${entry.target.id}`));
+        const hash = `#${entry.target.id}`;
+        links.forEach((a) => a.classList.toggle("active", a.getAttribute("href") === hash));
+        if (onChange) onChange(hash);
       });
-    }, { rootMargin: "-45% 0px -50% 0px" });
-    sections.forEach((s) => spy.observe(s));
+    }, { rootMargin: rootMargin || "-45% 0px -50% 0px" });
+    targets.forEach((t) => spy.observe(t));
+  };
 
+  spyOn([...document.querySelectorAll('#nav-menu .nav-tab[href^="#"]')]);
+
+  /* ---------- Reveal on scroll ---------- */
+  if (hasObserver) {
     const reveal = new IntersectionObserver((entries, obs) => {
       entries.forEach((entry) => {
         if (!entry.isIntersecting) return;
@@ -36,40 +48,91 @@
         obs.unobserve(entry.target);
       });
     }, { rootMargin: "0px 0px -8% 0px" });
-    document.querySelectorAll(".section__head, .feature, .repo, .person, .step, .phases li, .pipeline")
+    document.querySelectorAll(".section__head, .feature, .repo, .person, .step, .phases li, .pipeline, .wiki-section")
       .forEach((el) => { el.classList.add("reveal"); reveal.observe(el); });
   }
 
   /* ---------- Showcase video picker ---------- */
   const video = document.getElementById("player-video");
   const pickers = document.querySelectorAll(".video-picker__item");
-  pickers.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      pickers.forEach((b) => b.classList.toggle("is-active", b === btn));
-      if (video.getAttribute("src") !== btn.dataset.src) {
-        video.poster = btn.dataset.poster;
-        video.src = btn.dataset.src;
-      }
-      video.play().catch(() => {});
+  if (video) {
+    pickers.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        pickers.forEach((b) => b.classList.toggle("is-active", b === btn));
+        if (video.getAttribute("src") !== btn.dataset.src) {
+          video.poster = btn.dataset.poster;
+          video.src = btn.dataset.src;
+        }
+        video.play().catch(() => {});
+      });
     });
-  });
+  }
 
   /* ---------- Screenshot lightbox ---------- */
   const lightbox = document.getElementById("lightbox");
   const lightboxImg = document.getElementById("lightbox-img");
-  document.querySelectorAll(".gallery__item").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const img = btn.querySelector("img");
-      lightboxImg.src = btn.dataset.full;
-      lightboxImg.alt = img ? img.alt : "";
-      if (typeof lightbox.showModal === "function") lightbox.showModal();
-      else window.open(btn.dataset.full, "_blank", "noopener");
+  if (lightbox && lightboxImg) {
+    document.querySelectorAll(".gallery__item").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const img = btn.querySelector("img");
+        lightboxImg.src = btn.dataset.full;
+        lightboxImg.alt = img ? img.alt : "";
+        if (typeof lightbox.showModal === "function") lightbox.showModal();
+        else window.open(btn.dataset.full, "_blank", "noopener");
+      });
     });
-  });
-  lightbox.addEventListener("click", (e) => { if (e.target === lightbox) lightbox.close(); });
+    lightbox.addEventListener("click", (e) => { if (e.target === lightbox) lightbox.close(); });
+  }
+
+  /* ---------- Wiki: table of contents ---------- */
+  const toc = document.querySelector(".wiki-toc");
+  if (toc) {
+    const tocLinks = [...toc.querySelectorAll('a[href^="#"]')];
+    const mobile = window.matchMedia("(max-width: 960px)");
+    // Collapsed by default on small screens, where it sits above the content.
+    const syncToc = () => { toc.open = !mobile.matches; };
+    syncToc();
+    mobile.addEventListener("change", syncToc);
+    toc.addEventListener("click", (e) => { if (e.target.closest("a") && mobile.matches) toc.open = false; });
+
+    spyOn(tocLinks, {
+      rootMargin: "-20% 0px -70% 0px",
+      // A sub-section also keeps its parent "Tools Reference" tab highlighted.
+      onChange: (hash) => {
+        const sub = toc.querySelector(`.nav-subtab[href="${hash}"]`);
+        if (sub) toc.querySelector('.nav-tab[href="#tools"]').classList.add("active");
+      },
+    });
+  }
+
+  /* ---------- Wiki: patch mode tabs (the patcher's mode radio cards) ---------- */
+  const modeTabs = [...document.querySelectorAll('.mode-toggle-group [role="tab"]')];
+  if (modeTabs.length) {
+    const select = (tab, focus) => {
+      modeTabs.forEach((t) => {
+        const on = t === tab;
+        t.classList.toggle("is-selected", on);
+        t.setAttribute("aria-selected", String(on));
+        t.tabIndex = on ? 0 : -1;
+        document.getElementById(t.getAttribute("aria-controls")).hidden = !on;
+      });
+      if (focus) tab.focus();
+    };
+    modeTabs.forEach((tab, i) => {
+      tab.addEventListener("click", () => select(tab));
+      tab.addEventListener("keydown", (e) => {
+        const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+        if (!step) return;
+        e.preventDefault();
+        select(modeTabs[(i + step + modeTabs.length) % modeTabs.length], true);
+      });
+    });
+    select(modeTabs.find((t) => t.classList.contains("is-selected")) || modeTabs[0]);
+  }
 
   /* ---------- Releases & channel switch ---------- */
   const $ = (key) => document.querySelector(`[data-release="${key}"]`);
+  const setText = (key, text) => { const el = $(key); if (el) el.textContent = text; };
   const channelButtons = document.querySelectorAll(".switch-option[data-channel]");
   const channels = { stable: null, beta: null };
 
@@ -91,7 +154,7 @@
 
   const showChannel = (name) => {
     const release = channels[name];
-    if (!release) return;
+    if (!release || !$("download")) return;
 
     channelButtons.forEach((b) => {
       const on = b.dataset.channel === name;
@@ -101,12 +164,12 @@
 
     const installer = pickInstaller(release);
     const portable = pickPortable(release);
-
-    $("version").textContent = release.tag_name;
     const kind = !installer ? "" : /-setup\.exe$/i.test(installer.name) ? "Setup .exe" : /\.msi$/i.test(installer.name) ? ".msi installer" : ".exe";
-    $("details").textContent = [formatDate(release.published_at), kind].filter(Boolean).join(" · ");
+
+    setText("version", release.tag_name);
+    setText("details", [formatDate(release.published_at), kind].filter(Boolean).join(" · "));
+    setText("download-label", name === "beta" ? "Download Beta for Windows" : "Download for Windows");
     $("download").href = installer ? installer.browser_download_url : release.html_url;
-    $("download-label").textContent = name === "beta" ? "Download Beta for Windows" : "Download for Windows";
     $("beta-warning").hidden = name !== "beta";
 
     const portableLink = $("portable");
@@ -116,16 +179,21 @@
 
   channelButtons.forEach((b) => b.addEventListener("click", () => { if (!b.disabled) showChannel(b.dataset.channel); }));
 
+  const setStatus = (state, text) => {
+    const status = $("status");
+    if (!status) return;
+    status.className = `update-badge state-${state}`;
+    status.textContent = text;
+  };
+
   const render = (releases) => {
     const published = releases.filter((r) => !r.draft);
     const stable = published.find((r) => !r.prerelease) || null;
     const beta = published.find((r) => r.prerelease) || null;
-    const status = $("status");
 
     if (!stable && !beta) {
-      status.className = "update-badge state-error";
-      status.textContent = "No releases";
-      $("details").textContent = "";
+      setStatus("error", "No releases");
+      setText("details", "");
       return;
     }
 
@@ -135,29 +203,28 @@
     channels.beta = betaIsNewer ? beta : null;
 
     const betaButton = document.querySelector('.switch-option[data-channel="beta"]');
-    betaButton.disabled = !channels.beta;
-    betaButton.title = channels.beta ? `Pre-release ${channels.beta.tag_name}` : "No newer beta build right now";
-
-    status.className = channels.beta ? "update-badge state-available" : "update-badge state-uptodate";
-    status.textContent = channels.beta ? "Beta available" : "Latest";
+    if (betaButton) {
+      betaButton.disabled = !channels.beta;
+      betaButton.title = channels.beta ? `Pre-release ${channels.beta.tag_name}` : "No newer beta build right now";
+    }
+    setStatus(channels.beta ? "available" : "uptodate", channels.beta ? "Beta available" : "Latest");
 
     const navVersion = $("nav-version");
-    navVersion.textContent = channels.stable.tag_name;
-    navVersion.hidden = false;
-
+    if (navVersion) {
+      navVersion.textContent = channels.stable.tag_name;
+      navVersion.hidden = false;
+    }
     const navInstaller = pickInstaller(channels.stable);
-    if (navInstaller) $("nav-download").href = navInstaller.browser_download_url;
+    if (navInstaller && $("nav-download")) $("nav-download").href = navInstaller.browser_download_url;
 
     showChannel("stable");
   };
 
   const renderOffline = () => {
-    const status = $("status");
-    status.className = "update-badge state-error";
-    status.textContent = "Offline";
-    $("version").textContent = "Latest";
-    $("details").textContent = "Couldn't reach GitHub, the buttons open the releases page.";
-    $("download").href = RELEASES_URL + "/latest";
+    setStatus("error", "Offline");
+    setText("version", "Latest");
+    setText("details", "Couldn't reach GitHub, the buttons open the releases page.");
+    if ($("download")) $("download").href = RELEASES_URL + "/latest";
   };
 
   const readCache = () => {

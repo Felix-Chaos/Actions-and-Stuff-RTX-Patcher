@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wiki · A&amp;S RTX Patcher</title>
+  <meta name="description" content="Full feature guide for the Actions &amp; Stuff RTX Patcher: patch modes, how patching works, every tool, app settings and troubleshooting." />
+  <link rel="canonical" href="https://felix-chaos.github.io/Actions-and-Stuff-RTX-Patcher/wiki.html" />
+  <!-- Also the accent bar colour of Discord link embeds -->
+  <meta name="theme-color" content="#22c55e" />
+
+  <!-- Link previews (Discord, Reddit, WhatsApp, X, …). Image URLs must be absolute. -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Actions &amp; Stuff RTX Patcher" />
+  <meta property="og:url" content="https://felix-chaos.github.io/Actions-and-Stuff-RTX-Patcher/wiki.html" />
+  <meta property="og:title" content="Wiki · A&amp;S RTX Patcher" />
+  <meta property="og:description" content="Every tab, every toggle, and when to actually use them: patch modes, tools, app settings and troubleshooting for the Actions &amp; Stuff RTX Patcher." />
+  <meta property="og:image" content="https://felix-chaos.github.io/Actions-and-Stuff-RTX-Patcher/assets/og-image.jpg" />
+  <meta property="og:image:type" content="image/jpeg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Actions &amp; Stuff RTX Patcher: Patch and Play Actions &amp; Stuff in RTX" />
+  <meta property="og:locale" content="en_US" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Wiki · A&amp;S RTX Patcher" />
+  <meta name="twitter:description" content="Every tab, every toggle, and when to actually use them: patch modes, tools, app settings and troubleshooting for the Actions &amp; Stuff RTX Patcher." />
+  <meta name="twitter:image" content="https://felix-chaos.github.io/Actions-and-Stuff-RTX-Patcher/assets/og-image.jpg" />
+  <meta name="twitter:image:alt" content="Actions &amp; Stuff RTX Patcher: Patch and Play Actions &amp; Stuff in RTX" />
+
+  <link rel="icon" type="image/png" href="assets/logo.png" />
+  <link rel="apple-touch-icon" href="assets/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="wiki-page">
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="nav">
+    <div class="nav__inner">
+      <a class="nav__logo" href="index.html" aria-label="Actions &amp; Stuff RTX Patcher home">
+        <img src="assets/logo.png" alt="" width="40" height="40" />
+        <span class="logo-text">
+          <span>ACTIONS &amp; STUFF</span>
+          <span class="accent-text">RTX PATCHER</span>
+        </span>
+      </a>
+      <span class="version-badge nav__version" data-release="nav-version" hidden></span>
+
+      <nav id="nav-menu" class="nav__menu" aria-label="Main">
+        <a class="nav-tab" href="index.html#setup"><span class="tab-icon" aria-hidden="true">⚡</span><span>Setup</span></a>
+        <a class="nav-tab" href="index.html#showcase"><span class="tab-icon" aria-hidden="true">🎬</span><span>Showcase</span></a>
+        <a class="nav-tab" href="index.html#features"><span class="tab-icon" aria-hidden="true">🛠️</span><span>Features</span></a>
+        <a class="nav-tab" href="index.html#how-it-works"><span class="tab-icon" aria-hidden="true">📦</span><span>How it works</span></a>
+        <a class="nav-tab active" href="wiki.html" aria-current="page"><span class="tab-icon" aria-hidden="true">📖</span><span>Wiki</span></a>
+        <div class="nav__actions">
+          <a class="btn btn-secondary btn-square" href="https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher" title="GitHub" aria-label="GitHub">
+            <svg class="nav-btn-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.68 0-1.26.45-2.28 1.19-3.08-.12-.3-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.75.11 3.05.74.8 1.19 1.82 1.19 3.08 0 4.41-2.7 5.38-5.26 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+          </a>
+          <a class="btn btn-secondary btn-square" href="https://discord.gg/YrMMmN2kc7" title="Discord" aria-label="Discord">
+            <svg class="nav-btn-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.32 4.37A19.8 19.8 0 0 0 15.4 2.85a13.7 13.7 0 0 0-.63 1.3 18.4 18.4 0 0 0-5.5 0 13 13 0 0 0-.64-1.3 19.7 19.7 0 0 0-4.93 1.53C.6 9.05-.25 13.61.17 18.1a19.9 19.9 0 0 0 6.04 3.05c.49-.66.92-1.36 1.3-2.1a12.9 12.9 0 0 1-2.04-.98l.5-.39a14.2 14.2 0 0 0 12.07 0l.5.39c-.65.39-1.33.71-2.05.98.38.74.81 1.44 1.3 2.1a19.8 19.8 0 0 0 6.04-3.05c.5-5.2-.84-9.72-3.51-13.73ZM8.02 15.33c-1.18 0-2.15-1.08-2.15-2.42 0-1.33.95-2.42 2.15-2.42 1.2 0 2.17 1.1 2.15 2.42 0 1.34-.95 2.42-2.15 2.42Zm7.96 0c-1.18 0-2.15-1.08-2.15-2.42 0-1.33.95-2.42 2.15-2.42 1.2 0 2.17 1.1 2.15 2.42 0 1.34-.94 2.42-2.15 2.42Z"/></svg>
+          </a>
+          <a class="btn btn-primary nav__download" data-release="nav-download" href="https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/latest">Download</a>
+        </div>
+      </nav>
+
+      <button class="btn btn-secondary btn-square nav__toggle" type="button" aria-expanded="false" aria-controls="nav-menu" aria-label="Open menu">
+        <svg class="nav-btn-icon" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><path d="M2 3h12v2H2zM2 7h12v2H2zM2 11h12v2H2z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main id="main" class="wiki">
+    <!-- ============ WIKI HEADER ============ -->
+    <section class="wiki-hero">
+      <div class="hero__backdrop" aria-hidden="true"></div>
+      <div class="container">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+          <a href="index.html">Home</a><span aria-hidden="true">/</span><span aria-current="page">Wiki</span>
+        </nav>
+        <div class="wiki-hero__inner">
+          <div>
+            <p class="eyebrow">📖 Wiki</p>
+            <h1 class="wiki-hero__title">Full Feature Guide</h1>
+            <p class="wiki-hero__lead">
+              Every tab, every toggle, and when to actually use them. Just want the quick install?
+              The <a href="index.html#setup">setup steps</a> are enough. Come here to find out what a specific button,
+              toggle or tab does.
+            </p>
+            <div class="logo-badges">
+              <span class="version-badge">Tauri patcher</span>
+              <span class="update-badge state-checking">Actions and Stuff RTX Patcher.exe</span>
+            </div>
+          </div>
+          <div class="wiki-hero__actions">
+            <a class="btn btn-gold-3d" href="https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/latest">Download</a>
+            <a class="btn btn-secondary" href="https://discord.gg/YrMMmN2kc7">Ask on Discord</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="container wiki-layout">
+      <!-- ============ SIDEBAR TOC ============ -->
+      <aside class="wiki-sidebar">
+        <details class="wiki-toc" open>
+          <summary class="wiki-toc__summary">
+            <span>On this page</span>
+            <span class="dropdown-arrow" aria-hidden="true">▼</span>
+          </summary>
+          <nav class="wiki-toc__nav" aria-label="Wiki contents">
+            <a class="nav-tab" href="#how-patching-works"><span class="tab-icon" aria-hidden="true">🔍</span><span>How patching works</span></a>
+            <a class="nav-tab" href="#patch-modes"><span class="tab-icon" aria-hidden="true">🚀</span><span>Patch Modes</span></a>
+            <a class="nav-tab" href="#extract-brarchives"><span class="tab-icon" aria-hidden="true">📦</span><span>Extract Brarchives</span></a>
+            <a class="nav-tab" href="#tools"><span class="tab-icon" aria-hidden="true">🧰</span><span>Tools Reference</span></a>
+            <div class="nav-dropdown-items">
+              <a class="nav-subtab" href="#cleaner"><span class="subtab-dot" aria-hidden="true">•</span>Cleaner</a>
+              <a class="nav-subtab" href="#rtx-settings"><span class="subtab-dot" aria-hidden="true">•</span>RTX Settings</a>
+              <a class="nav-subtab" href="#utilities"><span class="subtab-dot" aria-hidden="true">•</span>Utilities</a>
+              <a class="nav-subtab" href="#support"><span class="subtab-dot" aria-hidden="true">•</span>Support</a>
+              <a class="nav-subtab" href="#patch-library"><span class="subtab-dot" aria-hidden="true">•</span>Patch Library</a>
+              <a class="nav-subtab" href="#release-builder"><span class="subtab-dot" aria-hidden="true">•</span>Release Builder</a>
+            </div>
+            <a class="nav-tab" href="#app-settings"><span class="tab-icon" aria-hidden="true">⚙️</span><span>App Settings</span></a>
+            <a class="nav-tab" href="#troubleshooting"><span class="tab-icon" aria-hidden="true">🩹</span><span>Troubleshooting</span></a>
+          </nav>
+        </details>
+        <div class="wiki-sidebar__footer">
+          <p class="field-label">Found a mistake?</p>
+          <a class="btn btn-secondary btn--block" href="https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/blob/main/docs/WIKI.md">
+            <svg class="pixel-icon" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><path fill="#1b1b1c" d="M1 2h7v2h7v10H1z"/><path fill="#d99a33" d="M2 3h5v2h7v8H2z"/><path fill="#f2c15c" d="M2 3h5v1H2z M8 5h6v1H8z"/><path fill="#a86f1f" d="M2 12h12v1H2z"/></svg>
+            Edit on GitHub
+          </a>
+        </div>
+      </aside>
+
+      <!-- ============ CONTENT ============ -->
+      <div class="wiki-content">
+
+        <!-- How patching works -->
+        <section class="card wiki-section" id="how-patching-works">
+          <h2 class="wiki-h2"><span class="wiki-h2__icon" aria-hidden="true">🔍</span>How Patching Works</h2>
+          <p>
+            The patcher never redistributes any original Actions &amp; Stuff asset. Instead it ships small binary diffs
+            (<code>.vcdiff</code>, applied with <a href="https://github.com/jmacd/xdelta">xdelta3</a>) that transform
+            <strong>your own legally-owned copy</strong> into the RTX-enhanced version:
+          </p>
+
+          <div class="pipeline pipeline--compact" aria-label="Patching pipeline">
+            <div class="pipeline__node">
+              <span class="pipeline__icon" aria-hidden="true">📦</span>
+              <span class="pipeline__label">Your A&amp;S copy</span>
+            </div>
+            <span class="pipeline__arrow" aria-hidden="true"></span>
+            <div class="pipeline__node pipeline__node--accent">
+              <span class="pipeline__icon" aria-hidden="true">⚙️</span>
+              <span class="pipeline__label">xdelta3 + <code>.vcdiff</code></span>
+            </div>
+            <span class="pipeline__arrow" aria-hidden="true"></span>
+            <div class="pipeline__node">
+              <span class="pipeline__icon" aria-hidden="true">✨</span>
+              <span class="pipeline__label">A&amp;S Enhanced for RTX <code>.mcpack</code></span>
+            </div>
+          </div>
+
+          <p>Two <code>.vcdiff</code> files exist per patch version, because there are two possible starting points:</p>
+
+          <div class="diff-files">
+            <div class="release-action-card">
+              <div class="release-action-info">
+                <strong><code>encrypted.vcdiff</code></strong>
+                <span>Diffed against your raw, still-DRM-encrypted Marketplace cache.</span>
+              </div>
+              <span class="mode-chip mode-chip--green">Used by Marketplace mode</span>
+            </div>
+            <div class="release-action-card">
+              <div class="release-action-info">
+                <strong><code>decrypted.vcdiff</code></strong>
+                <span>Diffed against an already-decrypted, plain pack: a <code>.zip</code> / <code>.mcpack</code> you downloaded or extracted yourself.</span>
+              </div>
+              <span class="mode-chip">Used by Zip / McPack mode</span>
+            </div>
+          </div>
+
+          <p class="wiki-note">
+            Both patches reconstruct the exact same final pack. The tool just picks whichever one matches the format of the
+            pack you're feeding it, so it never has to touch DRM-protected bytes it can't otherwise read.
+          </p>
+        </section>
+
+        <!-- Patch modes -->
+        <section class="card wiki-section" id="patch-modes">
+          <h2 class="wiki-h2"><span class="wiki-h2__icon" aria-hidden="true">🚀</span>Patch Modes</h2>
+          <p>
+            Pick a mode on the <strong>Patcher</strong> tab. The first is always available; the other two require
+            <strong>Advanced Mode</strong> (bottom-left toggle in the sidebar).
+          </p>
+
+          <p class="field-label" id="mode-label">Select Patch Mode:</p>
+          <div class="mode-toggle-group" role="tablist" aria-labelledby="mode-label">
+            <button class="radio-card is-selected" type="button" role="tab" id="tab-marketplace" aria-controls="mode-marketplace" aria-selected="true">
+              <span class="mode-icon" aria-hidden="true">🏪</span>
+              <span class="mode-title">Marketplace</span>
+              <span class="mode-desc">Default · auto-detects your purchased pack</span>
+            </button>
+            <button class="radio-card" type="button" role="tab" id="tab-zip" aria-controls="mode-zip" aria-selected="false" tabindex="-1">
+              <span class="mode-icon" aria-hidden="true">📂</span>
+              <span class="mode-title">Zip / McPack</span>
+              <span class="mode-desc">Advanced Mode · from a file</span>
+            </button>
+            <button class="radio-card" type="button" role="tab" id="tab-custom" aria-controls="mode-custom" aria-selected="false" tabindex="-1">
+              <span class="mode-icon" aria-hidden="true">🔧</span>
+              <span class="mode-title">Custom Patch</span>
+              <span class="mode-desc">Advanced Mode · pick every input</span>
+            </button>
+          </div>
+
+          <div class="mode-panel" id="mode-marketplace" role="tabpanel" aria-labelledby="tab-marketplace">
+            <h3 class="wiki-h3">🏪 Marketplace <span class="update-badge state-uptodate">Default</span></h3>
+            <p>
+              Auto-detects your purchased Actions &amp; Stuff pack directly from Minecraft's <code>premium_cache</code>
+              (works for the Microsoft Store/UWP and GDK/Xbox app installs). This is the mode almost everyone should use,
+              no manual file picking required.
+            </p>
+            <ol class="wiki-steps">
+              <li>Choose <kbd>Auto-Detect</kbd> or <kbd>Manual Select</kbd> for the target patch/pack version.</li>
+              <li>Optionally leave <strong>Delete older patched versions automatically</strong> on to keep old installs from piling up.</li>
+              <li>Click <kbd class="kbd-gold">Apply RTX Patch</kbd>.</li>
+            </ol>
+          </div>
+
+          <div class="mode-panel" id="mode-zip" role="tabpanel" aria-labelledby="tab-zip">
+            <h3 class="wiki-h3">📂 Zip / McPack <span class="update-badge state-available">Advanced Mode</span></h3>
+            <p>
+              For when you already have Actions &amp; Stuff as a <code>.zip</code> or <code>.mcpack</code> file (e.g. downloaded
+              rather than pulled from the Marketplace cache). The patcher extracts it, strips Mojang's licensing metadata
+              (<code>contents.json</code>, <code>signatures.json</code>, etc.), injects its own manifest, and applies
+              <code>decrypted.vcdiff</code>.
+            </p>
+          </div>
+
+          <div class="mode-panel" id="mode-custom" role="tabpanel" aria-labelledby="tab-custom">
+            <h3 class="wiki-h3">🔧 Custom Patch <span class="update-badge state-available">Advanced Mode</span></h3>
+            <p>
+              Lets you manually point at a specific <strong>source</strong> pack (folder or zip), <strong>target</strong> output
+              path, and a specific <code>.vcdiff</code> <strong>patch file</strong>, bypassing the normal auto-detection entirely.
+              Useful for testing a patch you (or a patch developer) just built with the
+              <a href="#create-patch">Create Patch tool</a>, or for applying an older/specific patch version by hand.
+            </p>
+          </div>
+
+          <div class="callout callout--info">
+            <p class="callout__title">Tip</p>
+            <p>After any mode finishes, click <kbd>Install Pack</kbd> to copy the result straight into your Minecraft <code>resource_packs</code> folder, no manual extraction needed.</p>
+          </div>
+        </section>
+
+        <!-- Extract brarchives -->
+        <section class="card wiki-section" id="extract-brarchives">
+          <h2 class="wiki-h2"><span class="wiki-h2__icon" aria-hidden="true">📦</span>Extract Brarchives <span class="update-badge state-available">Beta</span></h2>
+          <p>
+            Some Actions &amp; Stuff source material ships assets bundled inside a custom container format instead of as
+            normal loose files: a <code>__brarchive</code> folder containing <code>*.brarchive</code> files, each of which is
+            really several real files packed together with a small binary header.
+          </p>
+          <div class="fact-grid">
+            <div class="util-card">
+              <h3 class="fact-title">What it does</h3>
+              <p>
+                Recursively scans the target folder for <code>__brarchive</code> directories, unpacks every
+                <code>.brarchive</code> file back into a normal file at the path it's named after (stripping the
+                <code>.brarchive</code> suffix), then deletes the now-empty containers and leftover pointer files.
+              </p>
+            </div>
+            <div class="util-card">
+              <h3 class="fact-title">Where it lives</h3>
+              <p>
+                <strong>Utilities → Extract Brarchives</strong>, a standalone tool you point at any folder directly.
+                Handy for inspecting what's inside a <code>__brarchive</code> folder.
+              </p>
+            </div>
+          </div>
+          <p class="wiki-note">
+            If a folder doesn't have a <code>__brarchive</code> anywhere in it, running this is a harmless no-op, which is
+            why it's still marked <strong>Beta</strong>.
+          </p>
+        </section>
+
+        <!-- Tools reference -->
+        <section class="card wiki-section" id="tools">
+          <h2 class="wiki-h2"><span class="wiki-h2__icon" aria-hidden="true">🧰</span>Tools Reference</h2>
+          <p>
+            Everything below lives behind the sidebar tabs. <strong>Advanced Mode</strong> (bottom-left toggle) is required to
+            see the <strong>Utilities</strong> menu and a few of the Patcher-tab controls.
+          </p>
+
+          <article class="tool" id="cleaner">
+            <div class="feature__icon feature__icon--green" aria-hidden="true">🧹</div>
+            <div class="tool__body">
+              <h3 class="wiki-h3">Cleaner</h3>
+              <p>
+                Scans every detected Minecraft install (Microsoft Store/UWP, GDK/Xbox app, and per-world
+                <code>resource_packs</code> / <code>development_resource_packs</code> folders) for leftover Actions &amp; Stuff
+                pack directories from previous patches, and lets you delete the ones you select. Use it if you've patched
+                several times and want to reclaim disk space, or before re-patching to avoid stale duplicate packs in-game.
+              </p>
+            </div>
+          </article>
+
+          <article class="tool" id="rtx-settings">
+            <div class="feature__icon feature__icon--blue" aria-hidden="true">🎛️</div>
+            <div class="tool__body">
+              <h3 class="wiki-h3">RTX Settings</h3>
+              <p>
+                Reads and writes your Minecraft <code>options.txt</code> directly, so you can flip RTX-relevant graphics
+                settings (<code>graphics_mode</code>, <code>graphics_api</code>, ray tracing/deferred view distance, upscaling
+                mode &amp; percentage, etc.) without hunting through Minecraft's menus. <kbd>Set Best Settings</kbd> applies the
+                recommended RTX configuration in one click; <kbd class="kbd-green">Apply Settings</kbd> saves whatever you've
+                edited manually. Pick which <code>options.txt</code> profile to target first if you have more than one
+                Minecraft install or user profile.
+              </p>
+            </div>
+          </article>
+
+          <article class="tool" id="utilities">
+            <div class="feature__icon feature__icon--gold" aria-hidden="true">🛠️</div>
+            <div class="tool__body">
+              <h3 class="wiki-h3">Utilities <span class="update-badge state-available">Advanced Mode</span></h3>
+              <p>Standalone tools that don't run the full patch pipeline, useful for patch developers or troubleshooting.</p>
+
+              <div class="utils-grid utils-grid--wiki">
+                <div class="util-card" id="zip-packer">
+                  <h4 class="fact-title"><span class="subtab-dot" aria-hidden="true">•</span> Deterministic ZIP Packer</h4>
+                  <p>
+                    Compresses a folder into a <code>.zip</code> / <code>.mcpack</code> with fixed timestamps (Jan 1 1980) and
+                    no compression (stored). Two runs over identical input always produce a byte-identical archive. That
+                    determinism keeps the xdelta diffs reproducible and small, so it's used everywhere the patcher zips for diffing.
+                  </p>
+                </div>
+                <div class="util-card" id="extract-zip">
+                  <h4 class="fact-title"><span class="subtab-dot" aria-hidden="true">•</span> Extract ZIP / MCPack</h4>
+                  <p>
+                    Extracts any <code>.zip</code> or <code>.mcpack</code> archive to a folder, automatically unwrapping a
+                    single redundant top-level folder if the archive has one (e.g. <code>MyPack-main/...</code> becomes just
+                    the pack contents).
+                  </p>
+                </div>
+                <div class="util-card" id="extract-brarchives-standalone">
+                  <h4 class="fact-title"><span class="subtab-dot" aria-hidden="true">•</span> Extract Brarchives (standalone)</h4>
+                  <p>
+                    The same <a href="#extract-brarchives">brarchive extraction</a>, pointed at any folder you choose,
+                    independent of a patch run. Good for inspecting or unpacking a <code>__brarchive</code> folder without
+                    doing anything else.
+                  </p>
+                </div>
+              </div>
+
+              <div class="create-patch" id="create-patch">
+                <h4 class="wiki-h4"><span class="subtab-dot" aria-hidden="true">•</span> Create Patch (VCDIFF) <span class="update-badge state-checking">Maintainers &amp; patch developers</span></h4>
+                <p>
+                  This is how new patch versions actually get built, for custom or new patches. It's not something regular
+                  users need. It takes four inputs:
+                </p>
+                <ol class="input-list">
+                  <li>
+                    <span class="input-list__num" aria-hidden="true">1</span>
+                    <div><strong>Target Folder</strong><span>Your finished, modified "Actions &amp; Stuff RTX" pack: the result you want end users to end up with.</span></div>
+                  </li>
+                  <li>
+                    <span class="input-list__num" aria-hidden="true">2</span>
+                    <div><strong>Source Decrypted Folder</strong><span>A vanilla, already-decrypted baseline copy of the same Actions &amp; Stuff version (no DRM).</span></div>
+                  </li>
+                  <li>
+                    <span class="input-list__num" aria-hidden="true">3</span>
+                    <div><strong>Source Encrypted Folder</strong><span>The same vanilla version, but straight from <code>premium_cache</code>, still DRM-encrypted.</span></div>
+                  </li>
+                  <li>
+                    <span class="input-list__num input-list__num--folder" aria-hidden="true">
+                      <svg class="pixel-icon" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges" focusable="false"><path fill="#1b1b1c" d="M1 2h7v2h7v10H1z"/><path fill="#d99a33" d="M2 3h5v2h7v8H2z"/><path fill="#f2c15c" d="M2 3h5v1H2z M8 5h6v1H8z"/><path fill="#a86f1f" d="M2 12h12v1H2z"/></svg>
+                    </span>
+                    <div><strong>Output Directory</strong><span>Where the finished <code>.vcdiff</code> files and <code>patch_config.json</code> get written.</span></div>
+                  </li>
+                </ol>
+                <p>
+                  Plus <strong>Pack Version</strong> / <strong>Patch Version</strong> (used to name the output folder and
+                  populate <code>patch_config.json</code>), and one toggle:
+                </p>
+                <div class="option-field">
+                  <div>
+                    <span class="option-name">Inject Custom Manifest</span>
+                    <span class="option-desc">Writes the patcher's own <code>manifest.json</code> into both the decrypted baseline and the target folder before diffing, so the shipped pack always ends up with the correct custom pack identity.</span>
+                  </div>
+                  <span class="mc-toggle" aria-hidden="true"><span class="mc-slider is-on"></span></span>
+                </div>
+                <p>
+                  Clicking <kbd class="kbd-green">Create Patches</kbd> produces <code>encrypted.vcdiff</code>,
+                  <code>decrypted.vcdiff</code> and a <code>patch_config.json</code> (pack/patch version plus validation stats
+                  used by Marketplace auto-detection) in a new
+                  <code>Actions &amp; Stuff for RTX &lt;pack version&gt; V&lt;patch version&gt;</code> folder under your output directory.
+                </p>
+              </div>
+            </div>
+          </article>
+
+          <article class="tool" id="support">
+            <div class="feature__icon feature__icon--blue" aria-hidden="true">💬</div>
+            <div class="tool__body">
+              <h3 class="wiki-h3">Support</h3>
+              <p>
+                Discord invite links (community + BetterRTX), and the <strong>Bug Report</strong> form. The bug reporter can
+                optionally attach:
+              </p>
+              <ul class="check-list">
+                <li><span class="mc-checkbox-box is-checked" aria-hidden="true"></span>Your application log</li>
+                <li><span class="mc-checkbox-box is-checked" aria-hidden="true"></span>The pack you patched</li>
+                <li><span class="mc-checkbox-box is-checked" aria-hidden="true"></span>A Minecraft content log, with usernames scrubbed from file paths</li>
+                <li><span class="mc-checkbox-box is-checked" aria-hidden="true"></span>Recent GPU driver events</li>
+                <li><span class="mc-checkbox-box is-checked" aria-hidden="true"></span>A hardware summary (GPU / CPU / RAM / BetterRTX preset)</li>
+              </ul>
+              <p>
+                Every item is opt-in per checkbox, and all are tied to a random install ID rather than anything personally
+                identifying. See <strong>App Settings → Privacy</strong> for the underlying telemetry consent controls.
+              </p>
+            </div>
+          </article>
+
+          <article class="tool" id="patch-library">
+            <div class="feature__icon feature__icon--teal" aria-hidden="true">📚</div>
+            <div class="tool__body">
+              <h3 class="wiki-h3">Patch Library <span class="update-badge state-checking">Maintainers only</span></h3>
+              <p>
+                Patches are downloaded from a separate <a href="https://github.com/Felix-Chaos/AS-RTX-Patch-Library">patch library repo</a>
+                rather than shipped inside the patcher, so a new patch reaches everyone without a patcher update. You can
+                publish one straight from the <a href="#create-patch">Create Patch tool</a>.
+              </p>
+            </div>
+          </article>
+
+          <article class="tool" id="release-builder">
+            <div class="feature__icon feature__icon--gold" aria-hidden="true">📦</div>
+            <div class="tool__body">
+              <h3 class="wiki-h3">Release Builder <span class="update-badge state-checking">Maintainers only</span></h3>
+              <p>
+                Version bump and build automation for cutting a new patcher release: edit the app version, build MSI/NSIS
+                installers and/or a portable <code>.exe</code>, and sort the resulting artifacts into a
+                <code>Releases/vX.Y.Z</code> folder with the updater manifest signature injected automatically. Not relevant
+                unless you're publishing a new patcher build.
+              </p>
+            </div>
+          </article>
+        </section>
+
+        <!-- App settings -->
+        <section class="card wiki-section" id="app-settings">
+          <h2 class="wiki-h2"><span class="wiki-h2__icon" aria-hidden="true">⚙️</span>App Settings Reference</h2>
+          <p>What every group on the <strong>App Settings</strong> tab controls.</p>
+
+          <div class="settings-list">
+            <div class="settings-group">
+              <h3 class="settings-group__title">General</h3>
+              <dl>
+                <div><dt>Default Patcher Mode</dt><dd>Which patch mode is pre-selected on launch.</dd></div>
+                <div><dt>Enable Advanced Mode UI</dt><dd>Reveals Zip/Custom patch modes, the Utilities tab, and other advanced controls.</dd></div>
+                <div><dt>Opt-in to Beta Updates</dt><dd>Lets the in-app updater offer beta/alpha releases, not just stable.</dd></div>
+              </dl>
+            </div>
+            <div class="settings-group">
+              <h3 class="settings-group__title">Patcher Behaviors</h3>
+              <dl>
+                <div><dt>Clean Old Patch Remnants</dt><dd>Runs the Cleaner scan automatically before every patch.</dd></div>
+                <div><dt>Keep only the most recently used patch</dt><dd>After a successful patch, delete other downloaded patches to save space. Off by default.</dd></div>
+              </dl>
+            </div>
+            <div class="settings-group">
+              <h3 class="settings-group__title">Console</h3>
+              <dl>
+                <div><dt>Console height</dt><dd>How tall the execution output console is. You can also drag the grip in its bottom-right corner.</dd></div>
+              </dl>
+            </div>
+            <div class="settings-group">
+              <h3 class="settings-group__title">Downloaded Patches</h3>
+              <dl>
+                <div><dt>Remove / Remove all downloads</dt><dd>Delete cached patch downloads. They are fetched again automatically when next needed; bundled patches are never touched.</dd></div>
+              </dl>
+            </div>
+            <div class="settings-group">
+              <h3 class="settings-group__title">Patch Creator Defaults</h3>
+              <dl>
+                <div><dt>Inject Custom Manifest</dt><dd>Default state of the matching toggle in the <a href="#create-patch">Create Patch tool</a>.</dd></div>
+                <div><dt>Patch library repo folder / Publish after creating</dt><dd>Where to publish new patches, and whether to publish automatically. See the <a href="https://github.com/Felix-Chaos/AS-RTX-Patch-Library">Patch Library</a>.</dd></div>
+              </dl>
+            </div>
+            <div class="settings-group">
+              <h3 class="settings-group__title">Bug Reporter Defaults</h3>
+              <dl>
+                <div><dt>Include Application Log / Pack / Content Log / Driver Events / Hardware Info</dt><dd>Default state of the matching checkboxes on the bug report form.</dd></div>
+              </dl>
+            </div>
+            <div class="settings-group">
+              <h3 class="settings-group__title">Privacy</h3>
+              <dl>
+                <div><dt>Telemetry consent, Delete My Data</dt><dd>Opt in or out of anonymous hardware pings, and erase your server-side data (rotates your local install ID).</dd></div>
+              </dl>
+            </div>
+          </div>
+        </section>
+
+        <!-- Troubleshooting -->
+        <section class="card wiki-section" id="troubleshooting">
+          <h2 class="wiki-h2"><span class="wiki-h2__icon" aria-hidden="true">🩹</span>Troubleshooting</h2>
+
+          <div class="faq">
+            <details class="faq__item" open>
+              <summary>A texture, model or sound looks broken or purple after patching<span class="dropdown-arrow" aria-hidden="true">▼</span></summary>
+              <p>Use the <strong>Bug Report</strong> form (Support tab) with the content log and hardware info included. This gives us the most actionable diagnostics.</p>
+            </details>
+            <details class="faq__item">
+              <summary>Nothing happens when I click Apply RTX Patch<span class="dropdown-arrow" aria-hidden="true">▼</span></summary>
+              <p>Check the process log (Advanced Mode) for the actual error, and confirm you own a legitimate copy of Actions &amp; Stuff in one of the supported formats.</p>
+            </details>
+            <details class="faq__item">
+              <summary>I just patched, but Minecraft still shows the old pack<span class="dropdown-arrow" aria-hidden="true">▼</span></summary>
+              <p>Make sure your resource pack load order matches the <a href="index.html#setup">setup steps</a>, and run the <a href="#cleaner">Cleaner</a> to remove stale duplicates.</p>
+            </details>
+          </div>
+
+          <div class="stuck">
+            <div>
+              <h3 class="wiki-h3">Still stuck?</h3>
+              <p>Ask in the Discord or check the pinned FAQ thread.</p>
+            </div>
+            <div class="stuck__actions">
+              <a class="btn btn-primary" href="https://discord.gg/YrMMmN2kc7">Join Discord</a>
+              <a class="btn btn-secondary" href="https://discord.com/channels/691547840463241267/1360688874388455504/1376325634246049792">Open FAQ</a>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer__links-section">
+      <div class="footer__links">
+        <div class="footer__column">
+          <h2 class="footer__heading">Resources</h2>
+          <ul class="footer__list">
+            <li><a class="footer-link" href="https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases">Releases &amp; changelog</a></li>
+            <li><a class="footer-link" href="wiki.html">Wiki &amp; full guide</a></li>
+            <li><a class="footer-link" href="https://github.com/Felix-Chaos/AS-RTX-Patch-Library">Patch Library</a></li>
+            <li><a class="footer-link" href="https://bedrock.graphics/">BetterRTX</a></li>
+            <li><a class="footer-link footer-link--muted" href="https://discord.com/channels/691547840463241267/1360688874388455504/1376325634246049792">FAQ</a></li>
+          </ul>
+        </div>
+        <div class="footer__column">
+          <h2 class="footer__heading">Community</h2>
+          <ul class="footer__list">
+            <li><a class="footer-link" href="https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher">GitHub</a></li>
+            <li><a class="footer-link" href="https://discord.gg/YrMMmN2kc7">ChaosDev Projects Discord</a></li>
+            <li><a class="footer-link" href="https://discord.gg/HPP6J4qFPu">BetterRTX Discord</a></li>
+            <li><a class="footer-link" href="https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/issues">Report an issue</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer__credits-section">
+      <div>
+        <p class="footer__disclaimer">Not affiliated with Oreville Studios, NVIDIA, Mojang or Microsoft.</p>
+        <p class="footer__body">
+          The patcher is provided by the community for educational and personal use. It does not distribute any part of
+          the original <em>Actions &amp; Stuff</em> pack; all original assets remain property of their respective owners.
+          Donations go directly to <a class="footer-link" href="https://ko-fi.com/dementeparker">the original creator</a>.
+        </p>
+        <p class="footer__credits">
+          Built by the A&amp;S RTX community · Site design inspired by <a class="footer-link" href="https://bedrock.graphics/">bedrock.graphics</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="main.js" defer></script>
+</body>
+</html>
