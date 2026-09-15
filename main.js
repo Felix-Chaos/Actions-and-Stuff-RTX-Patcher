@@ -1,6 +1,7 @@
-// A&S RTX Patcher site: release lookup, showcase player, lightbox and nav.
+// A&S RTX Patcher site: release lookup, channel switch, showcase player, lightbox and nav.
 (() => {
   const REPO = "Felix-Chaos/Actions-and-Stuff-RTX-Patcher";
+  const RELEASES_URL = `https://github.com/${REPO}/releases`;
   const CACHE_KEY = "asrtx-releases";
   const CACHE_TTL = 30 * 60 * 1000;
 
@@ -16,14 +17,14 @@
   menu.addEventListener("click", (e) => { if (e.target.closest("a")) setMenu(false); });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") setMenu(false); });
 
-  /* ---------- Active nav link while scrolling ---------- */
-  const navLinks = [...document.querySelectorAll('.nav-link[href^="#"]')];
-  const sections = navLinks.map((a) => document.querySelector(a.getAttribute("href"))).filter(Boolean);
+  /* ---------- Active nav tab while scrolling ---------- */
+  const navTabs = [...document.querySelectorAll('.nav-tab[href^="#"]')];
+  const sections = navTabs.map((a) => document.querySelector(a.getAttribute("href"))).filter(Boolean);
   if ("IntersectionObserver" in window) {
     const spy = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (!entry.isIntersecting) return;
-        navLinks.forEach((a) => a.classList.toggle("nav-link--active", a.getAttribute("href") === `#${entry.target.id}`));
+        navTabs.forEach((a) => a.classList.toggle("active", a.getAttribute("href") === `#${entry.target.id}`));
       });
     }, { rootMargin: "-45% 0px -50% 0px" });
     sections.forEach((s) => spy.observe(s));
@@ -35,15 +36,16 @@
         obs.unobserve(entry.target);
       });
     }, { rootMargin: "0px 0px -8% 0px" });
-    document.querySelectorAll(".section__head, .card, .repo, .person, .step, .phases li, .pipeline")
+    document.querySelectorAll(".section__head, .feature, .repo, .person, .step, .phases li, .pipeline")
       .forEach((el) => { el.classList.add("reveal"); reveal.observe(el); });
   }
 
   /* ---------- Showcase video picker ---------- */
   const video = document.getElementById("player-video");
-  document.querySelectorAll(".video-picker__item").forEach((btn) => {
+  const pickers = document.querySelectorAll(".video-picker__item");
+  pickers.forEach((btn) => {
     btn.addEventListener("click", () => {
-      document.querySelectorAll(".video-picker__item").forEach((b) => b.classList.toggle("is-active", b === btn));
+      pickers.forEach((b) => b.classList.toggle("is-active", b === btn));
       if (video.getAttribute("src") !== btn.dataset.src) {
         video.poster = btn.dataset.poster;
         video.src = btn.dataset.src;
@@ -66,46 +68,96 @@
   });
   lightbox.addEventListener("click", (e) => { if (e.target === lightbox) lightbox.close(); });
 
-  /* ---------- Latest release lookup ---------- */
+  /* ---------- Releases & channel switch ---------- */
   const $ = (key) => document.querySelector(`[data-release="${key}"]`);
+  const channelButtons = document.querySelectorAll(".switch-option[data-channel]");
+  const channels = { stable: null, beta: null };
 
   // Prefer the NSIS installer, then the MSI, then any Windows binary.
-  const pickAsset = (release) => {
+  const pickInstaller = (release) => {
     const assets = release.assets || [];
     return assets.find((a) => /-setup\.exe$/i.test(a.name))
       || assets.find((a) => /\.msi$/i.test(a.name))
       || assets.find((a) => /\.exe$/i.test(a.name))
       || null;
   };
+  const pickPortable = (release) => (release.assets || []).find((a) => /portable.*\.zip$/i.test(a.name)) || null;
 
   const formatDate = (iso) => {
     try {
-      return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+      return new Date(iso).toLocaleDateString("en-GB", { year: "numeric", month: "short", day: "numeric" });
     } catch { return ""; }
   };
 
+  const showChannel = (name) => {
+    const release = channels[name];
+    if (!release) return;
+
+    channelButtons.forEach((b) => {
+      const on = b.dataset.channel === name;
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-checked", String(on));
+    });
+
+    const installer = pickInstaller(release);
+    const portable = pickPortable(release);
+
+    $("version").textContent = release.tag_name;
+    const kind = !installer ? "" : /-setup\.exe$/i.test(installer.name) ? "Setup .exe" : /\.msi$/i.test(installer.name) ? ".msi installer" : ".exe";
+    $("details").textContent = [formatDate(release.published_at), kind].filter(Boolean).join(" · ");
+    $("download").href = installer ? installer.browser_download_url : release.html_url;
+    $("download-label").textContent = name === "beta" ? "Download Beta for Windows" : "Download for Windows";
+    $("beta-warning").hidden = name !== "beta";
+
+    const portableLink = $("portable");
+    portableLink.hidden = !portable;
+    if (portable) portableLink.href = portable.browser_download_url;
+  };
+
+  channelButtons.forEach((b) => b.addEventListener("click", () => { if (!b.disabled) showChannel(b.dataset.channel); }));
+
   const render = (releases) => {
     const published = releases.filter((r) => !r.draft);
-    const stable = published.find((r) => !r.prerelease);
-    const beta = published.find((r) => r.prerelease);
-    const main = stable || beta;
-    if (!main) return;
+    const stable = published.find((r) => !r.prerelease) || null;
+    const beta = published.find((r) => r.prerelease) || null;
+    const status = $("status");
 
-    const asset = pickAsset(main);
-    $("version").textContent = main.tag_name;
-    $("date").textContent = formatDate(main.published_at);
-    $("download").href = asset ? asset.browser_download_url : main.html_url;
-    if (!stable) $("download-label").textContent = "Download beta for Windows";
-
-    // Only surface the beta when it is newer than the stable build.
-    if (stable && beta && new Date(beta.published_at) > new Date(stable.published_at)) {
-      const betaAsset = pickAsset(beta);
-      const link = $("beta");
-      link.href = betaAsset ? betaAsset.browser_download_url : beta.html_url;
-      link.textContent = `Beta ${beta.tag_name}`;
-      link.title = "Newer pre-release build, may contain bugs";
-      link.hidden = false;
+    if (!stable && !beta) {
+      status.className = "update-badge state-error";
+      status.textContent = "No releases";
+      $("details").textContent = "";
+      return;
     }
+
+    channels.stable = stable || beta;
+    // Offer the beta channel only when it is newer than the stable build.
+    const betaIsNewer = stable && beta && new Date(beta.published_at) > new Date(stable.published_at);
+    channels.beta = betaIsNewer ? beta : null;
+
+    const betaButton = document.querySelector('.switch-option[data-channel="beta"]');
+    betaButton.disabled = !channels.beta;
+    betaButton.title = channels.beta ? `Pre-release ${channels.beta.tag_name}` : "No newer beta build right now";
+
+    status.className = channels.beta ? "update-badge state-available" : "update-badge state-uptodate";
+    status.textContent = channels.beta ? "Beta available" : "Latest";
+
+    const navVersion = $("nav-version");
+    navVersion.textContent = channels.stable.tag_name;
+    navVersion.hidden = false;
+
+    const navInstaller = pickInstaller(channels.stable);
+    if (navInstaller) $("nav-download").href = navInstaller.browser_download_url;
+
+    showChannel("stable");
+  };
+
+  const renderOffline = () => {
+    const status = $("status");
+    status.className = "update-badge state-error";
+    status.textContent = "Offline";
+    $("version").textContent = "Latest";
+    $("details").textContent = "Couldn't reach GitHub, the buttons open the releases page.";
+    $("download").href = RELEASES_URL + "/latest";
   };
 
   const readCache = () => {
@@ -134,7 +186,6 @@
         writeCache(slim);
         render(slim);
       })
-      // Offline or rate-limited: the static links to /releases/latest still work.
-      .catch(() => {});
+      .catch(renderOffline);
   }
 })();
