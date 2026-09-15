@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>A&amp;S RTX Patcher</title>
+  <meta name="description" content="A community-built patcher that makes your own copy of Actions &amp; Stuff work with ray tracing and BetterRTX on Minecraft: Bedrock Edition." />
+  <meta name="theme-color" content="#2b2b2c" />
+  <meta property="og:title" content="A&amp;S RTX Patcher" />
+  <meta property="og:description" content="Make your copy of Actions &amp; Stuff RTX-ready with BetterRTX lighting, reflections and PBR materials." />
+  <meta property="og:image" content="assets/showcase/showcase_image_2.jpg" />
+  <meta property="og:type" content="website" />
+  <link rel="icon" type="image/png" href="assets/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="nav">
+    <div class="nav__inner">
+      <a class="nav__logo" href="#top" aria-label="A&amp;S RTX Patcher home">
+        <img src="assets/logo.png" alt="" width="36" height="36" />
+        <span>A&amp;S <strong>RTX</strong> Patcher</span>
+      </a>
+
+      <button class="nav__toggle" type="button" aria-expanded="false" aria-controls="nav-menu" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+
+      <nav id="nav-menu" class="nav__menu">
+        <a class="nav-link" href="#setup">Setup</a>
+        <a class="nav-link" href="#features">Features</a>
+        <a class="nav-link" href="#showcase">Showcase</a>
+        <a class="nav-link" href="#how-it-works">How it works</a>
+        <a class="nav-link" href="https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/blob/main/docs/WIKI.md">Wiki</a>
+        <span class="nav__divider" aria-hidden="true"></span>
+        <a class="nav-icon" href="https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher" aria-label="GitHub">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.68 0-1.26.45-2.28 1.19-3.08-.12-.3-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.75.11 3.05.74.8 1.19 1.82 1.19 3.08 0 4.41-2.7 5.38-5.26 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+          <span class="nav-icon__label">GitHub</span>
+        </a>
+        <a class="nav-icon" href="https://discord.gg/YrMMmN2kc7" aria-label="Discord">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.32 4.37A19.8 19.8 0 0 0 15.4 2.85a13.7 13.7 0 0 0-.63 1.3 18.4 18.4 0 0 0-5.5 0 13 13 0 0 0-.64-1.3 19.7 19.7 0 0 0-4.93 1.53C.6 9.05-.25 13.61.17 18.1a19.9 19.9 0 0 0 6.04 3.05c.49-.66.92-1.36 1.3-2.1a12.9 12.9 0 0 1-2.04-.98l.5-.39a14.2 14.2 0 0 0 12.07 0l.5.39c-.65.39-1.33.71-2.05.98.38.74.81 1.44 1.3 2.1a19.8 19.8 0 0 0 6.04-3.05c.5-5.2-.84-9.72-3.51-13.73ZM8.02 15.33c-1.18 0-2.15-1.08-2.15-2.42 0-1.33.95-2.42 2.15-2.42 1.2 0 2.17 1.1 2.15 2.42 0 1.34-.95 2.42-2.15 2.42Zm7.96 0c-1.18 0-2.15-1.08-2.15-2.42 0-1.33.95-2.42 2.15-2.42 1.2 0 2.17 1.1 2.15 2.42 0 1.34-.94 2.42-2.15 2.42Z"/></svg>
+          <span class="nav-icon__label">Discord</span>
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- ============ HERO ============ -->
+    <section class="hero" id="top">
+      <div class="hero__backdrop" aria-hidden="true"></div>
+
+      <a class="announcement" href="https://github.com/Felix-Chaos/AS-RTX-Patch-Library">
+        <span class="announcement__tag">New</span>
+        <span>New patches now arrive from the Patch Library, no patcher update needed.</span>
+        <span class="announcement__arrow" aria-hidden="true">→</span>
+      </a>
+
+      <div class="hero-stage">
+        <div class="hero-heading">
+          <h1 class="hero-heading__title">
+            <span class="hero-heading__line">Patch and Play</span>
+            <span class="hero-heading__line hero-heading__line--accent"><span class="nowrap">Actions &amp; Stuff</span> in RTX</span>
+          </h1>
+          <p class="hero-heading__lead">
+            A free, community-built patcher that makes <strong>your own copy</strong> of Actions &amp; Stuff
+            work with ray tracing: BetterRTX lighting, true reflections and PBR materials for every mob, item and block.
+          </p>
+          <ul class="hero-heading__chips">
+            <li>Marketplace auto-detect</li>
+            <li>.zip &amp; .mcpack</li>
+            <li>No assets redistributed</li>
+          </ul>
+        </div>
+
+        <aside class="installer" aria-labelledby="installer-title">
+          <div class="installer__head">
+            <img src="assets/logo.png" alt="" width="52" height="52" />
+            <div>
+              <h2 id="installer-title" class="installer__title">A&amp;S RTX Patcher</h2>
+              <p class="installer__meta">
+                <span class="installer__version" data-release="version">Latest release</span>
+                <span class="installer__date" data-release="date"></span>
+              </p>
+            </div>
+          </div>
+
+          <a class="btn btn--primary btn--block" data-release="download"
+             href="https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/latest">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 5-5m-5 5-5-5M4 19h16" /></svg>
+            <span data-release="download-label">Download for Windows</span>
+          </a>
+          <div class="installer__row">
+            <a class="btn btn--ghost" data-release="beta" href="https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases" hidden>Beta build</a>
+            <a class="btn btn--ghost" href="https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases">All releases</a>
+          </div>
+
+          <div class="installer__checklist">
+            <p class="installer__label">Before you start</p>
+            <ul>
+              <li><span class="check" aria-hidden="true"></span><a href="https://bedrock.graphics/">BetterRTX</a> installed</li>
+              <li><span class="check" aria-hidden="true"></span><a href="https://www.minecraft.net/en-us/marketplace/pdp/oreville-studios/actions--stuff-1.6/61c7a786-d7ad-49e0-a710-817121cd9795">Actions &amp; Stuff</a> owned</li>
+              <li><span class="check" aria-hidden="true"></span>Windows 10 / 11 with an RTX-capable GPU</li>
+            </ul>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ============ SHOWCASE ============ -->
+    <section class="section" id="showcase">
+      <div class="container">
+        <header class="section__head">
+          <p class="eyebrow">Showcase</p>
+          <h2 class="section__title">Featured Videos</h2>
+        </header>
+
+        <div class="player">
+          <video id="player-video" controls preload="metadata" playsinline
+                 poster="assets/showcase/showcase_thumb_1.jpg" src="assets/showcase/showcase_video_1.mp4"></video>
+        </div>
+
+        <div class="video-picker" role="list">
+          <button class="video-picker__item is-active" type="button" role="listitem"
+                  data-src="assets/showcase/showcase_video_1.mp4" data-poster="assets/showcase/showcase_thumb_1.jpg">
+            <img src="assets/showcase/showcase_thumb_1.jpg" alt="" loading="lazy" />
+            <span class="video-picker__play" aria-hidden="true"></span>
+            <span class="sr-only">Play showcase video 1</span>
+          </button>
+          <button class="video-picker__item" type="button" role="listitem"
+                  data-src="assets/showcase/showcase_video_2.mp4" data-poster="assets/showcase/showcase_thumb_2.jpg">
+            <img src="assets/showcase/showcase_thumb_2.jpg" alt="" loading="lazy" />
+            <span class="video-picker__play" aria-hidden="true"></span>
+            <span class="sr-only">Play showcase video 2</span>
+          </button>
+          <button class="video-picker__item" type="button" role="listitem"
+                  data-src="assets/showcase/showcase_video_3.mp4" data-poster="assets/showcase/showcase_thumb_3.jpg">
+            <img src="assets/showcase/showcase_thumb_3.jpg" alt="" loading="lazy" />
+            <span class="video-picker__play" aria-hidden="true"></span>
+            <span class="sr-only">Play showcase video 3</span>
+          </button>
+        </div>
+
+        <div class="gallery">
+          <button class="gallery__item" type="button" data-full="assets/showcase/showcase_image_1.png">
+            <img src="assets/showcase/showcase_image_1.png" alt="Ender dragon and enderman with glowing eyes in the End, rendered with RTX" loading="lazy" />
+          </button>
+          <button class="gallery__item" type="button" data-full="assets/showcase/showcase_image_2.jpg">
+            <img src="assets/showcase/showcase_image_2.jpg" alt="In-game RTX screenshot of Actions &amp; Stuff" loading="lazy" />
+          </button>
+          <button class="gallery__item" type="button" data-full="assets/showcase/showcase_image_4.png">
+            <img src="assets/showcase/showcase_image_4.png" alt="In-game RTX screenshot of Actions &amp; Stuff" loading="lazy" />
+          </button>
+        </div>
+        <p class="section__note">
+          In-game footage courtesy of patch creator <strong>J4vi3r6003</strong>. Share yours in the
+          <a href="https://discord.com/channels/691547840463241267/1360688874388455504">Discord thread</a> for a chance to be featured here.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ SETUP ============ -->
+    <section class="section section--alt" id="setup">
+      <div class="container container--narrow">
+        <header class="section__head">
+          <p class="eyebrow">Setup</p>
+          <h2 class="section__title">Up and running in four steps</h2>
+        </header>
+
+        <ol class="steps">
+          <li class="step">
+            <h3 class="step__title"><span class="step__num">1.</span> Install BetterRTX</h3>
+            <p>
+              The patched pack is built around <strong>BetterRTX</strong> lighting. Follow the official
+              installer at <a href="https://bedrock.graphics/">bedrock.graphics</a> first, then come back here.
+            </p>
+            <a class="step__banner" href="https://bedrock.graphics/">
+              <img src="assets/betterrtx_banner.png" alt="BetterRTX: On" loading="lazy" />
+            </a>
+          </li>
+
+          <li class="step">
+            <h3 class="step__title"><span class="step__num">2.</span> Get Actions &amp; Stuff</h3>
+            <p>
+              Download <a href="https://www.minecraft.net/en-us/marketplace/pdp/oreville-studios/actions--stuff-1.6/61c7a786-d7ad-49e0-a710-817121cd9795">Actions &amp; Stuff</a>
+              from the Marketplace and open Minecraft once so the pack is on disk. A <code>.zip</code> or
+              <code>.mcpack</code> copy works too.
+            </p>
+          </li>
+
+          <li class="step">
+            <h3 class="step__title"><span class="step__num">3.</span> Run the patcher</h3>
+            <p>
+              <a href="https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/latest">Download the patcher</a>,
+              launch it and press <kbd>Patch from Marketplace</kbd>. It finds your copy, applies the latest patch
+              and writes a ready-to-import <code>.mcpack</code>.
+            </p>
+            <div class="callout callout--info">
+              <p class="callout__title">Info</p>
+              <p>
+                Your original pack is <strong>never modified</strong>. The patcher reads your copy, applies a binary diff
+                and writes a new pack next to it. Press <kbd>Adjust Settings for RTX</kbd> in the patcher to apply
+                the recommended video settings, including turning off <em>Mob Dithering</em>.
+              </p>
+            </div>
+          </li>
+
+          <li class="step">
+            <h3 class="step__title"><span class="step__num">4.</span> Import &amp; set the pack order</h3>
+            <p>Double-click the generated <code>.mcpack</code>, then order your global resource packs from top to bottom:</p>
+            <ol class="pack-order">
+              <li><span>A&amp;S for RTX</span><em>Always on top</em></li>
+              <li><span>RTX pack</span><em>Vanilla RTX, Kelly's, …</em></li>
+              <li><span>Other resource packs</span><em>Optional</em></li>
+              <li class="pack-order__muted"><span>Actions &amp; Stuff (original)</span><em>Not recommended</em></li>
+            </ol>
+          </li>
+        </ol>
+
+        <div class="callout callout--warn">
+          <p class="callout__title">Please don't share patched copies</p>
+          <p>
+            This is a community RTX enhancement for <em>Actions &amp; Stuff</em> by <strong>Oreville Studios</strong>.
+            Each player patches their own purchased copy, so keep your patched pack to yourself.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FEATURES ============ -->
+    <section class="section" id="features">
+      <div class="container">
+        <header class="section__head">
+          <p class="eyebrow">Features</p>
+          <h2 class="section__title">More than a one-click patch</h2>
+        </header>
+
+        <div class="cards">
+          <article class="card">
+            <div class="card__icon card__icon--green" aria-hidden="true">⚡</div>
+            <h3>Marketplace auto-detect</h3>
+            <p>Finds your installed Actions &amp; Stuff copy automatically. No digging through hidden game folders.</p>
+          </article>
+          <article class="card">
+            <div class="card__icon card__icon--blue" aria-hidden="true">💡</div>
+            <h3>BetterRTX lighting &amp; PBR</h3>
+            <p>Adds RTX materials, PBR textures and lighting fixes so every A&amp;S model looks right under ray tracing.</p>
+          </article>
+          <article class="card">
+            <div class="card__icon card__icon--teal" aria-hidden="true">📚</div>
+            <h3>Remote Patch Library</h3>
+            <p>New patch versions come straight from the Patch Library, so updates arrive without reinstalling the app.</p>
+          </article>
+          <article class="card">
+            <div class="card__icon card__icon--yellow" aria-hidden="true">🎮</div>
+            <h3>RTX settings in one click</h3>
+            <p>Applies recommended video settings, or open the full <code>options.txt</code> editor in Advanced Mode.</p>
+          </article>
+          <article class="card">
+            <div class="card__icon card__icon--green" aria-hidden="true">🧹</div>
+            <h3>Cleaner</h3>
+            <p>Finds and removes old patched versions, so outdated packs don't pile up in your resource pack list.</p>
+          </article>
+          <article class="card">
+            <div class="card__icon card__icon--blue" aria-hidden="true">🔧</div>
+            <h3>Creator tools</h3>
+            <p>Build your own <code>.vcdiff</code> patches, extract brarchives and pack deterministic ZIPs for releases.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ HOW IT WORKS ============ -->
+    <section class="section section--alt" id="how-it-works">
+      <div class="container">
+        <header class="section__head">
+          <p class="eyebrow">How it works</p>
+          <h2 class="section__title">Binary diffs, not re-uploads</h2>
+          <p class="section__lead">
+            The patcher only ships the <em>difference</em> between the original pack and the RTX version.
+            It rebuilds the result from the copy you already own.
+          </p>
+        </header>
+
+        <div class="pipeline" aria-label="Patching pipeline">
+          <div class="pipeline__node">
+            <span class="pipeline__icon" aria-hidden="true">📦</span>
+            <span class="pipeline__label">Your A&amp;S copy</span>
+          </div>
+          <span class="pipeline__arrow" aria-hidden="true"></span>
+          <div class="pipeline__node pipeline__node--accent">
+            <span class="pipeline__icon" aria-hidden="true">⚙️</span>
+            <span class="pipeline__label">xdelta3 + <code>.vcdiff</code></span>
+          </div>
+          <span class="pipeline__arrow" aria-hidden="true"></span>
+          <div class="pipeline__node">
+            <span class="pipeline__icon" aria-hidden="true">✨</span>
+            <span class="pipeline__label">A&amp;S for RTX <code>.mcpack</code></span>
+          </div>
+        </div>
+
+        <ol class="phases">
+          <li><strong>Detect</strong><span>Locates your installed pack, or takes the file you choose.</span></li>
+          <li><strong>Extract</strong><span>Unpacks the source from <code>.brarchive</code>, <code>.zip</code> or <code>.mcpack</code>.</span></li>
+          <li><strong>Patch</strong><span>Applies <code>.vcdiff</code> diffs with <a href="https://github.com/jmacd/xdelta">xdelta3</a>.</span></li>
+          <li><strong>Package</strong><span>Bundles a ready-to-import <code>.mcpack</code> with an updated manifest.</span></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ============ ECOSYSTEM ============ -->
+    <section class="section" id="ecosystem">
+      <div class="container">
+        <header class="section__head">
+          <p class="eyebrow">Project ecosystem</p>
+          <h2 class="section__title">Open source, end to end</h2>
+        </header>
+
+        <div class="repos">
+          <a class="repo" href="https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher">
+            <span class="repo__icon" aria-hidden="true">⚡</span>
+            <span class="repo__name">A&amp;S RTX Patcher</span>
+            <span class="repo__desc">The desktop app: Marketplace &amp; ZIP support, GUI and automated patching.</span>
+          </a>
+          <a class="repo" href="https://github.com/Felix-Chaos/AS-RTX-Patch-Library">
+            <span class="repo__icon" aria-hidden="true">📚</span>
+            <span class="repo__name">Patch Library</span>
+            <span class="repo__desc">The patch catalogue the patcher downloads from.</span>
+          </a>
+          <a class="repo" href="https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher-Archive">
+            <span class="repo__icon" aria-hidden="true">🗄️</span>
+            <span class="repo__name">Archive</span>
+            <span class="repo__desc">Every past <code>.vcdiff</code> patch and the legacy V1 patcher source.</span>
+          </a>
+          <a class="repo" href="https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher-External_Tools">
+            <span class="repo__icon" aria-hidden="true">🧰</span>
+            <span class="repo__name">External Tools</span>
+            <span class="repo__desc">Brarchive extractor and helper tools used by the patcher.</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CREDITS ============ -->
+    <section class="section section--alt" id="credits">
+      <div class="container">
+        <header class="section__head">
+          <p class="eyebrow">Credits</p>
+          <h2 class="section__title">Made by the community</h2>
+        </header>
+
+        <div class="people">
+          <article class="person">
+            <h3>J4vi3r6003</h3>
+            <p class="person__role">Patch development, subpacks, bug fixes</p>
+            <p class="person__contact">Discord: <code>error90099900</code></p>
+          </article>
+          <article class="person">
+            <h3>Felix-Chaos</h3>
+            <p class="person__role">Project maintenance, patcher updates, releases</p>
+            <p class="person__contact"><a href="https://github.com/Felix-Chaos">GitHub</a> · Discord: <code>felixchaos</code></p>
+          </article>
+          <article class="person person--highlight">
+            <h3>Demente Parker</h3>
+            <p class="person__role">Original creator, source files provider</p>
+            <a class="btn btn--kofi" href="https://ko-fi.com/dementeparker">💙 Support on Ko-fi</a>
+          </article>
+          <article class="person">
+            <h3>Community Testers</h3>
+            <p class="person__role">Bug reports, testing and feedback</p>
+            <p class="person__contact">Join us on <a href="https://discord.gg/YrMMmN2kc7">Discord</a></p>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer__links-section">
+      <div class="footer__links">
+        <div class="footer__column">
+          <h2 class="footer__heading">Resources</h2>
+          <ul class="footer__list">
+            <li><a class="footer-link" href="https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases">Releases &amp; changelog</a></li>
+            <li><a class="footer-link" href="https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/blob/main/docs/WIKI.md">Wiki &amp; full guide</a></li>
+            <li><a class="footer-link" href="https://github.com/Felix-Chaos/AS-RTX-Patch-Library">Patch Library</a></li>
+            <li><a class="footer-link" href="https://bedrock.graphics/">BetterRTX</a></li>
+            <li><a class="footer-link footer-link--muted" href="https://discord.com/channels/691547840463241267/1360688874388455504/1376325634246049792">FAQ</a></li>
+          </ul>
+        </div>
+        <div class="footer__column">
+          <h2 class="footer__heading">Community</h2>
+          <ul class="footer__list">
+            <li><a class="footer-link" href="https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher">GitHub</a></li>
+            <li><a class="footer-link" href="https://discord.gg/YrMMmN2kc7">ChaosDev Projects Discord</a></li>
+            <li><a class="footer-link" href="https://discord.gg/HPP6J4qFPu">BetterRTX Discord</a></li>
+            <li><a class="footer-link" href="https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/issues">Report an issue</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer__credits-section">
+      <div>
+        <p class="footer__disclaimer">Not affiliated with Oreville Studios, NVIDIA, Mojang or Microsoft.</p>
+        <p class="footer__body">
+          The patcher is provided by the community for educational and personal use. It does not distribute any part of
+          the original <em>Actions &amp; Stuff</em> pack; all original assets remain property of their respective owners.
+          Donations go directly to <a class="footer-link" href="https://ko-fi.com/dementeparker">the original creator</a>.
+        </p>
+        <p class="footer__credits">
+          Built by the A&amp;S RTX community · Site design inspired by <a class="footer-link" href="https://bedrock.graphics/">bedrock.graphics</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+
+  <dialog class="lightbox" id="lightbox" aria-label="Screenshot preview">
+    <form method="dialog"><button class="lightbox__close" aria-label="Close">×</button></form>
+    <img id="lightbox-img" alt="" />
+  </dialog>
+
+  <script src="main.js" defer></script>
+</body>
+</html>
