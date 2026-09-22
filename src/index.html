@@ -867,8 +867,9 @@
 
                 <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 12px 0;" />
                 <p style="font-size: 0.78rem; color: #9aa0a6; margin: 0 0 8px;">
-                  Publishing copies a created patch into your local clone of the patch library and pushes it.
-                  Everyone gets it within a minute, with no patcher update. Requires git to be set up.
+                  Publishing copies a created patch into your local clone of the patch library and opens a pull
+                  request for it. Once merged, everyone gets it within a minute, with no patcher update.
+                  Requires git and the GitHub CLI (<code>gh</code>) to be set up.
                 </p>
                 <div class="form-group" style="margin-bottom: 8px;">
                   <label for="set-patch-library-dir">Patch library repo folder</label>
@@ -975,6 +976,32 @@
         <div class="modal-actions">
           <button id="btn-modal-cancel" class="btn btn-secondary hidden-group">Cancel</button>
           <button id="btn-modal-ok" class="btn btn-primary">OK</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Publish Patch to Library Modal -->
+    <div id="publish-patch-modal" class="modal-overlay hidden-group">
+      <div class="modal-card" style="max-width: 480px;">
+        <h3>Publish to Patch Library</h3>
+        <p style="text-align: left; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px;">
+          Opens a pull request in the patch library repo instead of pushing directly, so it can be reviewed before it reaches everyone.
+        </p>
+        <div class="form-group">
+          <label for="publish-creator">Your name / handle</label>
+          <input type="text" id="publish-creator" class="custom-input" placeholder="Shown as the patch's creator" />
+        </div>
+        <div class="form-group">
+          <label for="publish-title">Pull request title</label>
+          <input type="text" id="publish-title" class="custom-input" />
+        </div>
+        <div class="form-group">
+          <label for="publish-description">Description <span style="color: var(--text-muted); font-weight: 400;">(optional)</span></label>
+          <textarea id="publish-description" class="custom-textarea" rows="3" placeholder="What changed in this patch?"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button id="btn-publish-modal-cancel" class="btn btn-secondary">Cancel</button>
+          <button id="btn-publish-modal-ok" class="btn btn-primary">Open Pull Request</button>
         </div>
       </div>
     </div>

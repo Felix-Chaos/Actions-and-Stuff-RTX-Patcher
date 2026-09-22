@@ -321,9 +321,53 @@ async function loadMotd() {
 // regenerating it.
 let lastCreatedPatchFolder = "";
 
-// Copies a created patch folder into the patch library clone and pushes it.
-// CI there does the hashing, upload and catalogue rebuild, so a push is all it
-// takes for every installed patcher to offer the patch.
+// Collects the creator/title/description for a publish PR, pre-filled from
+// whatever was used last time so the maintainer isn't retyping the same
+// details on every patch. Resolves null on cancel.
+function showPublishDetailsForm({ creator = '', title = '', description = '' } = {}) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('publish-patch-modal');
+    const creatorEl = document.getElementById('publish-creator');
+    const titleEl = document.getElementById('publish-title');
+    const descEl = document.getElementById('publish-description');
+    const okBtn = document.getElementById('btn-publish-modal-ok');
+    const cancelBtn = document.getElementById('btn-publish-modal-cancel');
+
+    if (!modal || !creatorEl || !titleEl || !descEl || !okBtn || !cancelBtn) {
+      console.warn("Publish details modal missing.");
+      resolve(null);
+      return;
+    }
+
+    creatorEl.value = creator;
+    titleEl.value = title;
+    descEl.value = description;
+
+    const cleanup = () => {
+      modal.classList.add('hidden-group');
+      okBtn.onclick = null;
+      cancelBtn.onclick = null;
+    };
+
+    okBtn.onclick = () => {
+      const result = {
+        creator: creatorEl.value.trim(),
+        title: titleEl.value.trim(),
+        description: descEl.value.trim(),
+      };
+      cleanup();
+      resolve(result);
+    };
+    cancelBtn.onclick = () => { cleanup(); resolve(null); };
+
+    modal.classList.remove('hidden-group');
+    titleEl.focus();
+  });
+}
+
+// Copies a created patch folder into the patch library clone and opens a
+// pull request for it, so CI there (hashing, upload, catalogue rebuild) runs
+// against a reviewable change instead of a direct push to main.
 async function publishPatchToLibrary(patchFolder, { packVer, patchVer } = {}) {
   const gLog = (msg, type = 'info') => logTo('genpatch-logs', msg, type);
   const libraryDir = appSettings.patchLibraryDir;
@@ -338,24 +382,37 @@ async function publishPatchToLibrary(patchFolder, { packVer, patchVer } = {}) {
   }
 
   const name = patchFolder.split(/[\\/]/).pop() || patchFolder;
-  const proceed = await showConfirm(
-    `Publish "${name}" to the patch library?\n\n` +
-    `Repo: ${libraryDir}\n\n` +
-    `This pushes the patch. Everyone using the patcher will be offered it within a minute, with no patcher update.`,
-    'Publish patch'
-  );
-  if (!proceed) return false;
-
-  const message = packVer && patchVer
+  const defaultTitle = packVer && patchVer
     ? `Publish Actions & Stuff for RTX ${packVer} v${patchVer}`
-    : `Publish ${name}`;
+    : (appSettings.lastPatchPrTitle || `Publish ${name}`);
+
+  const details = await showPublishDetailsForm({
+    creator: appSettings.patchCreatorName || '',
+    title: defaultTitle,
+    description: appSettings.lastPatchPrDescription || '',
+  });
+  if (!details) { gLog("Publishing cancelled.", 'warning'); return false; }
+
+  const { creator, title, description } = details;
+  // Remembered for next time, so these fields don't need retyping.
+  appSettings.patchCreatorName = creator;
+  appSettings.lastPatchPrTitle = title;
+  appSettings.lastPatchPrDescription = description;
+  await saveSettings();
 
   const attempt = async (overwrite) => invoke("publish_patch_to_library", {
-    libraryDir, patchFolder, message, overwrite
+    libraryDir, patchFolder, creator, title, description, overwrite
   });
 
+  const openPr = async (prUrl) => {
+    gLog(`Opened pull request: ${prUrl}`, 'success');
+    await showAlert(`Pull request opened:\n\n${prUrl}`, 'Published');
+    try { await invoke("open_url", { url: prUrl }); } catch (_) {}
+  };
+
   try {
-    await attempt(false);
+    const prUrl = await attempt(false);
+    await openPr(prUrl);
   } catch (err) {
     const text = String(err);
     if (!text.includes("ALREADY_EXISTS")) {
@@ -363,15 +420,16 @@ async function publishPatchToLibrary(patchFolder, { packVer, patchVer } = {}) {
       await showAlert(`Publishing failed:\n\n${text}`, 'Publish failed');
       return false;
     }
-    // Already in the library: republishing replaces the payloads, which is a
-    // real thing to want after rebuilding a patch, but never silent.
+    // Already in the library: a PR that replaces the payloads is a real thing
+    // to want after rebuilding a patch, but never silent.
     const replace = await showConfirm(
-      `"${name}" is already in the patch library.\n\nReplace it with the version you just built?`,
+      `"${name}" is already in the patch library.\n\nOpen a pull request that replaces it with the version you just built?`,
       'Already published'
     );
     if (!replace) { gLog("Publishing cancelled; the existing entry was kept.", 'warning'); return false; }
     try {
-      await attempt(true);
+      const prUrl = await attempt(true);
+      await openPr(prUrl);
     } catch (err2) {
       gLog(`Publishing failed: ${err2}`, 'error');
       await showAlert(`Publishing failed:\n\n${err2}`, 'Publish failed');
@@ -379,9 +437,6 @@ async function publishPatchToLibrary(patchFolder, { packVer, patchVer } = {}) {
     }
   }
 
-  gLog(`Published "${name}" to the patch library.`, 'success');
-  // The new patch is live, so make it visible here too.
-  try { await loadPatchConfigs({ quiet: true }); await refreshCachedPatches(); } catch (_) {}
   return true;
 }
 
@@ -2999,6 +3054,9 @@ let appSettings = {
   consoleHeight: 150,
   patchLibraryDir: '',
   publishAfterCreate: false,
+  patchCreatorName: '',
+  lastPatchPrTitle: '',
+  lastPatchPrDescription: '',
   genInjectManifest: true,
   bugIncludeLog: true,
   bugIncludePack: false,

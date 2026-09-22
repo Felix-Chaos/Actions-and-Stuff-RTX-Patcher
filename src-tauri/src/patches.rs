@@ -374,9 +374,11 @@ pub const ALREADY_EXISTS: &str = "ALREADY_EXISTS";
 
 const PATCH_FILES: [&str; 3] = ["patch_config.json", "encrypted.vcdiff", "decrypted.vcdiff"];
 
-/// Runs one git command in `dir`, echoing what it did to the Patch Creator log.
-fn run_git(app: &tauri::AppHandle, dir: &Path, args: &[&str]) -> Result<String, String> {
-    let mut cmd = std::process::Command::new("git");
+/// Runs one command in `dir`, echoing what it did to the Patch Creator log.
+/// Shared by `run_git` and `run_gh` - both are "shell out, log output" in the
+/// exact same shape.
+fn run_cmd(app: &tauri::AppHandle, program: &str, dir: &Path, args: &[&str]) -> Result<String, String> {
+    let mut cmd = std::process::Command::new(program);
     cmd.current_dir(dir).args(args);
 
     // * CREATE_NO_WINDOW, same as the xdelta invocation: no console flash.
@@ -386,29 +388,58 @@ fn run_git(app: &tauri::AppHandle, dir: &Path, args: &[&str]) -> Result<String, 
         cmd.creation_flags(0x08000000);
     }
 
-    let out = cmd
-        .output()
-        .map_err(|e| format!("Could not run git (is it installed and on PATH?): {}", e))?;
+    let out = cmd.output().map_err(|e| {
+        format!("Could not run {} (is it installed and on PATH?): {}", program, e)
+    })?;
 
     let stdout = String::from_utf8_lossy(&out.stdout).trim().to_string();
     let stderr = String::from_utf8_lossy(&out.stderr).trim().to_string();
 
     if !stdout.is_empty() {
-        emit_log(app, "genpatch-logs", &format!("  git: {}", stdout), "info");
+        emit_log(app, "genpatch-logs", &format!("  {}: {}", program, stdout), "info");
     }
-    // ! git writes ordinary progress to stderr, so this is not necessarily an error.
+    // ! git and gh both write ordinary progress to stderr, so this is not
+    // ! necessarily an error.
     if !stderr.is_empty() {
-        emit_log(app, "genpatch-logs", &format!("  git: {}", stderr), "info");
+        emit_log(app, "genpatch-logs", &format!("  {}: {}", program, stderr), "info");
     }
 
     if !out.status.success() {
         return Err(format!(
-            "git {} failed: {}",
+            "{} {} failed: {}",
+            program,
             args.join(" "),
             if stderr.is_empty() { stdout } else { stderr }
         ));
     }
     Ok(stdout)
+}
+
+fn run_git(app: &tauri::AppHandle, dir: &Path, args: &[&str]) -> Result<String, String> {
+    run_cmd(app, "git", dir, args)
+}
+
+/// Requires the GitHub CLI, already assumed available for maintainer-only
+/// tooling: it is what actually opens the pull request, since plain git has
+/// no concept of one.
+fn run_gh(app: &tauri::AppHandle, dir: &Path, args: &[&str]) -> Result<String, String> {
+    run_cmd(app, "gh", dir, args)
+}
+
+/// Turns a patch folder name into a safe git branch name fragment.
+fn slugify(input: &str) -> String {
+    let mut out = String::new();
+    let mut last_dash = false;
+    for c in input.chars() {
+        if c.is_ascii_alphanumeric() {
+            out.push(c.to_ascii_lowercase());
+            last_dash = false;
+        } else if !last_dash {
+            out.push('-');
+            last_dash = true;
+        }
+    }
+    out.trim_matches('-').to_string()
 }
 
 /// Recursive directory copy. std has no equivalent, and the payloads are large
@@ -428,23 +459,27 @@ fn copy_dir_all(src: &Path, dst: &Path) -> std::io::Result<()> {
     Ok(())
 }
 
-/// Copies a created patch folder into the patch library repo and pushes it.
+/// Copies a created patch folder into the patch library repo and opens a
+/// pull request for it, returning the PR URL.
 ///
-/// CI in that repo hashes the payloads, uploads them and regenerates the
-/// catalogue, so a successful push is all that is needed for every installed
-/// patcher to offer the patch. Nothing here touches the patcher's own release
-/// flow.
+/// A PR rather than a direct push so a publish can be reviewed (and CI can
+/// run) before it reaches every installed patcher. CI in that repo hashes the
+/// payloads, uploads them and regenerates the catalogue once the PR is
+/// merged. Nothing here touches the patcher's own release flow.
 ///
 /// Refuses rather than guessing when anything looks off: a directory that is
 /// not a git work tree, a library with no `Patches/`, a source folder missing
 /// one of its three files, an entry that already exists (unless `overwrite`),
-/// or a work tree carrying unrelated changes that a commit would sweep up.
+/// a work tree with any uncommitted changes at all (a fresh branch must start
+/// clean), or a local clone that cannot fast-forward to `origin`.
 #[tauri::command]
 pub async fn publish_patch_to_library(
     app: tauri::AppHandle,
     library_dir: String,
     patch_folder: String,
-    message: String,
+    creator: String,
+    title: String,
+    description: String,
     overwrite: bool,
 ) -> Result<String, String> {
     let lib = Path::new(&library_dir);
@@ -489,58 +524,128 @@ pub async fn publish_patch_to_library(
         return Err(format!("{}: \"{}\" is already published.", ALREADY_EXISTS, name));
     }
 
-    // ! A publish commit must contain only this patch. Anything else in the
-    // ! work tree means the user has work in progress there.
+    let base_branch = run_git(&app, lib, &["rev-parse", "--abbrev-ref", "HEAD"])?
+        .trim()
+        .to_string();
+    if base_branch.is_empty() || base_branch == "HEAD" {
+        return Err(
+            "The patch library repo is on a detached HEAD. Check out its default branch first."
+                .to_string(),
+        );
+    }
+
+    // ! A fresh publish branch must start clean - anything already sitting in
+    // ! the work tree means the user has unrelated work in progress there.
     let status = run_git(&app, lib, &["status", "--porcelain"])?;
-    let stray: Vec<&str> = status
-        .lines()
-        .map(|l| l.trim_end())
-        .filter(|l| !l.is_empty())
-        .filter(|l| {
-            let path = l.get(3..).unwrap_or("").trim_matches('"');
-            !path.starts_with(&rel)
-        })
-        .collect();
-    if !stray.is_empty() {
+    if !status.trim().is_empty() {
         return Err(format!(
-            "The patch library has unrelated uncommitted changes, so publishing was stopped:\n{}\n\nCommit or discard them first.",
-            stray.join("\n")
+            "The patch library has uncommitted changes, so publishing was stopped:\n{}\n\nCommit or discard them first.",
+            status.trim()
         ));
     }
 
+    emit_log(&app, "genpatch-logs", &format!("Updating {}...", base_branch), "info");
+    run_git(&app, lib, &["fetch", "origin", &base_branch])
+        .map_err(|e| format!("Could not fetch the latest {}: {}", base_branch, e))?;
+    run_git(&app, lib, &["pull", "--ff-only", "origin", &base_branch]).map_err(|e| {
+        format!(
+            "Could not fast-forward {} to origin (resolve this manually first): {}",
+            base_branch, e
+        )
+    })?;
+
+    let title = if title.trim().is_empty() {
+        format!("Publish {}", name)
+    } else {
+        title.trim().to_string()
+    };
+    let creator = if creator.trim().is_empty() {
+        "unknown".to_string()
+    } else {
+        creator.trim().to_string()
+    };
+    let body = if description.trim().is_empty() {
+        format!("Submitted by: {}", creator)
+    } else {
+        format!("{}\n\n---\nSubmitted by: {}", description.trim(), creator)
+    };
+
+    let branch = format!(
+        "publish/{}-{}",
+        slugify(&name),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0)
+    );
+
     emit_log(
         &app,
         "genpatch-logs",
-        &format!("Publishing \"{}\" to the patch library...", name),
+        &format!("Publishing \"{}\" to the patch library on branch {}...", name, branch),
         "info",
     );
 
-    if dest.exists() {
-        emit_log(&app, "genpatch-logs", "  Replacing the existing entry...", "warning");
-        std::fs::remove_dir_all(&dest)
-            .map_err(|e| format!("Could not replace the existing entry: {}", e))?;
+    // From here on, anything that fails must leave the repo back on the
+    // branch the maintainer started on rather than stranded mid-publish.
+    let result = (|| -> Result<String, String> {
+        run_git(&app, lib, &["checkout", "-b", &branch])?;
+
+        if dest.exists() {
+            emit_log(&app, "genpatch-logs", "  Replacing the existing entry...", "warning");
+            std::fs::remove_dir_all(&dest)
+                .map_err(|e| format!("Could not replace the existing entry: {}", e))?;
+        }
+
+        copy_dir_all(src, &dest)
+            .map_err(|e| format!("Could not copy the patch into the library: {}", e))?;
+        emit_log(&app, "genpatch-logs", &format!("  Copied into {}", rel), "info");
+
+        run_git(&app, lib, &["add", "--", &rel])?;
+        run_git(&app, lib, &["commit", "-m", &title, "-m", &body])?;
+        run_git(&app, lib, &["push", "-u", "origin", &branch])?;
+
+        emit_log(&app, "genpatch-logs", "  Opening the pull request...", "info");
+        let pr_output = run_gh(
+            &app,
+            lib,
+            &[
+                "pr",
+                "create",
+                "--base",
+                &base_branch,
+                "--head",
+                &branch,
+                "--title",
+                &title,
+                "--body",
+                &body,
+            ],
+        )?;
+        // `gh pr create` prints the PR URL as the last line of stdout.
+        Ok(pr_output.lines().last().unwrap_or(&pr_output).trim().to_string())
+    })();
+
+    let _ = run_git(&app, lib, &["checkout", &base_branch]);
+    if result.is_err() {
+        // The branch either never got pushed or is now an abandoned attempt;
+        // either way, leaving it lying around only invites confusion.
+        let _ = run_git(&app, lib, &["branch", "-D", &branch]);
     }
 
-    copy_dir_all(src, &dest).map_err(|e| format!("Could not copy the patch into the library: {}", e))?;
-    emit_log(&app, "genpatch-logs", &format!("  Copied into {}", rel), "info");
-
-    run_git(&app, lib, &["add", "--", &rel])?;
-    let commit_msg = if message.trim().is_empty() {
-        format!("Publish {}", name)
-    } else {
-        message
-    };
-    run_git(&app, lib, &["commit", "-m", &commit_msg])?;
-    run_git(&app, lib, &["push"])?;
+    let pr_url = result?;
 
     emit_log(
         &app,
         "genpatch-logs",
-        "Published. The patch library will build and publish it within a minute; every installed patcher will offer it without an update.",
+        &format!(
+            "Pull request opened: {}. Once merged, the patch library's CI hashes, uploads and rebuilds the catalogue, and every installed patcher offers it without an update.",
+            pr_url
+        ),
         "success",
     );
 
-    Ok(name)
+    Ok(pr_url)
 }
 
 /// One downloaded patch in the local cache.

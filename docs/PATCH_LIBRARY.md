@@ -62,8 +62,8 @@ The easiest route, and the one to use by default.
 
 **One-time setup.** Clone the library repo somewhere local, then in the patcher open
 **App Settings → Patch Creator Default Options** and set **Patch library repo folder** to that
-clone. Git must be installed and able to push to the repo; the patcher uses your existing git
-credentials and stores no token of its own.
+clone. Git and the [GitHub CLI](https://cli.github.com/) (`gh`) must both be installed and
+authenticated; the patcher uses your existing credentials and stores no token of its own.
 
 **Each patch:**
 
@@ -71,10 +71,12 @@ credentials and stores no token of its own.
 2. Either turn on **Publish to Patch Library** before pressing *Create Patches*, or press
    **Publish to Library** afterwards. The button appears once a patch has been created, so you can
    publish without rebuilding.
-3. Confirm the prompt. It names the patch and the target repo before anything is pushed.
+3. Fill in your name, a pull request title and an optional description. These are remembered for
+   next time, so you're not retyping them on every patch.
 
-The patcher copies the created folder into `Patches/`, commits and pushes it, and logs each git
-step in the Patch Creator log. Publishing is off by default and always confirmed.
+The patcher copies the created folder into `Patches/` on a fresh branch, commits, pushes it and
+opens a pull request against the library's default branch via `gh pr create`, logging each step in
+the Patch Creator log. Publishing is off by default and always confirmed.
 
 It stops rather than guessing if:
 
@@ -82,8 +84,9 @@ It stops rather than guessing if:
 | :--- | :--- |
 | The folder is not a git repo, or has no `Patches/` | Refuses, so a mistyped path cannot create a repo |
 | The patch folder is missing one of its three files | Refuses |
-| That version is already published | Asks whether to replace it |
-| The library has unrelated uncommitted changes | Refuses, so a publish cannot sweep up work in progress |
+| That version is already published | Asks whether to open a PR that replaces it |
+| The library has any uncommitted changes | Refuses, so a publish branch cannot sweep up work in progress |
+| The local clone can't fast-forward to `origin` | Refuses, so the PR is not opened against a stale base |
 
 A publish failure never marks patch creation as failed: the `.vcdiff` files on disk are already
 good, so you can fix the problem and press **Publish to Library** again.
