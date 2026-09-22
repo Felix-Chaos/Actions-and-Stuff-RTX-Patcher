@@ -1120,6 +1120,7 @@ kbd.kbd-green { background: var(--mc-green); color: #fff; text-shadow: 1px 1px 0
 .faq__item summary::-webkit-details-marker { display: none; }
 .faq__item summary:hover { color: var(--primary-light); }
 .faq__item p { margin: 0; padding: 0 16px 14px; color: #d1d5db; font-size: .9rem; }
+.faq__item img { display: block; width: calc(100% - 32px); max-width: 480px; margin: 0 16px 14px; border-radius: 8px; border: 1px solid var(--subtle-border); }
 
 .stuck {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px;
