@@ -38,7 +38,7 @@ bits:
 
 **Response time:** we aim to acknowledge within 72 hours and give you an initial assessment
 within a week. This is a community project maintained outside working hours, so please be
-patient — but we do take reports seriously and will keep you updated.
+patient, but we do take reports seriously and will keep you updated.
 
 If the report is valid, we'll credit you in the fix's release notes (unless you'd rather stay
 anonymous) once a patch has shipped.
@@ -47,7 +47,7 @@ anonymous) once a patch has shipped.
 
 **In scope:**
 
-- The patcher application itself (`src-tauri/`, `src/`) — this repository.
+- The patcher application itself (`src-tauri/`, `src/`), this repository.
 - The [patch library repo](https://github.com/Felix-Chaos/AS-RTX-Patch-Library) and its CI, since
   the patcher trusts and downloads from it automatically.
 - The [GitHub Pages site](https://felix-chaos.github.io/Actions-and-Stuff-RTX-Patcher/) (`gh-pages`
@@ -58,9 +58,9 @@ anonymous) once a patch has shipped.
 **Out of scope:**
 
 - Minecraft Bedrock, the Marketplace, or Mojang/Microsoft's own systems.
-- BetterRTX itself — report through [bedrock.graphics](https://bedrock.graphics/) or its
+- BetterRTX itself: report through [bedrock.graphics](https://bedrock.graphics/) or its
   [Discord](https://discord.gg/HPP6J4qFPu), not here.
-- The original *Actions & Stuff* pack content — this project only ships binary diffs
+- The original *Actions & Stuff* pack content: this project only ships binary diffs
   (`.vcdiff`) against a copy you already own; it never redistributes the original assets. Content
   or licensing concerns about the pack itself belong with its original creator, not here.
 - Social engineering, physical access, or issues that require the attacker to already have
@@ -75,7 +75,7 @@ A rough log of what's been hardened, so reporters can build on it rather than re
   (`src-tauri/tauri.conf.json`), so a script injected via any future XSS bug can't freely call
   privileged Tauri commands like deleting files.
 - **Signed auto-updates.** Updates are verified against an embedded minisign public key
-  (`tauri.conf.json`'s `updater.pubkey`) before being applied — a compromised or MITM'd
+  (`tauri.conf.json`'s `updater.pubkey`) before being applied, so a compromised or MITM'd
   `updater.json` can't push an unsigned build.
 - **Path traversal fixes.** `.brarchive` entry names and extracted zip/mcpack paths are validated
   before writing, so a crafted archive can't escape the target directory.
@@ -86,5 +86,5 @@ A rough log of what's been hardened, so reporters can build on it rather than re
   deletable at any time from Settings ("Delete My Data").
 - **Dependency updates.** `dependabot.yml` covers `npm`, `cargo`, and `github-actions` ecosystems.
 
-None of this means the app is bulletproof — if you find a gap in any of the above, that's exactly
+None of this means the app is bulletproof. If you find a gap in any of the above, that's exactly
 what this policy is for.
