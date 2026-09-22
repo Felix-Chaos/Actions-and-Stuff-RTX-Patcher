@@ -196,7 +196,6 @@ The most common issues, sorted by category. Nothing here match what you're seein
 
   ![Purple boats and cyan pig example of a load order issue](../assets/faq/purple-cyan-load-order.png)
 - **My skin or cape isn't loading.** By default the A&S RTX Pack overrides the player entity, which breaks personal skins. Edit `ccc3ed4bb82925a91cd4.json` in the pack files and change the `default` and `cape` texture entries back to `textures/entity/player` and `textures/entity/cape`.
-- **No dynamic lighting from held items (e.g. torches).** A known limitation of the RTX engine. Switch to **Custom Experience** in the patcher settings. Note that Glowstone specifically still won't emit dynamic light even then, that's an engine limitation, not a bug.
 - **Glowing/emissive textures don't work with Vibrant Visuals.** Vibrant Visuals doesn't support the MER (Metalness/Emissive/Roughness) texture technology the pack relies on for glow. Use a fully compatible RTX pack instead, such as Completely Normal RTX.
 - **Warden texture is bugged (ears, bowtie, etc.).** The Warden is only fully supported in one patcher mode. Make sure **Full Experience** is selected instead of Custom Experience.
 
