@@ -123,7 +123,7 @@
               <a class="nav-subtab" href="#release-builder"><span class="subtab-dot" aria-hidden="true">•</span>Release Builder</a>
             </div>
             <a class="nav-tab" href="#app-settings"><span class="tab-icon" aria-hidden="true">⚙️</span><span>App Settings</span></a>
-            <a class="nav-tab" href="#troubleshooting"><span class="tab-icon" aria-hidden="true">🩹</span><span>Troubleshooting</span></a>
+            <a class="nav-tab" href="#troubleshooting"><span class="tab-icon" aria-hidden="true">🩹</span><span>FAQ &amp; Troubleshooting</span></a>
           </nav>
         </details>
         <div class="wiki-sidebar__footer">
@@ -508,12 +508,23 @@
 
         <!-- Troubleshooting -->
         <section class="card wiki-section" id="troubleshooting">
-          <h2 class="wiki-h2"><span class="wiki-h2__icon" aria-hidden="true">🩹</span>Troubleshooting</h2>
+          <h2 class="wiki-h2"><span class="wiki-h2__icon" aria-hidden="true">🩹</span>FAQ &amp; Troubleshooting</h2>
+          <p>The most common issues, sorted by category. Nothing here match what you're seeing? Ask in Discord or send a <a href="#support">Bug Report</a>.</p>
 
+          <h3 class="wiki-h3">📥 Installation &amp; Patcher Errors</h3>
           <div class="faq">
             <details class="faq__item" open>
-              <summary>A texture, model or sound looks broken or purple after patching<span class="dropdown-arrow" aria-hidden="true">▼</span></summary>
-              <p>Use the <strong>Bug Report</strong> form (Support tab) with the content log and hardware info included. This gives us the most actionable diagnostics.</p>
+              <summary>Error "Pack not found" / the patcher can't locate the resource pack<span class="dropdown-arrow" aria-hidden="true">▼</span></summary>
+              <p>This happens when the patcher can't automatically find your premium cache folder. Open <code>%AppData%/Minecraft Bedrock/premium_cache/resource_packs</code> yourself and look for the folder containing the A&amp;S logo (it'll have a long, cryptic name). If it's genuinely missing, reinstalling the pack from the Marketplace resets the folder structure.</p>
+            </details>
+            <details class="faq__item">
+              <summary>Error "Validation failed: Pack seems corrupted or modified" / XD3_INVALID_INPUT (xdelta error)<span class="dropdown-arrow" aria-hidden="true">▼</span></summary>
+              <p>These xdelta errors are almost always a version mismatch, the pack version is either too old or too new for the patch you picked. Check that your version is supported by the patch you're applying. If you're patching a <code>.zip</code>, this can also mean the source file itself was modified, make sure you're using an untouched, original download.</p>
+              <p><a href="https://cdn.discordapp.com/attachments/1538552448300613722/1538552449781211366/Screenshot_2026-08-14_074412.png">See an example of this error</a>.</p>
+            </details>
+            <details class="faq__item">
+              <summary>Minecraft crashes during Direct Import<span class="dropdown-arrow" aria-hidden="true">▼</span></summary>
+              <p>The patcher uses a direct import method, and a crash right after is usually a known Minecraft bug rather than a patch problem. Just restart the game, the import typically finishes in the background despite the crash.</p>
             </details>
             <details class="faq__item">
               <summary>Nothing happens when I click Apply RTX Patch<span class="dropdown-arrow" aria-hidden="true">▼</span></summary>
@@ -522,6 +533,57 @@
             <details class="faq__item">
               <summary>I just patched, but Minecraft still shows the old pack<span class="dropdown-arrow" aria-hidden="true">▼</span></summary>
               <p>Make sure your resource pack load order matches the <a href="index.html#setup">setup steps</a>, and run the <a href="#cleaner">Cleaner</a> to remove stale duplicates.</p>
+            </details>
+          </div>
+
+          <h3 class="wiki-h3">🎨 Visual Bugs &amp; Texture Issues</h3>
+          <div class="faq">
+            <details class="faq__item">
+              <summary>Invisible or broken textures right after joining a world (beds, chests, mobs)<span class="dropdown-arrow" aria-hidden="true">▼</span></summary>
+              <p>Render inconsistencies occasionally happen while a world is still loading. Restarting the game or the world once or twice usually resolves it on its own.</p>
+              <p><a href="https://cdn.discordapp.com/attachments/1547050496030675026/1547050496630726739/image.png">See an example</a>.</p>
+            </details>
+            <details class="faq__item">
+              <summary>Incorrect colors or purple/pink textures (e.g. purple boats, bright cyan pigs)<span class="dropdown-arrow" aria-hidden="true">▼</span></summary>
+              <p>This points to an incorrect load order or a missing base RTX pack. Put the A&amp;S RTX Pack at the very top of your resource pack list, and make sure BetterRTX is installed correctly.</p>
+              <p><a href="https://cdn.discordapp.com/attachments/1535827766119768085/1535828460759547954/Screenshot_2026-08-08_215340.png">See an example</a>.</p>
+            </details>
+            <details class="faq__item">
+              <summary>My skin or cape isn't loading<span class="dropdown-arrow" aria-hidden="true">▼</span></summary>
+              <p>By default the A&amp;S RTX Pack overrides the player entity, which breaks personal skins. Edit <code>ccc3ed4bb82925a91cd4.json</code> in the pack files and change the <code>default</code> and <code>cape</code> texture entries back to <code>textures/entity/player</code> and <code>textures/entity/cape</code>.</p>
+            </details>
+            <details class="faq__item">
+              <summary>No dynamic lighting from held items (e.g. torches)<span class="dropdown-arrow" aria-hidden="true">▼</span></summary>
+              <p>A known limitation of the RTX engine. Switch to <strong>Custom Experience</strong> in the patcher settings. Note that Glowstone specifically still won't emit dynamic light even then, that's an engine limitation, not a bug.</p>
+            </details>
+            <details class="faq__item">
+              <summary>Glowing/emissive textures don't work with Vibrant Visuals<span class="dropdown-arrow" aria-hidden="true">▼</span></summary>
+              <p>Vibrant Visuals doesn't support the MER (Metalness/Emissive/Roughness) texture technology the pack relies on for glow. Use a fully compatible RTX pack instead, such as Completely Normal RTX.</p>
+            </details>
+            <details class="faq__item">
+              <summary>Warden texture is bugged (ears, bowtie, etc.)<span class="dropdown-arrow" aria-hidden="true">▼</span></summary>
+              <p>The Warden is only fully supported in one patcher mode. Make sure <strong>Full Experience</strong> is selected instead of Custom Experience.</p>
+              <p><a href="https://cdn.discordapp.com/attachments/1540994640612954155/1540994640919003147/image.png">See an example</a>.</p>
+            </details>
+          </div>
+
+          <h3 class="wiki-h3">🎮 Game Crashes &amp; Performance</h3>
+          <div class="faq">
+            <details class="faq__item">
+              <summary>Black screen when loading a world in fullscreen<span class="dropdown-arrow" aria-hidden="true">▼</span></summary>
+              <p>A known visual Minecraft bug. Launch the game in windowed mode before loading the world.</p>
+            </details>
+            <details class="faq__item">
+              <summary>Massive FPS drops or crashes in specific areas<span class="dropdown-arrow" aria-hidden="true">▼</span></summary>
+              <p>Frequently caused by Armor Stands rendering incorrectly, specifically leather boots with the "Rib Armor Trim" placed on an armor stand. Avoid or remove those in RTX worlds.</p>
+            </details>
+          </div>
+
+          <h3 class="wiki-h3">🌐 Multiplayer &amp; Realms</h3>
+          <div class="faq">
+            <details class="faq__item">
+              <summary>Texture issues that only happen in multiplayer<span class="dropdown-arrow" aria-hidden="true">▼</span></summary>
+              <p>On servers or friends' worlds, entity textures (chests, shulker boxes, horses, etc.) frequently break. Multiplayer worlds often stack many server-side resource packs at once, which hits the RTX engine's texture limits. There's currently no reliable client-side fix for this.</p>
             </details>
           </div>
 
