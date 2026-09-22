@@ -183,7 +183,6 @@ The most common issues, sorted by category. Nothing here match what you're seein
 - **Error "Validation failed: Pack seems corrupted or modified" / `XD3_INVALID_INPUT` (xdelta error).** These xdelta errors are almost always a version mismatch, the pack version is either too old or too new for the patch you picked. Check that your version is supported by the patch you're applying. If you're patching a `.zip`, this can also mean the source file itself was modified, make sure you're using an untouched, original download.
 
   ![xdelta validation error example](../assets/faq/xdelta-validation-error.png)
-- **Minecraft crashes during Direct Import.** The patcher uses a direct import method, and a crash right after is usually a known Minecraft bug rather than a patch problem. Just restart the game, the import typically finishes in the background despite the crash.
 - **Nothing happens when I click Apply RTX Patch.** Check the process log (Advanced Mode) for the actual error, and confirm you own a legitimate copy of Actions & Stuff in one of the supported formats.
 - **Just patched but Minecraft still shows the old pack.** Make sure your resource pack load order matches the [README's setup section](../README.md), and run the Cleaner to remove stale duplicates.
 
