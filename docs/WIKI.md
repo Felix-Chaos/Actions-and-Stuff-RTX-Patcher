@@ -41,7 +41,11 @@ This guide covers the current Tauri-based patcher (the app that ships as `Action
   - [📚 Patch Library (maintainers only)](#-patch-library-maintainers-only)
   - [📦 Release Builder (maintainers only)](#-release-builder-maintainers-only)
   - [⚙️ App Settings](#-app-settings-reference)
-- [Troubleshooting](#-troubleshooting)
+- [FAQ & Troubleshooting](#-faq--troubleshooting)
+  - [Installation & Patcher Errors](#-installation--patcher-errors)
+  - [Visual Bugs & Texture Issues](#-visual-bugs--texture-issues)
+  - [Game Crashes & Performance](#-game-crashes--performance)
+  - [Multiplayer & Realms](#-multiplayer--realms)
 
 ---
 
@@ -178,12 +182,44 @@ Version bump + build automation for cutting a new patcher release: edit the app 
 
 ---
 
-## 🩹 Troubleshooting
+## 🩹 FAQ & Troubleshooting
 
-- **A texture/model/sound looks broken or purple after patching.** Use the Bug Report form (Support tab) with the content log and hardware info included; this gives us the most actionable diagnostics.
+The most common issues, sorted by category. Nothing here match what you're seeing? Ask in the [Discord](https://discord.gg/YrMMmN2kc7) or send a Bug Report (Support tab).
+
+### 📥 Installation & Patcher Errors
+
+- **Error "Pack not found" / the patcher can't locate the resource pack.** This happens when the patcher can't automatically find your premium cache folder. Open `%AppData%/Minecraft Bedrock/premium_cache/resource_packs` yourself and look for the folder containing the A&S logo (it'll have a long, cryptic name). If it's genuinely missing, reinstalling the pack from the Marketplace resets the folder structure.
+- **Error "Validation failed: Pack seems corrupted or modified" / `XD3_INVALID_INPUT` (xdelta error).** These xdelta errors are almost always a version mismatch, the pack version is either too old or too new for the patch you picked. Check that your version is supported by the patch you're applying. If you're patching a `.zip`, this can also mean the source file itself was modified, make sure you're using an untouched, original download.
+
+  ![xdelta validation error example](../assets/faq/xdelta-validation-error.png)
 - **Nothing happens when I click Apply RTX Patch.** Check the process log (Advanced Mode) for the actual error, and confirm you own a legitimate copy of Actions & Stuff in one of the supported formats.
 - **Just patched but Minecraft still shows the old pack.** Make sure your resource pack load order matches the [README's setup section](../README.md), and run the Cleaner to remove stale duplicates.
-- **Still stuck?** Ask in the [Discord](https://discord.gg/YrMMmN2kc7) or check the pinned [FAQ thread](https://discord.com/channels/691547840463241267/1360688874388455504/1376325634246049792).
+
+### 🎨 Visual Bugs & Texture Issues
+
+- **Invisible or broken textures right after joining a world (beds, chests, mobs).** Render inconsistencies occasionally happen while a world is still loading. Restarting the game or the world once or twice usually resolves it on its own.
+
+  ![Invisible or broken entity textures example](../assets/faq/invisible-broken-textures.png)
+
+- **Incorrect colors or purple/pink textures (e.g. purple boats, bright cyan pigs).** This points to an incorrect load order or a missing base RTX pack. Put the A&S RTX Pack at the very top of your resource pack list, and make sure BetterRTX is installed correctly.
+
+  ![Purple boats and cyan pig example of a load order issue](../assets/faq/purple-cyan-load-order.png)
+- **My skin or cape isn't loading.** By default the A&S RTX Pack overrides the player entity, which breaks personal skins. Edit `ccc3ed4bb82925a91cd4.json` in the pack files and change the `default` and `cape` texture entries back to `textures/entity/player` and `textures/entity/cape`.
+- **Glowing/emissive textures don't work with Vibrant Visuals.** Vibrant Visuals doesn't support the MER (Metalness/Emissive/Roughness) texture technology the pack relies on for glow. Use a fully compatible RTX pack instead, such as Completely Normal RTX.
+- **Warden texture is bugged (ears, bowtie, etc.).** The Warden is only fully supported in one patcher mode. Make sure **Full Experience** is selected instead of Custom Experience.
+
+  ![Warden texture bug example](../assets/faq/warden-texture-bug.png)
+
+### 🎮 Game Crashes & Performance
+
+- **Black screen when loading a world in fullscreen.** A known visual Minecraft bug. Launch the game in windowed mode before loading the world.
+- **Massive FPS drops or crashes in specific areas.** Frequently caused by Armor Stands rendering incorrectly, specifically leather boots with the "Rib Armor Trim" placed on an armor stand. Avoid or remove those in RTX worlds.
+
+### 🌐 Multiplayer & Realms
+
+- **Texture issues that only happen in multiplayer.** On servers or friends' worlds, entity textures (chests, shulker boxes, horses, etc.) frequently break. Multiplayer worlds often stack many server-side resource packs at once, which hits the RTX engine's texture limits. There's currently no reliable client-side fix for this.
+
+**Still stuck?** Ask in the [Discord](https://discord.gg/YrMMmN2kc7) or check the pinned [FAQ thread](https://discord.com/channels/691547840463241267/1360688874388455504/1376325634246049792).
 
 ---
 
