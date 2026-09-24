@@ -1091,6 +1091,95 @@ fn controller_labels_per_entity(
         .collect()
 }
 
+/// Turns a Molang-derived label into something safe inside a geometry ID: only [a-z0-9_]
+/// per dotted part, no `minecraft:` namespaces, no unresolved variable names (`v.ogswns`),
+/// no context prefixes (`c.`, `q.`). Returns None when nothing meaningful is left.
+fn sanitize_label(label: &str) -> Option<String> {
+    let non_alnum = Regex::new(r"[^a-z0-9]+").unwrap();
+    let raw = Regex::new(r"^[a-z]{6}$").unwrap();
+    // keep `v.xxxxxx` together so the dotted-part split below cannot separate it
+    let var = Regex::new(r"(^|[^a-z0-9])(?:v|variable)\.([a-z]{6})([^a-z0-9]|$)").unwrap();
+    let label = var.replace_all(label, "${1}v_${2}${3}");
+    let mut parts = Vec::new();
+    for part in label.split('.') {
+        let p = part.to_lowercase().replace("minecraft:", "");
+        let p = non_alnum.replace_all(&p, "_");
+        let toks: Vec<&str> = p.split('_').filter(|t| !t.is_empty()).collect();
+        let mut out: Vec<&str> = Vec::new();
+        let mut i = 0;
+        while i < toks.len() {
+            let t = toks[i];
+            if t == "v" && toks.get(i + 1).map_or(false, |n| raw.is_match(n)) {
+                // unresolved variable: drop it together with the connector in front of it
+                if matches!(out.last(), Some(&"or") | Some(&"and") | Some(&"not")) {
+                    out.pop();
+                }
+                i += 2;
+                continue;
+            }
+            if matches!(t, "v" | "c" | "q") {
+                i += 1;
+                continue;
+            }
+            out.push(t);
+            i += 1;
+        }
+        while matches!(out.first(), Some(&"or") | Some(&"and")) {
+            out.remove(0);
+        }
+        while matches!(out.last(), Some(&"or") | Some(&"and") | Some(&"not")) {
+            out.pop();
+        }
+        if !out.is_empty() {
+            parts.push(out.join("_"));
+        }
+    }
+    if parts.is_empty() {
+        None
+    } else {
+        Some(parts.join("."))
+    }
+}
+
+/// Final guard: a new geometry ID may only contain [a-z0-9_.] after the prefix.
+fn sanitize_name(name: &str) -> String {
+    let Some(rest) = name.strip_prefix(PREFIX) else {
+        return name.to_string();
+    };
+    let mut out = String::new();
+    for c in rest.to_lowercase().chars() {
+        let c = if c.is_ascii_lowercase() || c.is_ascii_digit() || c == '.' {
+            c
+        } else {
+            '_'
+        };
+        if (c == '_' || c == '.') && (out.ends_with('_') || out.ends_with('.') || out.is_empty()) {
+            if c == '.' && out.ends_with('_') {
+                out.pop();
+                out.push('.');
+            }
+            continue;
+        }
+        out.push(c);
+    }
+    let out = out.trim_end_matches(|c| c == '_' || c == '.');
+    format!("{}{}", PREFIX, if out.is_empty() { "model" } else { out })
+}
+
+fn valid_new_name(name: &str) -> bool {
+    static R: OnceLock<Regex> = OnceLock::new();
+    R.get_or_init(|| Regex::new(r"^geometry\.oreville_ans\.[a-z0-9_]+(\.[a-z0-9_]+)*$").unwrap())
+        .is_match(name)
+}
+
+/// True when the Molang label only adds detail to the table value (`baby` -> `baby.snowy`).
+fn label_refines(table_value: &str, molang_label: &str) -> bool {
+    let words: HashSet<&str> = molang_label.split(|c| c == '_' || c == '.').collect();
+    table_value
+        .split(|c| c == '_' || c == '.')
+        .all(|w| words.contains(w))
+}
+
 fn label_conflicts(table_value: &str, molang_label: &str) -> bool {
     let words: HashSet<&str> = table_value.split(|c| c == '_' || c == '.').collect();
     let compact = table_value.replace('_', "");
@@ -1728,13 +1817,16 @@ pub fn rename_pack(root: &Path, log: &dyn Fn(&str, &str)) -> Result<PackReport, 
             .iter()
             .filter(|x| x.role == role)
             .find_map(|x| per_entity.get(&x.ident).and_then(|m| m.get(&role)).cloned())
-            .filter(|l| !l.starts_with("v."));
+            .and_then(|l| sanitize_label(&l));
         let mut t = "referenced_ok";
         method.insert(g.clone(), "entity_or_attachable_binding".into());
         if role != "default" {
             match &lab {
                 Some(l) => {
-                    let use_molang = if tv == role && is_raw(&role) {
+                    let use_molang = if (tv == role && is_raw(&role))
+                        || (label_refines(&tv, l) && label_conflicts(&tv, l))
+                    {
+                        // unnamed role, or the Molang label only adds detail: no review needed
                         t = "referenced_named_by_molang";
                         true
                     } else if label_conflicts(&tv, l) {
@@ -1777,7 +1869,11 @@ pub fn rename_pack(root: &Path, log: &dyn Fn(&str, &str)) -> Result<PackReport, 
         .collect();
     let mut groups: BTreeMap<String, Vec<&String>> = BTreeMap::new();
     for g in &all {
-        let mut b = base[g].clone();
+        let mut b = if base[g] != *g {
+            sanitize_name(&base[g])
+        } else {
+            base[g].clone()
+        };
         // A new name must never look like an obfuscated ID (prefix + exactly 6 letters),
         // otherwise it could collide with one and re-runs could not tell renamed packs apart.
         if is_obfuscated(&b) && b != *g {
@@ -1866,6 +1962,23 @@ pub fn rename_pack(root: &Path, log: &dyn Fn(&str, &str)) -> Result<PackReport, 
                 .join(", ")
         ));
     }
+    let invalid: Vec<&str> = active
+        .values()
+        .copied()
+        .filter(|n| !valid_new_name(n))
+        .collect();
+    if !invalid.is_empty() {
+        report.errors.push(format!(
+            "{} new name(s) contain characters not allowed in a geometry ID, e.g. {}",
+            invalid.len(),
+            invalid
+                .iter()
+                .take(3)
+                .copied()
+                .collect::<Vec<_>>()
+                .join(", ")
+        ));
+    }
     let leftovers: Vec<&String> = after
         .defs
         .keys()
@@ -1941,6 +2054,37 @@ mod tests {
         assert_eq!(d.decode("32ff6jhgkl32j"), "bannerpostbar");
         assert_eq!(d.decode("5gjk2d7af_3"), "dorsalfin_3");
         assert_eq!(d.decode("rightleg"), "rightleg"); // plaintext untouched
+    }
+
+    #[test]
+    fn labels_and_names_are_sanitized() {
+        assert_eq!(
+            sanitize_label("brian_or_v.ogswns").as_deref(),
+            Some("brian")
+        );
+        assert_eq!(
+            sanitize_label("§§.minecraft:armor_stand").as_deref(),
+            Some("armor_stand")
+        );
+        assert_eq!(
+            sanitize_label("c.item_slot_eq_'head'").as_deref(),
+            Some("item_slot_eq_head")
+        );
+        assert_eq!(
+            sanitize_label("lava chicken").as_deref(),
+            Some("lava_chicken")
+        );
+        assert_eq!(sanitize_label("§§"), None);
+        assert_eq!(
+            sanitize_name("geometry.oreville_ans.copper_golem.minecraft:has_flower"),
+            "geometry.oreville_ans.copper_golem.minecraft_has_flower"
+        );
+        assert!(valid_new_name("geometry.oreville_ans.creeper.baby_snowy"));
+        assert!(!valid_new_name(
+            "geometry.oreville_ans.chicken.lava chicken"
+        ));
+        assert!(label_refines("baby", "baby.snowy"));
+        assert!(!label_refines("swelling_stage1", "baby"));
     }
 
     #[test]
