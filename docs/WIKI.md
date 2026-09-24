@@ -149,7 +149,29 @@ Clicking **Create Patches** produces `encrypted.vcdiff`, `decrypted.vcdiff`, and
 
 #### Extract Brarchives (standalone)
 
-Same brarchive extraction described [above](#-extract-brarchives), pointed at any folder you choose, independent of a patch run. Good for just inspecting/unpacking a `__brarchive` folder without doing anything else.
+Same brarchive extraction described [above](#-extract-brarchives), pointed at any folder you choose, independent of a patch run. Good for just inspecting/unpacking a `__brarchive` folder without doing anything else. The tool has its own log console underneath it.
+
+Two switches control what a run does:
+
+- **Extract brarchives** (on by default): unpacks every `__brarchive` folder, as described above. Turn it off when the folder is already extracted and you only want to rename.
+- **Rename geometries (Experimental)**: Actions & Stuff names every custom model `geometry.oreville_ans.<6 random letters>`. The renamer gives each one a readable name (`creeper.baby_snowy`, `unused.bannerpost.red`, ...) and rewrites every reference in the pack, subpacks included. Vanilla model IDs such as `geometry.boat` are never touched. It edits the files **in place**, so run it on a copy.
+
+After renaming, the pack is checked again automatically (no broken references, no leftover obfuscated IDs, every JSON file still valid) and three files are written **next to** the pack folder, so they never end up inside a packaged `.mcpack`:
+
+| File | What it's for |
+|---|---|
+| `<pack> - geometry manual check.txt` | Errors (if any) and every rename worth a human look, grouped by reason. Also opens from the **Open manual check list** button. |
+| `<pack> - geometry mapping.json` | Old ID → new ID for every geometry. Keep it if you need to undo or compare. |
+| `<pack> - geometry rename report.json` | Full details: tier, method and notes for every geometry. |
+
+What the check list groups mean:
+
+- **Role conflict**: the pack's own render-controller logic disagrees with the old hand-made role table; the pack's logic was used. Worth a quick look.
+- **Unused model, medium confidence**: a model no entity or item uses, matched to an item by the texture area it samples.
+- **Unused model, family only**: only the kind of model is known (e.g. slab, glow_berries), not the exact item.
+- **Raw variant suffix**: the right entity/item, but the variant part is still the minifier's 6-letter token (e.g. `pumpkin.pbyzuw`).
+
+Running the renamer again on an already renamed pack does nothing.
 
 ### 💬 Support
 

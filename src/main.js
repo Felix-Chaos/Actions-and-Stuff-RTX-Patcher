@@ -807,26 +807,111 @@ function setupUtilities() {
     document.getElementById('genpatch-logs').innerHTML = '<div class="log-line system">Ready to create patches...</div>';
   });
 
-  document.getElementById('btn-run-util-br').addEventListener('click', async () => {
+  // Brarchive tool: extract switch, experimental geometry-rename switch, own console
+  const brExtract = document.getElementById('util-br-extract');
+  const brRename = document.getElementById('util-br-rename');
+  const brRunBtn = document.getElementById('btn-run-util-br');
+  const brResults = document.getElementById('util-br-results');
+  const brLog = (msg, type = 'info') => logTo('brarchive-logs', msg, type);
+
+  const updateBrButton = () => {
+    const ex = brExtract.checked, rn = brRename.checked;
+    brRunBtn.textContent = ex && rn ? 'Extract & Rename Geometries'
+      : rn ? 'Rename Geometries (already extracted)'
+      : ex ? 'Extract Brarchives in Folder'
+      : 'Nothing selected';
+    brRunBtn.disabled = !ex && !rn;
+  };
+  try {
+    brExtract.checked = localStorage.getItem('brTool.extract') !== '0';
+    brRename.checked = localStorage.getItem('brTool.rename') === '1';
+  } catch (_) {}
+  [brExtract, brRename].forEach(el => el.addEventListener('change', () => {
+    try {
+      localStorage.setItem('brTool.extract', brExtract.checked ? '1' : '0');
+      localStorage.setItem('brTool.rename', brRename.checked ? '1' : '0');
+    } catch (_) {}
+    updateBrButton();
+  }));
+  updateBrButton();
+
+  document.getElementById('btn-copy-br-log').addEventListener('click', () => copyLogsFromEl('brarchive-logs', 'btn-copy-br-log'));
+  document.getElementById('btn-clear-br-log').addEventListener('click', () => {
+    document.getElementById('brarchive-logs').innerHTML = '<div class="log-line system">Log cleared.</div>';
+  });
+
+  const renderBrResults = (packs) => {
+    brResults.innerHTML = '';
+    const renamed = packs.filter(p => p.renamed > 0);
+    if (!renamed.length) { brResults.classList.add('hidden-group'); return; }
+    brResults.classList.remove('hidden-group');
+    for (const p of renamed) {
+      const t = (k) => p.tiers[k] || 0;
+      const review = t('referenced_role_conflict') + t('orphan_medium');
+      const box = document.createElement('div');
+      box.className = 'status-hint';
+      box.style.cssText = 'padding: 10px; border-radius: 8px; margin-bottom: 8px; background: rgba(255,255,255,0.04);';
+      const title = document.createElement('div');
+      title.style.cssText = 'font-weight: 600; color: #fff; margin-bottom: 4px; word-break: break-all;';
+      title.textContent = p.pack;
+      const lines = [
+        `${p.renamed} geometries renamed in ${p.files_changed} files`,
+        p.errors.length ? `⚠ ${p.errors.length} validation error(s): ${p.errors.join('; ')}` : '✓ Validation passed',
+        `Please review: ${review} (role conflicts ${t('referenced_role_conflict')}, medium-confidence unused models ${t('orphan_medium')})`,
+        `Readable but incomplete: ${t('referenced_role_unresolved')} raw variant suffixes, ${t('orphan_family_only')} family-only unused models`,
+      ];
+      box.appendChild(title);
+      lines.forEach((l, i) => {
+        const d = document.createElement('div');
+        d.textContent = l;
+        if (i === 1) d.style.color = p.errors.length ? 'var(--color-danger)' : 'var(--color-success)';
+        if (i === 2 && review) d.style.color = 'var(--color-warning)';
+        box.appendChild(d);
+      });
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-secondary btn-xs';
+      btn.style.marginTop = '6px';
+      btn.textContent = 'Open manual check list';
+      btn.addEventListener('click', () => invoke('open_in_explorer', { path: p.checklist_path }).catch(e => brLog(`${e}`, 'error')));
+      box.appendChild(btn);
+      brResults.appendChild(box);
+    }
+  };
+
+  brRunBtn.addEventListener('click', async () => {
     const folder = document.getElementById('util-br-folder').value;
     if (!folder) {
       alert("Please select a target folder.");
       return;
     }
-    
+    const extract = brExtract.checked, rename = brRename.checked;
+    if (rename) {
+      const ok = await showModal(
+        "The experimental renamer rewrites geometry IDs inside the pack files in this folder.\n\nMake sure you are working on a copy. Continue?",
+        { title: 'Rename geometries (experimental)', confirm: true, okText: 'Rename', cancelText: 'Cancel' });
+      if (!ok) return;
+    }
+
+    brRunBtn.disabled = true;
+    const label = brRunBtn.textContent;
+    brRunBtn.textContent = 'Working...';
+    brResults.classList.add('hidden-group');
+    const t0 = performance.now();
     try {
-      log(`Running standalone Brarchive extraction on: ${folder}`);
-      const found = await invoke("extract_brarchives_in_workspace", { workspace: folder });
-      if (found) {
-        log(`Successfully extracted brarchives inside ${folder}`, 'success');
-        alert("Brarchive extraction completed successfully!");
-      } else {
-        log(`No brarchives found to extract in: ${folder}`, 'warning');
-        alert("Completed: No __brarchive folders found to extract.");
+      const res = await invoke("run_brarchive_tool", { workspace: folder, extract, rename });
+      const secs = ((performance.now() - t0) / 1000).toFixed(1);
+      renderBrResults(res.packs || []);
+      const errs = (res.packs || []).reduce((n, p) => n + p.errors.length, 0);
+      brLog(`Finished in ${secs}s.`, errs ? 'warning' : 'success');
+      if (rename && !(res.packs || []).some(p => p.renamed > 0) && !(res.packs || []).some(p => p.already_renamed)) {
+        brLog('Nothing was renamed. See the messages above.', 'warning');
       }
     } catch (err) {
-      log(`Brarchive extraction failed: ${err}`, 'error');
-      alert(`Extraction failed:\n${err}`);
+      brLog(`Failed: ${err}`, 'error');
+      alert(`Brarchive tool failed:\n${err}`);
+    } finally {
+      brRunBtn.textContent = label;
+      updateBrButton();
     }
   });
 

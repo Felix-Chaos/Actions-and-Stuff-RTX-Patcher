@@ -503,7 +503,43 @@
                     <button id="btn-util-br-browse" class="btn btn-secondary">Browse...</button>
                   </div>
                 </div>
+
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
+                  <span style="font-size: 0.85rem; color: #ffffff; font-weight: 500;">Extract brarchives</span>
+                  <label class="mc-toggle" style="margin-left: 0;">
+                    <input type="checkbox" id="util-br-extract" checked />
+                    <span class="mc-slider"></span>
+                  </label>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
+                  <span style="font-size: 0.85rem; color: #ffffff; font-weight: 500;">Rename geometries <span style="color: var(--color-warning); font-weight: 600;">(Experimental)</span></span>
+                  <label class="mc-toggle" style="margin-left: 0;">
+                    <input type="checkbox" id="util-br-rename" />
+                    <span class="mc-slider"></span>
+                  </label>
+                </div>
+                <p class="status-hint" style="margin: 0 0 12px 0;">Renaming gives the obfuscated <code>geometry.oreville_ans.xxxxxx</code> IDs readable names and rewrites every reference, in place. Only use it on a copy. A mapping (old → new) and a manual check list are saved next to the pack folder.</p>
+
                 <button id="btn-run-util-br" class="btn btn-primary">Extract Brarchives in Folder</button>
+
+                <div id="util-br-results" class="hidden-group" style="margin-top: 12px;"></div>
+
+                <div class="console-section" style="margin-top: 16px;">
+                  <div class="console-header">
+                    <span>Brarchive Tool Log</span>
+                    <div class="console-actions">
+                      <button id="btn-copy-br-log" class="btn-icon-action" title="Copy log">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                      </button>
+                      <button id="btn-clear-br-log" class="btn-icon-action" title="Clear">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="console-body" id="brarchive-logs" style="height: 180px;">
+                    <div class="log-line system">Ready. Pick a folder and choose what to run.</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

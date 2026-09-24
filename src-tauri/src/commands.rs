@@ -809,6 +809,119 @@ pub async fn extract_brarchives_in_workspace(
     extract_brarchives_in_workspace_impl(Some(&app), ws, "main")
 }
 
+#[derive(serde::Serialize)]
+pub struct BrarchiveToolResult {
+    pub extracted: bool,
+    pub packs: Vec<crate::renamer::PackReport>,
+}
+
+/// Utilities -> Extract Brarchives. Optionally extracts `__brarchive` folders, then optionally
+/// runs the experimental geometry renamer on every extracted pack found in the folder.
+/// All progress goes to the tool's own console ("brarchive-logs").
+#[tauri::command]
+pub async fn run_brarchive_tool(
+    app: tauri::AppHandle,
+    workspace: String,
+    extract: bool,
+    rename: bool,
+) -> Result<BrarchiveToolResult, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        const LOG: &str = "brarchive-logs";
+        let ws = Path::new(&workspace);
+        if !ws.is_dir() {
+            return Err(format!("Folder does not exist: {}", workspace));
+        }
+        if !extract && !rename {
+            return Err("Both switches are off - nothing to do.".to_string());
+        }
+        let mut result = BrarchiveToolResult { extracted: false, packs: Vec::new() };
+
+        if extract {
+            emit_log(&app, LOG, &format!("Extracting brarchives in: {}", workspace), "system");
+            result.extracted = extract_brarchives_in_workspace_impl(Some(&app), ws, LOG)?;
+            if !result.extracted {
+                emit_log(&app, LOG, "No __brarchive folders found - nothing to extract.", "warning");
+            }
+        } else if crate::renamer::has_packed_brarchives(ws) {
+            emit_log(
+                &app,
+                LOG,
+                "This folder still contains packed __brarchive folders. The renamer only sees extracted files - turn on 'Extract brarchives' to unpack them first.",
+                "warning",
+            );
+        }
+
+        if rename {
+            emit_log(&app, LOG, "[Experimental] Geometry renamer started.", "system");
+            let roots = crate::renamer::find_pack_roots(ws);
+            if roots.is_empty() {
+                emit_log(&app, LOG, "No extracted resource pack found (needs a folder with manifest.json and models/).", "warning");
+            }
+            for root in roots {
+                emit_log(&app, LOG, &format!("Pack: {}", root.display()), "system");
+                let app_log = app.clone();
+                let report = crate::renamer::rename_pack(&root, &move |m, l| emit_log(&app_log, LOG, &format!("  {}", m), l))?;
+                if report.renamed == 0 {
+                    result.packs.push(report);
+                    continue;
+                }
+                let t = |k: &str| report.tiers.get(k).copied().unwrap_or(0);
+                emit_log(
+                    &app,
+                    LOG,
+                    &format!(
+                        "  Renamed {} geometries in {} files. Fully named: {} | named from Molang: {} | vanilla untouched: {}",
+                        report.renamed,
+                        report.files_changed,
+                        t("referenced_ok"),
+                        t("referenced_named_by_molang"),
+                        t("vanilla_untouched")
+                    ),
+                    "success",
+                );
+                emit_log(
+                    &app,
+                    LOG,
+                    &format!(
+                        "  Unused models: {} high, {} medium, {} family-only",
+                        t("orphan_high"),
+                        t("orphan_medium"),
+                        t("orphan_family_only")
+                    ),
+                    "info",
+                );
+                let review = t("referenced_role_conflict") + t("orphan_medium");
+                emit_log(
+                    &app,
+                    LOG,
+                    &format!(
+                        "  Manual check: {} to review (role conflicts {}, medium orphans {}), {} with a raw variant suffix, {} family-only.",
+                        review,
+                        t("referenced_role_conflict"),
+                        t("orphan_medium"),
+                        t("referenced_role_unresolved"),
+                        t("orphan_family_only")
+                    ),
+                    if review > 0 { "warning" } else { "info" },
+                );
+                if report.errors.is_empty() {
+                    emit_log(&app, LOG, "  Validation passed: no broken references, no leftover obfuscated IDs, all JSON still valid.", "success");
+                } else {
+                    for e in &report.errors {
+                        emit_log(&app, LOG, &format!("  ERROR: {}", e), "error");
+                    }
+                }
+                emit_log(&app, LOG, &format!("  Check list: {}", report.checklist_path), "info");
+                emit_log(&app, LOG, &format!("  Mapping (old -> new, keep it to undo): {}", report.mapping_path), "info");
+                result.packs.push(report);
+            }
+        }
+        Ok(result)
+    })
+    .await
+    .map_err(|e| format!("Background task failed: {}", e))?
+}
+
 #[tauri::command]
 pub async fn generate_xdelta_patch(
     app: tauri::AppHandle,

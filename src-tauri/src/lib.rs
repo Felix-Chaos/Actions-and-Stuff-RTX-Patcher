@@ -1,4 +1,5 @@
 pub mod commands;
+pub mod renamer;
 pub mod telemetry;
 pub mod utils;
 use commands::*;
@@ -28,6 +29,7 @@ pub fn run() {
             select_directory,
             select_file,
             extract_brarchives_in_workspace,
+            run_brarchive_tool,
             generate_xdelta_patch,
             open_in_explorer,
             open_project_dir,
