@@ -858,7 +858,7 @@ function setupUtilities() {
         `${p.renamed} geometries renamed in ${p.files_changed} files`,
         p.errors.length ? `⚠ ${p.errors.length} validation error(s): ${p.errors.join('; ')}` : '✓ Validation passed',
         `Please review: ${review} (role conflicts ${t('referenced_role_conflict')}, medium-confidence unused models ${t('orphan_medium')})`,
-        `Readable but incomplete: ${t('referenced_role_unresolved')} raw variant suffixes, ${t('orphan_family_only')} family-only unused models`,
+        `Readable but incomplete: ${t('referenced_role_unresolved')} raw variant suffixes, ${t('kept_original')} unidentified unused models kept their original ID`,
       ];
       box.appendChild(title);
       lines.forEach((l, i) => {

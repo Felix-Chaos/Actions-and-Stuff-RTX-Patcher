@@ -883,10 +883,10 @@ pub async fn run_brarchive_tool(
                     &app,
                     LOG,
                     &format!(
-                        "  Unused models: {} high, {} medium, {} family-only",
+                        "  Unused models: {} high, {} medium, {} not identified (original ID kept)",
                         t("orphan_high"),
                         t("orphan_medium"),
-                        t("orphan_family_only")
+                        t("kept_original")
                     ),
                     "info",
                 );
@@ -895,12 +895,12 @@ pub async fn run_brarchive_tool(
                     &app,
                     LOG,
                     &format!(
-                        "  Manual check: {} to review (role conflicts {}, medium orphans {}), {} with a raw variant suffix, {} family-only.",
+                        "  Manual check: {} to review (role conflicts {}, medium orphans {}), {} with a raw variant suffix, {} kept their original ID.",
                         review,
                         t("referenced_role_conflict"),
                         t("orphan_medium"),
                         t("referenced_role_unresolved"),
-                        t("orphan_family_only")
+                        t("kept_original")
                     ),
                     if review > 0 { "warning" } else { "info" },
                 );

@@ -166,12 +166,12 @@ After renaming, the pack is checked again automatically (no broken references, n
 
 What the check list groups mean:
 
-- **Role conflict**: the pack's own render-controller logic disagrees with the old hand-made role table; the pack's logic was used. Worth a quick look.
+- **Role conflict**: the old hand-made role table and the pack's own render-controller logic disagree, and the pack's side rests on a guessed variable meaning. Worth a quick look. (Where the pack's logic is unambiguous it wins silently; a review of every earlier conflict found it was right each time.)
 - **Unused model, medium confidence**: a model no entity or item uses, matched to an item by the texture area it samples.
-- **Unused model, family only**: only the kind of model is known (e.g. slab, glow_berries), not the exact item.
-- **Raw variant suffix**: the right entity/item, but the variant part is still the minifier's 6-letter token (e.g. `pumpkin.pbyzuw`).
+- **Raw variant suffix**: the right entity/item, but the variant part is still the pack's own 6-letter role key (e.g. `pumpkin.pbyzuw`).
+- **Kept original ID** (info only): unused models that couldn't be identified keep their `geometry.oreville_ans.xxxxxx` ID on purpose, so nothing looks more certain than it is. The best guess is listed next to each one.
 
-Running the renamer again on an already renamed pack does nothing.
+Running the renamer again on an already renamed pack changes nothing and keeps the first run's mapping and reports.
 
 ### 💬 Support
 

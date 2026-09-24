@@ -38,6 +38,9 @@ fn is_obfuscated(gid: &str) -> bool {
 
 // --------------------------------------------------------------------------- role table
 
+/// Entries disproved by the entities' own render controllers were removed (review of
+/// Sept 2026: creeper "swelling stages" are baby variants, fox/horse/cow/zombie/iron golem
+/// variant keys were mislabelled). The pack's Molang overrides this table anyway.
 /// Role keys decoded by hand from render controllers (carried over from the original
 /// descrambler so names stay compatible). The pack's own Molang overrides it on conflict.
 const BASE_ROLE_SEMANTICS: &[(&str, &str)] = &[
@@ -72,45 +75,20 @@ const BASE_ROLE_SEMANTICS: &[(&str, &str)] = &[
     ("jevhhw", "cherry"),
     ("gjhrgi", "eyes"),
     ("cqvkuv", "powered"),
-    ("meratx", "swelling_stage1"),
     ("sofmpb", "baby"),
     ("tblaea", "baby_powered"),
-    ("uibrhs", "swelling_stage2"),
     ("hkyjlq", "baby_swelling_stage1"),
-    ("tlyzdy", "baby_swelling_stage2"),
-    ("qrkrcz", "swelling_stage3"),
-    ("bsitgo", "baby_swelling_stage3"),
-    ("qddgxu", "swelling_stage4"),
-    ("xcyaru", "baby_swelling_stage4"),
-    ("vpbaiq", "swelling_stage5"),
-    ("hxbtht", "baby_swelling_stage5"),
-    ("giazhl", "swelling_stage6"),
-    ("mnpxpx", "baby_swelling_stage6"),
     ("pyscvg", "snowy"),
     ("hbdelw", "snowy_baby"),
     ("tunagv", "baby"),
-    ("dwvyiq", "baby_drowned"),
-    ("cfsfem", "drowned"),
-    ("bizcge", "head_item"),
-    ("xbxrgg", "baby_head_item"),
     ("ufzxyk", "eyes"),
-    ("nfcspr", "baby_eyes"),
     ("cxnlin", "baby"),
     ("efdwmo", "baby"),
     ("raszyg", "baby"),
     ("nmaiou", "baby"),
     ("yklrin", "baby"),
     ("fnzlax", "baby_snowy"),
-    ("smhkos", "baby_sulfur"),
-    ("afrgqm", "baby_cherry"),
     ("kpacwn", "baby"),
-    ("wziosx", "cold"),
-    ("lokszx", "warm"),
-    ("xjjhzp", "baby_cold"),
-    ("zvtryp", "baby_warm"),
-    ("bgbxrm", "baby"),
-    ("gtjjer", "sleep"),
-    ("bpylml", "cracked_high"),
     ("zywjwc", "cracked_medium"),
     ("sfhcsy", "cracked_low"),
     ("oauppz", "eyes"),
@@ -121,26 +99,6 @@ const BASE_ROLE_SEMANTICS: &[(&str, &str)] = &[
     ("gusrqk", "saddle"),
     ("gmvben", "chest"),
     ("cpizre", "baby"),
-    ("gxffsv", "markings"),
-    ("rgzdhy", "reins"),
-    ("oyxmae", "armor_netherite"),
-    ("lunuox", "mule_saddle"),
-];
-
-const CONDITION_KEYWORDS: &[(&str, &str)] = &[
-    ("v.cdrzno", "baby"),
-    ("q.is_baby", "baby"),
-    ("v.aybhly", "snowy"),
-    ("v.ifqpks", "cherry"),
-    ("v.uunhwi", "sulfur"),
-    ("q.is_powered", "powered"),
-    ("q.is_sheared", "sheared"),
-    ("q.is_sleeping", "sleep"),
-    ("c.is_first_person", "1st_person"),
-    ("!c.is_first_person", "3rd_person"),
-    ("jlfjfs", "3d"),
-    ("q.swell_amount", "swelling"),
-    ("is_enchanted", "enchanted"),
 ];
 
 const DYES: &[&str] = &[
@@ -829,15 +787,31 @@ fn describe(n: &Node, labels: &HashMap<String, String>) -> String {
             let low = tok.to_lowercase();
             if low.starts_with("v.") || low.starts_with("variable.") {
                 let var = tok.splitn(2, '.').nth(1).unwrap_or("");
+                if !is_minified_token(var) {
+                    return var.to_string(); // readable name, e.g. v.offer_flower_tick
+                }
                 labels.get(var).cloned().unwrap_or_else(|| tok.clone())
             } else if low.starts_with("q.") || low.starts_with("query.") {
                 let q = tok.splitn(2, '.').nth(1).unwrap_or("");
-                q.strip_prefix("is_").unwrap_or(q).to_string()
+                let q = q.strip_prefix("is_").unwrap_or(q);
+                match q {
+                    "swell_amount" => "swelling".to_string(),
+                    other => other.to_string(),
+                }
             } else {
                 tok.clone()
             }
         }
         Node::Not(x) => format!("not_{}", describe(x, labels)),
+        Node::Bin(op, _, b)
+            if op == "==" && matches!(&**b, Node::Atom(t) if t.starts_with('\'')) =>
+        {
+            // q.property('minecraft:climate_variant')=='cold' -> cold
+            match &**b {
+                Node::Atom(t) => t.trim_matches('\'').to_lowercase(),
+                _ => unreachable!(),
+            }
+        }
         Node::Bin(op, a, b) => {
             let j = match op.as_str() {
                 "&&" => "_and_".to_string(),
@@ -907,19 +881,23 @@ fn infer_variable_labels(pack: &Pack) -> HashMap<String, String> {
     let assign = Regex::new(r"\bv(?:ariable)?\.(\w+)\s*=\s*([^;]+)").unwrap();
     let lit = Regex::new(r"is_name_any\('([^']+)'").unwrap();
     let query = Regex::new(r"\bq(?:uery)?\.(\w+)").unwrap();
-    let mut counts: HashMap<String, Vec<(String, i64)>> = HashMap::new();
-    let mut bump = |var: &str, label: String, by: i64| {
+    // (label, score, backed by an is_name_any literal)
+    let mut counts: HashMap<String, Vec<(String, i64, bool)>> = HashMap::new();
+    let mut bump = |var: &str, label: String, by: i64, literal: bool| {
         let e = counts.entry(var.to_string()).or_default();
-        match e.iter_mut().find(|(l, _)| *l == label) {
-            Some(x) => x.1 += by,
-            None => e.push((label, by)),
+        match e.iter_mut().find(|(l, _, _)| *l == label) {
+            Some(x) => {
+                x.1 += by;
+                x.2 |= literal;
+            }
+            None => e.push((label, by, literal)),
         }
     };
     for text in &pack.scripts {
         for c in assign.captures_iter(text) {
             let (var, rhs) = (&c[1], &c[2]);
             if let Some(l) = lit.captures(rhs) {
-                bump(var, l[1].to_lowercase(), 3);
+                bump(var, l[1].to_lowercase(), 3, true);
             }
             for q in query.captures_iter(rhs) {
                 let q = &q[1];
@@ -931,7 +909,12 @@ fn infer_variable_labels(pack: &Pack) -> HashMap<String, String> {
                 ]
                 .contains(&q)
                 {
-                    bump(var, q.strip_prefix("is_").unwrap_or(q).to_string(), 1);
+                    bump(
+                        var,
+                        q.strip_prefix("is_").unwrap_or(q).to_string(),
+                        1,
+                        false,
+                    );
                 }
             }
         }
@@ -939,13 +922,23 @@ fn infer_variable_labels(pack: &Pack) -> HashMap<String, String> {
     counts
         .into_iter()
         .filter_map(|(var, c)| {
-            let mut best: Option<&(String, i64)> = None;
+            let mut best: Option<&(String, i64, bool)> = None;
             for x in &c {
                 if best.map_or(true, |b| x.1 > b.1) {
                     best = Some(x);
                 }
             }
-            best.map(|b| (var, b.0.clone()))
+            // "~" marks a meaning guessed from queries only; sanitize_label strips it
+            best.map(|b| {
+                (
+                    var,
+                    if b.2 {
+                        b.0.clone()
+                    } else {
+                        format!("~{}", b.0)
+                    },
+                )
+            })
         })
         .collect()
 }
@@ -956,7 +949,16 @@ fn index_label_re() -> &'static Regex {
 }
 
 /// controller name -> {geometry role key -> label}; parse errors are counted.
-fn resolve_render_controllers(pack: &Pack) -> (BTreeMap<String, HashMap<String, String>>, usize) {
+/// Label of one geometry role inside one render controller.
+#[derive(Clone)]
+struct Branch {
+    /// positive conditions joined with "." ("default" when there are none)
+    label: String,
+    /// conditions that must be false for this geometry (e.g. "baby" for an adult model)
+    negated: Vec<String>,
+}
+
+fn resolve_render_controllers(pack: &Pack) -> (BTreeMap<String, HashMap<String, Branch>>, usize) {
     let labels = infer_variable_labels(pack);
     let empty = serde_json::Map::new();
     let mut out = BTreeMap::new();
@@ -982,9 +984,13 @@ fn resolve_render_controllers(pack: &Pack) -> (BTreeMap<String, HashMap<String, 
         };
         let mut leaves = Vec::new();
         enumerate_branches(&tree, arrays, &labels, Vec::new(), &mut leaves, 0);
-        let mut branches: HashMap<String, ((bool, usize), String)> = HashMap::new();
+        let mut branches: HashMap<String, ((bool, usize), Branch)> = HashMap::new();
         for (path, key) in leaves {
             let positive: Vec<&String> = path.iter().filter(|p| !p.starts_with("not_")).collect();
+            let negated: Vec<String> = path
+                .iter()
+                .filter_map(|p| p.strip_prefix("not_").map(String::from))
+                .collect();
             let label = if positive.is_empty() {
                 "default".to_string()
             } else {
@@ -996,12 +1002,12 @@ fn resolve_render_controllers(pack: &Pack) -> (BTreeMap<String, HashMap<String, 
             };
             let rank = (index_label_re().is_match(&label), label.len()); // prefer semantic labels
             if branches.get(&key).map_or(true, |(r, _)| rank < *r) {
-                branches.insert(key, (rank, label));
+                branches.insert(key, (rank, Branch { label, negated }));
             }
         }
         out.insert(
             name.clone(),
-            branches.into_iter().map(|(k, (_, l))| (k, l)).collect(),
+            branches.into_iter().map(|(k, (_, b))| (k, b)).collect(),
         );
     }
     (out, errors)
@@ -1026,16 +1032,36 @@ fn positive_terms(n: &Node, labels: &HashMap<String, String>, out: &mut Vec<Stri
     }
 }
 
-/// entity identifier -> {role -> label from that entity's own render controllers}.
-/// The controller's own activation condition (entity file: `{"controller": "q.is_powered"}`)
-/// is prefixed, so e.g. swelling / powered overlays keep that context.
+/// What an entity's own render controllers say about one geometry role.
+#[derive(Clone, Default)]
+struct RoleInfo {
+    /// positive label, controller activation condition first (e.g. "powered.baby")
+    label: Option<String>,
+    /// conditions that must be false for this role (from the branch and the controller)
+    negated: Vec<String>,
+}
+
+fn negative_terms(n: &Node, labels: &HashMap<String, String>, out: &mut Vec<String>) {
+    match n {
+        Node::Bin(op, a, b) if op == "&&" => {
+            negative_terms(a, labels, out);
+            negative_terms(b, labels, out);
+        }
+        Node::Not(x) => out.push(describe(x, labels)),
+        _ => {}
+    }
+}
+
+/// entity identifier -> {role -> RoleInfo}. The controller's own activation condition
+/// (entity file: `{"controller": "q.is_powered"}`) is prefixed, so e.g. swelling / powered
+/// overlays keep that context. The main pack's entity files win over subpack copies.
 fn controller_labels_per_entity(
     pack: &Pack,
-    branches: &BTreeMap<String, HashMap<String, String>>,
-) -> HashMap<String, HashMap<String, String>> {
+    branches: &BTreeMap<String, HashMap<String, Branch>>,
+) -> HashMap<String, HashMap<String, RoleInfo>> {
     let sub_re = Regex::new(r"^subpacks/([^/]+)/").unwrap();
     let var_labels = infer_variable_labels(pack);
-    let mut per: HashMap<String, HashMap<String, (usize, String)>> = HashMap::new();
+    let mut per: HashMap<String, HashMap<String, ((bool, usize), RoleInfo)>> = HashMap::new();
     for (rel, desc) in &pack.clients {
         let ident = desc
             .get("identifier")
@@ -1055,10 +1081,11 @@ fn controller_labels_per_entity(
                 },
                 _ => continue,
             };
-            let mut prefix = Vec::new();
+            let (mut prefix, mut cond_neg) = (Vec::new(), Vec::new());
             if !cond.is_empty() {
                 if let Ok(node) = Parser::parse(&cond) {
                     positive_terms(&node, &var_labels, &mut prefix);
+                    negative_terms(&node, &var_labels, &mut cond_neg);
                 }
             }
             let table = sp
@@ -1067,28 +1094,42 @@ fn controller_labels_per_entity(
                 .or_else(|| branches.get(&name));
             let Some(t) = table else { continue };
             let e = per.entry(ident.clone()).or_default();
-            for (role, label) in t {
-                if index_label_re().is_match(label) {
+            for (role, br) in t {
+                if index_label_re().is_match(&br.label) {
                     continue;
                 }
                 let mut parts = prefix.clone();
-                if label != "default" {
-                    parts.push(label.clone());
+                if br.label != "default" {
+                    parts.push(br.label.clone());
                 }
-                if parts.is_empty() {
+                let mut negated = cond_neg.clone();
+                negated.extend(br.negated.iter().cloned());
+                if parts.is_empty() && negated.is_empty() {
                     continue;
                 }
-                // prefer the controller that needs the fewest extra conditions
-                let cand = (prefix.len(), parts.join("."));
-                if e.get(role).map_or(true, |cur| cand.0 < cur.0) {
-                    e.insert(role.clone(), cand);
+                let info = RoleInfo {
+                    label: if parts.is_empty() {
+                        None
+                    } else {
+                        Some(parts.join("."))
+                    },
+                    negated,
+                };
+                // main pack first, then the controller needing the fewest extra conditions
+                let rank = (sp.is_some(), prefix.len());
+                if e.get(role).map_or(true, |(cur, _)| rank < *cur) {
+                    e.insert(role.clone(), (rank, info));
                 }
             }
         }
     }
     per.into_iter()
-        .map(|(k, m)| (k, m.into_iter().map(|(r, (_, l))| (r, l)).collect()))
+        .map(|(k, m)| (k, m.into_iter().map(|(r, (_, i))| (r, i)).collect()))
         .collect()
+}
+
+fn is_minified_token(s: &str) -> bool {
+    s.len() == 6 && s.chars().all(|c| c.is_ascii_lowercase())
 }
 
 /// Turns a Molang-derived label into something safe inside a geometry ID: only [a-z0-9_]
@@ -1124,7 +1165,7 @@ fn sanitize_label(label: &str) -> Option<String> {
             out.push(t);
             i += 1;
         }
-        while matches!(out.first(), Some(&"or") | Some(&"and")) {
+        while matches!(out.first(), Some(&"or") | Some(&"and") | Some(&"is")) {
             out.remove(0);
         }
         while matches!(out.last(), Some(&"or") | Some(&"and") | Some(&"not")) {
@@ -1181,6 +1222,11 @@ fn label_refines(table_value: &str, molang_label: &str) -> bool {
 }
 
 fn label_conflicts(table_value: &str, molang_label: &str) -> bool {
+    let (table_value, molang_label) = (
+        table_value.replace("first", "1st"),
+        molang_label.replace("first", "1st"),
+    );
+    let (table_value, molang_label) = (table_value.as_str(), molang_label.as_str());
     let words: HashSet<&str> = table_value.split(|c| c == '_' || c == '.').collect();
     let compact = table_value.replace('_', "");
     molang_label.split('.').any(|part| {
@@ -1192,38 +1238,15 @@ fn label_conflicts(table_value: &str, molang_label: &str) -> bool {
 
 // --------------------------------------------------------------------------- naming
 
-fn role_dictionary(pack: &Pack) -> HashMap<String, String> {
-    let mut d: HashMap<String, String> = BASE_ROLE_SEMANTICS
+/// Static role table only. The original descrambler also ran a loose regex keyword pass over
+/// the controllers (`v.cdrzno[^?]*?...Geometry.X` -> "baby"); it matched across nested
+/// ternaries and mislabelled roles (bee queen as "baby", adult fox as "baby"), and the proper
+/// Molang resolver covers the same controllers, so it was dropped.
+fn role_dictionary() -> HashMap<String, String> {
+    BASE_ROLE_SEMANTICS
         .iter()
         .map(|(k, v)| (k.to_string(), v.to_string()))
-        .collect();
-    for (name, rc) in &pack.render_controllers {
-        if name.contains(':') {
-            continue; // the original descrambler only reads the main pack's controllers
-        }
-        let expr = match rc.get("geometry") {
-            Some(Value::String(s)) => s.clone(),
-            Some(other) => other.to_string(),
-            None => String::new(),
-        };
-        for (cond, meaning) in CONDITION_KEYWORDS {
-            if !expr.contains(cond) {
-                continue;
-            }
-            let re = Regex::new(&format!(
-                r"{}[^?]*\?[^:]*Geometry\.([a-zA-Z0-9_]+)",
-                regex::escape(cond)
-            ))
-            .unwrap();
-            if let Some(c) = re.captures(&expr) {
-                let role = c[1].to_string();
-                if d.get(&role).map_or(true, |v| *v == role) {
-                    d.insert(role, meaning.to_string());
-                }
-            }
-        }
-    }
-    d
+        .collect()
 }
 
 /// Name for a referenced geometry, from the entity/attachable that uses it and its role key.
@@ -1576,8 +1599,12 @@ struct Entry {
 const TIER_HELP: &[(&str, &str)] = &[
     ("referenced_role_conflict", "The old role table and the entity's own Molang disagree; the Molang label was used. Check that the variant name fits the model."),
     ("orphan_medium", "Unused model matched to an item with medium confidence. Check the item name."),
-    ("orphan_family_only", "Unused model: only its family is known (e.g. slab, glow_berries), not the exact item."),
     ("referenced_role_unresolved", "Used by the right entity/item, but the variant suffix is still the minifier's raw 6-letter token."),
+];
+
+/// Listed in the check list for information only; nothing to review.
+const INFO_TIERS: &[(&str, &str)] = &[
+    ("kept_original", "Unused model that could not be identified: its original ID was kept on purpose. The best guess is shown for reference."),
 ];
 
 fn write_outputs(root: &Path, entries: &[Entry], report: &mut PackReport) -> Result<(), String> {
@@ -1648,6 +1675,23 @@ fn write_outputs(root: &Path, entries: &[Entry], report: &mut PackReport) -> Res
             } else {
                 txt.push_str(&format!("  {}  ->  {}   [{}]\n", old, short, e.note));
             }
+        }
+        txt.push('\n');
+    }
+    for (tier, help) in INFO_TIERS {
+        let rows: Vec<&Entry> = entries.iter().filter(|e| e.tier == *tier).collect();
+        if rows.is_empty() {
+            continue;
+        }
+        txt.push_str(&format!(
+            "== {} ({}) - info only ==\n{}\n",
+            tier,
+            rows.len(),
+            help
+        ));
+        for e in rows {
+            let old = e.old.strip_prefix(PREFIX).unwrap_or(&e.old);
+            txt.push_str(&format!("  {}   [{}]\n", old, e.note));
         }
         txt.push('\n');
     }
@@ -1731,7 +1775,7 @@ pub fn rename_pack(root: &Path, log: &dyn Fn(&str, &str)) -> Result<PackReport, 
         "info",
     );
 
-    let roles = role_dictionary(&pack);
+    let roles = role_dictionary();
     let dec = BoneDecoder::new(&pack.vocab);
     log("Resolving render-controller Molang...", "info");
     let (branches, molang_errors) = resolve_render_controllers(&pack);
@@ -1766,16 +1810,24 @@ pub fn rename_pack(root: &Path, log: &dyn Fn(&str, &str)) -> Result<PackReport, 
         if !is_obfuscated(g) {
             continue; // vanilla overrides (geometry.boat, geometry.humanoid.*) keep their IDs
         }
+        method.insert(g.clone(), o.method.to_string());
+        if o.confidence != "high" && o.confidence != "medium" {
+            // Not identified: keep the original ID so nothing looks more certain than it is.
+            // The family guess is only recorded as a hint in the report / check list.
+            base.insert(g.clone(), g.clone());
+            tier.insert(g.clone(), "kept_original");
+            note.insert(g.clone(), format!("best guess: {} ({})", o.name, o.note));
+            continue;
+        }
         base.insert(g.clone(), format!("{}unused.{}", PREFIX, o.name));
         tier.insert(
             g.clone(),
-            match o.confidence {
-                "high" => "orphan_high",
-                "medium" => "orphan_medium",
-                _ => "orphan_family_only",
+            if o.confidence == "high" {
+                "orphan_high"
+            } else {
+                "orphan_medium"
             },
         );
-        method.insert(g.clone(), o.method.to_string());
         note.insert(g.clone(), o.note.clone());
     }
 
@@ -1791,7 +1843,8 @@ pub fn rename_pack(root: &Path, log: &dyn Fn(&str, &str)) -> Result<PackReport, 
             continue;
         }
         let Some(u) = pack.uses.get(g) else {
-            tier.insert(g.clone(), "orphan_family_only");
+            base.insert(g.clone(), g.clone());
+            tier.insert(g.clone(), "kept_original");
             continue;
         };
         let mut sorted: Vec<&Usage> = u.iter().collect();
@@ -1813,42 +1866,89 @@ pub fn rename_pack(root: &Path, log: &dyn Fn(&str, &str)) -> Result<PackReport, 
         });
         let role = sorted[0].role.clone();
         let tv = roles.get(&role).cloned().unwrap_or_else(|| role.clone());
-        let lab = sorted
+        let info = sorted
             .iter()
             .filter(|x| x.role == role)
             .find_map(|x| per_entity.get(&x.ident).and_then(|m| m.get(&role)).cloned())
-            .and_then(|l| sanitize_label(&l));
+            .unwrap_or_default();
+        // "~" marks a label that rests on a variable meaning guessed from queries
+        let weak = info.label.as_deref().map_or(false, |l| l.contains('~'));
+        let lab = info.label.as_deref().and_then(sanitize_label);
+        let negated: HashSet<String> = info
+            .negated
+            .iter()
+            .filter_map(|n| sanitize_label(n))
+            .flat_map(|n| {
+                n.split(|c| c == '.' || c == '_')
+                    .map(String::from)
+                    .collect::<Vec<_>>()
+            })
+            .collect();
+        // the table says "baby" but the entity only shows this model when NOT baby
+        let contradicted = tv != role
+            && tv.split('_').any(|w| negated.contains(w))
+            && lab.as_deref().map_or(true, |l| label_conflicts(&tv, l));
         let mut t = "referenced_ok";
+        let mut new_suffix: Option<String> = None;
         method.insert(g.clone(), "entity_or_attachable_binding".into());
         if role != "default" {
             match &lab {
-                Some(l) => {
-                    let use_molang = if (tv == role && is_raw(&role))
-                        || (label_refines(&tv, l) && label_conflicts(&tv, l))
-                    {
-                        // unnamed role, or the Molang label only adds detail: no review needed
-                        t = "referenced_named_by_molang";
-                        true
-                    } else if label_conflicts(&tv, l) {
+                Some(l) if tv == role && is_raw(&role) => {
+                    t = "referenced_named_by_molang";
+                    new_suffix = Some(l.clone());
+                }
+                Some(l) if contradicted || label_conflicts(&tv, l) => {
+                    new_suffix = Some(l.clone());
+                    if weak && !label_refines(&tv, l) {
+                        // the Molang side is a guess too: a human should decide
                         t = "referenced_role_conflict";
                         note.insert(
                             g.clone(),
-                            format!("role table said '{}', Molang says '{}'", tv, l),
+                            format!(
+                                "role table said '{}', Molang (guessed variable) says '{}'",
+                                tv, l
+                            ),
                         );
-                        true
                     } else {
-                        false
-                    };
-                    let b = base[g].clone();
-                    if use_molang && b.ends_with(&format!(".{}", tv)) {
-                        base.insert(
-                            g.clone(),
-                            format!("{}{}", &b[..b.len() - tv.len()], l.replace('.', "_")),
-                        );
+                        t = "referenced_named_by_molang";
+                        if !label_refines(&tv, l) {
+                            note.insert(g.clone(), format!("old role table said '{}'", tv));
+                        }
                     }
+                }
+                Some(_) => {}
+                None if contradicted => {
+                    // no positive condition left: an adult model if "baby" is negated
+                    t = "referenced_named_by_molang";
+                    new_suffix = Some(if negated.contains("baby") {
+                        "adult".into()
+                    } else {
+                        role.clone()
+                    });
+                    note.insert(
+                        g.clone(),
+                        format!(
+                            "old role table said '{}', but the pack shows it only when not {}",
+                            tv, tv
+                        ),
+                    );
+                }
+                None if tv == role && is_raw(&role) && negated.contains("baby") => {
+                    // only shown when NOT baby and nothing else is known: the adult model
+                    t = "referenced_named_by_molang";
+                    new_suffix = Some("adult".into());
                 }
                 None if tv == role && is_raw(&role) => t = "referenced_role_unresolved",
                 None => {}
+            }
+        }
+        if let Some(sfx) = new_suffix {
+            let b = base[g].clone();
+            if b.ends_with(&format!(".{}", tv)) {
+                base.insert(
+                    g.clone(),
+                    format!("{}{}", &b[..b.len() - tv.len()], sfx.replace('.', "_")),
+                );
             }
         }
         tier.insert(g.clone(), t);
@@ -1936,6 +2036,17 @@ pub fn rename_pack(root: &Path, log: &dyn Fn(&str, &str)) -> Result<PackReport, 
     }
     report.files_changed = changed;
     report.renamed = active.len();
+    if active.is_empty() {
+        // Already renamed: keep the reports of the run that did the renaming (its mapping is
+        // the only way back to the original IDs), so write nothing.
+        log(
+            "Nothing left to rename - this pack was already renamed. Existing reports were kept.",
+            "warning",
+        );
+        report.already_renamed = true;
+        report.geometries = rename.len();
+        return Ok(report);
+    }
 
     // 5. validate the rewritten pack
     log("Validating renamed pack...", "info");
@@ -2101,7 +2212,7 @@ mod tests {
         enumerate_branches(&tree, &arrays, &labels, vec![], &mut out, 0);
         let find = |k: &str| out.iter().find(|(_, g)| g == k).map(|(p, _)| p.join("."));
         assert_eq!(find("a").unwrap(), "baby.snowy");
-        assert_eq!(find("c").unwrap(), "not_baby.v.i_1");
+        assert_eq!(find("c").unwrap(), "not_baby.i_1");
         assert!(Parser::parse("Array.a[q.life_time*24]").is_ok());
         assert!(Parser::parse("Array.a[!v.b?v.c]").is_ok());
     }
