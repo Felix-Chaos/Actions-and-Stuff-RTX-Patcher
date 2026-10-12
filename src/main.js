@@ -1582,8 +1582,7 @@ function setupUtilities() {
     if (!renamed.length) { brResults.classList.add('hidden-group'); return; }
     brResults.classList.remove('hidden-group');
     for (const p of renamed) {
-      const t = (k) => p.tiers[k] || 0;
-      const review = t('referenced_role_conflict') + t('orphan_medium');
+      const s = p.summary;
       const box = document.createElement('div');
       box.className = 'status-hint';
       box.style.cssText = 'padding: 10px; border-radius: 8px; margin-bottom: 8px; background: rgba(255,255,255,0.04);';
@@ -1593,15 +1592,15 @@ function setupUtilities() {
       const lines = [
         `${p.renamed} geometries renamed in ${p.files_changed} files`,
         p.errors.length ? `⚠ ${p.errors.length} validation error(s): ${p.errors.join('; ')}` : '✓ Validation passed',
-        `Please review: ${review} (role conflicts ${t('referenced_role_conflict')}, medium-confidence unused models ${t('orphan_medium')})`,
-        `Readable but incomplete: ${t('referenced_role_unresolved')} raw variant suffixes, ${t('kept_original')} unidentified unused models kept their original ID`,
+        `Please review: ${s.review} (role conflicts ${s.role_conflicts}, medium-confidence unused models ${s.orphan_medium})`,
+        `Readable but incomplete: ${s.unresolved_suffix} raw variant suffixes, ${s.kept_original} unidentified unused models kept their original ID`,
       ];
       box.appendChild(title);
       lines.forEach((l, i) => {
         const d = document.createElement('div');
         d.textContent = l;
         if (i === 1) d.style.color = p.errors.length ? 'var(--color-danger)' : 'var(--color-success)';
-        if (i === 2 && review) d.style.color = 'var(--color-warning)';
+        if (i === 2 && s.review) d.style.color = 'var(--color-warning)';
         box.appendChild(d);
       });
       const btn = document.createElement('button');

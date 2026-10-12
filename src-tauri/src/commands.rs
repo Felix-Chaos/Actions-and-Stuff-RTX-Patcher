@@ -860,7 +860,19 @@ pub async fn run_brarchive_tool(
             for root in roots {
                 emit_log(&app, LOG, &format!("Pack: {}", root.display()), "system");
                 let app_log = app.clone();
-                let report = crate::renamer::rename_pack(&root, &move |m, l| emit_log(&app_log, LOG, &format!("  {}", m), l))?;
+                // One pack failing must not throw away the reports of the packs already done.
+                let report = match crate::renamer::rename_pack(&root, &move |m, l| emit_log(&app_log, LOG, &format!("  {}", m), l)) {
+                    Ok(report) => report,
+                    Err(e) => {
+                        emit_log(&app, LOG, &format!("  ERROR: {}", e), "error");
+                        result.packs.push(crate::renamer::PackReport {
+                            pack: root.to_string_lossy().to_string(),
+                            errors: vec![e],
+                            ..Default::default()
+                        });
+                        continue;
+                    }
+                };
                 if report.renamed == 0 {
                     result.packs.push(report);
                     continue;
@@ -890,19 +902,19 @@ pub async fn run_brarchive_tool(
                     ),
                     "info",
                 );
-                let review = t("referenced_role_conflict") + t("orphan_medium");
+                let s = &report.summary;
                 emit_log(
                     &app,
                     LOG,
                     &format!(
                         "  Manual check: {} to review (role conflicts {}, medium orphans {}), {} with a raw variant suffix, {} kept their original ID.",
-                        review,
-                        t("referenced_role_conflict"),
-                        t("orphan_medium"),
-                        t("referenced_role_unresolved"),
-                        t("kept_original")
+                        s.review,
+                        s.role_conflicts,
+                        s.orphan_medium,
+                        s.unresolved_suffix,
+                        s.kept_original
                     ),
-                    if review > 0 { "warning" } else { "info" },
+                    if s.review > 0 { "warning" } else { "info" },
                 );
                 if report.errors.is_empty() {
                     emit_log(&app, LOG, "  Validation passed: no broken references, no leftover obfuscated IDs, all JSON still valid.", "success");

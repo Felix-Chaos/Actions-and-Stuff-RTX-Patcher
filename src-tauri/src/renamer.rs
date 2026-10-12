@@ -672,7 +672,13 @@ enum Node {
 struct Parser {
     t: Vec<String>,
     i: usize,
+    depth: usize,
 }
+
+/// Expressions come from the pack, so nesting and length are capped before a hostile one
+/// can exhaust the stack (the tree is walked and dropped recursively as well as parsed).
+const MAX_PARSE_DEPTH: usize = 64;
+const MAX_TOKENS: usize = 4096;
 
 impl Parser {
     fn parse(expr: &str) -> Result<Node, String> {
@@ -682,7 +688,11 @@ impl Parser {
                 .map(|m| m.as_str().to_string())
                 .collect(),
             i: 0,
+            depth: 0,
         };
+        if p.t.len() > MAX_TOKENS {
+            return Err("expression is too long".to_string());
+        }
         p.ternary()
     }
     fn peek(&self) -> Option<&str> {
@@ -704,19 +714,34 @@ impl Parser {
         tok.ok_or_else(|| "unexpected end of expression".to_string())
     }
     fn ternary(&mut self) -> Result<Node, String> {
-        let cond = self.logic_or()?;
-        if self.peek() == Some("?") {
-            self.take(Some("?"))?;
-            let a = self.ternary()?;
-            let b = if self.peek() == Some(":") {
-                self.take(Some(":"))?;
-                self.ternary()?
-            } else {
-                Node::Atom("0".into()) // Molang 'a ? b' yields 0 when false
-            };
-            return Ok(Node::Tern(Box::new(cond), Box::new(a), Box::new(b)));
+        self.depth += 1;
+        if self.depth > MAX_PARSE_DEPTH {
+            return Err("expression is nested too deeply".to_string());
         }
-        Ok(cond)
+        let n = self.ternary_inner();
+        self.depth -= 1;
+        n
+    }
+    fn ternary_inner(&mut self) -> Result<Node, String> {
+        // An else-chain (a ? x : b ? y : ...) is read in a loop, so a controller with many
+        // variants does not count against the nesting cap.
+        let mut arms = Vec::new();
+        let mut n = loop {
+            let cond = self.logic_or()?;
+            if self.peek() != Some("?") {
+                break cond;
+            }
+            self.take(Some("?"))?;
+            arms.push((cond, self.ternary()?));
+            if self.peek() != Some(":") {
+                break Node::Atom("0".into()); // Molang 'a ? b' yields 0 when false
+            }
+            self.take(Some(":"))?;
+        };
+        for (cond, a) in arms.into_iter().rev() {
+            n = Node::Tern(Box::new(cond), Box::new(a), Box::new(n));
+        }
+        Ok(n)
     }
     fn logic_or(&mut self) -> Result<Node, String> {
         let mut n = self.logic_and()?;
@@ -746,11 +771,20 @@ impl Parser {
         Ok(n)
     }
     fn unary(&mut self) -> Result<Node, String> {
-        if self.peek() == Some("!") {
+        // Counted in a loop rather than by recursing, so a run of '!' cannot grow the stack.
+        let mut nots = 0;
+        while self.peek() == Some("!") {
             self.take(None)?;
-            return Ok(Node::Not(Box::new(self.unary()?)));
+            nots += 1;
         }
-        self.primary()
+        if nots > MAX_PARSE_DEPTH {
+            return Err("expression is nested too deeply".to_string());
+        }
+        let mut n = self.primary()?;
+        for _ in 0..nots {
+            n = Node::Not(Box::new(n));
+        }
+        Ok(n)
     }
     fn primary(&mut self) -> Result<Node, String> {
         let tok = self.take(None)?;
@@ -1578,6 +1612,7 @@ pub struct PackReport {
     pub renamed: usize,
     pub files_changed: usize,
     pub tiers: BTreeMap<String, usize>,
+    pub summary: TierSummary,
     pub orphan_methods: BTreeMap<String, usize>,
     pub molang_parse_errors: usize,
     pub needs_manual_check: usize,
@@ -1586,6 +1621,31 @@ pub struct PackReport {
     pub report_path: String,
     pub checklist_path: String,
     pub mapping_path: String,
+}
+
+/// The manual-check counts shown by both the tool log and the results box, derived from
+/// `tiers` in one place so the two cannot drift apart.
+#[derive(Serialize, Clone, Default)]
+pub struct TierSummary {
+    /// role_conflicts + orphan_medium: the entries worth a human look.
+    pub review: usize,
+    pub role_conflicts: usize,
+    pub orphan_medium: usize,
+    pub unresolved_suffix: usize,
+    pub kept_original: usize,
+}
+
+impl TierSummary {
+    fn from_tiers(tiers: &BTreeMap<String, usize>) -> Self {
+        let t = |k: &str| tiers.get(k).copied().unwrap_or(0);
+        TierSummary {
+            review: t("referenced_role_conflict") + t("orphan_medium"),
+            role_conflicts: t("referenced_role_conflict"),
+            orphan_medium: t("orphan_medium"),
+            unresolved_suffix: t("referenced_role_unresolved"),
+            kept_original: t("kept_original"),
+        }
+    }
 }
 
 struct Entry {
@@ -2014,7 +2074,10 @@ pub fn rename_pack(root: &Path, log: &dyn Fn(&str, &str)) -> Result<PackReport, 
         "info",
     );
     let id_re = Regex::new(r"geometry\.oreville_ans\.[a-z0-9_]+").unwrap();
-    let mut changed = 0;
+    // Every rewrite is worked out before the disk is touched, and the originals are kept
+    // until all of them are written, so a file that cannot be written (open in the game or
+    // an editor, read-only) does not leave the pack half renamed.
+    let mut pending = Vec::new();
     for (rel, path) in json_files(root) {
         let Ok(bytes) = std::fs::read(&path) else {
             continue;
@@ -2022,19 +2085,50 @@ pub fn rename_pack(root: &Path, log: &dyn Fn(&str, &str)) -> Result<PackReport, 
         let Ok(text) = String::from_utf8(bytes) else {
             continue;
         }; // leave non-UTF-8 files untouched
-        let new_text = id_re.replace_all(&text, |c: &regex::Captures| {
-            active
-                .get(&c[0])
-                .map(|s| s.to_string())
-                .unwrap_or_else(|| c[0].to_string())
-        });
+        let new_text = id_re
+            .replace_all(&text, |c: &regex::Captures| {
+                active
+                    .get(&c[0])
+                    .map(|s| s.to_string())
+                    .unwrap_or_else(|| c[0].to_string())
+            })
+            .into_owned();
         if new_text != text {
-            std::fs::write(&path, new_text.as_bytes())
-                .map_err(|e| format!("Could not write {}: {}", rel, e))?;
-            changed += 1;
+            pending.push((rel, path, text, new_text));
         }
     }
-    report.files_changed = changed;
+    let mut written = 0;
+    let mut failure = None;
+    for (rel, path, _, new_text) in &pending {
+        if let Err(e) = std::fs::write(path, new_text.as_bytes()) {
+            failure = Some(format!("Could not write {}: {}", rel, e));
+            break;
+        }
+        written += 1;
+    }
+    if let Some(err) = failure {
+        // Put back everything written so far, plus the file that failed part-way.
+        let stuck: Vec<&str> = pending
+            .iter()
+            .take(written + 1)
+            .filter(|(_, path, old, _)| {
+                std::fs::write(path, old.as_bytes()).is_err()
+                    && std::fs::read(path).map_or(true, |now| now != old.as_bytes())
+            })
+            .map(|(rel, ..)| rel.as_str())
+            .collect();
+        return Err(if stuck.is_empty() {
+            format!("{}. Nothing was renamed; the pack is unchanged.", err)
+        } else {
+            format!(
+                "{}. The rename could not be undone in {} file(s): {}. Restore the pack from your copy.",
+                err,
+                stuck.len(),
+                stuck.join(", ")
+            )
+        });
+    }
+    report.files_changed = pending.len();
     report.renamed = active.len();
     if active.is_empty() {
         // Already renamed: keep the reports of the run that did the renaming (its mapping is
@@ -2137,6 +2231,7 @@ pub fn rename_pack(root: &Path, log: &dyn Fn(&str, &str)) -> Result<PackReport, 
             *report.orphan_methods.entry(e.method.clone()).or_default() += 1;
         }
     }
+    report.summary = TierSummary::from_tiers(&report.tiers);
     report.needs_manual_check = entries
         .iter()
         .filter(|e| TIER_HELP.iter().any(|(t, _)| *t == e.tier))
@@ -2149,6 +2244,20 @@ pub fn rename_pack(root: &Path, log: &dyn Fn(&str, &str)) -> Result<PackReport, 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn parser_rejects_runaway_nesting() {
+        let parens = format!("{}q.life_time{}", "(".repeat(1000), ")".repeat(1000));
+        assert!(Parser::parse(&parens).is_err());
+        let nots = format!("{}q.is_baby", "!".repeat(1000));
+        assert!(Parser::parse(&nots).is_err());
+        let too_long = vec!["q.is_baby"; 5000].join(" || ");
+        assert!(Parser::parse(&too_long).is_err());
+        // A long else-chain is legitimate and must still parse.
+        let chain: String = (0..200).map(|i| format!("q.variant == {} ? geometry.g{} : ", i, i)).collect();
+        assert!(Parser::parse(&format!("{}geometry.default", chain)).is_ok());
+        assert!(Parser::parse("!(q.is_baby) ? geometry.a : (q.variant == 1 ? geometry.b : geometry.c)").is_ok());
+    }
 
     #[test]
     fn bone_cipher_decodes_known_names() {
