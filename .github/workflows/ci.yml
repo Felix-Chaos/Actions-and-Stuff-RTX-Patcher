@@ -6,12 +6,14 @@ on:
     paths:
       - 'src-tauri/**'
       - 'src/**'
+      - 'scripts/**'
       - '.github/workflows/ci.yml'
   push:
     branches: [main]
     paths:
       - 'src-tauri/**'
       - 'src/**'
+      - 'scripts/**'
       - '.github/workflows/ci.yml'
 
 permissions:
@@ -26,6 +28,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+
+      - name: Check locale files
+        working-directory: .
+        run: node scripts/check-locales.mjs
 
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable

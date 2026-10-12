@@ -5,15 +5,7 @@
 //
 // Usage: node scripts/check-locales.mjs
 import { LOCALES, FALLBACK_LOCALE } from '../src/i18n/registry.js';
-
-function flatten(obj, prefix = '', out = {}) {
-  for (const [k, v] of Object.entries(obj)) {
-    const key = prefix ? `${prefix}.${k}` : k;
-    if (v && typeof v === 'object' && !Array.isArray(v)) flatten(v, key, out);
-    else out[key] = v;
-  }
-  return out;
-}
+import { flatten } from '../src/i18n/flatten.js';
 
 const dicts = new Map();
 for (const { code, loader } of LOCALES) {

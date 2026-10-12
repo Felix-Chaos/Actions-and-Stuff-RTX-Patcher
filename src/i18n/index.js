@@ -6,21 +6,12 @@
 //
 // * Log and console OUTPUT is never translated. See .agents/I18N.md for the rule.
 import { LOCALES, FALLBACK_LOCALE } from './registry.js';
+import { flatten } from './flatten.js';
 
 let current = FALLBACK_LOCALE;
 let dict = {};
 let fallbackDict = {};
 const listeners = new Set();
-
-// Locale files are nested for readability; lookups are flat dot-paths.
-function flatten(obj, prefix = '', out = {}) {
-  for (const [k, v] of Object.entries(obj)) {
-    const key = prefix ? `${prefix}.${k}` : k;
-    if (v && typeof v === 'object' && !Array.isArray(v)) flatten(v, key, out);
-    else out[key] = v;
-  }
-  return out;
-}
 
 async function loadDict(code) {
   const entry = LOCALES.find(l => l.code === code)

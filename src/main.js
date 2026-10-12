@@ -165,6 +165,23 @@ function log(msg, type = 'info') {
   consoleLogs.scrollTop = consoleLogs.scrollHeight;
 }
 
+// Shows a busy label on a button while `fn` runs. A button that carries an
+// i18n key gets its idle label back from the locale rather than from a
+// snapshot, so a language switch made mid-run is not undone.
+async function withBusyLabel(btn, busyHtml, fn) {
+  const original = btn.innerHTML;
+  btn.innerHTML = busyHtml;
+  try {
+    return await fn();
+  } finally {
+    const htmlKey = btn.getAttribute('data-i18n-html');
+    const textKey = btn.getAttribute('data-i18n');
+    if (htmlKey) btn.innerHTML = t(htmlKey);
+    else if (textKey) btn.textContent = t(textKey);
+    else btn.innerHTML = original;
+  }
+}
+
 function logTo(container, msg, type = 'info') {
   const el = document.getElementById(container);
   if (!el) return;
@@ -834,6 +851,11 @@ function wireVersionControls() {
   const patchSelect = document.getElementById('select-patch-version');
   if (patchSelect) {
     patchSelect.addEventListener('change', () => updateSelectedPatchAvailability());
+    // Which variant counts as downloaded depends on the mode, so repaint on a switch.
+    modeRadios.forEach(radio => radio.addEventListener('change', () => {
+      const asSel = document.getElementById('select-as-version');
+      if (asSel && asSel.value) updatePatchVersionsList(asSel.value);
+    }));
   }
 
   // Manual refresh, so a patch published minutes ago can be picked up without
@@ -842,20 +864,14 @@ function wireVersionControls() {
   if (btnRefresh) {
     btnRefresh.addEventListener('click', async () => {
       btnRefresh.disabled = true;
-      const original = btnRefresh.innerHTML;
-      btnRefresh.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('tabPatcher.version.refreshing')}`;
       try {
-        await loadPatchConfigs();
-        await refreshCachedPatches();
+        await withBusyLabel(btnRefresh, `<i class="fas fa-spinner fa-spin"></i> ${t('tabPatcher.version.refreshing')}`, async () => {
+          await loadPatchConfigs();
+          await refreshCachedPatches();
+        });
       } finally {
         btnRefresh.disabled = false;
-        btnRefresh.innerHTML = original;
       }
-    // Which variant counts as downloaded depends on the mode, so repaint on a switch.
-    modeRadios.forEach(radio => radio.addEventListener('change', () => {
-      const asSel = document.getElementById('select-as-version');
-      if (asSel && asSel.value) updatePatchVersionsList(asSel.value);
-    }));
     });
   }
 
@@ -892,16 +908,15 @@ function wireVersionControls() {
       if (!ok) return;
 
       btnClearCache.disabled = true;
-      const original = btnClearCache.innerHTML;
-      btnClearCache.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('tabPatcher.cache.removing')}`;
       try {
-        const [removed, freed] = await invoke("clear_patch_cache");
-        log(`Removed ${removed} downloaded patch(es), freeing ${(freed / 1048576).toFixed(1)} MB.`, 'success');
-        await refreshCachedPatches();
+        await withBusyLabel(btnClearCache, `<i class="fas fa-spinner fa-spin"></i> ${t('tabPatcher.cache.removing')}`, async () => {
+          const [removed, freed] = await invoke("clear_patch_cache");
+          log(`Removed ${removed} downloaded patch(es), freeing ${(freed / 1048576).toFixed(1)} MB.`, 'success');
+          await refreshCachedPatches();
+        });
       } catch (err) {
         log(`Could not clear the downloaded patches: ${err}`, 'error');
       } finally {
-        btnClearCache.innerHTML = original;
         btnClearCache.disabled = cachedPatchInfo.length === 0;
       }
     });
@@ -1075,10 +1090,12 @@ async function refreshCachedPatches() {
   try {
     const cached = await invoke("list_cached_patches");
     cachedPatchSlugs = new Set(cached.map(c => c.slug));
+    cachedPatchVariants = new Map(cached.map(c => [c.slug, new Set(c.variants)]));
     cachedPatchInfo = cached;
   } catch (err) {
     console.error("Failed to list downloaded patches", err);
     cachedPatchSlugs = new Set();
+    cachedPatchVariants = new Map();
     cachedPatchInfo = [];
   }
   const asSel = document.getElementById('select-as-version');
@@ -1090,12 +1107,10 @@ async function refreshCachedPatches() {
 // so versions must be normalised before any comparison.
 function normalizePackVersion(v) {
   return String(v ?? '').trim().replace(/^v/i, '');
-    cachedPatchVariants = new Map(cached.map(c => [c.slug, new Set(c.variants)]));
 }
 
 // Does a scanned pack look like the pack this patch config was built against?
 // v1.11 and v1.11.1 share a logo hash, so file and directory counts are the
-    cachedPatchVariants = new Map();
 // only thing that separates them. Files tolerate a small delta (a user may have
 // added a file); directories must match exactly.
 function candidateMatchesConfig(candidate, config) {
@@ -3413,13 +3428,11 @@ window.addEventListener('DOMContentLoaded', async () => {
     btnPublishLast.addEventListener('click', async () => {
       if (!lastCreatedPatchFolder) return;
       btnPublishLast.disabled = true;
-      const original = btnPublishLast.innerHTML;
-      btnPublishLast.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('tabUtils.genpatch.publishing')}`;
       try {
-        await publishPatchToLibrary(lastCreatedPatchFolder);
+        await withBusyLabel(btnPublishLast, `<i class="fas fa-spinner fa-spin"></i> ${t('tabUtils.genpatch.publishing')}`,
+          () => publishPatchToLibrary(lastCreatedPatchFolder));
       } finally {
         btnPublishLast.disabled = false;
-        btnPublishLast.innerHTML = original;
       }
     });
   }
