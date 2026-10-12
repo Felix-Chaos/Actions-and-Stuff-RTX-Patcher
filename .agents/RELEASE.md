@@ -85,7 +85,8 @@ Everything planned for this release is done: on-demand downloads, the merged cat
 with auto-refresh, download management in App Settings, publishing from the Patch
 Creator, and `docs/PATCH_LIBRARY.md`.
 
-The only outstanding gate is **1a**, trimming the bundled patches.
+Gate **1a** is done as well: the bundle was trimmed to `Actions & Stuff for RTX 1.11.1 V0.1`
+after all nine folders were checked against the library catalogue by SHA-256.
 
 ---
 
