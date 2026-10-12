@@ -200,6 +200,23 @@ $mg = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Cryptography' -Name Mach
                     let effective_vram = accurate_vram.or(adapter_ram).unwrap_or(0);
                     if let Some(map) = gpu.as_object_mut() {
                         map.insert("VramBytes".to_string(), serde_json::json!(effective_vram));
+                        // ! AdapterRAM is a uint32 and saturates at ~4 GiB, so a 16 GB card
+                        // ! reports 4293918720. Leaving it in the payload meant anything
+                        // ! reading the "obvious" field got a wrong, capped number. Drop it:
+                        // ! VramBytes is the only VRAM figure that should ever be consumed.
+                        map.remove("AdapterRAM");
+                        // Says whether VramBytes is the real figure or the capped fallback,
+                        // so a consumer can tell a genuine 4 GB card from a saturated one.
+                        map.insert(
+                            "VramSource".to_string(),
+                            serde_json::json!(if accurate_vram.is_some() {
+                                "registry"
+                            } else if adapter_ram.is_some() {
+                                "wmi_capped"
+                            } else {
+                                "unknown"
+                            }),
+                        );
                     }
                 }
 
@@ -248,7 +265,9 @@ $mg = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Cryptography' -Name Mach
 
     let state = load_state(&app)?;
     let payload = serde_json::json!({
-        "schema_version": 1,
+        // v2: AdapterRAM removed (uint32, capped at 4 GiB); VramBytes + VramSource
+        // are authoritative. Rows written under v1 carry the capped VRAM figure.
+        "schema_version": 2,
         "install_id": state.install_id,
         "hardware_id": hardware_id,
         "patcher_version": app.package_info().version.to_string(),

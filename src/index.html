@@ -15,7 +15,7 @@
       
       <!-- Top Titlebar / Header -->
       <header class="app-header">
-        <button id="btn-toggle-sidebar" class="sidebar-float-toggle btn btn-secondary btn-xs" title="Toggle Sidebar">
+        <button id="btn-toggle-sidebar" class="sidebar-float-toggle btn btn-secondary btn-xs" data-i18n-title="sidebar.toggle" title="Toggle Sidebar">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
         </button>
         <div class="logo-area">
@@ -25,64 +25,69 @@
           </div>
           <div class="logo-badges">
             <span class="version-badge" id="app-version-badge">v3.0</span>
-            <span id="update-badge" class="update-badge state-checking">Checking...</span>
+            <span id="update-badge" class="update-badge state-checking" data-i18n="sidebar.update.checking">Checking...</span>
           </div>
-          <button id="btn-update-now" class="btn btn-primary btn-xs hidden-group" style="margin-top: 8px; font-size: 0.75rem; padding: 4px 8px; width: 100%;">Update Now</button>
+          <button id="btn-update-now" class="btn btn-primary btn-xs hidden-group" style="margin-top: 8px; font-size: 0.75rem; padding: 4px 8px; width: 100%;" data-i18n="sidebar.update.updateNow">Update Now</button>
         </div>
         <nav class="app-nav">
           <button class="nav-tab active" data-tab="patcher">
-            <span class="tab-icon">⚡</span> <span class="tab-text">Patcher</span>
+            <span class="tab-icon">⚡</span> <span class="tab-text" data-i18n="nav.patcher">Patcher</span>
           </button>
           <button class="nav-tab" data-tab="cleaner">
-            <span class="tab-icon">🧹</span> <span class="tab-text">Cleaner</span>
+            <span class="tab-icon">🧹</span> <span class="tab-text" data-i18n="nav.cleaner">Cleaner</span>
           </button>
           <button class="nav-tab" data-tab="settings">
-            <span class="tab-icon">🎛️</span> <span class="tab-text">RTX Settings</span>
+            <span class="tab-icon">🎛️</span> <span class="tab-text" data-i18n="nav.rtxSettings">RTX Settings</span>
           </button>
           <div class="nav-dropdown" id="nav-utils-dropdown">
             <button class="nav-tab nav-dropdown-toggle" data-tab="utils" type="button">
-              <span class="tab-icon">🛠️</span> <span class="tab-text">Utilities</span>
+              <span class="tab-icon">🛠️</span> <span class="tab-text" data-i18n="nav.utils.label">Utilities</span>
               <span class="dropdown-arrow">▼</span>
             </button>
             <div class="nav-dropdown-items">
               <button class="nav-subtab" data-util="pack" type="button">
-                <span class="subtab-dot">•</span> <span class="tab-text">ZIP Packer</span>
+                <span class="subtab-dot">•</span> <span class="tab-text" data-i18n="nav.utils.pack">ZIP Packer</span>
               </button>
               <button class="nav-subtab" data-util="extract" type="button">
-                <span class="subtab-dot">•</span> <span class="tab-text">Extract ZIP</span>
+                <span class="subtab-dot">•</span> <span class="tab-text" data-i18n="nav.utils.extract">Extract ZIP</span>
               </button>
               <button class="nav-subtab" data-util="genpatch" type="button">
-                <span class="subtab-dot">•</span> <span class="tab-text">Create Patch</span>
+                <span class="subtab-dot">•</span> <span class="tab-text" data-i18n="nav.utils.genpatch">Create Patch</span>
               </button>
               <button class="nav-subtab" data-util="brarchive" type="button">
-                <span class="subtab-dot">•</span> <span class="tab-text">Ext Brarchives</span>
+                <span class="subtab-dot">•</span> <span class="tab-text" data-i18n="nav.utils.brarchive">Ext Brarchives</span>
               </button>
             </div>
           </div>
           <button class="nav-tab" data-tab="support">
-            <span class="tab-icon">💬</span> <span class="tab-text">Support</span>
+            <span class="tab-icon">💬</span> <span class="tab-text" data-i18n="nav.support">Support</span>
           </button>
           <button class="nav-tab" data-tab="release">
-            <span class="tab-icon">📦</span> <span class="tab-text">Release</span>
+            <span class="tab-icon">📦</span> <span class="tab-text" data-i18n="nav.release">Release</span>
           </button>
           <button class="nav-tab" data-tab="app-settings">
-            <span class="tab-icon">⚙️</span> <span class="tab-text">App Settings</span>
+            <span class="tab-icon">⚙️</span> <span class="tab-text" data-i18n="nav.appSettings">App Settings</span>
           </button>
         </nav>
         <div class="sidebar-footer">
           <div class="advanced-toggle-container">
-            <span class="toggle-label">Advanced Mode</span>
+            <span class="toggle-label" data-i18n="sidebar.advancedMode">Advanced Mode</span>
             <label class="mc-toggle" style="margin-left: 0;">
               <input type="checkbox" id="chk-advanced-mode" />
               <span class="mc-slider"></span>
             </label>
           </div>
           <div class="advanced-toggle-container" style="margin-top: 8px;">
-            <span class="toggle-label">Beta Updates</span>
+            <span class="toggle-label" data-i18n="sidebar.betaUpdates">Beta Updates</span>
             <label class="mc-toggle" style="margin-left: 0;">
               <input type="checkbox" id="chk-beta-updates" />
               <span class="mc-slider"></span>
             </label>
+          </div>
+          <div class="advanced-toggle-container" style="margin-top: 8px;">
+            <span class="toggle-label" data-i18n="sidebar.language">Language</span>
+            <!-- Options are filled from the i18n registry at runtime. -->
+            <select id="sel-language" class="custom-select sidebar-language-select"></select>
           </div>
         </div>
       </header>
@@ -95,7 +100,7 @@
           <div class="split-view">
             <!-- Left Side: Controls -->
             <div class="controls-panel card">
-              <h2>Select Patch Mode</h2>
+              <h2 data-i18n="tabPatcher.heading">Select Patch Mode</h2>
               <div id="motd-container" class="motd-box hidden-group" style="background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); padding: 12px; border-radius: 8px; margin-bottom: 16px;">
                 <h3 id="motd-title" style="color: #fbbf24; margin: 0 0 4px 0; font-size: 1rem; white-space: pre-line;">Status</h3>
                 <p id="motd-message" style="margin: 0; font-size: 0.85rem; color: #e2e8f0; white-space: pre-line;"></p>
@@ -105,24 +110,24 @@
                   <input type="radio" name="patch-mode" value="marketplace" checked />
                   <span class="radio-card">
                     <span class="mode-icon">🏪</span>
-                    <span class="mode-title">Marketplace</span>
-                    <span class="mode-desc">Patches your purchased Marketplace pack directly from premium cache</span>
+                    <span class="mode-title" data-i18n="tabPatcher.mode.marketplace.title">Marketplace</span>
+                    <span class="mode-desc" data-i18n="tabPatcher.mode.marketplace.desc">Patches your purchased Marketplace pack directly from premium cache</span>
                   </span>
                 </label>
-                <label class="mode-radio disabled-mode" id="mode-zip-label" title="Enable Advanced Mode to use this feature">
+                <label class="mode-radio disabled-mode" id="mode-zip-label" data-i18n-title="tabPatcher.mode.advancedHint" title="Enable Advanced Mode to use this feature">
                   <input type="radio" name="patch-mode" value="zip" id="radio-mode-zip" disabled />
                   <span class="radio-card">
                     <span class="mode-icon">📂</span>
-                    <span class="mode-title">Zip / McPack</span>
-                    <span class="mode-desc">Normalize and patch an external Minecraft pack file</span>
+                    <span class="mode-title" data-i18n="tabPatcher.mode.zip.title">Zip / McPack</span>
+                    <span class="mode-desc" data-i18n="tabPatcher.mode.zip.desc">Normalize and patch an external Minecraft pack file</span>
                   </span>
                 </label>
-                <label class="mode-radio disabled-mode" id="mode-custom-label" title="Enable Advanced Mode to use this feature">
+                <label class="mode-radio disabled-mode" id="mode-custom-label" data-i18n-title="tabPatcher.mode.advancedHint" title="Enable Advanced Mode to use this feature">
                   <input type="radio" name="patch-mode" value="custom" id="radio-mode-custom" disabled />
                   <span class="radio-card">
                     <span class="mode-icon">🔧</span>
-                    <span class="mode-title">Custom Patch</span>
-                    <span class="mode-desc">Select specific source, target, and .vcdiff patch files manually</span>
+                    <span class="mode-title" data-i18n="tabPatcher.mode.custom.title">Custom Patch</span>
+                    <span class="mode-desc" data-i18n="tabPatcher.mode.custom.desc">Select specific source, target, and .vcdiff patch files manually</span>
                   </span>
                 </label>
               </div>
@@ -130,72 +135,81 @@
               <!-- Disclaimer -->
               <div class="disclaimer-box hidden-group">
                 <span class="disclaimer-icon">⚠️</span>
-                <span class="disclaimer-text"><strong>Disclaimer:</strong> A valid Actions &amp; Stuff license is required for legal usage of this patcher!</span>
+                <span class="disclaimer-text" data-i18n-html="tabPatcher.disclaimer"><strong>Disclaimer:</strong> A valid Actions &amp; Stuff license is required for legal usage of this patcher!</span>
               </div>
 
               <!-- Config options contextually shown -->
               <div class="patch-options-section">
                 <!-- Version Selection (For Marketplace/Zip) -->
                 <div class="form-group" id="version-select-group">
-                  <label>Version Selection Mode:</label>
+                  <label data-i18n="tabPatcher.version.modeLabel">Version Selection Mode:</label>
                   <div class="text-switch-container">
                     <input type="hidden" id="version-selection-mode" value="auto" />
-                    <button type="button" class="switch-option active" id="btn-ver-auto" data-value="auto">Auto-detect</button>
-                    <button type="button" class="switch-option" id="btn-ver-manual" data-value="manual">Manual Select</button>
+                    <button type="button" class="switch-option active" id="btn-ver-auto" data-value="auto" data-i18n="tabPatcher.version.autoDetect">Auto-detect</button>
+                    <button type="button" class="switch-option" id="btn-ver-manual" data-value="manual" data-i18n="tabPatcher.version.manualSelect">Manual Select</button>
                   </div>
 
                   <!-- Manual Sub-options (hidden initially) -->
                   <div id="manual-version-options" class="hidden-group">
                     <div class="manual-version-row">
                       <div class="form-group flex-1">
-                        <label for="select-as-version">A&amp;S Version:</label>
+                        <label for="select-as-version" data-i18n="tabPatcher.version.asVersion">A&amp;S Version:</label>
                         <select id="select-as-version" class="custom-select">
                           <!-- Populated dynamically -->
                         </select>
                       </div>
                       <div class="form-group flex-1">
-                        <label for="select-patch-version">Patch Version:</label>
+                        <label for="select-patch-version" data-i18n="tabPatcher.version.patchVersion">Patch Version:</label>
                         <select id="select-patch-version" class="custom-select">
                           <!-- Populated dynamically based on A&S version -->
                         </select>
                       </div>
+                    </div>
+                    <div id="patch-availability-hint" class="status-hint" style="font-size: 0.78rem; margin-top: 6px;"></div>
+                    <div style="display: flex; gap: 6px; margin-top: 4px;">
+                      <button type="button" id="btn-refresh-patches" class="btn btn-secondary btn-xs" data-i18n-html="tabPatcher.version.refreshPatches" data-i18n-title="tabPatcher.version.refreshPatchesTooltip" title="Check the patch library for newly released patches">
+                        <i class="fas fa-rotate"></i> Refresh patch list
+                      </button>
+                      <button type="button" id="btn-remove-selected-patch" class="btn btn-secondary btn-xs hidden-group" data-i18n-html="tabPatcher.version.removeDownload" data-i18n-title="tabPatcher.version.removeDownloadTooltip" title="Delete this downloaded patch from disk. It will be downloaded again next time it is used.">
+                        <i class="fas fa-trash-can"></i> Remove download
+                      </button>
                     </div>
                   </div>
                 </div>
 
                 <!-- Zip/McPack file picker (shown only in zip mode) -->
                 <div id="zip-file-group" class="form-group hidden-group">
-                  <label>Input File (.zip / .mcpack):</label>
+                  <label data-i18n="tabPatcher.zipMode.inputFile">Input File (.zip / .mcpack):</label>
                   <div class="file-picker-group">
-                    <input type="text" id="zip-input-file" placeholder="No file selected" readonly />
-                    <button id="btn-browse-zip-input" class="btn btn-secondary">Browse...</button>
+                    <input type="text" id="zip-input-file" data-i18n-placeholder="tabPatcher.zipMode.noFileSelected" placeholder="No file selected" readonly />
+                    <button id="btn-browse-zip-input" class="btn btn-secondary btn-square" data-i18n-title="common.browse" data-i18n-aria-label="common.browse" title="Browse..." aria-label="Browse..."><svg class="pixel-icon" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><path fill="#1b1b1c" d="M1 2h7v2h7v10H1z"/><path fill="#d99a33" d="M2 3h5v2h7v8H2z"/><path fill="#f2c15c" d="M2 3h5v1H2z M8 5h6v1H8z"/><path fill="#a86f1f" d="M2 12h12v1H2z"/></svg></button>
                   </div>
                 </div>
 
                 <!-- Custom Patch inputs -->
                 <div id="custom-inputs-group" class="hidden-group">
                   <div class="form-group">
-                    <label>Source (Folder / ZIP):</label>
+                    <label data-i18n="tabPatcher.customMode.sourceLabel">Source (Folder / ZIP):</label>
                     <div class="file-picker-group">
-                      <input type="text" id="custom-src" placeholder="No source selected" readonly />
-                      <button id="btn-browse-src" class="btn btn-secondary">Browse...</button>
+                      <input type="text" id="custom-src" data-i18n-placeholder="tabPatcher.customMode.noSourceSelected" placeholder="No source selected" readonly />
+                      <button id="btn-browse-src" class="btn btn-secondary btn-square" data-i18n-title="common.browse" data-i18n-aria-label="common.browse" title="Browse..." aria-label="Browse..."><svg class="pixel-icon" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><path fill="#1b1b1c" d="M1 2h7v2h7v10H1z"/><path fill="#d99a33" d="M2 3h5v2h7v8H2z"/><path fill="#f2c15c" d="M2 3h5v1H2z M8 5h6v1H8z"/><path fill="#a86f1f" d="M2 12h12v1H2z"/></svg></button>
                     </div>
                   </div>
                   <div class="form-group">
-                    <label>Target File (.mcpack / .zip):</label>
+                    <label data-i18n="tabPatcher.customMode.targetLabel">Target File (.mcpack / .zip):</label>
                     <div class="file-picker-group">
-                      <input type="text" id="custom-tgt" placeholder="No target selected" readonly />
-                      <button id="btn-copy-tgt" class="btn-icon-action" title="Copy path to clipboard" style="padding: 8px;">
+                      <input type="text" id="custom-tgt" data-i18n-placeholder="tabPatcher.customMode.noTargetSelected" placeholder="No target selected" readonly />
+                      <button id="btn-copy-tgt" class="btn-icon-action" data-i18n-title="tabPatcher.customMode.copyPath" title="Copy path to clipboard" style="padding: 8px;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                       </button>
-                      <button id="btn-browse-tgt" class="btn btn-secondary">Browse...</button>
+                      <button id="btn-browse-tgt" class="btn btn-secondary btn-square" data-i18n-title="common.browse" data-i18n-aria-label="common.browse" title="Browse..." aria-label="Browse..."><svg class="pixel-icon" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><path fill="#1b1b1c" d="M1 2h7v2h7v10H1z"/><path fill="#d99a33" d="M2 3h5v2h7v8H2z"/><path fill="#f2c15c" d="M2 3h5v1H2z M8 5h6v1H8z"/><path fill="#a86f1f" d="M2 12h12v1H2z"/></svg></button>
                     </div>
                   </div>
                   <div class="form-group">
-                    <label>Patch File (.vcdiff):</label>
+                    <label data-i18n="tabPatcher.customMode.patchLabel">Patch File (.vcdiff):</label>
                     <div class="file-picker-group">
-                      <input type="text" id="custom-patch" placeholder="No patch selected" readonly />
-                      <button id="btn-browse-patch" class="btn btn-secondary">Browse...</button>
+                      <input type="text" id="custom-patch" data-i18n-placeholder="tabPatcher.customMode.noPatchSelected" placeholder="No patch selected" readonly />
+                      <button id="btn-browse-patch" class="btn btn-secondary btn-square" data-i18n-title="common.browse" data-i18n-aria-label="common.browse" title="Browse..." aria-label="Browse..."><svg class="pixel-icon" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><path fill="#1b1b1c" d="M1 2h7v2h7v10H1z"/><path fill="#d99a33" d="M2 3h5v2h7v8H2z"/><path fill="#f2c15c" d="M2 3h5v1H2z M8 5h6v1H8z"/><path fill="#a86f1f" d="M2 12h12v1H2z"/></svg></button>
                     </div>
                   </div>
                 </div>
@@ -203,7 +217,7 @@
                 <!-- Common Checkbox Options -->
                 <div class="checkbox-group" id="common-checkbox-group">
                   <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                    <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Delete older patched versions automatically</span>
+                    <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;" data-i18n="tabPatcher.options.cleanOld">Delete older patched versions automatically</span>
                     <label class="mc-toggle" style="margin-left: 0;">
                       <input type="checkbox" id="chk-clean-old" checked />
                       <span class="mc-slider"></span>
@@ -213,20 +227,20 @@
               </div>
 
               <div class="action-bar">
-                <button id="btn-start-patch" class="btn btn-gold-3d">Apply RTX Patch</button>
+                <button id="btn-start-patch" class="btn btn-gold-3d" data-i18n="tabPatcher.actions.applyPatch">Apply RTX Patch</button>
               </div>
             </div>
 
             <!-- Right Side: Process Step Feedback -->
             <div class="progress-panel card hidden-group">
-              <h2>Patch Status</h2>
+              <h2 data-i18n="tabPatcher.status.heading">Patch Status</h2>
               
               <!-- Simple Status Summary -->
               <div class="status-summary">
                 <div class="status-icon" id="status-spinner">💤</div>
                 <div class="status-text-container">
-                  <div class="status-title" id="status-title-text">Ready to Patch</div>
-                  <div class="status-subtitle" id="status-subtitle-text">Configure options and click Apply</div>
+                  <div class="status-title" id="status-title-text" data-i18n="tabPatcher.status.readyTitle">Ready to Patch</div>
+                  <div class="status-subtitle" id="status-subtitle-text" data-i18n="tabPatcher.status.readySubtitle">Configure options and click Apply</div>
                 </div>
               </div>
 
@@ -240,43 +254,47 @@
               <div class="steps-checklist">
                 <div class="step-item" id="step-0">
                   <span class="step-indicator">⚪</span>
-                  <span class="step-label">Scan / Verify source contents</span>
+                  <span class="step-label" data-i18n="tabPatcher.steps.scan">Scan / Verify source contents</span>
                 </div>
                 <div class="step-item" id="step-1">
                   <span class="step-indicator">⚪</span>
-                  <span class="step-label">Deterministic compression &amp; normalization</span>
+                  <span class="step-label" data-i18n="tabPatcher.steps.normalize">Deterministic compression &amp; normalization</span>
                 </div>
                 <div class="step-item" id="step-2">
                   <span class="step-indicator">⚪</span>
-                  <span class="step-label">Clean older versions</span>
+                  <span class="step-label" data-i18n="tabPatcher.steps.cleanOld">Clean older versions</span>
                 </div>
                 <div class="step-item" id="step-3">
                   <span class="step-indicator">⚪</span>
-                  <span class="step-label">Execute XDelta RTX patch</span>
+                  <span class="step-label" data-i18n="tabPatcher.steps.ensurePatch">Ensure patch file is available</span>
                 </div>
                 <div class="step-item" id="step-4">
                   <span class="step-indicator">⚪</span>
-                  <span class="step-label">Import Minecraft Pack</span>
+                  <span class="step-label" data-i18n="tabPatcher.steps.executePatch">Execute XDelta RTX patch</span>
+                </div>
+                <div class="step-item" id="step-5">
+                  <span class="step-indicator">⚪</span>
+                  <span class="step-label" data-i18n="tabPatcher.steps.importPack">Import Minecraft Pack</span>
                 </div>
               </div>
 
               <!-- Post-patch action buttons -->
               <div id="progress-actions-container" class="progress-actions hidden-group">
-                <button id="btn-install-pack" class="btn btn-success hidden-group">Install Pack</button>
-                <button id="btn-copy-log-large" class="btn btn-secondary hidden-group" title="Copy log to clipboard">📋 Copy Log</button>
-                <button id="btn-report-bug-quick" class="btn btn-danger hidden-group">🐞 Report Bug</button>
-                <button id="btn-patch-back" class="btn btn-secondary">Back to Selection</button>
+                <button id="btn-install-pack" class="btn btn-success hidden-group" data-i18n="tabPatcher.actions.installPack">Install Pack</button>
+                <button id="btn-copy-log-large" class="btn btn-secondary hidden-group" data-i18n="tabPatcher.actions.copyLog" data-i18n-title="tabPatcher.console.copyTooltip" title="Copy log to clipboard">📋 Copy Log</button>
+                <button id="btn-report-bug-quick" class="btn btn-danger hidden-group" data-i18n="tabPatcher.actions.reportBug">🐞 Report Bug</button>
+                <button id="btn-patch-back" class="btn btn-secondary" data-i18n="tabPatcher.actions.backToSelection">Back to Selection</button>
               </div>
 
               <!-- Console output toggle -->
-              <div class="console-section">
+              <div class="console-section" id="main-console-section">
                 <div class="console-header">
-                  <span>Execution Output</span>
+                  <span data-i18n="tabPatcher.console.heading">Execution Output</span>
                   <div class="console-actions">
-                    <button id="btn-copy-log" class="btn-icon-action" title="Copy log to clipboard">
+                    <button id="btn-copy-log" class="btn-icon-action" data-i18n-title="tabPatcher.console.copyTooltip" title="Copy log to clipboard">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                     </button>
-                    <button id="btn-clear-console" class="btn-icon-action" title="Clear console">
+                    <button id="btn-clear-console" class="btn-icon-action" data-i18n-title="tabPatcher.console.clearTooltip" title="Clear console">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                     </button>
                   </div>
@@ -284,6 +302,7 @@
                 <div class="console-body" id="console-logs">
                   <div class="log-line system">Waiting for process start...</div>
                 </div>
+                <div class="console-resize-grip" id="console-resize-handle" data-i18n-title="tabPatcher.console.resizeGripTooltip" title="Drag down to enlarge the console. Double-click to reset."></div>
               </div>
             </div>
           </div>
@@ -292,21 +311,35 @@
         <!-- Tab: Cleaner -->
         <section class="tab-content" id="tab-cleaner">
           <div class="card full-card">
-            <h2>🧹 Scan &amp; Clean Old Patches</h2>
-            <p>Locates and deletes leftover Actions &amp; Stuff pack directories from Minecraft resource pack and world folders to keep your installation clean.</p>
+            <h2 data-i18n="tabCleaner.title">🧹 Scan &amp; Clean Old Patches</h2>
+            <p data-i18n="tabCleaner.description">Locates and deletes leftover Actions &amp; Stuff pack directories from Minecraft resource pack and world folders to keep your installation clean.</p>
             
             <div class="action-panel">
-              <button id="btn-scan-cleaner" class="btn btn-secondary">Scan Folders</button>
-              <button id="btn-run-cleaner" class="btn btn-danger" disabled>Delete Selected Files</button>
+              <button id="btn-scan-cleaner" class="btn btn-secondary" data-i18n="tabCleaner.actions.scan">Scan Folders</button>
+              <button id="btn-run-cleaner" class="btn btn-danger" disabled data-i18n="tabCleaner.actions.deleteSelected">Delete Selected</button>
+              <button id="btn-clean-delete-all" class="btn btn-danger" disabled data-i18n="tabCleaner.actions.deleteAll">Delete All</button>
             </div>
 
             <div class="clean-results-container">
               <div class="results-header">
-                <span>Scan Results:</span>
-                <span id="clean-results-count" class="count-tag">0 found</span>
+                <span data-i18n="tabCleaner.results.title">Scan Results:</span>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <button type="button" id="btn-clean-select-all" class="btn btn-secondary btn-xs hidden-group" data-i18n="tabCleaner.actions.selectAll">Select all</button>
+                  <button type="button" id="btn-clean-select-none" class="btn btn-secondary btn-xs hidden-group" data-i18n="tabCleaner.actions.selectNone">Select none</button>
+                  <span id="clean-results-count" class="count-tag" data-i18n="tabCleaner.results.noneFound">0 found</span>
+                </div>
               </div>
+
+              <!-- Deletion progress, hidden until a delete actually starts -->
+              <div id="clean-progress-wrap" class="hidden-group" style="margin: 10px 0 6px;">
+                <div class="progress-bar-container">
+                  <div class="progress-bar-fill" id="clean-progress-fill" style="width: 0%"></div>
+                </div>
+                <div id="clean-progress-text" style="font-size: 0.78rem; color: #9aa0a6;"></div>
+              </div>
+
               <div class="results-list" id="clean-results-list">
-                <div class="placeholder-text">Click Scan Folders to begin search...</div>
+                <div class="placeholder-text" data-i18n="tabCleaner.results.placeholder">Click Scan Folders to begin search...</div>
               </div>
             </div>
           </div>
@@ -316,24 +349,24 @@
         <!-- Tab: RTX Settings -->
         <section class="tab-content" id="tab-settings">
           <div class="card full-card">
-            <h2>⚙️ Edit options.txt directly</h2>
-            <p>Directly modify Minecraft graphics configuration files to force Ray Tracing, Upscaling, and other premium visual toggles.</p>
+            <h2 data-i18n="tabRtxSettings.title">⚙️ Edit options.txt directly</h2>
+            <p data-i18n="tabRtxSettings.description">Directly modify Minecraft graphics configuration files to force Ray Tracing, Upscaling, and other premium visual toggles.</p>
 
             <div class="form-group options-file-selector">
-              <label for="options-file-select">Target options.txt Profile:</label>
+              <label for="options-file-select" data-i18n="tabRtxSettings.profileLabel">Target options.txt Profile:</label>
               <select id="options-file-select" class="custom-select">
-                <option value="">Loading profiles...</option>
+                <option value="" data-i18n="tabRtxSettings.loadingProfiles">Loading profiles...</option>
               </select>
             </div>
 
             <div class="options-grid" id="rtx-settings-grid">
               <!-- Dynamically populated options inputs -->
-              <div class="placeholder-text">Select an options.txt profile to read settings...</div>
+              <div class="placeholder-text" data-i18n="tabRtxSettings.placeholder">Select an options.txt profile to read settings...</div>
             </div>
 
             <div class="action-bar" style="gap: 12px;">
-              <button id="btn-best-settings" class="btn btn-secondary" disabled>Set Best Settings</button>
-              <button id="btn-save-settings" class="btn btn-primary" disabled>Apply Settings</button>
+              <button id="btn-best-settings" class="btn btn-secondary" disabled data-i18n="tabRtxSettings.actions.setBest">Set Best Settings</button>
+              <button id="btn-save-settings" class="btn btn-primary" disabled data-i18n="tabRtxSettings.actions.apply">Apply Settings</button>
             </div>
           </div>
         </section>
@@ -341,98 +374,98 @@
         <!-- Tab: Utilities -->
         <section class="tab-content" id="tab-utils">
           <div class="card full-card">
-            <h2>🛠️ Standalone Utilities</h2>
-            <p>Select a utility tool to execute specialized tasks without running the main patcher pipeline.</p>
+            <h2 data-i18n="tabUtils.title">🛠️ Standalone Utilities</h2>
+            <p data-i18n="tabUtils.description">Select a utility tool to execute specialized tasks without running the main patcher pipeline.</p>
             
             <div class="form-group utils-selector-group hidden-group" style="max-width: 320px; margin-bottom: 20px;">
-              <label for="utils-tool-select">Select Utility Tool:</label>
+              <label for="utils-tool-select" data-i18n="tabUtils.selectTool">Select Utility Tool:</label>
               <select id="utils-tool-select" class="custom-select">
-                <option value="pack">Deterministic ZIP Packer</option>
-                <option value="extract">Extract ZIP / MCPack</option>
-                <option value="genpatch">Create Patch (VCDIFF)</option>
-                <option value="brarchive">Extract Brarchives</option>
+                <option value="pack" data-i18n="tabUtils.pack.title">Deterministic ZIP Packer</option>
+                <option value="extract" data-i18n="tabUtils.extract.title">Extract ZIP / MCPack</option>
+                <option value="genpatch" data-i18n="tabUtils.genpatch.title">Create Patch (VCDIFF)</option>
+                <option value="brarchive" data-i18n="tabUtils.brarchive.title">Extract Brarchives</option>
               </select>
             </div>
 
             <div class="utils-container">
               <!-- Utility 1: Pack Folder -->
               <div class="util-card" id="util-card-pack">
-                <h3>Deterministic ZIP Packer</h3>
-                <p>Creates a zip archive with fixed timestamps (Jan 1, 1980) and no compression (stored). Ideal for patch generators.</p>
+                <h3 data-i18n="tabUtils.pack.title">Deterministic ZIP Packer</h3>
+                <p data-i18n="tabUtils.pack.description">Creates a zip archive with fixed timestamps (Jan 1, 1980) and no compression (stored). Ideal for patch generators.</p>
                 
                 <div class="form-group">
-                  <label>Folder to Pack:</label>
+                  <label data-i18n="tabUtils.pack.folderLabel">Folder to Pack:</label>
                   <div class="file-picker-group">
-                    <input type="text" id="pack-src-folder" placeholder="No folder selected" readonly />
-                    <button id="btn-pack-src-browse" class="btn btn-secondary">Browse...</button>
+                    <input type="text" id="pack-src-folder" placeholder="No folder selected" data-i18n-placeholder="common.noFolderSelected" readonly />
+                    <button id="btn-pack-src-browse" class="btn btn-secondary btn-square" data-i18n-title="common.browse" data-i18n-aria-label="common.browse" title="Browse..." aria-label="Browse..."><svg class="pixel-icon" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><path fill="#1b1b1c" d="M1 2h7v2h7v10H1z"/><path fill="#d99a33" d="M2 3h5v2h7v8H2z"/><path fill="#f2c15c" d="M2 3h5v1H2z M8 5h6v1H8z"/><path fill="#a86f1f" d="M2 12h12v1H2z"/></svg></button>
                   </div>
                 </div>
                 <div class="form-group">
-                  <label>Save Zip / McPack Location:</label>
+                  <label data-i18n="tabUtils.pack.saveLocationLabel">Save Zip / McPack Location:</label>
                   <div class="file-picker-group">
-                    <input type="text" id="pack-dst-file" placeholder="No output zip selected" readonly />
-                    <button id="btn-pack-dst-browse" class="btn btn-secondary">Browse...</button>
+                    <input type="text" id="pack-dst-file" placeholder="No output zip selected" data-i18n-placeholder="tabUtils.pack.noOutputZip" readonly />
+                    <button id="btn-pack-dst-browse" class="btn btn-secondary btn-square" data-i18n-title="common.browse" data-i18n-aria-label="common.browse" title="Browse..." aria-label="Browse..."><svg class="pixel-icon" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><path fill="#1b1b1c" d="M1 2h7v2h7v10H1z"/><path fill="#d99a33" d="M2 3h5v2h7v8H2z"/><path fill="#f2c15c" d="M2 3h5v1H2z M8 5h6v1H8z"/><path fill="#a86f1f" d="M2 12h12v1H2z"/></svg></button>
                   </div>
                 </div>
-                <button id="btn-run-pack" class="btn btn-primary">Compress Deterministically</button>
+                <button id="btn-run-pack" class="btn btn-primary" data-i18n="tabUtils.pack.compressBtn">Compress Deterministically</button>
               </div>
 
               <!-- Utility 2: Extract Archive -->
               <div class="util-card hidden-group" id="util-card-extract">
-                <h3>Extract ZIP / MCPack</h3>
-                <p>Extracts any archive file to a destination directory, resolving double-nested folders automatically.</p>
+                <h3 data-i18n="tabUtils.extract.title">Extract ZIP / MCPack</h3>
+                <p data-i18n="tabUtils.extract.description">Extracts any archive file to a destination directory, resolving double-nested folders automatically.</p>
                 
                 <div class="form-group">
-                  <label>Archive file:</label>
+                  <label data-i18n="tabUtils.extract.archiveFileLabel">Archive file:</label>
                   <div class="file-picker-group">
-                    <input type="text" id="extract-src-file" placeholder="No zip file selected" readonly />
-                    <button id="btn-extract-src-browse" class="btn btn-secondary">Browse...</button>
+                    <input type="text" id="extract-src-file" placeholder="No zip file selected" data-i18n-placeholder="tabUtils.extract.noZipFileSelected" readonly />
+                    <button id="btn-extract-src-browse" class="btn btn-secondary btn-square" data-i18n-title="common.browse" data-i18n-aria-label="common.browse" title="Browse..." aria-label="Browse..."><svg class="pixel-icon" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><path fill="#1b1b1c" d="M1 2h7v2h7v10H1z"/><path fill="#d99a33" d="M2 3h5v2h7v8H2z"/><path fill="#f2c15c" d="M2 3h5v1H2z M8 5h6v1H8z"/><path fill="#a86f1f" d="M2 12h12v1H2z"/></svg></button>
                   </div>
                 </div>
                 <div class="form-group">
-                  <label>Destination Folder:</label>
+                  <label data-i18n="tabUtils.extract.destFolderLabel">Destination Folder:</label>
                   <div class="file-picker-group">
-                    <input type="text" id="extract-dst-folder" placeholder="No destination selected" readonly />
-                    <button id="btn-extract-dst-browse" class="btn btn-secondary">Browse...</button>
+                    <input type="text" id="extract-dst-folder" placeholder="No destination selected" data-i18n-placeholder="tabUtils.extract.noDestSelected" readonly />
+                    <button id="btn-extract-dst-browse" class="btn btn-secondary btn-square" data-i18n-title="common.browse" data-i18n-aria-label="common.browse" title="Browse..." aria-label="Browse..."><svg class="pixel-icon" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><path fill="#1b1b1c" d="M1 2h7v2h7v10H1z"/><path fill="#d99a33" d="M2 3h5v2h7v8H2z"/><path fill="#f2c15c" d="M2 3h5v1H2z M8 5h6v1H8z"/><path fill="#a86f1f" d="M2 12h12v1H2z"/></svg></button>
                   </div>
                 </div>
-                <button id="btn-run-extract" class="btn btn-primary">Extract Files</button>
+                <button id="btn-run-extract" class="btn btn-primary" data-i18n="tabUtils.extract.extractBtn">Extract Files</button>
               </div>
 
               <!-- Utility 3: Generate VCDIFF Patch (V2-style) -->
               <div class="util-card hidden-group" id="util-card-genpatch">
-                <h3>Create Patch (VCDIFF)</h3>
-                <p>Generates encrypted and decrypted .vcdiff patch files from source and patched pack directories. Matches the V2 patch creator workflow.</p>
+                <h3 data-i18n="tabUtils.genpatch.title">Create Patch (VCDIFF)</h3>
+                <p data-i18n="tabUtils.genpatch.description">Generates encrypted and decrypted .vcdiff patch files from source and patched pack directories. Matches the V2 patch creator workflow.</p>
 
                 <div class="genpatch-grid">
                   <!-- Left column: folder inputs -->
                   <div class="genpatch-inputs">
                     <div class="form-group">
-                      <label>1. Target Folder <span class="label-hint">(your modified/patched version)</span></label>
+                      <label data-i18n-html="tabUtils.genpatch.targetFolderLabel">1. Target Folder <span class="label-hint">(your modified/patched version)</span></label>
                       <div class="file-picker-group">
-                        <input type="text" id="gen-patched-dir" placeholder="No folder selected" readonly />
-                        <button id="btn-gen-patched-browse" class="btn btn-secondary">Browse...</button>
+                        <input type="text" id="gen-patched-dir" placeholder="No folder selected" data-i18n-placeholder="common.noFolderSelected" readonly />
+                        <button id="btn-gen-patched-browse" class="btn btn-secondary btn-square" data-i18n-title="common.browse" data-i18n-aria-label="common.browse" title="Browse..." aria-label="Browse..."><svg class="pixel-icon" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><path fill="#1b1b1c" d="M1 2h7v2h7v10H1z"/><path fill="#d99a33" d="M2 3h5v2h7v8H2z"/><path fill="#f2c15c" d="M2 3h5v1H2z M8 5h6v1H8z"/><path fill="#a86f1f" d="M2 12h12v1H2z"/></svg></button>
                       </div>
                     </div>
                     <div class="form-group">
-                      <label>2. Source Decrypted Folder <span class="label-hint">(vanilla baseline)</span></label>
+                      <label data-i18n-html="tabUtils.genpatch.decryptedFolderLabel">2. Source Decrypted Folder <span class="label-hint">(vanilla baseline)</span></label>
                       <div class="file-picker-group">
-                        <input type="text" id="gen-decrypted-dir" placeholder="No folder selected" readonly />
-                        <button id="btn-gen-decrypted-browse" class="btn btn-secondary">Browse...</button>
+                        <input type="text" id="gen-decrypted-dir" placeholder="No folder selected" data-i18n-placeholder="common.noFolderSelected" readonly />
+                        <button id="btn-gen-decrypted-browse" class="btn btn-secondary btn-square" data-i18n-title="common.browse" data-i18n-aria-label="common.browse" title="Browse..." aria-label="Browse..."><svg class="pixel-icon" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><path fill="#1b1b1c" d="M1 2h7v2h7v10H1z"/><path fill="#d99a33" d="M2 3h5v2h7v8H2z"/><path fill="#f2c15c" d="M2 3h5v1H2z M8 5h6v1H8z"/><path fill="#a86f1f" d="M2 12h12v1H2z"/></svg></button>
                       </div>
                     </div>
                     <div class="form-group">
-                      <label>3. Source Encrypted Folder <span class="label-hint">(premium cache / marketplace)</span></label>
+                      <label data-i18n-html="tabUtils.genpatch.encryptedFolderLabel">3. Source Encrypted Folder <span class="label-hint">(premium cache / marketplace)</span></label>
                       <div class="file-picker-group">
-                        <input type="text" id="gen-encrypted-dir" placeholder="No folder selected" readonly />
-                        <button id="btn-gen-encrypted-browse" class="btn btn-secondary">Browse...</button>
+                        <input type="text" id="gen-encrypted-dir" placeholder="No folder selected" data-i18n-placeholder="common.noFolderSelected" readonly />
+                        <button id="btn-gen-encrypted-browse" class="btn btn-secondary btn-square" data-i18n-title="common.browse" data-i18n-aria-label="common.browse" title="Browse..." aria-label="Browse..."><svg class="pixel-icon" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><path fill="#1b1b1c" d="M1 2h7v2h7v10H1z"/><path fill="#d99a33" d="M2 3h5v2h7v8H2z"/><path fill="#f2c15c" d="M2 3h5v1H2z M8 5h6v1H8z"/><path fill="#a86f1f" d="M2 12h12v1H2z"/></svg></button>
                       </div>
                     </div>
                     <div class="form-group">
-                      <label>Output Directory <span class="label-hint">(where .vcdiff files are saved)</span></label>
+                      <label data-i18n-html="tabUtils.genpatch.outputDirLabel">Output Directory <span class="label-hint">(where .vcdiff files are saved)</span></label>
                       <div class="file-picker-group">
-                        <input type="text" id="gen-output-dir" placeholder="No output directory selected" readonly />
-                        <button id="btn-gen-output-browse" class="btn btn-secondary">Browse...</button>
+                        <input type="text" id="gen-output-dir" placeholder="No output directory selected" data-i18n-placeholder="tabUtils.genpatch.noOutputDirSelected" readonly />
+                        <button id="btn-gen-output-browse" class="btn btn-secondary btn-square" data-i18n-title="common.browse" data-i18n-aria-label="common.browse" title="Browse..." aria-label="Browse..."><svg class="pixel-icon" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><path fill="#1b1b1c" d="M1 2h7v2h7v10H1z"/><path fill="#d99a33" d="M2 3h5v2h7v8H2z"/><path fill="#f2c15c" d="M2 3h5v1H2z M8 5h6v1H8z"/><path fill="#a86f1f" d="M2 12h12v1H2z"/></svg></button>
                       </div>
                     </div>
                   </div>
@@ -440,8 +473,8 @@
                   <!-- Right column: version + options -->
                   <div class="genpatch-meta">
                                         <div class="form-group" style="margin-bottom: 8px;">
-                      <label for="gen-pack-version">Pack Version</label>
-                      <input type="text" id="gen-pack-version" class="custom-input" placeholder="e.g. 1.10.1" value="1.10.1" style="width: 100%; margin-bottom: 4px;" />
+                      <label for="gen-pack-version" data-i18n="tabUtils.genpatch.packVersionLabel">Pack Version</label>
+                      <input type="text" id="gen-pack-version" class="custom-input" placeholder="e.g. 1.10.1" data-i18n-placeholder="tabUtils.genpatch.packVersionPlaceholder" value="1.10.1" style="width: 100%; margin-bottom: 4px;" />
                       <div style="display: flex; gap: 4px;">
                         <button type="button" class="btn btn-secondary btn-xs" id="btn-pack-major" style="flex: 1;">+1.0.0</button>
                         <button type="button" class="btn btn-secondary btn-xs" id="btn-pack-minor" style="flex: 1;">+0.1.0</button>
@@ -449,22 +482,30 @@
                       </div>
                     </div>
                     <div class="form-group">
-                      <label for="gen-patch-version">Patch Version</label>
-                      <input type="text" id="gen-patch-version" class="custom-input" placeholder="e.g. 1.1" value="1.1" style="width: 100%; margin-bottom: 4px;" />
+                      <label for="gen-patch-version" data-i18n="tabUtils.genpatch.patchVersionLabel">Patch Version</label>
+                      <input type="text" id="gen-patch-version" class="custom-input" placeholder="e.g. 1.1" data-i18n-placeholder="tabUtils.genpatch.patchVersionPlaceholder" value="1.1" style="width: 100%; margin-bottom: 4px;" />
                       <div style="display: flex; gap: 4px;">
                         <button type="button" class="btn btn-secondary btn-xs" id="btn-patch-major" style="flex: 1;">+1.0</button>
                         <button type="button" class="btn btn-secondary btn-xs" id="btn-patch-minor" style="flex: 1;">+0.1</button>
                       </div>
                     </div>
                     <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0; margin-top: 8px;">
-                      <span style="font-size: 0.85rem; color: #ffffff; font-weight: 500;">Inject Custom Manifest</span>
+                      <span style="font-size: 0.85rem; color: #ffffff; font-weight: 500;" data-i18n="tabUtils.genpatch.injectManifest">Inject Custom Manifest</span>
                       <label class="mc-toggle" style="margin-left: 0;">
                         <input type="checkbox" id="gen-inject-manifest" checked />
                         <span class="mc-slider"></span>
                       </label>
                     </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
+                      <span style="font-size: 0.85rem; color: #ffffff; font-weight: 500;" data-i18n="tabUtils.genpatch.publishToLibrary">Publish to Patch Library</span>
+                      <label class="mc-toggle" style="margin-left: 0;">
+                        <input type="checkbox" id="gen-publish-library" />
+                        <span class="mc-slider"></span>
+                      </label>
+                    </div>
                     <div class="genpatch-actions" style="margin-top: 16px;">
-                      <button id="btn-run-gen-patch" class="btn btn-gold-3d" style="width: 100%;">Create Patches</button>
+                      <button id="btn-run-gen-patch" class="btn btn-gold-3d" style="width: 100%;" data-i18n="tabUtils.genpatch.createPatchesBtn">Create Patches</button>
+                      <button id="btn-publish-last-patch" class="btn btn-secondary hidden-group" style="width: 100%; margin-top: 8px;" data-i18n="tabUtils.genpatch.publishBtn">Publish to Library</button>
                     </div>
                     <div class="genpatch-status" id="genpatch-status" style="margin-top: 12px; display: none;">
                       <div id="genpatch-status-text" class="status-hint"></div>
@@ -475,12 +516,12 @@
                 <!-- Log output inside genpatch -->
                 <div class="console-section" style="margin-top: 16px;">
                   <div class="console-header">
-                    <span>Patch Creator Log</span>
+                    <span data-i18n="tabUtils.genpatch.console.heading">Patch Creator Log</span>
                     <div class="console-actions">
-                    <button id="btn-copy-genpatch-log" class="btn-icon-action" title="Copy log">
+                    <button id="btn-copy-genpatch-log" class="btn-icon-action" title="Copy log" data-i18n-title="tabUtils.genpatch.console.copyTooltip">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                     </button>
-                    <button id="btn-clear-genpatch-log" class="btn-icon-action" title="Clear">
+                    <button id="btn-clear-genpatch-log" class="btn-icon-action" title="Clear" data-i18n-title="tabUtils.genpatch.console.clearTooltip">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                     </button>
                   </div>
@@ -493,14 +534,14 @@
 
               <!-- Utility 4: Standalone Brarchive Extractor -->
               <div class="util-card hidden-group" id="util-card-brarchive">
-                <h3>Extract Brarchives</h3>
-                <p>Recursively scans a workspace directory, deserializes and unpacks <code>.brarchive</code> contents, and cleans up temp pointer files.</p>
+                <h3 data-i18n="tabUtils.brarchive.title">Extract Brarchives</h3>
+                <p data-i18n-html="tabUtils.brarchive.description">Recursively scans a workspace directory, deserializes and unpacks <code>.brarchive</code> contents, and cleans up temp pointer files.</p>
                 
                 <div class="form-group">
-                  <label>Workspace / Target Folder:</label>
+                  <label data-i18n="tabUtils.brarchive.workspaceLabel">Workspace / Target Folder:</label>
                   <div class="file-picker-group">
-                    <input type="text" id="util-br-folder" placeholder="No workspace folder selected" readonly />
-                    <button id="btn-util-br-browse" class="btn btn-secondary">Browse...</button>
+                    <input type="text" id="util-br-folder" placeholder="No workspace folder selected" data-i18n-placeholder="tabUtils.brarchive.noFolderSelected" readonly />
+                    <button id="btn-util-br-browse" class="btn btn-secondary btn-square" data-i18n-title="common.browse" data-i18n-aria-label="common.browse" title="Browse..." aria-label="Browse..."><svg class="pixel-icon" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><path fill="#1b1b1c" d="M1 2h7v2h7v10H1z"/><path fill="#d99a33" d="M2 3h5v2h7v8H2z"/><path fill="#f2c15c" d="M2 3h5v1H2z M8 5h6v1H8z"/><path fill="#a86f1f" d="M2 12h12v1H2z"/></svg></button>
                   </div>
                 </div>
 
@@ -548,7 +589,7 @@
         <!-- Tab: Support -->
         <section class="tab-content" id="tab-support">
           <div class="card full-card" style="display: block;">
-            <h2>💬 Support & Community</h2>
+            <h2 data-i18n="tabSupport.title">💬 Support & Community</h2>
             
             <!-- Offline MOTD Box (only shown here when API is down) -->
             <div id="motd-offline-container" class="motd-box hidden-group" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); padding: 12px; border-radius: 8px; margin-bottom: 16px;">
@@ -556,107 +597,90 @@
               <p id="motd-offline-message" style="margin: 0; font-size: 0.85rem; color: #e2e8f0; white-space: pre-line;"></p>
             </div>
 
-            <p>Need help or want to join the community? Check out the servers below.</p>
+            <p data-i18n="tabSupport.description">Need help or want to join the community? Check out the servers below.</p>
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
               <div class="util-card">
                 <img src="assets/chaos_dev_banner.png" alt="Chaos dev" style="width: 100%; height: 120px; object-fit: cover; border-radius: 6px; margin-bottom: 12px; border: 1px solid rgba(255, 255, 255, 0.06); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);" />
-                <h3 style="margin-bottom: 4px;">Chaos dev Projects Server <span class="badge" style="background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; margin-left: 8px;">Recommended</span></h3>
+                <h3 style="margin-bottom: 4px;" data-i18n-html="tabSupport.chaosServer.title">Chaos dev Projects Server <span class="badge" style="background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; margin-left: 8px;">Recommended</span></h3>
                 <div class="server-tags" style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;">
-                  <span class="badge" style="background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.3); color: #93c5fd; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 600;">Patcher</span>
-                  <span class="badge" style="background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 600;">Patches</span>
-                  <span class="badge" style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.3); color: #6ee7b7; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 600;">Other Projects</span>
+                  <span class="badge" style="background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.3); color: #93c5fd; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 600;" data-i18n="tabSupport.tags.patcher">Patcher</span>
+                  <span class="badge" style="background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 600;" data-i18n="tabSupport.tags.patches">Patches</span>
+                  <span class="badge" style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.3); color: #6ee7b7; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 600;" data-i18n="tabSupport.tags.otherProjects">Other Projects</span>
                 </div>
-                <p>The official server for Actions & Stuff RTX Patcher development and updates. The 3D printing and gaming community is also on there!</p>
-                <button id="btn-chaos-discord" class="btn btn-gold-3d" style="margin-top: 12px; width: 100%;">Join Discord Server</button>
+                <p data-i18n="tabSupport.chaosServer.desc">The official server for Actions & Stuff RTX Patcher development and updates. The 3D printing and gaming community is also on there!</p>
+                <button id="btn-chaos-discord" class="btn btn-gold-3d" style="margin-top: 12px; width: 100%;" data-i18n="tabSupport.joinDiscord">Join Discord Server</button>
               </div>
               
               <div class="util-card">
                 <img src="assets/betterrtx_banner.png" alt="BetterRTX" style="width: 100%; height: 120px; object-fit: cover; border-radius: 6px; margin-bottom: 12px; border: 1px solid rgba(255, 255, 255, 0.06); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);" />
-                <h3 style="margin-bottom: 4px;">BetterRTX Discord Server</h3>
+                <h3 style="margin-bottom: 4px;" data-i18n="tabSupport.betterRtxServer.title">BetterRTX Discord Server</h3>
                 <div class="server-tags" style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;">
-                  <span class="badge" style="background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.3); color: #c4b5fd; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 600;">Better RTX</span>
-                  <span class="badge" style="background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 600;">RTX Related issues</span>
+                  <span class="badge" style="background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.3); color: #c4b5fd; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 600;" data-i18n="tabSupport.tags.betterRtx">Better RTX</span>
+                  <span class="badge" style="background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 600;" data-i18n="tabSupport.tags.rtxIssues">RTX Related issues</span>
                 </div>
-                <p>The central hub for all things Minecraft RTX and BetterRTX development.</p>
-                <button id="btn-betterrtx-discord" class="btn btn-secondary" style="margin-top: 12px; width: 100%;">Join Discord Server</button>
+                <p data-i18n="tabSupport.betterRtxServer.desc">The central hub for all things Minecraft RTX and BetterRTX development.</p>
+                <button id="btn-betterrtx-discord" class="btn btn-secondary" style="margin-top: 12px; width: 100%;" data-i18n="tabSupport.joinDiscord">Join Discord Server</button>
               </div>
-            </div>
-
-            <!-- Known Issue: NVIDIA Mob Texture Corruption -->
-            <div class="card" style="margin-top: 24px; background: rgba(139, 92, 246, 0.06); border: 1px solid rgba(139, 92, 246, 0.25);">
-              <h3 style="margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">🟣 Known Issue: Wrong/Missing Mob Textures (NVIDIA)</h3>
-              <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
-                Seeing stretched, black, or purple textures on <b>Zombies, Creepers, or Skeletons</b> on an NVIDIA graphics card? We're actively tracking this specific issue. Use the button below to send a fully <b>anonymous</b> report — no Discord account needed.
-              </p>
-              <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 16px;">
-                This automatically includes your hardware info, GPU driver events, and Minecraft content log, since diagnosing this bug needs all three. Unlike a regular bug report, this data is kept until the issue is actually fixed instead of being auto-deleted after 30/90 days.
-              </p>
-              <div class="form-group">
-                <label for="known-issue-description">Anything else to add? <span style="color: var(--text-muted); font-weight: 400;">(optional)</span></label>
-                <textarea id="known-issue-description" class="custom-textarea" rows="2" maxlength="500" placeholder="e.g. which subpack, when it started, etc. (optional)"></textarea>
-              </div>
-              <button id="btn-submit-known-issue" class="btn btn-primary" style="width: 100%;">Report This Issue Anonymously</button>
-              <div id="known-issue-status" style="margin-top: 12px; font-size: 0.85rem; text-align: center;" class="hidden-group"></div>
             </div>
 
             <!-- Bug Report Section -->
             <div class="card" style="margin-top: 24px; background: rgba(0,0,0,0.2);">
-              <h3 style="margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">🐞 Submit a Bug Report</h3>
-              <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">Send an automated bug report directly to our developer team via Discord. A case number will be generated for tracking.</p>
+              <h3 style="margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;" data-i18n="tabSupport.bugReport.title">🐞 Submit a Bug Report</h3>
+              <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;" data-i18n="tabSupport.bugReport.desc">Send an automated bug report directly to our developer team via Discord. A case number will be generated for tracking.</p>
               
               <div class="form-group">
-                <label for="bug-discord-name">Your Discord Username (e.g. user#1234)</label>
-                <input type="text" id="bug-discord-name" class="custom-input" placeholder="We need this to link the report to you" />
+                <label for="bug-discord-name" data-i18n="tabSupport.bugReport.discordLabel">Your Discord Username (e.g. user#1234)</label>
+                <input type="text" id="bug-discord-name" class="custom-input" placeholder="We need this to link the report to you" data-i18n-placeholder="tabSupport.bugReport.discordPlaceholder" />
               </div>
 
               <div class="form-group">
-                <label for="bug-description">Bug Description</label>
-                <textarea id="bug-description" class="custom-textarea" rows="3" maxlength="500" placeholder="Please describe what went wrong (max 500 characters)"></textarea>
+                <label for="bug-description" data-i18n="tabSupport.bugReport.descLabel">Bug Description</label>
+                <textarea id="bug-description" class="custom-textarea" rows="3" maxlength="500" placeholder="Please describe what went wrong (max 500 characters)" data-i18n-placeholder="tabSupport.bugReport.descPlaceholder"></textarea>
               </div>
 
               <div class="form-group">
-                <label>Bug Category <span style="color: var(--text-muted); font-weight: 400;">(select all that apply)</span></label>
+                <label data-i18n-html="tabSupport.bugReport.categoryLabel">Bug Category <span style="color: var(--text-muted); font-weight: 400;">(select all that apply)</span></label>
                 <div id="bug-categories" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; margin-top: 8px;">
-                  <label class="mc-checkbox-item"><input type="checkbox" class="bug-category" value="Texture Messup" /><span class="mc-checkbox-box"></span> Texture Messup</label>
-                  <label class="mc-checkbox-item"><input type="checkbox" class="bug-category" value="Texture Purple" /><span class="mc-checkbox-box"></span> Texture Purple</label>
-                  <label class="mc-checkbox-item"><input type="checkbox" class="bug-category" value="DeltaX Problem" /><span class="mc-checkbox-box"></span> DeltaX Problem</label>
-                  <label class="mc-checkbox-item"><input type="checkbox" class="bug-category" value="No dynamic light" /><span class="mc-checkbox-box"></span> No dynamic light</label>
-                  <label class="mc-checkbox-item"><input type="checkbox" class="bug-category" value="Wrong Model for mob" /><span class="mc-checkbox-box"></span> Wrong Model for mob</label>
+                  <label class="mc-checkbox-item"><input type="checkbox" class="bug-category" value="Texture Messup" /><span class="mc-checkbox-box"></span> <span data-i18n="tabSupport.bugReport.categories.textureMessup">Texture Messup</span></label>
+                  <label class="mc-checkbox-item"><input type="checkbox" class="bug-category" value="Texture Purple" /><span class="mc-checkbox-box"></span> <span data-i18n="tabSupport.bugReport.categories.texturePurple">Texture Purple</span></label>
+                  <label class="mc-checkbox-item"><input type="checkbox" class="bug-category" value="DeltaX Problem" /><span class="mc-checkbox-box"></span> <span data-i18n="tabSupport.bugReport.categories.deltaXProblem">DeltaX Problem</span></label>
+                  <label class="mc-checkbox-item"><input type="checkbox" class="bug-category" value="No dynamic light" /><span class="mc-checkbox-box"></span> <span data-i18n="tabSupport.bugReport.categories.noDynamicLight">No dynamic light</span></label>
+                  <label class="mc-checkbox-item"><input type="checkbox" class="bug-category" value="Wrong Model for mob" /><span class="mc-checkbox-box"></span> <span data-i18n="tabSupport.bugReport.categories.wrongModelMob">Wrong Model for mob</span></label>
                 </div>
               </div>
 
               <div class="checkbox-group" style="margin-bottom: 16px; background: rgba(0,0,0,0.1); padding: 12px; border-radius: 6px;">
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                  <span style="font-size: 0.85rem; font-weight: 500;">Include Application Log</span>
+                  <span style="font-size: 0.85rem; font-weight: 500;" data-i18n="tabSupport.bugReport.includeAppLog">Include Application Log</span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="bug-include-log" checked />
                     <span class="mc-slider"></span>
                   </label>
                 </div>
                 <div id="bug-pack-toggle-row" style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0; margin-top: 8px;">
-                  <span style="font-size: 0.85rem; font-weight: 500;">Include Pack (Marketplace Cache / Zip)</span>
+                  <span style="font-size: 0.85rem; font-weight: 500;" data-i18n="tabSupport.bugReport.includePack">Include Pack (Marketplace Cache / Zip)</span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="bug-include-pack" />
                     <span class="mc-slider"></span>
                   </label>
                 </div>
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0; margin-top: 8px;">
-                  <span style="font-size: 0.85rem; font-weight: 500;">Send Minecraft Content Log <span style="color: var(--text-muted); font-weight: 400;">(recommended for rendering bugs)</span></span>
+                  <span style="font-size: 0.85rem; font-weight: 500;" data-i18n-html="tabSupport.bugReport.includeContentLog">Send Minecraft Content Log <span style="color: var(--text-muted); font-weight: 400;">(recommended for rendering bugs)</span></span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="bug-include-content-log" checked />
                     <span class="mc-slider"></span>
                   </label>
                 </div>
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0; margin-top: 8px;">
-                  <span style="font-size: 0.85rem; font-weight: 500;">Include GPU Driver Events <span style="color: var(--text-muted); font-weight: 400;">(last 7 days, display driver only)</span></span>
+                  <span style="font-size: 0.85rem; font-weight: 500;" data-i18n-html="tabSupport.bugReport.includeDriverLog">Include GPU Driver Events <span style="color: var(--text-muted); font-weight: 400;">(last 7 days, display driver only)</span></span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="bug-include-driver-log" checked />
                     <span class="mc-slider"></span>
                   </label>
                 </div>
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0; margin-top: 8px;">
-                  <span style="font-size: 0.85rem; font-weight: 500;">Include Hardware Info <span style="color: var(--text-muted); font-weight: 400;">(GPU, driver, RAM, BetterRTX version &amp; RTX settings)</span></span>
+                  <span style="font-size: 0.85rem; font-weight: 500;" data-i18n-html="tabSupport.bugReport.includeHardware">Include Hardware Info <span style="color: var(--text-muted); font-weight: 400;">(GPU, driver, RAM, BetterRTX version &amp; RTX settings)</span></span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="bug-include-hardware" checked />
                     <span class="mc-slider"></span>
@@ -664,8 +688,25 @@
                 </div>
               </div>
 
-              <button id="btn-submit-bug" class="btn btn-primary" style="width: 100%;">Send Bug Report</button>
+              <button id="btn-submit-bug" class="btn btn-primary" style="width: 100%;" data-i18n="tabSupport.bugReport.submitBtn">Send Bug Report</button>
               <div id="bug-report-status" style="margin-top: 12px; font-size: 0.85rem; text-align: center;" class="hidden-group"></div>
+            </div>
+
+            <!-- Known Issue: NVIDIA Mob Texture Corruption -->
+            <div class="card" style="margin-top: 24px; background: rgba(139, 92, 246, 0.06); border: 1px solid rgba(139, 92, 246, 0.25);">
+              <h3 style="margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;" data-i18n="tabSupport.knownIssue.title">🟣 Known Issue: Wrong/Missing Mob Textures (NVIDIA)</h3>
+              <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;" data-i18n-html="tabSupport.knownIssue.desc">
+                Seeing stretched, black, or purple textures on <b>Zombies, Creepers, or Skeletons</b> on an NVIDIA graphics card? We're actively tracking this specific issue. Use the button below to send a fully <b>anonymous</b> report, no Discord account needed.
+              </p>
+              <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 16px;" data-i18n="tabSupport.knownIssue.details">
+                This automatically includes your hardware info, GPU driver events, and Minecraft content log, since diagnosing this bug needs all three. Unlike a regular bug report, this data is kept until the issue is actually fixed instead of being auto-deleted after 30/90 days.
+              </p>
+              <div class="form-group">
+                <label for="known-issue-description" data-i18n-html="tabSupport.knownIssue.notesLabel">Anything else to add? <span style="color: var(--text-muted); font-weight: 400;">(optional)</span></label>
+                <textarea id="known-issue-description" class="custom-textarea" rows="2" maxlength="500" placeholder="e.g. which subpack, when it started, etc. (optional)" data-i18n-placeholder="tabSupport.knownIssue.notesPlaceholder"></textarea>
+              </div>
+              <button id="btn-submit-known-issue" class="btn btn-primary" style="width: 100%;" data-i18n="tabSupport.knownIssue.submitBtn">Report This Issue Anonymously</button>
+              <div id="known-issue-status" style="margin-top: 12px; font-size: 0.85rem; text-align: center;" class="hidden-group"></div>
             </div>
 
           </div>
@@ -674,23 +715,23 @@
         <!-- Tab: Release Builder -->
         <section class="tab-content" id="tab-release">
           <div class="card full-card">
-            <h2>📦 Release Builder</h2>
-            <p>Edit version metadata and build a distributable release of the patcher.</p>
+            <h2 data-i18n="tabRelease.title">📦 Release Builder</h2>
+            <p data-i18n="tabRelease.description">Edit version metadata and build a distributable release of the patcher.</p>
 
             <div class="release-grid">
               <!-- Version Editor -->
               <div class="release-section">
-                <h3>Version Editor</h3>
+                <h3 data-i18n="tabRelease.versionEditor.title">Version Editor</h3>
                 <div class="form-group">
-                  <label for="rel-app-version">App Version (tauri.conf.json)</label>
+                  <label for="rel-app-version" data-i18n="tabRelease.versionEditor.appVersionLabel">App Version (tauri.conf.json)</label>
                   <div class="file-picker-group">
-                    <input type="text" id="rel-app-version" class="custom-input" placeholder="e.g. 3.0.1" />
-                    <button id="btn-apply-version" class="btn btn-secondary">Apply</button>
+                    <input type="text" id="rel-app-version" class="custom-input" placeholder="e.g. 3.0.1" data-i18n-placeholder="tabRelease.versionEditor.placeholder" />
+                    <button id="btn-apply-version" class="btn btn-secondary" data-i18n="tabRelease.versionEditor.applyBtn">Apply</button>
                   </div>
-                  <span class="field-hint" id="rel-version-hint">Loading current version...</span>
+                  <span class="field-hint" id="rel-version-hint" data-i18n="tabRelease.versionEditor.loadingVersion">Loading current version...</span>
                 </div>
                 <div class="form-group">
-                  <label>Version Adjustments:</label>
+                  <label data-i18n="tabRelease.versionEditor.adjustmentsLabel">Version Adjustments:</label>
                   <div style="display: flex; gap: 8px;">
                     <button type="button" id="btn-inc-major" class="btn btn-secondary btn-xs" style="padding: 4px 8px; font-size: 0.7rem; min-width: 50px;">+1.0.0</button>
                     <button type="button" id="btn-inc-minor" class="btn btn-secondary btn-xs" style="padding: 4px 8px; font-size: 0.7rem; min-width: 50px;">+0.1.0</button>
@@ -698,49 +739,49 @@
                   </div>
                 </div>
                 <div class="form-group" style="margin-top: 0; margin-bottom: 12px;">
-                  <label for="select-release-type" style="font-weight: 600; font-size: 0.85rem; color: var(--text-light); margin-bottom: 6px; display: block;">Release Type</label>
+                  <label for="select-release-type" style="font-weight: 600; font-size: 0.85rem; color: var(--text-light); margin-bottom: 6px; display: block;" data-i18n="tabRelease.versionEditor.releaseTypeLabel">Release Type</label>
                   <select id="select-release-type" class="custom-select">
-                    <option value="stable">Stable</option>
-                    <option value="beta">Beta Version (_b)</option>
-                    <option value="alpha">Alpha Version (_a)</option>
+                    <option value="stable" data-i18n="tabRelease.versionEditor.types.stable">Stable</option>
+                    <option value="beta" data-i18n="tabRelease.versionEditor.types.beta">Beta Version (_b)</option>
+                    <option value="alpha" data-i18n="tabRelease.versionEditor.types.alpha">Alpha Version (_a)</option>
                   </select>
                 </div>
               </div>
 
               <!-- Build Actions -->
               <div class="release-section">
-                <h3>Build Actions</h3>
+                <h3 data-i18n="tabRelease.buildActions.title">Build Actions</h3>
 
                 <div class="release-action-card">
                   <div class="release-action-info">
-                    <strong>Build All (Installers + Portable)</strong>
-                    <span>Builds MSI, NSIS, and Portable exe</span>
+                    <strong data-i18n="tabRelease.buildActions.buildAllTitle">Build All (Installers + Portable)</strong>
+                    <span data-i18n="tabRelease.buildActions.buildAllDesc">Builds MSI, NSIS, and Portable exe</span>
                   </div>
-                  <button id="btn-build-all" class="btn btn-gold-3d">Build All</button>
+                  <button id="btn-build-all" class="btn btn-gold-3d" data-i18n="tabRelease.buildActions.buildAllBtn">Build All</button>
                 </div>
 
                 <div class="release-action-card">
                   <div class="release-action-info">
-                    <strong>Build Installers Only</strong>
-                    <span>Builds MSI & NSIS</span>
+                    <strong data-i18n="tabRelease.buildActions.buildInstallersTitle">Build Installers Only</strong>
+                    <span data-i18n="tabRelease.buildActions.buildInstallersDesc">Builds MSI & NSIS</span>
                   </div>
-                  <button id="btn-build-installers" class="btn btn-secondary">Build Installers</button>
+                  <button id="btn-build-installers" class="btn btn-secondary" data-i18n="tabRelease.buildActions.buildInstallersBtn">Build Installers</button>
                 </div>
 
                 <div class="release-action-card">
                   <div class="release-action-info">
-                    <strong>Build Portable Only</strong>
-                    <span>Builds Portable exe</span>
+                    <strong data-i18n="tabRelease.buildActions.buildPortableTitle">Build Portable Only</strong>
+                    <span data-i18n="tabRelease.buildActions.buildPortableDesc">Builds Portable exe</span>
                   </div>
-                  <button id="btn-build-portable" class="btn btn-secondary">Build Portable</button>
+                  <button id="btn-build-portable" class="btn btn-secondary" data-i18n="tabRelease.buildActions.buildPortableBtn">Build Portable</button>
                 </div>
 
                 <div class="release-action-card">
                   <div class="release-action-info">
-                    <strong>Open Bundle Folder</strong>
-                    <span>Opens the versioned release folder</span>
+                    <strong data-i18n="tabRelease.buildActions.openBundleTitle">Open Bundle Folder</strong>
+                    <span data-i18n="tabRelease.buildActions.openBundleDesc">Opens the versioned release folder</span>
                   </div>
-                  <button id="btn-open-bundle-folder" class="btn btn-secondary">Open Folder</button>
+                  <button id="btn-open-bundle-folder" class="btn btn-secondary" data-i18n="tabRelease.buildActions.openBundleBtn">Open Folder</button>
                 </div>
               </div>
             </div>
@@ -748,12 +789,12 @@
             <!-- Build log (Full Width Below Grid) -->
             <div class="console-section" style="margin-top: 24px;">
               <div class="console-header">
-                <span>Build Log</span>
+                <span data-i18n="tabRelease.console.heading">Build Log</span>
                 <div class="console-actions">
-                <button id="btn-copy-build-log" class="btn-icon-action" title="Copy log">
+                <button id="btn-copy-build-log" class="btn-icon-action" title="Copy log" data-i18n-title="tabRelease.console.copyTooltip">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                 </button>
-                <button id="btn-clear-build-log" class="btn-icon-action" title="Clear">
+                <button id="btn-clear-build-log" class="btn-icon-action" title="Clear" data-i18n-title="tabRelease.console.clearTooltip">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                 </button>
               </div>
@@ -769,29 +810,37 @@
         <!-- Tab: Settings -->
         <section class="tab-content" id="tab-app-settings">
           <div class="card full-card">
-            <h2>⚙️ Application Settings</h2>
-            <div class="settings-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
+            <h2 data-i18n="tabAppSettings.title">⚙️ Application Settings</h2>
+            <!-- Layout lives in styles.css so it can collapse to one column
+                 on narrow windows; an inline style could not be overridden. -->
+            <div class="settings-grid">
               
               <!-- General Settings -->
               <div class="settings-group card" style="background: rgba(0,0,0,0.2);">
-                <h3 style="margin-top: 0;">General Options</h3>
+                <h3 style="margin-top: 0;" data-i18n="tabAppSettings.general.heading">General Options</h3>
                 <div class="form-group" style="margin-bottom: 12px;">
-                  <label for="set-default-mode">Default Patcher Mode</label>
+                  <label for="set-language" data-i18n="tabAppSettings.language.label">Language</label>
+                  <!-- Options are filled from the i18n registry at runtime. -->
+                  <select id="set-language" class="custom-select"></select>
+                  <small style="display: block; margin-top: 4px; font-size: 0.75rem; opacity: 0.7;" data-i18n="tabAppSettings.language.hint">Log and console output stays in English.</small>
+                </div>
+                <div class="form-group" style="margin-bottom: 12px;">
+                  <label for="set-default-mode" data-i18n="tabAppSettings.defaultPatcherMode.label">Default Patcher Mode</label>
                   <select id="set-default-mode" class="custom-select">
-                    <option value="marketplace">Marketplace Auto-Detect</option>
-                    <option value="zip">Manual Zip/Mcpack</option>
-                    <option value="custom">Custom Modpack (WIP)</option>
+                    <option value="marketplace" data-i18n="tabAppSettings.defaultPatcherMode.marketplace">Marketplace Auto-Detect</option>
+                    <option value="zip" data-i18n="tabAppSettings.defaultPatcherMode.zip">Manual Zip/Mcpack</option>
+                    <option value="custom" data-i18n="tabAppSettings.defaultPatcherMode.custom">Custom Modpack (WIP)</option>
                   </select>
                 </div>
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                  <span style="font-size: 0.85rem; color: #ffffff;">Enable Advanced Mode UI</span>
+                  <span style="font-size: 0.85rem; color: #ffffff;" data-i18n="tabAppSettings.general.enableAdvancedMode">Enable Advanced Mode UI</span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="set-advanced-mode" />
                     <span class="mc-slider"></span>
                   </label>
                 </div>
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                  <span style="font-size: 0.85rem; color: #ffffff;">Opt-in to Beta Updates</span>
+                  <span style="font-size: 0.85rem; color: #ffffff;" data-i18n="tabAppSettings.general.optInBetaUpdates">Opt-in to Beta Updates</span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="set-beta-updates" />
                     <span class="mc-slider"></span>
@@ -801,9 +850,9 @@
 
               <!-- Patcher Behaviors -->
               <div class="settings-group card" style="background: rgba(0,0,0,0.2);">
-                <h3 style="margin-top: 0;">Patcher Behaviors</h3>
+                <h3 style="margin-top: 0;" data-i18n="tabAppSettings.patcherBehaviors.heading">Patcher Behaviors</h3>
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                  <span style="font-size: 0.85rem; color: #ffffff;">Clean Old Patch Remnants</span>
+                  <span style="font-size: 0.85rem; color: #ffffff;" data-i18n="tabAppSettings.patcherBehaviors.cleanOldRemnants">Clean Old Patch Remnants</span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="set-clean-old" checked />
                     <span class="mc-slider"></span>
@@ -811,13 +860,66 @@
                 </div>
               </div>
 
+              <!-- Console -->
+              <div class="settings-group card" style="background: rgba(0,0,0,0.2);">
+                <h3 style="margin-top: 0;" data-i18n="tabAppSettings.console.heading">Console</h3>
+                <p style="font-size: 0.78rem; color: #9aa0a6; margin-top: 0;" data-i18n="tabAppSettings.console.description">Set how tall the execution output console is. You can also drag the grip above the console itself, or double-click it to reset.</p>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0;">
+                  <span style="font-size: 0.85rem; color: #ffffff;" data-i18n="tabAppSettings.console.heightLabel">Console height</span>
+                  <div style="display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary btn-xs console-size-preset" data-height="110" data-i18n="tabAppSettings.console.presetSmall">Small</button>
+                    <button type="button" class="btn btn-secondary btn-xs console-size-preset" data-height="150" data-i18n="tabAppSettings.console.presetMedium">Medium</button>
+                    <button type="button" class="btn btn-secondary btn-xs console-size-preset" data-height="260" data-i18n="tabAppSettings.console.presetLarge">Large</button>
+                    <button type="button" class="btn btn-secondary btn-xs console-size-preset" data-height="400" data-i18n="tabAppSettings.console.presetTall">Tall</button>
+                  </div>
+                </div>
+                <div id="console-height-readout" style="font-size: 0.75rem; color: #9aa0a6;"></div>
+              </div>
+
+              <!-- Downloaded Patches -->
+              <div class="settings-group card" style="background: rgba(0,0,0,0.2);">
+                <h3 style="margin-top: 0;" data-i18n="tabAppSettings.downloadedPatches.heading">Downloaded Patches</h3>
+                <p style="font-size: 0.78rem; color: #9aa0a6; margin-top: 0;" data-i18n="tabAppSettings.downloadedPatches.description">Patches are downloaded as you use them and kept for offline use. Removing one only frees disk space; it is downloaded again automatically next time. Patches bundled with the app are never removed.</p>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
+                  <span style="font-size: 0.85rem; color: #ffffff;" data-i18n="tabAppSettings.downloadedPatches.keepOnlyRecent">Keep only the most recently used patch</span>
+                  <label class="mc-toggle" style="margin-left: 0;">
+                    <input type="checkbox" id="set-clean-patch-cache" />
+                    <span class="mc-slider"></span>
+                  </label>
+                </div>
+                <div id="downloaded-patches-list" style="margin-top: 8px;"></div>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px;">
+                  <span id="downloaded-patches-total" style="font-size: 0.75rem; color: #9aa0a6;"></span>
+                  <button type="button" id="btn-clear-patch-cache" class="btn btn-secondary btn-xs" disabled data-i18n-html="tabAppSettings.downloadedPatches.removeAll">
+                    <i class="fas fa-trash-can"></i> Remove all downloads
+                  </button>
+                </div>
+              </div>
+
               <!-- Patch Creator -->
               <div class="settings-group card" style="background: rgba(0,0,0,0.2);">
-                <h3 style="margin-top: 0;">Patch Creator Default Options</h3>
+                <h3 style="margin-top: 0;" data-i18n="tabAppSettings.patchCreator.heading">Patch Creator Default Options</h3>
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                  <span style="font-size: 0.85rem; color: #ffffff;">Inject Custom Manifest</span>
+                  <span style="font-size: 0.85rem; color: #ffffff;" data-i18n="tabUtils.genpatch.injectManifest">Inject Custom Manifest</span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="set-gen-inject-manifest" checked />
+                    <span class="mc-slider"></span>
+                  </label>
+                </div>
+
+                <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 12px 0;" />
+                <p style="font-size: 0.78rem; color: #9aa0a6; margin: 0 0 8px;" data-i18n="tabAppSettings.patchCreator.description">Publishing copies a created patch into your local clone of the patch library and pushes it. Everyone gets it within a minute, with no patcher update. Requires git to be set up.</p>
+                <div class="form-group" style="margin-bottom: 8px;">
+                  <label for="set-patch-library-dir" data-i18n="tabAppSettings.patchCreator.repoFolderLabel">Patch library repo folder</label>
+                  <div class="file-picker-group">
+                    <input type="text" id="set-patch-library-dir" placeholder="No folder selected" data-i18n-placeholder="common.noFolderSelected" readonly />
+                    <button id="btn-browse-patch-library" class="btn btn-secondary btn-square" data-i18n-title="common.browse" data-i18n-aria-label="common.browse" title="Browse..." aria-label="Browse..."><svg class="pixel-icon" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><path fill="#1b1b1c" d="M1 2h7v2h7v10H1z"/><path fill="#d99a33" d="M2 3h5v2h7v8H2z"/><path fill="#f2c15c" d="M2 3h5v1H2z M8 5h6v1H8z"/><path fill="#a86f1f" d="M2 12h12v1H2z"/></svg></button>
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
+                  <span style="font-size: 0.85rem; color: #ffffff;" data-i18n="tabAppSettings.patchCreator.publishAfterCreate">Publish after creating a patch</span>
+                  <label class="mc-toggle" style="margin-left: 0;">
+                    <input type="checkbox" id="set-publish-after-create" />
                     <span class="mc-slider"></span>
                   </label>
                 </div>
@@ -825,37 +927,37 @@
 
               <!-- Bug Reporter -->
               <div class="settings-group card" style="background: rgba(0,0,0,0.2);">
-                <h3 style="margin-top: 0;">Bug Reporter Defaults</h3>
+                <h3 style="margin-top: 0;" data-i18n="tabAppSettings.bugReporter.heading">Bug Reporter Defaults</h3>
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                  <span style="font-size: 0.85rem; color: #ffffff;">Include Application Logs</span>
+                  <span style="font-size: 0.85rem; color: #ffffff;" data-i18n="tabAppSettings.bugReporter.includeLogs">Include Application Logs</span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="set-bug-include-log" checked />
                     <span class="mc-slider"></span>
                   </label>
                 </div>
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                  <span style="font-size: 0.85rem; color: #ffffff;">Include Pack (Large)</span>
+                  <span style="font-size: 0.85rem; color: #ffffff;" data-i18n="tabAppSettings.bugReporter.includePack">Include Pack (Large)</span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="set-bug-include-pack" />
                     <span class="mc-slider"></span>
                   </label>
                 </div>
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                  <span style="font-size: 0.85rem; color: #ffffff;">Send Minecraft Content Log</span>
+                  <span style="font-size: 0.85rem; color: #ffffff;" data-i18n="tabAppSettings.bugReporter.sendContentLog">Send Minecraft Content Log</span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="set-bug-include-content-log" checked />
                     <span class="mc-slider"></span>
                   </label>
                 </div>
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                  <span style="font-size: 0.85rem; color: #ffffff;">Include GPU Driver Events</span>
+                  <span style="font-size: 0.85rem; color: #ffffff;" data-i18n="tabAppSettings.bugReporter.includeDriverEvents">Include GPU Driver Events</span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="set-bug-include-driver-log" checked />
                     <span class="mc-slider"></span>
                   </label>
                 </div>
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                  <span style="font-size: 0.85rem; color: #ffffff;">Include Hardware Info</span>
+                  <span style="font-size: 0.85rem; color: #ffffff;" data-i18n="tabAppSettings.bugReporter.includeHardwareInfo">Include Hardware Info</span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="set-bug-include-hardware" checked />
                     <span class="mc-slider"></span>
@@ -865,34 +967,34 @@
 
               <!-- Privacy & Telemetry (DSGVO) -->
               <div class="settings-group card" style="background: rgba(0,0,0,0.2);">
-                <h3 style="margin-top: 0;">Privacy &amp; Telemetry</h3>
+                <h3 style="margin-top: 0;" data-i18n="tabAppSettings.privacy.heading">Privacy &amp; Telemetry</h3>
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                  <span style="font-size: 0.85rem; color: #ffffff;">Pseudonymous Hardware Ping <span style="color: #94a3b8;">(checked every start, sent only on changes)</span></span>
+                  <span style="font-size: 0.85rem; color: #ffffff;" data-i18n-html="tabAppSettings.privacy.pingLabel">Pseudonymous Hardware Ping <span style="color: #94a3b8;">(checked every start, sent only on changes)</span></span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="set-telemetry-consent" />
                     <span class="mc-slider"></span>
                   </label>
                 </div>
                 <p style="font-size: 0.78rem; color: #94a3b8; margin: 8px 0;">
-                  This data is <b>pseudonymous</b>, not anonymous
-                  (<button type="button" id="btn-pseudonymous-info" style="background: none; border: none; padding: 0; color: #7dd3fc; text-decoration: underline; cursor: pointer; font-size: inherit;">what's the difference?</button>),
-                  since submissions are linked by a persistent identifier. Reporting is opt-in from first launch; afterward, a submission is sent only when your hardware hash changes, not on every launch.
-                  Uploaded logs are deleted automatically after 30 days.
+                  <span data-i18n-html="tabAppSettings.privacy.notice">This data is <b>pseudonymous</b>, not anonymous</span>
+                  (<button type="button" id="btn-pseudonymous-info" style="background: none; border: none; padding: 0; color: #7dd3fc; text-decoration: underline; cursor: pointer; font-size: inherit;" data-i18n="modal.telemetryConsent.whatsTheDifference">what's the difference?</button>)<span data-i18n="tabAppSettings.privacy.noticeAfter">, since submissions are linked by a persistent identifier. Reporting is opt-in from first launch; afterward, a submission is sent only when your hardware hash changes, not on every launch. Uploaded logs are deleted automatically after 30 days.</span>
                 </p>
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                  <button class="btn btn-secondary btn-xs" id="btn-view-telemetry-payload">Open Diagnostics Folder</button>
-                  <button class="btn btn-secondary btn-xs" id="btn-delete-telemetry-data" style="color: #f87171;">Delete My Data</button>
+                  <button class="btn btn-secondary btn-xs" id="btn-view-telemetry-payload" data-i18n="tabAppSettings.privacy.openDiagnosticsFolder">Open Diagnostics Folder</button>
+                  <button class="btn btn-secondary btn-xs" id="btn-delete-telemetry-data" style="color: #f87171;" data-i18n="tabSupport.telemetry.deleteConfirmTitle">Delete My Data</button>
                 </div>
                 <p id="telemetry-settings-status" style="margin-top: 8px; font-size: 0.8rem; color: #94a3b8;"></p>
               </div>
 
               <!-- Tests -->
-              <div class="settings-group card" style="background: rgba(0,0,0,0.2); grid-column: span 2;">
-                <h3 style="margin-top: 0;">Diagnostics & Tests</h3>
+              <!-- Spans both columns. As a class, not an inline style, so the
+                   single-column layout can reset it. -->
+              <div class="settings-group card settings-group-wide" style="background: rgba(0,0,0,0.2);">
+                <h3 style="margin-top: 0;" data-i18n="tabAppSettings.diagnostics.heading">Diagnostics & Tests</h3>
                 <div style="display: flex; gap: 8px;">
-                  <button class="btn btn-secondary btn-xs" id="btn-test-github-api">Test GitHub API</button>
-                  <button class="btn btn-secondary btn-xs" id="btn-test-backend">Test Backend Connection</button>
-                  <button class="btn btn-secondary btn-xs" id="btn-test-workspace">Test Workspace Paths</button>
+                  <button class="btn btn-secondary btn-xs" id="btn-test-github-api" data-i18n="tabAppSettings.diagnostics.testGithubBtn">Test GitHub API</button>
+                  <button class="btn btn-secondary btn-xs" id="btn-test-backend" data-i18n="tabAppSettings.diagnostics.testBackendBtn">Test Backend Connection</button>
+                  <button class="btn btn-secondary btn-xs" id="btn-test-workspace" data-i18n="tabAppSettings.diagnostics.testWorkspaceBtn">Test Workspace Paths</button>
                 </div>
                 <p id="api-test-results" style="margin-top: 12px; font-size: 0.85rem; color: #94a3b8; font-family: monospace;"></p>
               </div>
@@ -907,11 +1009,11 @@
     <!-- Custom Modal Dialog -->
     <div id="custom-modal" class="modal-overlay hidden-group">
       <div class="modal-card">
-        <h3 id="modal-title">Notification</h3>
+        <h3 id="modal-title" data-i18n="modal.notificationTitle">Notification</h3>
         <p id="modal-message">Message goes here</p>
         <div class="modal-actions">
-          <button id="btn-modal-cancel" class="btn btn-secondary hidden-group">Cancel</button>
-          <button id="btn-modal-ok" class="btn btn-primary">OK</button>
+          <button id="btn-modal-cancel" class="btn btn-secondary hidden-group" data-i18n="common.cancel">Cancel</button>
+          <button id="btn-modal-ok" class="btn btn-primary" data-i18n="common.ok">OK</button>
         </div>
       </div>
     </div>
@@ -919,17 +1021,19 @@
     <!-- Telemetry Consent Modal (DSGVO / GDPR) -->
     <div id="telemetry-consent-modal" class="modal-overlay hidden-group">
       <div class="modal-card" style="max-width: 520px;">
-        <h3>Help Us Diagnose Rare RTX Issues</h3>
-        <p style="text-align: left; white-space: normal;">Certain rendering issues occur only on specific GPU and driver combinations. With your consent, the patcher can submit a <b>pseudonymous hardware summary</b> (<button type="button" id="btn-pseudonymous-info-modal" style="background: none; border: none; padding: 0; color: #7dd3fc; text-decoration: underline; cursor: pointer; font-size: inherit;">what's the difference?</button>) to help identify these cases. Reporting is opt-in and is requested once, on first launch. Afterward, your hardware is checked on every launch, and a new submission is sent only when the result differs from the previous one, for example after a GPU, driver, or BetterRTX preset change:</p>
+        <h3 data-i18n="modal.telemetryConsent.title">Help Us Diagnose Rare RTX Issues</h3>
+        <!-- Split around the button: data-i18n-html rewrites innerHTML, which
+             would destroy the button element and its click handler. -->
+        <p style="text-align: left; white-space: normal;"><span data-i18n-html="modal.telemetryConsent.intro">Certain rendering issues occur only on specific GPU and driver combinations. With your consent, the patcher can submit a <b>pseudonymous hardware summary</b></span> (<button type="button" id="btn-pseudonymous-info-modal" style="background: none; border: none; padding: 0; color: #7dd3fc; text-decoration: underline; cursor: pointer; font-size: inherit;" data-i18n="modal.telemetryConsent.whatsTheDifference">what's the difference?</button>) <span data-i18n-html="modal.telemetryConsent.introAfter">to help identify these cases. Reporting is opt-in and is requested once, on first launch. Afterward, your hardware is checked on every launch, and a new submission is sent only when the result differs from the previous one, for example after a GPU, driver, or BetterRTX preset change:</span></p>
         <ul style="text-align: left; font-size: 0.85rem; color: #cbd5e1; margin: 0 0 14px 18px; line-height: 1.6;">
-          <li>GPU model, driver version &amp; VRAM</li>
-          <li>CPU model, RAM size, Windows build</li>
-          <li>Minecraft edition (Store / Launcher) &amp; patcher version</li>
+          <li data-i18n="modal.telemetryConsent.point1">GPU model, driver version &amp; VRAM</li>
+          <li data-i18n="modal.telemetryConsent.point2">CPU model, RAM size, Windows build</li>
+          <li data-i18n="modal.telemetryConsent.point3">Minecraft edition (Store / Launcher) &amp; patcher version</li>
         </ul>
-        <p style="text-align: left; font-size: 0.85rem; color: #94a3b8; white-space: normal;"><b>Not collected:</b> your name, files, or serial numbers. Each submission is identified by a randomly generated <b>installation ID</b> and a one-way hash derived from your machine, used solely to recognize repeat submissions from the same installation so it is not counted twice after a reinstall. Because these identifiers persist and link submissions over time, this is described as pseudonymous rather than anonymous. Both identifiers can be deleted at any time from Settings under "Delete My Data," which also removes the corresponding record from the server. Every payload is additionally saved locally as <code>last_hardware_ping.json</code> for review. Uploaded bug-report logs are deleted after 30 days.</p>
+        <p style="text-align: left; font-size: 0.85rem; color: #94a3b8; white-space: normal;" data-i18n-html="modal.telemetryConsent.notCollected"><b>Not collected:</b> your name, files, or serial numbers. Each submission is identified by a randomly generated <b>installation ID</b> and a one-way hash derived from your machine, used solely to recognize repeat submissions from the same installation so it is not counted twice after a reinstall. Because these identifiers persist and link submissions over time, this is described as pseudonymous rather than anonymous. Both identifiers can be deleted at any time from Settings under "Delete My Data," which also removes the corresponding record from the server. Every payload is additionally saved locally as <code>last_hardware_ping.json</code> for review. Uploaded bug-report logs are deleted after 30 days.</p>
         <div class="modal-actions">
-          <button id="btn-consent-decline" class="btn btn-secondary">Decline</button>
-          <button id="btn-consent-accept" class="btn btn-primary">Enable Reporting</button>
+          <button id="btn-consent-decline" class="btn btn-secondary" data-i18n="modal.telemetryConsent.decline">Decline</button>
+          <button id="btn-consent-accept" class="btn btn-primary" data-i18n="modal.telemetryConsent.accept">Enable Reporting</button>
         </div>
       </div>
     </div>

@@ -1,8 +1,10 @@
 pub mod commands;
+pub mod patches;
 pub mod renamer;
 pub mod telemetry;
 pub mod utils;
 use commands::*;
+use patches::*;
 use telemetry::*;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -57,7 +59,14 @@ pub fn run() {
             submit_hardware_ping,
             telemetry_delete_my_data,
             collect_driver_events,
-            prepare_content_log
+            prepare_content_log,
+            fetch_patch_index,
+            ensure_patch_downloaded,
+            prune_patch_cache,
+            list_cached_patches,
+            delete_cached_patch,
+            clear_patch_cache,
+            publish_patch_to_library
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,5 +1,50 @@
 // JavaScript Controller for Actions & Stuff RTX Patcher v3
 
+import { initI18n, setLocale, getLocale, getLocales, onLocaleChange, t, tPlural } from './i18n/index.js';
+
+// applyTranslations only reaches text annotated in index.html. Anything a
+// function writes into the DOM at runtime keeps the language it was rendered
+// in until that function runs again, so those regions are rebuilt here.
+//
+// * Re-render from state already in memory only. Nothing here may touch the
+// * network or the backend: switching language stays instant and works offline.
+onLocaleChange(() => {
+  // ? Each region is guarded on its own. One that is not built yet, or throws,
+  // ? must not leave the rest of the page stuck in the previous language.
+  const regions = [
+    // The update badge interpolates a version number, so it cannot be restored
+    // from a data-i18n key alone; it remembers the version instead.
+    () => {
+      const badge = document.getElementById('update-badge');
+      if (badge?.dataset.updateVersion) {
+        badge.innerText = t('sidebar.update.available', { version: badge.dataset.updateVersion });
+      }
+    },
+    () => {
+      const asSel = document.getElementById('select-as-version');
+      if (!asSel) return;
+      Array.from(asSel.options).forEach(opt => {
+        opt.innerText = t('tabPatcher.version.versionOption', { version: opt.value });
+      });
+      if (asSel.value) updatePatchVersionsList(asSel.value);
+    },
+    () => updateMotdBox(),
+    () => updateSelectedPatchAvailability(),
+    () => renderDownloadedPatchesSettings(),
+    () => renderCleanerResults(),
+    () => updateCleanerButtons(),
+    () => updateConsoleHeightReadout(appSettings.consoleHeight),
+  ];
+
+  for (const region of regions) {
+    try {
+      region();
+    } catch (e) {
+      console.warn('[i18n] re-render failed:', e);
+    }
+  }
+});
+
 // Destructure invoke and listen from Tauri Core
 const { invoke, Channel } = window.__TAURI__ ? window.__TAURI__.core : { invoke: () => Promise.reject("Tauri not available"), Channel: class {} };
 const { listen } = window.__TAURI__ ? window.__TAURI__.event : { listen: () => {} };
@@ -18,10 +63,10 @@ if (window.__TAURI__) {
 
 function showModal(message, options = {}) {
   const {
-    title = 'Notification',
+    title = t('modal.notificationTitle'),
     confirm = false,
-    okText = 'OK',
-    cancelText = 'Cancel'
+    okText = t('common.ok'),
+    cancelText = t('common.cancel')
   } = options;
 
   return new Promise((resolve) => {
@@ -68,11 +113,13 @@ function showModal(message, options = {}) {
   });
 }
 
-function showAlert(message, title = 'Notification') {
-  showModal(message, { title, confirm: false });
+// Returns the promise so callers can await dismissal. Existing fire-and-forget
+// callers are unaffected.
+function showAlert(message, title = t('modal.notificationTitle')) {
+  return showModal(message, { title, confirm: false });
 }
 
-async function showConfirm(message, title = 'Confirm') {
+async function showConfirm(message, title = t('modal.confirmTitle')) {
   return showModal(message, { title, confirm: true });
 }
 
@@ -81,8 +128,21 @@ window.alert = function(msg) {
   showAlert(msg);
 };
 
+// window.confirm cannot be redirected to the in-app modal, because it must
+// return synchronously while the modal resolves a promise. Anything reaching
+// this has to be rewritten as `await showConfirm(...)`; deny in the meantime,
+// so a stray call can never silently approve a destructive action.
+window.confirm = function(msg) {
+  console.error("window.confirm is not supported in this app - use `await showConfirm(...)` instead. Denied:", msg);
+  showAlert(msg, t('modal.confirmTitle'));
+  return false;
+};
+
 // Global State
 let patchConfigs = [];
+// Slugs of patches downloaded into this user's cache, plus their sizes.
+let cachedPatchSlugs = new Set();
+let cachedPatchInfo = [];
 let optionsProfiles = [];
 let selectedOptionsPath = "";
 let defaultPaths = {};
@@ -148,7 +208,7 @@ function updateStepState(stepId, state) {
 }
 
 function resetSteps() {
-  for (let i = 0; i <= 4; i++) {
+  for (let i = 0; i <= 5; i++) {
     updateStepState(i, 'idle');
   }
 }
@@ -265,8 +325,8 @@ async function loadMotd() {
         try {
           const isDev = await invoke("is_dev_build");
           if (isDev) {
-            if (offlineTitle) offlineTitle.innerText = "Service Offline UI Preview (Dev Mode)";
-            if (offlineMessage) offlineMessage.innerText = "This is just a preview of the offline box. The API is actually ONLINE right now.";
+            if (offlineTitle) offlineTitle.innerText = t('tabPatcher.motd.offlineDevPreviewTitle');
+            if (offlineMessage) offlineMessage.innerText = t('tabPatcher.motd.offlineDevPreviewMessage');
             offlineContainer.classList.remove('hidden-group');
           } else {
             offlineContainer.classList.add('hidden-group');
@@ -282,14 +342,17 @@ async function loadMotd() {
     }
   } catch (err) {
     console.warn("Could not fetch MOTD:", err);
+    // ! motdContainer belongs to updateMotdBox, not to this function. Reading it
+    // ! here threw a ReferenceError that aborted the whole offline branch below.
+    const motdContainer = document.getElementById('motd-container');
     if (motdContainer) motdContainer.classList.add('hidden-group'); // Hide from main page
     
     if (offlineContainer && offlineTitle) {
       try {
         const isDev = await invoke("is_dev_build");
         if (isDev) {
-          offlineTitle.innerText = "Service Offline (Dev Mode)";
-          if (offlineMessage) offlineMessage.innerText = "Could not connect to the Chaos dev backend. This box is only visible in Dev Mode.";
+          offlineTitle.innerText = t('tabPatcher.motd.offlineDevTitle');
+          if (offlineMessage) offlineMessage.innerText = t('tabPatcher.motd.offlineDevMessage');
           offlineContainer.classList.remove('hidden-group');
         } else {
           // Completely remove/hide the text in release version
@@ -302,62 +365,544 @@ async function loadMotd() {
   }
 }
 
-// Load configs and versions from Rust
-async function loadPatchConfigs() {
+// Folder of the most recently created patch, so it can be published without
+// regenerating it.
+let lastCreatedPatchFolder = "";
+
+// Copies a created patch folder into the patch library clone and pushes it.
+// CI there does the hashing, upload and catalogue rebuild, so a push is all it
+// takes for every installed patcher to offer the patch.
+async function publishPatchToLibrary(patchFolder, { packVer, patchVer } = {}) {
+  const gLog = (msg, type = 'info') => logTo('genpatch-logs', msg, type);
+  const libraryDir = appSettings.patchLibraryDir;
+
+  if (!libraryDir) {
+    gLog("No patch library folder is set. Choose it in App Settings under Patch Creator.", 'warning');
+    await showAlert(
+      t('tabPatcher.publish.noLibraryFolderMessage'),
+      t('tabPatcher.publish.noLibraryFolderTitle')
+    );
+    return false;
+  }
+
+  const name = patchFolder.split(/[\\/]/).pop() || patchFolder;
+  const proceed = await showConfirm(
+    t('tabPatcher.publish.confirmMessage', { name, repo: libraryDir }),
+    t('tabPatcher.publish.confirmTitle')
+  );
+  if (!proceed) return false;
+
+  const message = packVer && patchVer
+    ? `Publish Actions & Stuff for RTX ${packVer} v${patchVer}`
+    : `Publish ${name}`;
+
+  const attempt = async (overwrite) => invoke("publish_patch_to_library", {
+    libraryDir, patchFolder, message, overwrite
+  });
+
   try {
-    log("Loading patch configurations...");
-    patchConfigs = await invoke("get_patch_configs");
-    log(`Loaded ${patchConfigs.length} patch configuration profiles.`);
-    
+    await attempt(false);
+  } catch (err) {
+    const text = String(err);
+    if (!text.includes("ALREADY_EXISTS")) {
+      gLog(`Publishing failed: ${text}`, 'error');
+      await showAlert(
+        t('tabPatcher.publish.failedMessage', { error: text }),
+        t('tabPatcher.publish.failedTitle')
+      );
+      return false;
+    }
+    // Already in the library: republishing replaces the payloads, which is a
+    // real thing to want after rebuilding a patch, but never silent.
+    const replace = await showConfirm(
+      t('tabPatcher.publish.alreadyPublishedMessage', { name }),
+      t('tabPatcher.publish.alreadyPublishedTitle')
+    );
+    if (!replace) { gLog("Publishing cancelled; the existing entry was kept.", 'warning'); return false; }
+    try {
+      await attempt(true);
+    } catch (err2) {
+      gLog(`Publishing failed: ${err2}`, 'error');
+      await showAlert(
+        t('tabPatcher.publish.failedMessage', { error: err2 }),
+        t('tabPatcher.publish.failedTitle')
+      );
+      return false;
+    }
+  }
+
+  gLog(`Published "${name}" to the patch library.`, 'success');
+  // The new patch is live, so make it visible here too.
+  try { await loadPatchConfigs({ quiet: true }); await refreshCachedPatches(); } catch (_) {}
+  return true;
+}
+
+// Catalogue auto-refresh. A patch published while the app is open should show
+// up on its own, but the catalogue must not be re-fetched on every stray focus
+// event, and never mid-run.
+const CATALOGUE_POLL_MS = 15 * 60 * 1000;   // periodic check while the app is open
+const CATALOGUE_MIN_GAP_MS = 60 * 1000;     // floor between any two automatic checks
+let lastCatalogueStamp = null;
+let lastCatalogueCheck = 0;
+let knownPatchKeys = null;
+let catalogueRefreshInFlight = false;
+
+function patchConfigsKeys(configs) {
+  return configs.map(c => `${c.packVersion}|${c.patchVersion || "1.0"}`);
+}
+
+// Briefly highlights the version controls so a change is noticed even if the
+// console is scrolled away.
+function flashPatchListUpdated(count) {
+  const hint = document.getElementById('patch-availability-hint');
+  if (!hint) return;
+  const msg = tPlural('tabPatcher.version.newPatchesAvailable', count);
+  hint.dataset.flash = 'true';
+  hint.innerHTML = `<span style="color:#7ed17e;">${msg}</span>`;
+  // Hand the hint back to the normal availability text after a moment.
+  setTimeout(() => {
+    if (hint.dataset.flash) {
+      delete hint.dataset.flash;
+      updateSelectedPatchAvailability();
+    }
+  }, 6000);
+}
+
+function patchRunInProgress() {
+  const btn = document.getElementById('btn-start-patch');
+  return !!(btn && btn.disabled);
+}
+
+// Re-checks the catalogue if enough time has passed. Silent by design: it logs
+// only when something actually changed.
+async function autoRefreshCatalogue(reason) {
+  if (catalogueRefreshInFlight) return;
+  if (patchRunInProgress()) return;                       // never disturb a running patch
+  if (Date.now() - lastCatalogueCheck < CATALOGUE_MIN_GAP_MS) return;
+
+  catalogueRefreshInFlight = true;
+  lastCatalogueCheck = Date.now();
+  const before = lastCatalogueStamp;
+  try {
+    await loadPatchConfigs({ quiet: true });
+    await refreshCachedPatches();
+    if (before !== lastCatalogueStamp) {
+      console.log(`Patch catalogue refreshed (${reason}); updated ${lastCatalogueStamp}`);
+    }
+  } catch (err) {
+    console.error("Automatic catalogue refresh failed", err);
+  } finally {
+    catalogueRefreshInFlight = false;
+  }
+}
+
+function setupCatalogueAutoRefresh() {
+  // Coming back to the window is the moment a newly published patch is most
+  // likely to matter, and it costs one small request.
+  window.addEventListener('focus', () => autoRefreshCatalogue('window focus'));
+
+  // Opening the Patcher tab, for a long-running window that never loses focus.
+  document.querySelectorAll('.nav-tab[data-tab="patcher"]').forEach(tab => {
+    tab.addEventListener('click', () => autoRefreshCatalogue('patcher tab'));
+  });
+
+  setInterval(() => autoRefreshCatalogue('periodic'), CATALOGUE_POLL_MS);
+}
+
+// Load configs and versions from Rust.
+// Safe to call more than once: it only rebuilds the dropdowns. The one-time
+// event wiring lives in wireVersionControls().
+async function loadPatchConfigs({ quiet = false } = {}) {
+  const say = (msg, type) => { if (!quiet) log(msg, type); };
+  let newlyAdded = 0;
+  try {
+    say("Loading patch configurations...");
+    const bundled = await invoke("get_patch_configs");
+    say(`Found ${bundled.length} bundled patch configuration profile(s).`);
+
+    // Merge in the remote patch library. Bundled entries win on conflict, so a
+    // patch shipped inside the installer is always preferred over downloading
+    // the same version again.
+    let remote = [];
+    try {
+      const index = await invoke("fetch_patch_index");
+      const bundledKeys = new Set(bundled.map(c => `${c.packVersion}|${c.patchVersion || "1.0"}`));
+      remote = (index.entries || []).filter(
+        e => !bundledKeys.has(`${e.packVersion}|${e.patchVersion || "1.0"}`)
+      );
+      say(`Loaded ${remote.length} downloadable patch entries from the patch library (source: ${index.source}${index.updated ? `, updated ${index.updated}` : ''}).`);
+      if (index.source === 'cache') {
+        say("The patch library could not be reached; using the last known catalogue.", 'warning');
+      } else if (index.source === 'none') {
+        say("No patch library catalogue is available. Only bundled patches can be used.", 'warning');
+      }
+      lastCatalogueStamp = index.updated || null;
+    } catch (err) {
+      say(`Could not load the remote patch library: ${err}`, 'warning');
+    }
+
+    // Announce anything that appeared since the last look, so a patch released
+    // while the app is open is visible without the user hunting for it.
+    const seenBefore = knownPatchKeys;
+    const nowKeys = new Set(patchConfigsKeys([...bundled, ...remote]));
+    if (seenBefore) {
+      const added = [...nowKeys].filter(k => !seenBefore.has(k));
+      added.forEach(k => log(`New patch available: ${k.replace('|', ' patch ')}`, 'success'));
+      newlyAdded = added.length;
+    }
+    knownPatchKeys = nowKeys;
+
+    patchConfigs = [...bundled, ...remote];
+    say(`${patchConfigs.length} patch configuration profile(s) available in total.`);
+
     // Extract unique packVersion strings and sort descending
     const uniqueAsVersions = Array.from(new Set(patchConfigs.map(c => c.packVersion)))
       .sort((a, b) => b.localeCompare(a, undefined, { numeric: true, sensitivity: 'base' }));
 
     const asSelect = document.getElementById('select-as-version');
     if (asSelect) {
+      const previous = asSelect.value;
       asSelect.innerHTML = '';
       uniqueAsVersions.forEach(v => {
         const opt = document.createElement('option');
         opt.value = v;
-        opt.innerText = `Version ${v}`;
+        opt.innerText = t('tabPatcher.version.versionOption', { version: v });
         asSelect.appendChild(opt);
       });
-
-      asSelect.addEventListener('change', (e) => {
-        updatePatchVersionsList(e.target.value);
-      });
+      if (previous && uniqueAsVersions.includes(previous)) asSelect.value = previous;
     }
 
-    if (uniqueAsVersions.length > 0) {
-      updatePatchVersionsList(uniqueAsVersions[0]);
+    const selected = asSelect && asSelect.value ? asSelect.value : uniqueAsVersions[0];
+    if (selected) {
+      updatePatchVersionsList(selected);
     }
 
-    // Selection mode toggle buttons switch
-    const btnAuto = document.getElementById('btn-ver-auto');
-    const btnManual = document.getElementById('btn-ver-manual');
-    const verModeInput = document.getElementById('version-selection-mode');
-    const manualOptions = document.getElementById('manual-version-options');
-    
-    if (btnAuto && btnManual && verModeInput && manualOptions) {
-      const toggleMode = (mode) => {
-        verModeInput.value = mode;
-        if (mode === 'auto') {
-          btnAuto.classList.add('active');
-          btnManual.classList.remove('active');
-          manualOptions.classList.add('hidden-group');
-        } else {
-          btnAuto.classList.remove('active');
-          btnManual.classList.add('active');
-          manualOptions.classList.remove('hidden-group');
-        }
-        verModeInput.dispatchEvent(new Event('change'));
-      };
-
-      btnAuto.addEventListener('click', () => toggleMode('auto'));
-      btnManual.addEventListener('click', () => toggleMode('manual'));
-    }
+    // After the rebuild, so the notice is not immediately overwritten by it.
+    if (newlyAdded) flashPatchListUpdated(newlyAdded);
   } catch (err) {
     log(`Failed to load patch configs: ${err}`, 'error');
+  }
+}
+
+// Console resizing. The section has a fixed height in CSS; dragging the handle
+// overrides it and the choice is persisted like any other setting.
+const CONSOLE_HEIGHT_DEFAULT = 150;
+const CONSOLE_HEIGHT_MIN = 80;
+
+function consoleHeightMax() {
+  // Leave room for the rest of the panel on short windows.
+  return Math.max(CONSOLE_HEIGHT_MIN, Math.round(window.innerHeight * 0.7));
+}
+
+function applyConsoleHeight(px) {
+  const section = document.getElementById('main-console-section');
+  if (!section) return CONSOLE_HEIGHT_DEFAULT;
+  const clamped = Math.min(consoleHeightMax(), Math.max(CONSOLE_HEIGHT_MIN, Math.round(px)));
+  section.style.height = `${clamped}px`;
+  return clamped;
+}
+
+function updateConsoleHeightReadout(px) {
+  const readout = document.getElementById('console-height-readout');
+  if (readout) readout.innerText = t('tabAppSettings.console.currently', { px });
+  document.querySelectorAll('.console-size-preset').forEach(btn => {
+    btn.classList.toggle('active', Number(btn.dataset.height) === px);
+  });
+}
+
+function setConsoleHeight(px, persist = true) {
+  const applied = applyConsoleHeight(px);
+  updateConsoleHeightReadout(applied);
+  if (persist && applied !== appSettings.consoleHeight) {
+    appSettings.consoleHeight = applied;
+    saveSettings();
+  }
+  return applied;
+}
+
+function setupConsoleResize() {
+  const handle = document.getElementById('console-resize-handle');
+  const section = document.getElementById('main-console-section');
+
+  // The presets live in Settings and must work even if the console markup
+  // changes, so they are wired independently of the drag handle.
+  document.querySelectorAll('.console-size-preset').forEach(btn => {
+    btn.addEventListener('click', () => setConsoleHeight(Number(btn.dataset.height)));
+  });
+
+  if (!handle || !section) return;
+
+  updateConsoleHeightReadout(applyConsoleHeight(appSettings.consoleHeight || CONSOLE_HEIGHT_DEFAULT));
+
+  let startY = 0;
+  let startHeight = 0;
+  let latest = 0;
+
+  const onMove = (e) => {
+    // The grip sits on the bottom edge, so the console follows the cursor:
+    // dragging down enlarges it.
+    latest = applyConsoleHeight(startHeight + (e.clientY - startY));
+    updateConsoleHeightReadout(latest);
+  };
+
+  const onUp = () => {
+    document.removeEventListener('pointermove', onMove);
+    document.removeEventListener('pointerup', onUp);
+    handle.classList.remove('dragging');
+    document.body.classList.remove('console-resizing');
+    if (latest && latest !== appSettings.consoleHeight) {
+      appSettings.consoleHeight = latest;
+      saveSettings();
+    }
+    updateConsoleHeightReadout(latest);
+  };
+
+  handle.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    startY = e.clientY;
+    startHeight = section.getBoundingClientRect().height;
+    latest = startHeight;
+    handle.classList.add('dragging');
+    document.body.classList.add('console-resizing');
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  });
+
+  handle.addEventListener('dblclick', () => {
+    setConsoleHeight(CONSOLE_HEIGHT_DEFAULT);
+    log(`Console height reset to ${CONSOLE_HEIGHT_DEFAULT}px.`);
+  });
+
+  // A saved height can exceed the window after a resize or a screen change.
+  window.addEventListener('resize', () => {
+    if (appSettings.consoleHeight) applyConsoleHeight(appSettings.consoleHeight);
+  });
+}
+
+// Renders the "Downloaded Patches" list in Settings: one row per cached
+// patch with its size and a Remove button, plus a total.
+function renderDownloadedPatchesSettings() {
+  const list = document.getElementById('downloaded-patches-list');
+  const total = document.getElementById('downloaded-patches-total');
+  const btnClear = document.getElementById('btn-clear-patch-cache');
+  if (!list) return;
+
+  if (cachedPatchInfo.length === 0) {
+    list.innerHTML = `<div class="placeholder-text" style="font-size: 0.8rem;">${t('tabPatcher.cache.empty')}</div>`;
+    if (total) total.innerText = '';
+    if (btnClear) btnClear.disabled = true;
+    return;
+  }
+
+  if (btnClear) btnClear.disabled = false;
+  list.innerHTML = '';
+
+  cachedPatchInfo.forEach(entry => {
+    // Map the cache id back to a human name where the catalogue still knows it.
+    const config = patchConfigs.find(c => c.slug === entry.slug);
+    const label = config
+      ? t('tabPatcher.cache.patchLabel', { packVersion: config.packVersion, patchVersion: config.patchVersion || "1.0" })
+      : entry.slug;
+
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);';
+    row.innerHTML = `
+      <div style="min-width:0;">
+        <div style="font-size:0.85rem;color:#ffffff;">${label}</div>
+        <div style="font-size:0.72rem;color:#9aa0a6;">${entry.variants.join(', ')} &middot; ${(entry.size / 1048576).toFixed(1)} MB</div>
+      </div>
+      <button type="button" class="btn btn-secondary btn-xs" data-slug="${entry.slug}">${t('tabPatcher.cache.remove')}</button>
+    `;
+    row.querySelector('button').addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      btn.innerText = t('tabPatcher.cache.removing');
+      try {
+        const freed = await invoke("delete_cached_patch", { slug: entry.slug });
+        log(`Removed downloaded patch ${entry.slug} (${(freed / 1048576).toFixed(1)} MB freed).`, 'success');
+        await refreshCachedPatches();
+      } catch (err) {
+        log(`Could not remove the downloaded patch: ${err}`, 'error');
+        btn.disabled = false;
+        btn.innerText = t('tabPatcher.cache.remove');
+      }
+    });
+    list.appendChild(row);
+  });
+
+  const bytes = cachedPatchInfo.reduce((sum, e) => sum + e.size, 0);
+  if (total) {
+    const mb = (bytes / 1048576).toFixed(1);
+    total.innerText = tPlural('tabPatcher.cache.summary', cachedPatchInfo.length, { mb });
+  }
+}
+
+// One-time listener wiring for the version selectors. Kept out of
+// loadPatchConfigs so refreshing the catalogue cannot double-bind handlers.
+function wireVersionControls() {
+  const asSelect = document.getElementById('select-as-version');
+  if (asSelect) {
+    asSelect.addEventListener('change', (e) => {
+      updatePatchVersionsList(e.target.value);
+    });
+  }
+
+  // Selection mode toggle buttons switch
+  const btnAuto = document.getElementById('btn-ver-auto');
+  const btnManual = document.getElementById('btn-ver-manual');
+  const verModeInput = document.getElementById('version-selection-mode');
+  const manualOptions = document.getElementById('manual-version-options');
+
+  if (btnAuto && btnManual && verModeInput && manualOptions) {
+    const toggleMode = (mode) => {
+      verModeInput.value = mode;
+      if (mode === 'auto') {
+        btnAuto.classList.add('active');
+        btnManual.classList.remove('active');
+        manualOptions.classList.add('hidden-group');
+      } else {
+        btnAuto.classList.remove('active');
+        btnManual.classList.add('active');
+        manualOptions.classList.remove('hidden-group');
+      }
+      verModeInput.dispatchEvent(new Event('change'));
+    };
+
+    btnAuto.addEventListener('click', () => toggleMode('auto'));
+    btnManual.addEventListener('click', () => toggleMode('manual'));
+  }
+
+  // Keep the availability hint in step with the selected patch version.
+  const patchSelect = document.getElementById('select-patch-version');
+  if (patchSelect) {
+    patchSelect.addEventListener('change', () => updateSelectedPatchAvailability());
+  }
+
+  // Manual refresh, so a patch published minutes ago can be picked up without
+  // restarting the app.
+  const btnRefresh = document.getElementById('btn-refresh-patches');
+  if (btnRefresh) {
+    btnRefresh.addEventListener('click', async () => {
+      btnRefresh.disabled = true;
+      const original = btnRefresh.innerHTML;
+      btnRefresh.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('tabPatcher.version.refreshing')}`;
+      try {
+        await loadPatchConfigs();
+        await refreshCachedPatches();
+      } finally {
+        btnRefresh.disabled = false;
+        btnRefresh.innerHTML = original;
+      }
+    });
+  }
+
+  // Remove just the patch currently selected in the version list.
+  const btnRemoveSelected = document.getElementById('btn-remove-selected-patch');
+  if (btnRemoveSelected) {
+    btnRemoveSelected.addEventListener('click', async () => {
+      const slug = btnRemoveSelected.dataset.slug;
+      if (!slug) return;
+      btnRemoveSelected.disabled = true;
+      try {
+        const freed = await invoke("delete_cached_patch", { slug });
+        log(`Removed downloaded patch ${slug} (${(freed / 1048576).toFixed(1)} MB freed). It will be downloaded again next time it is used.`, 'success');
+        await refreshCachedPatches();
+      } catch (err) {
+        log(`Could not remove the downloaded patch: ${err}`, 'error');
+      } finally {
+        btnRemoveSelected.disabled = false;
+      }
+    });
+  }
+
+  // Remove every downloaded patch (Settings).
+  const btnClearCache = document.getElementById('btn-clear-patch-cache');
+  if (btnClearCache) {
+    btnClearCache.addEventListener('click', async () => {
+      if (cachedPatchInfo.length === 0) return;
+      const bytes = cachedPatchInfo.reduce((sum, e) => sum + e.size, 0);
+      const mb = (bytes / 1048576).toFixed(1);
+      const ok = await showConfirm(
+        tPlural('tabPatcher.cache.clearConfirmMessage', cachedPatchInfo.length, { mb }),
+        t('tabPatcher.cache.clearConfirmTitle')
+      );
+      if (!ok) return;
+
+      btnClearCache.disabled = true;
+      const original = btnClearCache.innerHTML;
+      btnClearCache.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('tabPatcher.cache.removing')}`;
+      try {
+        const [removed, freed] = await invoke("clear_patch_cache");
+        log(`Removed ${removed} downloaded patch(es), freeing ${(freed / 1048576).toFixed(1)} MB.`, 'success');
+        await refreshCachedPatches();
+      } catch (err) {
+        log(`Could not clear the downloaded patches: ${err}`, 'error');
+      } finally {
+        btnClearCache.innerHTML = original;
+        btnClearCache.disabled = cachedPatchInfo.length === 0;
+      }
+    });
+  }
+}
+
+// Fetches one patch variant from the remote patch library into the local
+// cache, reporting live progress. Returns the absolute path on disk, which
+// run_xdelta_patch accepts unchanged. A cached, verified copy returns almost
+// immediately and emits no progress events.
+async function downloadPatchVariant(config, patchKey, variant) {
+  const slug = config.slug;
+  if (!slug) throw "Remote patch entry is missing its id (slug).";
+
+  const totalMb = variant.size ? (variant.size / 1048576).toFixed(1) : "?";
+  log(`Patch file for pack ${config.packVersion} (patch ${config.patchVersion || "1.0"}) is not bundled; fetching it from the patch library.`);
+  log(`  Variant: ${patchKey}  |  Size: ${totalMb} MB`);
+  updateStatus(
+    t('tabPatcher.status.preparingTitle'),
+    t('tabPatcher.status.downloading', { patch: patchKey, total: totalMb }),
+    '⬇️'
+  );
+
+  let unlisten = null;
+  try {
+    unlisten = await listen('patch-download-progress', (event) => {
+      const p = event.payload || {};
+      if (p.slug !== slug || p.variant !== patchKey) return;
+      const total = p.total_bytes || variant.size || 0;
+      const doneMb = (p.bytes_downloaded / 1048576).toFixed(1);
+      if (total > 0) {
+        const pct = Math.min(100, (p.bytes_downloaded / total) * 100);
+        // The download spans the 55-75% band of the overall pipeline.
+        // updateProgress writes the number straight into the label, so round it.
+        updateProgress(Math.round(55 + (pct * 0.20)));
+        updateStatus(
+          t('tabPatcher.status.preparingTitle'),
+          t('tabPatcher.status.downloadingProgress', { patch: patchKey, done: doneMb, total: totalMb, percent: pct.toFixed(0) }),
+          '⬇️'
+        );
+      } else {
+        updateStatus(
+          t('tabPatcher.status.preparingTitle'),
+          t('tabPatcher.status.downloadingProgressIndeterminate', { patch: patchKey, done: doneMb }),
+          '⬇️'
+        );
+      }
+    });
+
+    const path = await invoke("ensure_patch_downloaded", {
+      slug,
+      variant: patchKey,
+      url: variant.url,
+      sha256: variant.sha256 || "",
+      size: variant.size || 0
+    });
+
+    updateProgress(75);
+    log(`Patch file ready: "${path}"`, 'success');
+    return path;
+  } finally {
+    if (unlisten) {
+      try { unlisten(); } catch (_) {}
+    }
   }
 }
 
@@ -372,14 +917,133 @@ function updatePatchVersionsList(asVersion) {
       return verB.localeCompare(verA, undefined, { numeric: true, sensitivity: 'base' });
     });
 
-  patchSelect.innerHTML = '<option value="latest">Latest (Recommended)</option>';
+  const previous = patchSelect.value;
+  patchSelect.innerHTML = `<option value="latest">${t('tabPatcher.version.latestRecommended')}</option>`;
   matching.forEach(c => {
     const ver = c.patchVersion || "1.0";
     const opt = document.createElement('option');
     opt.value = ver;
-    opt.innerText = `Patch v${ver}`;
+    opt.innerText = `${t('tabPatcher.version.patchItem', { version: ver })} ${patchAvailabilityLabel(c)}`;
     patchSelect.appendChild(opt);
   });
+  if (previous && Array.from(patchSelect.options).some(o => o.value === previous)) {
+    patchSelect.value = previous;
+  }
+
+  updateSelectedPatchAvailability();
+}
+
+// Whether a config needs no download: either shipped in the installer, or
+// already sitting in this user's patch cache.
+function isPatchDownloaded(config) {
+  if (!config) return false;
+  const hasRemote = config.patches && Object.values(config.patches).some(v => v && typeof v === 'object' && v.url);
+  if (!hasRemote) return true; // bundled with the app
+  return !!(config.slug && cachedPatchSlugs.has(config.slug));
+}
+
+function patchAvailabilityLabel(config) {
+  const hasRemote = config.patches && Object.values(config.patches).some(v => v && typeof v === 'object' && v.url);
+  if (!hasRemote) return '\u{1F4E6}';
+  if (config.slug && cachedPatchSlugs.has(config.slug)) return '\u2705';
+  const bytes = Math.max(...Object.values(config.patches).map(v => (v && v.size) || 0));
+  return bytes ? `\u2B07\uFE0F ${(bytes / 1048576).toFixed(0)} MB` : '\u2B07\uFE0F';
+}
+
+// Reflects the currently selected version in the availability hint and the
+// per-version remove button.
+function updateSelectedPatchAvailability() {
+  const hint = document.getElementById('patch-availability-hint');
+  const btnRemove = document.getElementById('btn-remove-selected-patch');
+  if (!hint && !btnRemove) return;
+
+  const asSel = document.getElementById('select-as-version');
+  const patchSel = document.getElementById('select-patch-version');
+  if (!asSel || !patchSel) return;
+
+  const matching = patchConfigs.filter(c => c.packVersion === asSel.value)
+    .sort((a, b) => (b.patchVersion || "1.0").localeCompare(a.patchVersion || "1.0", undefined, { numeric: true, sensitivity: 'base' }));
+  const config = patchSel.value === 'latest'
+    ? matching[0]
+    : matching.find(c => (c.patchVersion || "1.0") === patchSel.value) || matching[0];
+
+  if (hint) {
+    if (!config) {
+      delete hint.dataset.flash;
+      hint.innerText = '';
+    } else if (isPatchDownloaded(config)) {
+      delete hint.dataset.flash;
+      const bundled = !(config.patches && Object.values(config.patches).some(v => v && typeof v === 'object' && v.url));
+      hint.innerHTML = bundled
+        ? `<span style="color:#7ed17e;">${t('tabPatcher.version.includedWithApp')}</span>`
+        : `<span style="color:#7ed17e;">${t('tabPatcher.version.downloadedOffline')}</span>`;
+    } else {
+      delete hint.dataset.flash;
+      const bytes = Math.max(...Object.values(config.patches || {}).map(v => (v && v.size) || 0));
+      const mb = bytes ? (bytes / 1048576).toFixed(0) : null;
+      const text = mb
+        ? t('tabPatcher.version.willBeDownloadedSize', { mb })
+        : t('tabPatcher.version.willBeDownloaded');
+      hint.innerHTML = `<span style="color:#e0b050;">${text}</span>`;
+    }
+  }
+
+  if (btnRemove) {
+    const removable = !!(config && config.slug && cachedPatchSlugs.has(config.slug));
+    btnRemove.classList.toggle('hidden-group', !removable);
+    btnRemove.dataset.slug = removable ? config.slug : '';
+  }
+}
+
+// Refreshes the cached-patch set from disk, then repaints anything that shows
+// download state.
+async function refreshCachedPatches() {
+  try {
+    const cached = await invoke("list_cached_patches");
+    cachedPatchSlugs = new Set(cached.map(c => c.slug));
+    cachedPatchInfo = cached;
+  } catch (err) {
+    console.error("Failed to list downloaded patches", err);
+    cachedPatchSlugs = new Set();
+    cachedPatchInfo = [];
+  }
+  const asSel = document.getElementById('select-as-version');
+  if (asSel && asSel.value) updatePatchVersionsList(asSel.value);
+  renderDownloadedPatchesSettings();
+}
+
+// patch_config.json stores "v1.11.1" while the pack scanner reports "1.11.1",
+// so versions must be normalised before any comparison.
+function normalizePackVersion(v) {
+  return String(v ?? '').trim().replace(/^v/i, '');
+}
+
+// Does a scanned pack look like the pack this patch config was built against?
+// v1.11 and v1.11.1 share a logo hash, so file and directory counts are the
+// only thing that separates them. Files tolerate a small delta (a user may have
+// added a file); directories must match exactly.
+function candidateMatchesConfig(candidate, config) {
+  if (!candidate || !config) return false;
+  const stats = config.stats || config.marketplace_pack_stats?.v1;
+  if (!stats || (!stats.files && !stats.dirs)) return false;
+
+  const fileMatch = stats.files && candidate.files_count > 0
+    ? Math.abs(stats.files - candidate.files_count) <= 5
+    : true;
+  const dirMatch = stats.dirs && candidate.dirs_count > 0
+    ? stats.dirs === candidate.dirs_count
+    : true;
+  return fileMatch && dirMatch;
+}
+
+// Best available description of the pack being patched. Prefer the scanner's
+// own version string; fall back to a config whose stats match this pack.
+function detectedVersionOf(candidate, fallbackConfig) {
+  if (candidate && candidate.version && candidate.version !== 'Unknown') return candidate.version;
+  const match = patchConfigs.find(c => candidateMatchesConfig(candidate, c));
+  if (match) return match.packVersion;
+  return (fallbackConfig && fallbackConfig.packVersion) || 'Unknown';
+
 }
 
 function resolvePatchConfig(selectionMode, detectedCandidate) {
@@ -616,7 +1280,7 @@ function setupUtilities() {
     const dst = document.getElementById('pack-dst-file').value;
     
     if (!src || !dst) {
-      alert("Please select both source folder and destination path.");
+      await showAlert(t('tabUtils.pack.alerts.missingPaths'));
       return;
     }
     
@@ -624,10 +1288,10 @@ function setupUtilities() {
       log(`Starting deterministic pack of: ${src}`);
       await invoke("pack_folder", { folderPath: src, outputZip: dst });
       log(`Successfully created deterministic pack at ${dst}`, 'success');
-      alert(`Pack created successfully at:\n${dst}`);
+      await showAlert(t('tabUtils.pack.alerts.success', { path: dst }));
     } catch (err) {
       log(`Packing failed: ${err}`, 'error');
-      alert(`Packing failed:\n${err}`);
+      await showAlert(t('tabUtils.pack.alerts.failed', { error: err }));
     }
   });
 
@@ -636,7 +1300,7 @@ function setupUtilities() {
     const dst = document.getElementById('extract-dst-folder').value;
     
     if (!src || !dst) {
-      alert("Please select both source archive and destination folder.");
+      await showAlert(t('tabUtils.extract.alerts.missingPaths'));
       return;
     }
     
@@ -644,10 +1308,10 @@ function setupUtilities() {
       log(`Extracting: ${src} to ${dst}`);
       await invoke("extract_archive", { zipPath: src, outputDir: dst });
       log(`Successfully extracted files to ${dst}`, 'success');
-      alert(`Extraction complete!`);
+      await showAlert(t('tabUtils.extract.alerts.success'));
     } catch (err) {
       log(`Extraction failed: ${err}`, 'error');
-      alert(`Extraction failed:\n${err}`);
+      await showAlert(t('tabUtils.extract.alerts.failed', { error: err }));
     }
   });
 
@@ -662,7 +1326,7 @@ function setupUtilities() {
     const injectManifest = document.getElementById('gen-inject-manifest').checked;
 
     if (!patchedDir || !decryptedDir || !encryptedDir || !outputDir) {
-      alert("Please fill in all four folder paths before creating patches.");
+      await showAlert(t('tabUtils.genpatch.alerts.missingPaths'));
       return;
     }
 
@@ -788,12 +1452,27 @@ function setupUtilities() {
         console.error("Failed to save patch version:", err);
       }
 
+      // The patch exists on disk and is good from here on, so nothing below is
+      // allowed to report the creation itself as failed.
+      lastCreatedPatchFolder = finalOutputDir;
+      const btnPublish = document.getElementById('btn-publish-last-patch');
+      if (btnPublish) btnPublish.classList.remove('hidden-group');
+
+      const wantsPublish = document.getElementById('gen-publish-library');
+      if (wantsPublish && wantsPublish.checked) {
+        try {
+          await publishPatchToLibrary(finalOutputDir, { packVer, patchVer });
+        } catch (err) {
+          gLog_fn(`Publishing failed, but the patch files are fine: ${err}`, 'warning');
+        }
+      }
+
       // Open output folder in Explorer
       try { await invoke("open_in_explorer", { path: finalOutputDir }); } catch (_) {}
 
     } catch (err) {
       gLog_fn(`❌ Patch creation failed: ${err}`, 'error');
-      alert(`Patch creation failed:\n${err}`);
+      await showAlert(t('tabUtils.genpatch.alerts.failed', { error: err }));
     } finally {
       document.getElementById('btn-run-gen-patch').disabled = false;
     }
@@ -881,7 +1560,7 @@ function setupUtilities() {
   brRunBtn.addEventListener('click', async () => {
     const folder = document.getElementById('util-br-folder').value;
     if (!folder) {
-      alert("Please select a target folder.");
+      await showAlert(t('tabUtils.brarchive.alerts.missingFolder'));
       return;
     }
     const extract = brExtract.checked, rename = brRename.checked;
@@ -908,7 +1587,7 @@ function setupUtilities() {
       }
     } catch (err) {
       brLog(`Failed: ${err}`, 'error');
-      alert(`Brarchive tool failed:\n${err}`);
+      await showAlert(`Brarchive tool failed:\n${err}`);
     } finally {
       brRunBtn.textContent = label;
       updateBrButton();
@@ -1002,7 +1681,7 @@ async function loadOptionsProfiles() {
     optionsProfiles = await invoke("get_options_paths");
     log(`Found ${optionsProfiles.length} options.txt profile(s): ${optionsProfiles.map(p => p.label).join(", ") || "none"}`);
     const select = document.getElementById('options-file-select');
-    select.innerHTML = '<option value="">-- Choose a Profile --</option>';
+    select.innerHTML = `<option value="" data-i18n="tabRtxSettings.chooseProfile">${t('tabRtxSettings.chooseProfile')}</option>`;
 
     optionsProfiles.forEach((profile, index) => {
       const opt = document.createElement('option');
@@ -1016,7 +1695,7 @@ async function loadOptionsProfiles() {
       if (selectedOptionsPath) {
         await loadOptionsData(selectedOptionsPath);
       } else {
-        document.getElementById('rtx-settings-grid').innerHTML = '<div class="placeholder-text">Select an options.txt profile to read settings...</div>';
+        document.getElementById('rtx-settings-grid').innerHTML = `<div class="placeholder-text" data-i18n="tabRtxSettings.placeholder">${t('tabRtxSettings.placeholder')}</div>`;
         document.getElementById('btn-save-settings').disabled = true;
         document.getElementById('btn-best-settings').disabled = true;
       }
@@ -1032,13 +1711,13 @@ async function loadOptionsData(path) {
     const data = await invoke("read_options", { path });
     
     const rtxKeys = {
-      'gfx_raytracing': { label: 'Ray Tracing', type: 'bool' },
-      'gfx_upscaling': { label: 'Upscaling / DLSS', type: 'bool' },
-      'raytracing_viewdistance': { label: 'Ray Tracing View Distance (Chunks)', type: 'number' },
-      'gfx_max_framerate': { label: 'Max Framerate', type: 'number' },
-      'gfx_vsync': { label: 'VSync', type: 'bool' },
-      'enable_dithering_blocks': { label: 'Block Dithering', type: 'bool' },
-      'enable_dithering_mobs': { label: 'Mob Dithering', type: 'bool' }
+      'gfx_raytracing': { labelKey: 'tabRtxSettings.fields.raytracing', type: 'bool' },
+      'gfx_upscaling': { labelKey: 'tabRtxSettings.fields.upscaling', type: 'bool' },
+      'raytracing_viewdistance': { labelKey: 'tabRtxSettings.fields.viewDistance', type: 'number' },
+      'gfx_max_framerate': { labelKey: 'tabRtxSettings.fields.maxFramerate', type: 'number' },
+      'gfx_vsync': { labelKey: 'tabRtxSettings.fields.vsync', type: 'bool' },
+      'enable_dithering_blocks': { labelKey: 'tabRtxSettings.fields.blockDithering', type: 'bool' },
+      'enable_dithering_mobs': { labelKey: 'tabRtxSettings.fields.mobDithering', type: 'bool' }
     };
     
     const grid = document.getElementById('rtx-settings-grid');
@@ -1053,7 +1732,8 @@ async function loadOptionsData(path) {
       
       const labelSpan = document.createElement('span');
       labelSpan.className = 'option-name';
-      labelSpan.innerText = cfg.label;
+      labelSpan.dataset.i18n = cfg.labelKey;
+      labelSpan.innerText = t(cfg.labelKey);
       field.appendChild(labelSpan);
       
       const controlDiv = document.createElement('div');
@@ -1111,14 +1791,14 @@ document.getElementById('btn-save-settings').addEventListener('click', async () 
     log(`Saving configuration edits...`);
     await invoke("write_options", { path: selectedOptionsPath, changes });
     log(`Successfully updated options.txt config!`, 'success');
-    alert("Settings applied successfully!");
+    await showAlert(t('tabRtxSettings.alerts.saveSuccess'));
   } catch (err) {
     log(`Failed to write settings: ${err}`, 'error');
-    alert(`Failed to save settings:\n${err}`);
+    await showAlert(t('tabRtxSettings.alerts.saveError', { error: err }));
   }
 });
 
-document.getElementById('btn-best-settings').addEventListener('click', () => {
+document.getElementById('btn-best-settings').addEventListener('click', async () => {
   const rt = document.querySelector('input[data-key="gfx_raytracing"]');
   const dlss = document.querySelector('input[data-key="gfx_upscaling"]');
   const vd = document.querySelector('input[data-key="raytracing_viewdistance"]');
@@ -1132,74 +1812,198 @@ document.getElementById('btn-best-settings').addEventListener('click', () => {
   if (dm) dm.checked = false;
   
   log("Automatically loaded best RTX settings into the editor. Click 'Apply Settings' to write them to options.txt.", "info");
-  alert("Best settings set in the editor! Click 'Apply Settings' to save them.");
+  await showAlert(t('tabRtxSettings.alerts.bestLoaded'));
 });
 
 
 // Cleaner panel setup
 let cleanablePacksPaths = [];
 
+// Paths the user has ticked for deletion. Everything found starts selected.
+let cleanSelectedPaths = new Set();
+
+function cleanerSelectedList() {
+  return cleanablePacksPaths.filter(p => cleanSelectedPaths.has(p));
+}
+
+function updateCleanerButtons() {
+  const selected = cleanerSelectedList().length;
+  const total = cleanablePacksPaths.length;
+  const btnSelected = document.getElementById('btn-run-cleaner');
+  const btnAll = document.getElementById('btn-clean-delete-all');
+
+  if (btnSelected) {
+    btnSelected.disabled = selected === 0;
+    btnSelected.innerText = selected > 0
+      ? tPlural('tabCleaner.actions.deleteSelectedCount', selected)
+      : t('tabCleaner.actions.deleteSelected');
+  }
+  if (btnAll) {
+    btnAll.disabled = total === 0;
+    btnAll.innerText = total > 0
+      ? tPlural('tabCleaner.actions.deleteAllCount', total)
+      : t('tabCleaner.actions.deleteAll');
+  }
+
+  ['btn-clean-select-all', 'btn-clean-select-none'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('hidden-group', total === 0);
+  });
+
+  const countTag = document.getElementById('clean-results-count');
+  if (countTag) {
+    countTag.innerText = total === 0
+      ? t('tabCleaner.results.noneFound')
+      : t('tabCleaner.results.selectedOfTotal', { selected, total });
+  }
+}
+
+function renderCleanerResults() {
+  const list = document.getElementById('clean-results-list');
+  if (!list) return;
+  list.innerHTML = '';
+
+  if (cleanablePacksPaths.length === 0) {
+    list.innerHTML = `<div class="placeholder-text" data-i18n="tabCleaner.results.clean">${t('tabCleaner.results.clean')}</div>`;
+    updateCleanerButtons();
+    return;
+  }
+
+  cleanablePacksPaths.forEach(p => {
+    const parts = p.split(/[\\/]/);
+    const name = parts[parts.length - 1] || p;
+
+    const item = document.createElement('div');
+    item.className = 'clean-item';
+    item.style.cssText = 'display:flex;align-items:center;gap:10px;';
+
+    const box = document.createElement('input');
+    box.type = 'checkbox';
+    box.checked = cleanSelectedPaths.has(p);
+    box.style.cssText = 'flex:0 0 auto;cursor:pointer;';
+    box.addEventListener('change', () => {
+      if (box.checked) cleanSelectedPaths.add(p); else cleanSelectedPaths.delete(p);
+      updateCleanerButtons();
+    });
+
+    const text = document.createElement('div');
+    text.style.cssText = 'min-width:0;flex:1;cursor:pointer;';
+    text.innerHTML = `<div style="font-size:0.85rem;color:#ffffff;">${name}</div>`;
+    const pathSpan = document.createElement('div');
+    pathSpan.className = 'clean-item-path';
+    pathSpan.style.maxWidth = '100%';
+    pathSpan.innerText = p;
+    pathSpan.title = p;
+    text.appendChild(pathSpan);
+    // Clicking the row toggles it, which is easier to hit than the checkbox.
+    text.addEventListener('click', () => { box.checked = !box.checked; box.dispatchEvent(new Event('change')); });
+
+    item.appendChild(box);
+    item.appendChild(text);
+    list.appendChild(item);
+  });
+
+  updateCleanerButtons();
+}
+
+async function runCleanerScan({ quiet = false } = {}) {
+  if (!quiet) log("Scanning Minecraft folders for old RTX packs...");
+  cleanablePacksPaths = await invoke("get_cleanable_packs");
+  cleanSelectedPaths = new Set(cleanablePacksPaths); // default to everything selected
+  renderCleanerResults();
+  if (!quiet) {
+    log(cleanablePacksPaths.length === 0
+      ? "Scan finished. Clean state verified."
+      : `Scan finished. Found ${cleanablePacksPaths.length} cleanable paths.`);
+  }
+}
+
+function setCleanProgress(done, total, label) {
+  const wrap = document.getElementById('clean-progress-wrap');
+  const fill = document.getElementById('clean-progress-fill');
+  const text = document.getElementById('clean-progress-text');
+  if (!wrap || !fill || !text) return;
+  wrap.classList.remove('hidden-group');
+  fill.style.width = `${total ? Math.round((done / total) * 100) : 0}%`;
+  text.innerText = label;
+}
+
+// Deletes one folder at a time so the bar reflects real progress. delete_folders
+// takes a list, but a single call gives no feedback until every folder is gone,
+// and these can hold thousands of files each.
+async function deleteCleanerPaths(paths, description) {
+  const confirmDelete = await showConfirm(
+    tPlural('tabCleaner.confirm.message', paths.length, { description }),
+    t('tabCleaner.confirm.title')
+  );
+  if (!confirmDelete) return;
+
+  const buttons = ['btn-scan-cleaner', 'btn-run-cleaner', 'btn-clean-delete-all', 'btn-clean-select-all', 'btn-clean-select-none']
+    .map(id => document.getElementById(id)).filter(Boolean);
+  buttons.forEach(b => { b.disabled = true; });
+
+  let deleted = 0;
+  let failed = 0;
+  try {
+    log(`Deleting ${paths.length} folder(s)...`);
+    setCleanProgress(0, paths.length, tPlural('tabCleaner.progress.preparing', paths.length));
+
+    for (let i = 0; i < paths.length; i++) {
+      const name = paths[i].split(/[\\/]/).pop() || paths[i];
+      setCleanProgress(i, paths.length, t('tabCleaner.progress.deleting', { current: i + 1, total: paths.length, name }));
+      try {
+        const count = await invoke("delete_folders", { folders: [paths[i]] });
+        if (count > 0) { deleted++; } else { failed++; log(`Could not delete: ${paths[i]}`, 'warning'); }
+      } catch (err) {
+        failed++;
+        log(`Failed to delete "${paths[i]}": ${err}`, 'error');
+      }
+    }
+
+    const doneLabel = failed
+      ? tPlural('tabCleaner.progress.doneWithFailures', deleted, { failed })
+      : tPlural('tabCleaner.progress.done', deleted);
+    setCleanProgress(paths.length, paths.length, doneLabel);
+    log(`Cleaner: deleted ${deleted} folder(s)${failed ? `, ${failed} failed` : ''}.`, failed ? 'warning' : 'success');
+  } finally {
+    buttons.forEach(b => { b.disabled = false; });
+    // Re-scan so the list reflects what is actually left, including anything
+    // that could not be removed because Minecraft still had it open.
+    await runCleanerScan({ quiet: true });
+    setTimeout(() => {
+      const wrap = document.getElementById('clean-progress-wrap');
+      if (wrap) wrap.classList.add('hidden-group');
+    }, 4000);
+  }
+}
+
 document.getElementById('btn-scan-cleaner').addEventListener('click', async () => {
   try {
-    log("Scanning Minecraft folders for old RTX packs...");
-    cleanablePacksPaths = await invoke("get_cleanable_packs");
-    
-    const countTag = document.getElementById('clean-results-count');
-    countTag.innerText = `${cleanablePacksPaths.length} found`;
-    
-    const list = document.getElementById('clean-results-list');
-    list.innerHTML = '';
-    
-    if (cleanablePacksPaths.length === 0) {
-      list.innerHTML = '<div class="placeholder-text">No old Actions & Stuff packs found. Your folders are clean!</div>';
-      document.getElementById('btn-run-cleaner').disabled = true;
-      log("Scan finished. Clean state verified.");
-    } else {
-      cleanablePacksPaths.forEach(p => {
-        const item = document.createElement('div');
-        item.className = 'clean-item';
-        
-        const pathSpan = document.createElement('span');
-        pathSpan.className = 'clean-item-path';
-        pathSpan.innerText = p;
-        item.appendChild(pathSpan);
-        
-        const labelSpan = document.createElement('span');
-        const parts = p.split(/[\\\/]/);
-        labelSpan.innerText = parts[parts.length - 1] || p;
-        item.appendChild(labelSpan);
-        
-        list.appendChild(item);
-      });
-      document.getElementById('btn-run-cleaner').disabled = false;
-      log(`Scan finished. Found ${cleanablePacksPaths.length} cleanable paths.`);
-    }
+    await runCleanerScan();
   } catch (err) {
     log(`Scan failed: ${err}`, 'error');
   }
 });
 
-document.getElementById('btn-run-cleaner').addEventListener('click', async () => {
+document.getElementById('btn-clean-select-all').addEventListener('click', () => {
+  cleanSelectedPaths = new Set(cleanablePacksPaths);
+  renderCleanerResults();
+});
+
+document.getElementById('btn-clean-select-none').addEventListener('click', () => {
+  cleanSelectedPaths.clear();
+  renderCleanerResults();
+});
+
+document.getElementById('btn-clean-delete-all').addEventListener('click', async () => {
   if (cleanablePacksPaths.length === 0) return;
-  const confirmDelete = await showConfirm(
-    `Are you sure you want to delete all ${cleanablePacksPaths.length} located folders?`,
-    'Confirm Deletion'
-  );
-  if (!confirmDelete) return;
-  
-  try {
-    log("Deleting located folders...");
-    const deletedCount = await invoke("delete_folders", { folders: cleanablePacksPaths });
-    log(`Cleaner: Successfully deleted ${deletedCount} folders.`, 'success');
-    alert(`Clean up complete! Deleted ${deletedCount} folder(s).`);
-    
-    document.getElementById('clean-results-list').innerHTML = '<div class="placeholder-text">Click Scan Folders to begin search...</div>';
-    document.getElementById('clean-results-count').innerText = '0 found';
-    document.getElementById('btn-run-cleaner').disabled = true;
-  } catch (err) {
-    log(`Deletion error: ${err}`, 'error');
-    alert(`Clean up failed:\n${err}`);
-  }
+  await deleteCleanerPaths([...cleanablePacksPaths], t('tabCleaner.confirm.descAll'));
+});
+
+document.getElementById('btn-run-cleaner').addEventListener('click', async () => {
+  const selected = cleanerSelectedList();
+  if (selected.length === 0) return;
+  await deleteCleanerPaths(selected, t('tabCleaner.confirm.descSelected'));
 });
 
 // CORE PATCHER PIPELINE
@@ -1230,6 +2034,10 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
   try {
     let sourceZipPath = "";
     let patchConfigToUse = null;
+    // The pack we actually chose to patch, and the folder picked if the user
+    // had to browse manually. Both feed the compression step below.
+    let selectedCandidate = null;
+    let browsedPackPath = "";
     
     // ----------------------------------------
     // STEP 0: SCAN & VERIFY
@@ -1296,14 +2104,30 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
           throw "User cancelled manual browse. Patch aborted.";
         }
         log(`Using manually browsed pack directory: ${browsePath}`);
+        browsedPackPath = browsePath;
         patchConfigToUse = resolvePatchConfig(selectionMode, null);
       } else {
-        const best = candidates[0];
-        log(`Auto-selected candidate pack:`);
+        // In Auto mode the scanner's ranking decides. In Manual mode the user
+        // has already named a version, so patch the pack that actually matches
+        // it - picking the top-ranked pack regardless would silently apply the
+        // patch to a different version and fail xdelta's source checksum.
+        let best = candidates[0];
+        if (selectionMode === 'manual') {
+          const wanted = resolvePatchConfig(selectionMode, null);
+          const match = wanted && candidates.find(c => candidateMatchesConfig(c, wanted));
+          if (match) {
+            best = match;
+          } else if (wanted) {
+            log(`None of the detected packs match the selected patch version (${wanted.packVersion}).`, 'warning');
+          }
+        }
+        selectedCandidate = best;
+
+        log(`Selected candidate pack:`);
         log(`  Path: "${best.path}"`);
         log(`  Version: ${best.version}`);
         log(`  Complexity: ${best.files_count} files and ${best.dirs_count} folders`);
-        
+
         patchConfigToUse = resolvePatchConfig(selectionMode, best);
 
         if (selectionMode === 'auto' && patchConfigToUse && patchConfigToUse.stats) {
@@ -1321,17 +2145,17 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
           }
         }
 
-        // If selection is manual, we check if the selected patch pack version matches the detected pack version
-        // To be safe, if we resolved an exact patchConfigToUse, its packVersion is the best determination of truth
-        let determinedVersion = best.version;
-        if (patchConfigToUse && patchConfigToUse.packVersion) {
-            determinedVersion = patchConfigToUse.packVersion;
-        }
+        // Warn when the manually chosen patch does not match the pack we are
+        // about to patch. This compares against the detected pack: the previous
+        // version overwrote the detected value with the selected one, so the
+        // two sides were always equal and the check never fired.
+        const detectedVersion = detectedVersionOf(best, patchConfigToUse);
 
-        if (selectionMode === 'manual' && patchConfigToUse.packVersion !== determinedVersion) {
-          log(`Warning: Target patch version (${patchConfigToUse.packVersion}) does not match detected pack version (${determinedVersion}).`, 'warning');
+        if (selectionMode === 'manual' && patchConfigToUse &&
+            normalizePackVersion(patchConfigToUse.packVersion) !== normalizePackVersion(detectedVersion)) {
+          log(`Warning: Target patch version (${patchConfigToUse.packVersion}) does not match detected pack version (${detectedVersion}).`, 'warning');
           const proceed = await showConfirm(
-            `Warning: The selected patch version (${patchConfigToUse.packVersion}) differs from your installed pack version (${determinedVersion}).\n\nDo you want to proceed anyway?`,
+            `Warning: The selected patch version (${patchConfigToUse.packVersion}) differs from the installed pack that will be patched (${detectedVersion}).\n\nApplying a patch built for a different version will fail.\n\nDo you want to proceed anyway?`,
             'Version Mismatch'
           );
           if (!proceed) {
@@ -1345,7 +2169,13 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
       // STEP 1: COMPRESSION / NORMALIZATION
       updateStepState(1, 'active');
       
-      const sourcePackPath = candidates.length > 0 ? candidates[0].path : document.getElementById('custom-src').value;
+      // Must follow the candidate actually selected above, not the top-ranked
+      // one, or Manual mode would compress a different pack than it patches.
+      // browsedPackPath covers the manual-browse fallback, whose chosen folder
+      // was previously discarded in favour of an unrelated custom-src field.
+      const sourcePackPath = selectedCandidate
+        ? selectedCandidate.path
+        : (browsedPackPath || document.getElementById('custom-src').value);
       const tempRoot = defaultPaths.temp ? defaultPaths.temp.replace(/\\/g, "/") : ".";
       const baseName = sourcePackPath.split(/[\\/]/).pop() || "source";
       const zipOut = `${tempRoot}/${baseName}_vanilla.zip`;
@@ -1367,7 +2197,7 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
       // Use pre-selected file from the Zip mode file picker
       let selectedZip = document.getElementById('zip-input-file') ? document.getElementById('zip-input-file').value : '';
       if (!selectedZip) {
-        log("No file pre-selected — prompting picker...");
+        log("No file pre-selected, prompting picker...");
         selectedZip = await invoke("select_file", {
           title: "Select Minecraft Resource Pack to Patch",
           filter: "Minecraft Packs (*.zip *.mcpack)|*.zip;*.mcpack"
@@ -1473,14 +2303,15 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
     }
     updateStepState(2, 'completed');
     
-    // STEP 3: APPLY RTX PATCH
+    // STEP 3: ENSURE THE PATCH FILE IS AVAILABLE (download it if it is remote)
     updateStepState(3, 'active');
-    updateStatus("Applying RTX Patch", "Running high-performance XDelta decoder...", '⚡');
-    updateProgress(65);
-    
+    updateStatus("Preparing Patch File", "Locating the patch for your pack...", '📦');
+    updateProgress(55);
+
     let patchFilePath = "";
     let finalOutputPath = "";
-    
+    let usedPatchSlug = null;
+
     if (mode === 'custom') {
       patchFilePath = document.getElementById('custom-patch').value;
       finalOutputPath = document.getElementById('custom-tgt').value;
@@ -1488,37 +2319,64 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
       if (!patchConfigToUse) {
         throw "No valid patch configuration found to match targets.";
       }
-      
+
       const isEncrypted = mode === 'marketplace';
       const patchKey = isEncrypted ? 'encrypted' : 'decrypted';
-      
-      let relPatch = patchConfigToUse.patches && patchConfigToUse.patches[patchKey]
-        ? patchConfigToUse.patches[patchKey]
-        : `assets/Patches/${patchConfigToUse.folder_name}/${isEncrypted ? 'encrypted.vcdiff' : 'decrypted.vcdiff'}`;
-        
-      patchFilePath = relPatch;
-      
+      const variant = patchConfigToUse.patches && patchConfigToUse.patches[patchKey];
+
+      if (variant && typeof variant === 'object' && variant.url) {
+        // Remote entry from the patch library: fetch it into the local cache.
+        // run_xdelta_patch takes the absolute cache path unchanged.
+        patchFilePath = await downloadPatchVariant(patchConfigToUse, patchKey, variant);
+        usedPatchSlug = patchConfigToUse.slug || null;
+      } else if (variant) {
+        // Explicit path override in a patch_config.json.
+        patchFilePath = variant;
+      } else {
+        // Bundled patch shipped inside the installer.
+        patchFilePath = `assets/Patches/${patchConfigToUse.folder_name}/${isEncrypted ? 'encrypted.vcdiff' : 'decrypted.vcdiff'}`;
+      }
+
       const sourcePackPath = sourceZipPath;
       const idx = sourcePackPath.lastIndexOf('.');
-      finalOutputPath = idx !== -1 
+      finalOutputPath = idx !== -1
         ? `${sourcePackPath.substring(0, idx)}_RTX_Patched.zip`
         : `${sourcePackPath}_RTX_Patched.zip`;
     }
-    
+
+    updateStepState(3, 'completed');
+
+    // STEP 4: APPLY RTX PATCH
+    updateStepState(4, 'active');
+    updateStatus("Applying RTX Patch", "Running high-performance XDelta decoder...", '⚡');
+    updateProgress(80);
+
     log(`APPLYING PATCH FILE:`);
     log(`  Patch:  "${patchFilePath}"`);
     log(`  Source: "${sourceZipPath}"`);
     log(`  Output: "${finalOutputPath}"`);
     log("Running XDelta patch execution...");
-    
+
     await invoke("run_xdelta_patch", {
       sourceZip: sourceZipPath,
       patchFile: patchFilePath,
       outputFile: finalOutputPath
     });
-    
+
     log("Patch application completed successfully!", 'success');
-    updateStepState(3, 'completed');
+    updateStepState(4, 'completed');
+
+    // Housekeeping only: never allowed to fail the run, since the patch is
+    // already applied by this point.
+    try {
+      if (appSettings.autoCleanPatchCache && usedPatchSlug) {
+        const removed = await invoke("prune_patch_cache", { keepSlug: usedPatchSlug });
+        if (removed > 0) log(`Removed ${removed} older downloaded patch(es) to save space.`);
+      }
+      await refreshCachedPatches();
+    } catch (err) {
+      log(`Could not tidy the downloaded patches: ${err}`, 'warning');
+    }
     
     // Clean intermediate zip
     if (mode === 'marketplace' || mode === 'zip' || (mode === 'custom' && !document.getElementById('custom-src').value.endsWith('.zip'))) {
@@ -1527,8 +2385,8 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
       log("Temporary source ZIP cleaned.");
     }
     
-    // STEP 4: IMPORT PACK
-    updateStepState(4, 'active');
+    // STEP 5: IMPORT PACK
+    updateStepState(5, 'active');
     updateStatus("Patch Done", "Ready to import into Minecraft!", '🎉');
     updateProgress(100);
     
@@ -1556,13 +2414,13 @@ document.getElementById('btn-install-pack').addEventListener('click', async () =
   const btn = document.getElementById('btn-install-pack');
   const originalText = btn.innerHTML;
   btn.disabled = true;
-  btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Installing...`;
+  btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('tabPatcher.installing')}`;
 
   try {
     log(`Launching installer for: ${finalPatchedPath}`);
     const actualMcpack = await invoke("install_mcpack", { outputFile: finalPatchedPath });
     log(`Successfully installed pack to: ${actualMcpack}`, 'success');
-    updateStepState(4, 'completed');
+    updateStepState(5, 'completed');
     btn.classList.add('hidden-group');
   } catch (err) {
     log(`Install failed: ${err}`, 'error');
@@ -1621,7 +2479,7 @@ document.getElementById('btn-patch-back').addEventListener('click', () => {
   document.querySelector('.progress-panel').classList.add('hidden-group');
   document.querySelector('.controls-panel').classList.remove('hidden-group');
   document.getElementById('btn-report-bug-quick').classList.add('hidden-group');
-  updateStatus("Ready to Patch", "Configure options and click Apply", '💤');
+  updateStatus(t('tabPatcher.status.readyTitle'), t('tabPatcher.status.readySubtitle'), '💤');
   updateProgress(0);
   resetSteps();
 });
@@ -1693,7 +2551,7 @@ function setupReleaseBuilder() {
     const currentVer = versionBadge.innerText.replace('v', '').trim();
     const parsed = parseVersion(currentVer);
     updateVerInputs(parsed);
-    if (relHint) relHint.innerText = `Current: ${versionBadge.innerText}`;
+    if (relHint) relHint.innerText = t('tabRelease.versionEditor.current', { version: versionBadge.innerText });
   }
 
   // Increment buttons listeners
@@ -1734,14 +2592,14 @@ function setupReleaseBuilder() {
   if (btnApplyVer) {
     btnApplyVer.addEventListener('click', async () => {
       const newVer = relVerInput ? relVerInput.value.trim() : '';
-      if (!newVer) { alert("Please enter a version number."); return; }
+      if (!newVer) { await showAlert(t('tabRelease.alerts.enterVersion')); return; }
       try {
         await invoke("update_app_version", { version: newVer });
-        if (relHint) relHint.innerText = `Current: v${newVer} (saved)`;
+        if (relHint) relHint.innerText = t('tabRelease.versionEditor.currentSaved', { version: `v${newVer}` });
         if (versionBadge) versionBadge.innerText = `v${newVer}`;
       } catch (err) {
         bLog(`Failed to update app version: ${err}`, 'error');
-        alert(`Failed to update app version:\n${err}`);
+        await showAlert(t('tabRelease.alerts.updateVersionFailed', { error: err }));
       }
     });
   }
@@ -1757,8 +2615,13 @@ function setupReleaseBuilder() {
         const exists = await invoke("check_build_exists", { version: currentVersion });
         if (exists) {
           const result = await showModal(
-            `A release build for version v${currentVersion} already exists in the output folder.\n\nDo you want to overwrite it?`,
-            { title: 'Build Already Exists', confirm: true, okText: 'Overwrite', cancelText: 'Cancel' }
+            t('tabRelease.confirmOverwrite.message', { version: currentVersion }),
+            {
+              title: t('tabRelease.confirmOverwrite.title'),
+              confirm: true,
+              okText: t('tabRelease.confirmOverwrite.overwriteBtn'),
+              cancelText: t('common.cancel')
+            }
           );
           if (!result) {
             return;
@@ -1780,7 +2643,7 @@ function setupReleaseBuilder() {
       await invoke("run_release_build", { buildType: buildType });
     } catch (err) {
       buildLog.innerHTML += `<div class="log-line error">Failed to run build: ${err}</div>`;
-      alert(`Failed to run release build:\n${err}`);
+      await showAlert(t('tabRelease.alerts.buildFailed', { error: err }));
     } finally {
       if (btnBuildAll) btnBuildAll.disabled = false;
       if (btnBuildInstallers) btnBuildInstallers.disabled = false;
@@ -1806,7 +2669,7 @@ function setupReleaseBuilder() {
         await invoke("open_project_dir", { name: "bundle" });
       } catch (err) {
         log(`Failed to open bundle folder: ${err}`, 'error');
-        alert(`Failed to open bundle folder:\n${err}`);
+        await showAlert(t('tabRelease.alerts.openBundleFailed', { error: err }));
       }
     });
   }
@@ -1819,7 +2682,7 @@ function setupReleaseBuilder() {
         await invoke("open_project_dir", { name: "patches" });
       } catch (err) {
         log(`Failed to open patches folder: ${err}`, 'error');
-        alert(`Failed to open patches folder:\n${err}`);
+        await showAlert(t('tabRelease.alerts.openPatchesFailed', { error: err }));
       }
     });
   }
@@ -1920,29 +2783,34 @@ async function setupTelemetry() {
   consentToggle?.addEventListener('change', async (e) => {
     await applyConsent(e.target.checked);
     if (statusEl) statusEl.innerText = e.target.checked
-      ? 'Thanks! Hardware ping enabled (checked on every start, only uploaded when something changes).'
-      : 'Hardware ping disabled. Nothing will be sent automatically.';
+      ? t('tabSupport.telemetry.enabledStatus')
+      : t('tabSupport.telemetry.disabledStatus');
   });
 
   document.getElementById('btn-view-telemetry-payload')?.addEventListener('click', async () => {
     try {
       await invoke('open_diagnostics_folder');
     } catch (e) {
-      showModal(`Failed to open diagnostics folder: ${e}`, { title: 'Error' });
+      showModal(t('tabSupport.telemetry.openDiagnosticsError', { error: e }), { title: t('tabSupport.telemetry.errorTitle') });
     }
   });
 
   document.getElementById('btn-delete-telemetry-data')?.addEventListener('click', async () => {
     const confirmed = await showModal(
-      'This deletes all telemetry and bug-report data linked to your random install ID from our server, then rotates the ID locally so old data can never be linked to you again. Continue?',
-      { title: 'Delete My Data', confirm: true, okText: 'Delete', cancelText: 'Cancel' }
+      t('tabSupport.telemetry.deleteConfirmMessage'),
+      {
+        title: t('tabSupport.telemetry.deleteConfirmTitle'),
+        confirm: true,
+        okText: t('tabSupport.telemetry.deleteBtn'),
+        cancelText: t('common.cancel')
+      }
     );
     if (!confirmed) return;
     try {
       await invoke('telemetry_delete_my_data');
-      if (statusEl) statusEl.innerText = '✅ Your data has been deleted and your ID rotated.';
+      if (statusEl) statusEl.innerText = t('tabSupport.telemetry.deleteSuccess');
     } catch (e) {
-      if (statusEl) statusEl.innerText = `❌ Deletion failed: ${e}`;
+      if (statusEl) statusEl.innerText = t('tabSupport.telemetry.deleteError', { error: e });
     }
   });
 }
@@ -1955,7 +2823,7 @@ async function setupTelemetry() {
 // Shared by the general Bug Reporter and the one-click Known Issue reporter,
 // since both need the exact same "walk the user through fixing this" flow.
 async function prepareContentLogOrInstruct(statusEl, btnSubmit) {
-  statusEl.innerHTML = "Checking Minecraft content log... <span class='status-spinner'>⏳</span>";
+  statusEl.innerHTML = `${t('tabSupport.contentLog.checking')} <span class='status-spinner'>⏳</span>`;
   const clRes = await invoke('prepare_content_log');
   if (clRes.status === 'ok') {
     return clRes.zip_path;
@@ -1963,47 +2831,20 @@ async function prepareContentLogOrInstruct(statusEl, btnSubmit) {
 
   let instruction;
   if (clRes.status === 'logging_was_off') {
-    instruction = "Minecraft's content logging was turned OFF, so no useful log exists yet.\n\n" +
-      "✅ I have already enabled it in your Minecraft settings for you.\n\n" +
-      "Please:\n" +
-      "1. Restart Minecraft\n" +
-      "2. Join the world where the bug happens\n" +
-      "3. Make sure the broken entity/block is loaded (walk up to it)\n" +
-      "4. Come back and press 'Send Bug Report' again";
+    instruction = t('tabSupport.contentLog.instructions.loggingOff');
   } else if (clRes.status === 'log_too_small') {
-    instruction = `Your newest content log is only ${clRes.log_size_mb} MB — too small to contain the error details (needs > 5 MB).\n\n` +
-      "Please:\n" +
-      "1. Restart Minecraft\n" +
-      "2. Join the world where the bug happens\n" +
-      "3. Make sure the broken entity/block is loaded (walk up to it) and play a minute\n" +
-      "4. Come back and press 'Send Bug Report' again";
+    instruction = t('tabSupport.contentLog.instructions.tooSmall', { size: clRes.log_size_mb });
   } else if (clRes.status === 'log_too_old') {
-    instruction = "Your newest content log is more than an hour old, so it probably doesn't show the current bug.\n\n" +
-      "Please:\n" +
-      "1. Restart Minecraft\n" +
-      "2. Join the world where the bug happens\n" +
-      "3. Make sure the broken entity/block is loaded (walk up to it)\n" +
-      "4. Come back and press 'Send Bug Report' again (within an hour)";
+    instruction = t('tabSupport.contentLog.instructions.tooOld');
   } else if (clRes.status === 'log_too_large') {
-    instruction = `Your newest content log is ${clRes.log_size_mb} MB — that's over the 500 MB limit and likely full of unrelated spam.\n\n` +
-      "Please:\n" +
-      "1. Restart Minecraft (this starts a fresh, clean log)\n" +
-      "2. Join the world where the bug happens\n" +
-      "3. Make sure the broken entity/block is loaded (walk up to it), just briefly\n" +
-      "4. Come back and press 'Send Bug Report' again";
+    instruction = t('tabSupport.contentLog.instructions.tooLarge', { size: clRes.log_size_mb });
   } else { // no_log
-    instruction = "Content logging is enabled, but no log file exists yet.\n\n" +
-      "Please:\n" +
-      "1. Restart Minecraft\n" +
-      "2. Join the world where the bug happens\n" +
-      "3. Make sure the broken entity/block is loaded (walk up to it)\n" +
-      "4. Come back and press 'Send Bug Report' again\n\n" +
-      "(Or turn off 'Send Minecraft Content Log' to submit without it.)";
+    instruction = t('tabSupport.contentLog.instructions.noLog');
   }
-  statusEl.innerHTML = "⏸️ Report not sent yet — Minecraft needs to generate a content log first.";
+  statusEl.innerText = t('tabSupport.contentLog.notSentStatus');
   statusEl.className = "status-hint";
   btnSubmit.disabled = false;
-  await showModal(instruction, { title: 'One more step: Content Log' });
+  await showModal(instruction, { title: t('tabSupport.contentLog.modalTitle') });
   return null;
 }
 
@@ -2014,12 +2855,12 @@ async function setupBugReporter() {
   btnSubmit.addEventListener('click', async () => {
     const discordName = document.getElementById('bug-discord-name').value.trim();
     if (!discordName) {
-      alert("Please enter your Discord username.");
+      showAlert(t('tabSupport.bugReport.alerts.enterDiscord'));
       return;
     }
 
     if (discordName.includes(' ')) {
-      alert("Discord usernames/IDs cannot contain spaces.\nIf you are using your display name/nickname, please use your actual Discord username (which contains no spaces) or your 18-digit Discord User ID instead.");
+      showAlert(t('tabSupport.bugReport.alerts.noSpacesDiscord'));
       return;
     }
 
@@ -2031,7 +2872,7 @@ async function setupBugReporter() {
     const includeHardware = document.getElementById('bug-include-hardware')?.checked || false;
     const statusEl = document.getElementById('bug-report-status');
 
-    statusEl.innerHTML = "Submitting bug report... <span class='status-spinner'>⏳</span>";
+    statusEl.innerHTML = `${t('tabSupport.bugReport.status.submitting')} <span class='status-spinner'>⏳</span>`;
     statusEl.className = "status-hint";
     btnSubmit.disabled = true;
 
@@ -2063,7 +2904,7 @@ async function setupBugReporter() {
         if (mode === 'zip') {
           packPath = document.getElementById('zip-input-file').value;
         } else if (mode === 'marketplace') {
-          statusEl.innerHTML = "Zipping Marketplace Pack... <span class='status-spinner'>⏳</span>";
+          statusEl.innerHTML = `${t('tabSupport.bugReport.status.zippingMarketplace')} <span class='status-spinner'>⏳</span>`;
           let expectedLogoHash = null;
           let expectedHasLangFile = null;
           let validStatsList = null;
@@ -2096,24 +2937,24 @@ async function setupBugReporter() {
       });
 
       if (res && res.success) {
-        let msg = `✅ Bug Report submitted successfully! Case ID: #${res.caseId}`;
+        let msg = t('tabSupport.bugReport.status.success', { caseId: res.caseId });
         if (res.replacedOld) {
-            msg += `<br><br><span style="color: #fbbf24; font-size: 0.8rem;">Note: You already had a recent issue submitted. Your previous pack file has been replaced to save space.</span>`;
+            msg += `<br><br><span style="color: #fbbf24; font-size: 0.8rem;">${t('tabSupport.bugReport.status.replacedOldNote')}</span>`;
         }
         statusEl.innerHTML = msg;
         statusEl.className = "status-success";
       }
 
     } catch (err) {
-      statusEl.innerHTML = `❌ Failed to submit: ${err}`;
+      statusEl.innerText = t('tabSupport.bugReport.status.failed', { error: err });
       statusEl.className = "status-error";
 
       if (err.includes("User not found")) {
-        showModal(err + "\nWould you like to join the Chaos dev project server now?", {
-          title: "Join Server Required",
+        showModal(t('tabSupport.bugReport.alerts.userNotFound', { error: err }), {
+          title: t('tabSupport.bugReport.alerts.joinServerTitle'),
           confirm: true,
-          okText: "Join Discord",
-          cancelText: "Cancel"
+          okText: t('tabSupport.bugReport.alerts.joinDiscordBtn'),
+          cancelText: t('common.cancel')
         }).then(async (joined) => {
           if (joined) {
             await invoke("open_url", { url: "https://discord.gg/YrMMmN2kc7" });
@@ -2150,7 +2991,7 @@ async function setupKnownIssueReporter() {
     const statusEl = document.getElementById('known-issue-status');
     const description = document.getElementById('known-issue-description')?.value.trim() || '';
 
-    statusEl.innerHTML = "Submitting report... <span class='status-spinner'>⏳</span>";
+    statusEl.innerHTML = `${t('tabSupport.knownIssue.status.submitting')} <span class='status-spinner'>⏳</span>`;
     statusEl.className = "status-hint";
     btnSubmit.disabled = true;
 
@@ -2170,12 +3011,12 @@ async function setupKnownIssueReporter() {
       });
 
       if (res && res.success) {
-        statusEl.innerHTML = `✅ Report submitted anonymously! Case ID: #${res.caseId}<br><br>` +
-          `<span style="font-size: 0.8rem;">This data will be kept until the issue is resolved, not auto-deleted after 30/90 days like a regular report.</span>`;
+        statusEl.innerHTML = `${t('tabSupport.knownIssue.status.success', { caseId: res.caseId })}<br><br>` +
+          `<span style="font-size: 0.8rem;">${t('tabSupport.knownIssue.status.retentionNotice')}</span>`;
         statusEl.className = "status-success";
       }
     } catch (err) {
-      statusEl.innerHTML = `❌ Failed to submit: ${err}`;
+      statusEl.innerText = t('tabSupport.knownIssue.status.failed', { error: err });
       statusEl.className = "status-error";
     } finally {
       btnSubmit.disabled = false;
@@ -2191,7 +3032,9 @@ async function checkForUpdates() {
   if (!badge) return;
 
   badge.className = "update-badge state-checking";
-  badge.innerText = "Checking...";
+  delete badge.dataset.updateVersion;
+  badge.setAttribute('data-i18n', 'sidebar.update.checking');
+  badge.innerText = t('sidebar.update.checking');
 
   const allowBetaUpdates = localStorage.getItem('allow-beta-updates') === 'true';
   const isAdvanced = document.getElementById('chk-advanced-mode')?.checked;
@@ -2217,7 +3060,9 @@ async function checkForUpdates() {
       if (isBetaUpdate && !allowBetaUpdates) {
         log(`Software update v${userFacingVersion} is a Beta version, and Beta updates are disabled.`);
         badge.className = "update-badge state-uptodate";
-        badge.innerText = "Up to Date";
+        delete badge.dataset.updateVersion;
+      badge.setAttribute('data-i18n', 'sidebar.update.upToDate');
+        badge.innerText = t('sidebar.update.upToDate');
         btn.classList.add('hidden-group');
         return;
       }
@@ -2226,14 +3071,18 @@ async function checkForUpdates() {
       if (isAlphaUpdate && (!allowBetaUpdates || !isAdvanced)) {
         log(`Software update v${userFacingVersion} is an Alpha version. It requires both Beta updates and Advanced Mode to be enabled.`);
         badge.className = "update-badge state-uptodate";
-        badge.innerText = "Up to Date";
+        delete badge.dataset.updateVersion;
+      badge.setAttribute('data-i18n', 'sidebar.update.upToDate');
+        badge.innerText = t('sidebar.update.upToDate');
         btn.classList.add('hidden-group');
         return;
       }
 
       log(`New update available: v${userFacingVersion}`);
       badge.className = "update-badge state-available";
-      badge.innerText = `v${userFacingVersion} Available`;
+      badge.removeAttribute('data-i18n');
+      badge.dataset.updateVersion = userFacingVersion;
+      badge.innerText = t('sidebar.update.available', { version: userFacingVersion });
       btn.classList.remove('hidden-group');
       
       btn.onclick = async () => {
@@ -2255,7 +3104,8 @@ async function checkForUpdates() {
         if (!confirmed) return;
 
         btn.disabled = true;
-        btn.innerText = "Updating...";
+        btn.setAttribute('data-i18n', 'sidebar.update.updating');
+        btn.innerText = t('sidebar.update.updating');
         log("Downloading and installing update...");
         try {
           if (!update.rid) {
@@ -2283,19 +3133,23 @@ async function checkForUpdates() {
           log(`Update installation failed: ${err}`, 'error');
           alert(`Update installation failed:\n${err}`);
           btn.disabled = false;
-          btn.innerText = "Update Now";
+          btn.setAttribute('data-i18n', 'sidebar.update.updateNow');
+          btn.innerText = t('sidebar.update.updateNow');
         }
       };
     } else {
       log("Software is up to date.");
       badge.className = "update-badge state-uptodate";
-      badge.innerText = "Up to Date";
+      delete badge.dataset.updateVersion;
+      badge.setAttribute('data-i18n', 'sidebar.update.upToDate');
+      badge.innerText = t('sidebar.update.upToDate');
       btn.classList.add('hidden-group');
     }
   } catch (err) {
     log(`Update check failed: ${err}`, 'warning');
     badge.className = "update-badge state-error";
-    badge.innerText = "Check Failed";
+    badge.setAttribute('data-i18n', 'sidebar.update.checkFailed');
+    badge.innerText = t('sidebar.update.checkFailed');
     btn.classList.add('hidden-group');
   }
 }
@@ -2306,13 +3160,18 @@ let appSettings = {
   advancedMode: false,
   betaUpdates: false,
   cleanOld: true,
+  autoCleanPatchCache: false,
+  consoleHeight: 150,
+  patchLibraryDir: '',
+  publishAfterCreate: false,
   genInjectManifest: true,
   bugIncludeLog: true,
   bugIncludePack: false,
   bugIncludeContentLog: true,
   bugIncludeDriverLog: true,
   bugIncludeHardware: true,
-  sidebarCollapsed: false
+  sidebarCollapsed: false,
+  language: 'en'
 };
 
 async function loadSettings() {
@@ -2341,7 +3200,11 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   // Load user settings
   await loadSettings();
-  
+
+  // * Must run before any settings-dependent UI is wired up: the handlers below
+  // * read labels out of an already-translated DOM.
+  await initI18n(appSettings.language);
+
   const updateSetting = async (key, val) => {
     appSettings[key] = val;
     await saveSettings();
@@ -2409,9 +3272,79 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (trigger && el2) el2.dispatchEvent(new Event('change'));
   };
 
+  // Select counterpart of syncToggle: mirrors two <select> elements onto one
+  // setting, persists the change, and runs an optional side effect.
+  const syncSelect = (id1, id2, key, onChange) => {
+    const els = [document.getElementById(id1), document.getElementById(id2)].filter(Boolean);
+    els.forEach(el => {
+      el.value = appSettings[key];
+      el.addEventListener('change', async e => {
+        const val = e.target.value;
+        els.forEach(other => { if (other !== e.target) other.value = val; });
+        await updateSetting(key, val);
+        if (onChange) await onChange(val);
+      });
+    });
+  };
+
+  // Language pickers. Both dropdowns are filled from the i18n registry rather
+  // than from hardcoded <option> markup, so adding a language needs no change
+  // here -- see src/i18n/registry.js.
+  ['sel-language', 'set-language'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = '';
+    for (const { code, label } of getLocales()) {
+      const opt = document.createElement('option');
+      opt.value = code;
+      opt.textContent = label;
+      el.appendChild(opt);
+    }
+    el.value = getLocale();
+  });
+  syncSelect('sel-language', 'set-language', 'language', code => setLocale(code));
+
   // Sync settings tabs to main UI tabs
   syncToggle('set-advanced-mode', 'chk-advanced-mode', 'advancedMode', true);
   syncToggle('set-beta-updates', 'chk-beta-updates', 'betaUpdates', true);
+  syncToggle('set-clean-patch-cache', null, 'autoCleanPatchCache');
+  syncToggle('set-publish-after-create', 'gen-publish-library', 'publishAfterCreate');
+
+  // Patch library folder picker, reusing the same select_directory command as
+  // every other Browse button.
+  const libDirInput = document.getElementById('set-patch-library-dir');
+  if (libDirInput) libDirInput.value = appSettings.patchLibraryDir || '';
+  const btnBrowseLib = document.getElementById('btn-browse-patch-library');
+  if (btnBrowseLib) {
+    btnBrowseLib.addEventListener('click', async () => {
+      try {
+        const dir = await invoke("select_directory", { title: "Select your local clone of the patch library repo" });
+        if (!dir) return;
+        if (libDirInput) libDirInput.value = dir;
+        await updateSetting('patchLibraryDir', dir);
+        log(`Patch library folder set to: ${dir}`);
+      } catch (err) {
+        log(`Could not set the patch library folder: ${err}`, 'error');
+      }
+    });
+  }
+
+  // Publish the most recently created patch without rebuilding it.
+  const btnPublishLast = document.getElementById('btn-publish-last-patch');
+  if (btnPublishLast) {
+    btnPublishLast.addEventListener('click', async () => {
+      if (!lastCreatedPatchFolder) return;
+      btnPublishLast.disabled = true;
+      const original = btnPublishLast.innerHTML;
+      btnPublishLast.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('tabUtils.genpatch.publishing')}`;
+      try {
+        await publishPatchToLibrary(lastCreatedPatchFolder);
+      } finally {
+        btnPublishLast.disabled = false;
+        btnPublishLast.innerHTML = original;
+      }
+    });
+  }
   syncToggle('set-clean-old', 'chk-clean-old', 'cleanOld');
   syncToggle('set-gen-inject-manifest', 'gen-inject-manifest', 'genInjectManifest');
   syncToggle('set-bug-include-log', 'bug-include-log', 'bugIncludeLog');
@@ -2449,20 +3382,20 @@ window.addEventListener('DOMContentLoaded', async () => {
     const resEl = document.getElementById('api-test-results');
     if (!resEl) return;
     resEl.style.color = '#e2e8f0';
-    resEl.textContent = 'Testing GitHub API...';
+    resEl.textContent = t('tabAppSettings.diagnostics.testingGithub');
     try {
       const resp = await fetch('https://api.github.com/repos/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/latest');
       if (resp.ok) {
         const data = await resp.json();
         resEl.style.color = '#4ade80';
-        resEl.textContent = `✅ Online. Latest release: ${data.tag_name}`;
+        resEl.textContent = t('tabAppSettings.diagnostics.githubOnline', { tag: data.tag_name });
       } else {
         resEl.style.color = '#ef4444';
-        resEl.textContent = `❌ API returned status: ${resp.status}`;
+        resEl.textContent = t('tabAppSettings.diagnostics.githubStatusError', { status: resp.status });
       }
     } catch(e) {
       resEl.style.color = '#ef4444';
-      resEl.textContent = `❌ Fetch failed: ${e.message}`;
+      resEl.textContent = t('tabAppSettings.diagnostics.githubFetchFailed', { error: e.message });
     }
   });
 
@@ -2470,14 +3403,14 @@ window.addEventListener('DOMContentLoaded', async () => {
     const resEl = document.getElementById('api-test-results');
     if (!resEl) return;
     resEl.style.color = '#e2e8f0';
-    resEl.textContent = 'Pinging Rust Backend...';
+    resEl.textContent = t('tabAppSettings.diagnostics.pingingBackend');
     try {
       const resp = await invoke("greet", { name: "Test" });
       resEl.style.color = '#4ade80';
-      resEl.textContent = `✅ Rust backend is responding: ${resp}`;
+      resEl.textContent = t('tabAppSettings.diagnostics.backendResponding', { response: resp });
     } catch(e) {
       resEl.style.color = '#ef4444';
-      resEl.textContent = `❌ Backend error: ${e}`;
+      resEl.textContent = t('tabAppSettings.diagnostics.backendError', { error: e });
     }
   });
 
@@ -2485,15 +3418,17 @@ window.addEventListener('DOMContentLoaded', async () => {
     const resEl = document.getElementById('api-test-results');
     if (!resEl) return;
     resEl.style.color = '#e2e8f0';
-    resEl.textContent = 'Testing Workspace Paths...';
+    resEl.textContent = t('tabAppSettings.diagnostics.testingWorkspace');
     try {
       const paths = await invoke("get_default_paths");
       const foundPath = paths.premium_cache || paths.mc_resource_packs || paths.premiumCache || paths.mcResourcePacks;
       resEl.style.color = '#4ade80';
-      resEl.textContent = `✅ Found Workspace: ${foundPath || 'Unknown, check advanced options'}`;
+      resEl.textContent = t('tabAppSettings.diagnostics.workspaceFound', {
+        path: foundPath || t('tabAppSettings.diagnostics.workspaceUnknown'),
+      });
     } catch(e) {
       resEl.style.color = '#ef4444';
-      resEl.textContent = `❌ Workspace error: ${e}`;
+      resEl.textContent = t('tabAppSettings.diagnostics.workspaceError', { error: e });
     }
   });
 
@@ -2526,7 +3461,11 @@ window.addEventListener('DOMContentLoaded', async () => {
     console.error("Failed to fetch patch versions:", err);
   }
 
+  setupConsoleResize();
+  wireVersionControls();
   await loadPatchConfigs();
+  await refreshCachedPatches();
+  setupCatalogueAutoRefresh();
   await bindPickers();
   setupUtilities();
   setupReleaseBuilder();
