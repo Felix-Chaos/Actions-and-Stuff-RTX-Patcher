@@ -11,6 +11,17 @@ pub fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
 
+/// Error prefix the frontend matches to tell "pack found, but no patch fits it" apart
+/// from every other scan failure. Followed by ":" and the pack version, if known.
+const NO_PATCH_FOR_PACK: &str = "NO_PATCH_FOR_PACK";
+
+/// Reads the pack version out of an extracted pack's name, for packs that do not come
+/// from the Marketplace scan (zip mode).
+#[tauri::command]
+pub async fn detect_pack_version(folder: String) -> Option<String> {
+    get_pack_name_version(Path::new(&folder))
+}
+
 #[derive(serde::Deserialize, Debug, Clone)]
 pub struct ValidStats {
     pub files: usize,
@@ -55,6 +66,7 @@ pub async fn scan_marketplace_packs(
     valid_stats_list: Option<Vec<ValidStats>>,
 ) -> Result<Vec<MarketplaceCandidate>, String> {
     let mut candidates = Vec::new();
+    let mut unmatched_versions: Vec<String> = Vec::new();
     let mut base_paths = Vec::new();
     let local_app_data = std::env::var("LOCALAPPDATA").ok();
     let app_data = std::env::var("APPDATA").ok();
@@ -90,6 +102,7 @@ pub async fn scan_marketplace_packs(
                         continue;
                     }
                     let version = get_lang_version(&path).unwrap_or_else(|| "Unknown".to_string());
+                    let name_version = get_pack_name_version(&path);
                     let folder_name = entry.file_name().to_string_lossy().into_owned();
                     let (files_count, dirs_count) = get_folder_stats(&path);
 
@@ -140,8 +153,11 @@ pub async fn scan_marketplace_packs(
                                     matched_latest = true;
                                 }
                             }
+                            // Configs store "v1.11.1" where the pack says "1.11.1", so both
+                            // sides are normalised; a prefix test would also confuse 1.11
+                            // with 1.11.1.
                             if let Some(ref ev) = valid.version {
-                                if version == *ev || version.starts_with(ev) || ev.starts_with(&version) {
+                                if normalize_pack_version(&version) == normalize_pack_version(ev) {
                                     matched_version = true;
                                 }
                             }
@@ -167,10 +183,15 @@ pub async fn scan_marketplace_packs(
                     }
 
                     // Include if score > 0
+                    if score == 0 {
+                        // A real Actions & Stuff pack that no known patch fits.
+                        unmatched_versions.push(name_version.clone().unwrap_or_default());
+                    }
                     if score > 0 {
                         candidates.push(MarketplaceCandidate {
                             path: path.to_string_lossy().into_owned(),
                             version,
+                            name_version,
                             folder_name,
                             files_count,
                             dirs_count,
@@ -189,6 +210,12 @@ pub async fn scan_marketplace_packs(
 
     // If we have expected stats and no candidate fits, throw error
     if (valid_stats_list.is_some() || expected_logo_hash.is_some()) && candidates.is_empty() {
+        // The pack is installed but nothing published fits it: that is a missing patch,
+        // not a missing pack, and the frontend words it that way.
+        if !unmatched_versions.is_empty() {
+            let version = unmatched_versions.iter().find(|v| !v.is_empty()).cloned().unwrap_or_default();
+            return Err(format!("{}:{}", NO_PATCH_FOR_PACK, version));
+        }
         return Err("No pack fits the expected stats in premium_cache. Please ensure the official pack is downloaded.".to_string());
     }
 

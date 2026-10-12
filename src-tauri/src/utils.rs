@@ -284,11 +284,12 @@ pub fn extract_archive_impl(
 }
 
 // Helper: extract pack version from en_US.lang
-pub fn get_lang_version(path: &Path) -> Option<String> {
+/// The pack version as the pack's own name states it ("Actions & Stuff 1.11.1" in
+/// texts/en_US.lang). Unlike `get_lang_version` this never falls back to manifest.json,
+/// whose version number is not the pack version, so it is safe to compare against the
+/// versions patches are published for.
+pub fn get_pack_name_version(path: &Path) -> Option<String> {
     let lang_path = path.join("texts").join("en_US.lang");
-    if !lang_path.exists() {
-        return None;
-    }
     if let Ok(content) = std::fs::read_to_string(&lang_path) {
         for line in content.lines() {
             if line.starts_with("pack.name=") {
@@ -305,6 +306,27 @@ pub fn get_lang_version(path: &Path) -> Option<String> {
                 }
             }
         }
+    }
+    None
+}
+
+/// "v1.11.0" and "1.11" name the same pack version: drop the prefix and trailing zeros.
+pub fn normalize_pack_version(v: &str) -> String {
+    let v = v.trim().trim_start_matches(['v', 'V']);
+    let mut parts: Vec<&str> = v.split('.').collect();
+    while parts.len() > 1 && parts.last().is_some_and(|p| p.chars().all(|c| c == '0')) {
+        parts.pop();
+    }
+    parts.join(".")
+}
+
+pub fn get_lang_version(path: &Path) -> Option<String> {
+    let lang_path = path.join("texts").join("en_US.lang");
+    if !lang_path.exists() {
+        return None;
+    }
+    if let Some(version) = get_pack_name_version(path) {
+        return Some(version);
     }
 
     // Fallback to manifest.json
@@ -486,6 +508,8 @@ pub fn get_folder_stats(dir: &Path) -> (usize, usize) {
 pub struct MarketplaceCandidate {
     pub path: String,
     pub version: String,
+    /// Version taken from the pack's own name only; None when the name carries none.
+    pub name_version: Option<String>,
     pub folder_name: String,
     pub files_count: usize,
     pub dirs_count: usize,
@@ -1025,4 +1049,28 @@ pub struct PatchStats {
     pub dirs: usize,
     pub logo_hash: String,
     pub has_lang_file: bool,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn pack_versions_compare_without_prefix_or_trailing_zeros() {
+        assert_eq!(normalize_pack_version("v1.11.1"), "1.11.1");
+        assert_eq!(normalize_pack_version("1.11.0"), normalize_pack_version("v1.11"));
+        assert_ne!(normalize_pack_version("1.11"), normalize_pack_version("1.11.1"));
+        assert_eq!(normalize_pack_version("1.10"), "1.10");
+    }
+
+    #[test]
+    fn pack_name_version_ignores_the_manifest() {
+        let dir = std::env::temp_dir().join(format!("asrtx_name_version_{}", std::process::id()));
+        std::fs::create_dir_all(dir.join("texts")).unwrap();
+        std::fs::write(dir.join("manifest.json"), r#"{"header":{"version":[9,9,9]}}"#).unwrap();
+        assert_eq!(get_pack_name_version(&dir), None);
+        std::fs::write(dir.join("texts/en_US.lang"), "pack.name=Actions & Stuff 1.12\n").unwrap();
+        assert_eq!(get_pack_name_version(&dir).as_deref(), Some("1.12"));
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
 }

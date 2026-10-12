@@ -16,6 +16,7 @@ pub fn run() {
             greet,
             get_patch_configs,
             scan_marketplace_packs,
+            detect_pack_version,
             run_xdelta_patch,
             install_mcpack,
             delete_folders,

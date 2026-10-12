@@ -546,20 +546,20 @@
                 </div>
 
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                  <span style="font-size: 0.85rem; color: #ffffff; font-weight: 500;">Extract brarchives</span>
+                  <span style="font-size: 0.85rem; color: #ffffff; font-weight: 500;" data-i18n="tabUtils.brarchive.extractToggle">Extract brarchives</span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="util-br-extract" checked />
                     <span class="mc-slider"></span>
                   </label>
                 </div>
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                  <span style="font-size: 0.85rem; color: #ffffff; font-weight: 500;">Rename geometries <span style="color: var(--color-warning); font-weight: 600;">(Experimental)</span></span>
+                  <span style="font-size: 0.85rem; color: #ffffff; font-weight: 500;" data-i18n-html="tabUtils.brarchive.renameToggle">Rename geometries <span style="color: var(--color-warning); font-weight: 600;">(Experimental)</span></span>
                   <label class="mc-toggle" style="margin-left: 0;">
                     <input type="checkbox" id="util-br-rename" />
                     <span class="mc-slider"></span>
                   </label>
                 </div>
-                <p class="status-hint" style="margin: 0 0 12px 0;">Renaming gives the obfuscated <code>geometry.oreville_ans.xxxxxx</code> IDs readable names and rewrites every reference, in place. Only use it on a copy. A mapping (old → new) and a manual check list are saved next to the pack folder.</p>
+                <p class="status-hint" style="margin: 0 0 12px 0;" data-i18n-html="tabUtils.brarchive.renameHint">Renaming gives the obfuscated <code>geometry.oreville_ans.xxxxxx</code> IDs readable names and rewrites every reference, in place. Only use it on a copy. A mapping (old → new) and a manual check list are saved next to the pack folder.</p>
 
                 <button id="btn-run-util-br" class="btn btn-primary">Extract Brarchives in Folder</button>
 
@@ -567,12 +567,12 @@
 
                 <div class="console-section" style="margin-top: 16px;">
                   <div class="console-header">
-                    <span>Brarchive Tool Log</span>
+                    <span data-i18n="tabUtils.brarchive.console.heading">Brarchive Tool Log</span>
                     <div class="console-actions">
-                      <button id="btn-copy-br-log" class="btn-icon-action" title="Copy log">
+                      <button id="btn-copy-br-log" class="btn-icon-action" title="Copy log" data-i18n-title="tabUtils.brarchive.console.copyTooltip">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                       </button>
-                      <button id="btn-clear-br-log" class="btn-icon-action" title="Clear">
+                      <button id="btn-clear-br-log" class="btn-icon-action" title="Clear" data-i18n-title="tabUtils.brarchive.console.clearTooltip">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                       </button>
                     </div>
@@ -908,11 +908,7 @@
                 </div>
 
                 <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 12px 0;" />
-                <p style="font-size: 0.78rem; color: #9aa0a6; margin: 0 0 8px;">
-                  Publishing copies a created patch into your local clone of the patch library and opens a pull
-                  request for it. Once merged, everyone gets it within a minute, with no patcher update.
-                  Requires git and the GitHub CLI (<code>gh</code>) to be set up.
-                </p>
+                <p style="font-size: 0.78rem; color: #9aa0a6; margin: 0 0 8px;" data-i18n-html="tabAppSettings.patchCreator.description">Publishing copies a created patch into your local clone of the patch library and opens a pull request for it. Once merged, everyone gets it within a minute, with no patcher update. Requires git and the GitHub CLI (<code>gh</code>) to be set up.</p>
                 <div class="form-group" style="margin-bottom: 8px;">
                   <label for="set-patch-library-dir" data-i18n="tabAppSettings.patchCreator.repoFolderLabel">Patch library repo folder</label>
                   <div class="file-picker-group">
@@ -1025,25 +1021,23 @@
     <!-- Publish Patch to Library Modal -->
     <div id="publish-patch-modal" class="modal-overlay hidden-group">
       <div class="modal-card" style="max-width: 480px;">
-        <h3>Publish to Patch Library</h3>
-        <p style="text-align: left; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px;">
-          Opens a pull request in the patch library repo instead of pushing directly, so it can be reviewed before it reaches everyone.
-        </p>
+        <h3 data-i18n="tabPatcher.publish.form.title">Publish to Patch Library</h3>
+        <p style="text-align: left; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px;" data-i18n="tabPatcher.publish.form.intro">Opens a pull request in the patch library repo instead of pushing directly, so it can be reviewed before it reaches everyone.</p>
         <div class="form-group">
-          <label for="publish-creator">Your name / handle</label>
-          <input type="text" id="publish-creator" class="custom-input" placeholder="Shown as the patch's creator" />
+          <label for="publish-creator" data-i18n="tabPatcher.publish.form.creatorLabel">Your name / handle</label>
+          <input type="text" id="publish-creator" class="custom-input" placeholder="Shown as the patch's creator" data-i18n-placeholder="tabPatcher.publish.form.creatorPlaceholder" />
         </div>
         <div class="form-group">
-          <label for="publish-title">Pull request title</label>
+          <label for="publish-title" data-i18n="tabPatcher.publish.form.titleLabel">Pull request title</label>
           <input type="text" id="publish-title" class="custom-input" />
         </div>
         <div class="form-group">
-          <label for="publish-description">Description <span style="color: var(--text-muted); font-weight: 400;">(optional)</span></label>
-          <textarea id="publish-description" class="custom-textarea" rows="3" placeholder="What changed in this patch?"></textarea>
+          <label for="publish-description" data-i18n-html="tabPatcher.publish.form.descriptionLabel">Description <span style="color: var(--text-muted); font-weight: 400;">(optional)</span></label>
+          <textarea id="publish-description" class="custom-textarea" rows="3" placeholder="What changed in this patch?" data-i18n-placeholder="tabPatcher.publish.form.descriptionPlaceholder"></textarea>
         </div>
         <div class="modal-actions">
-          <button id="btn-publish-modal-cancel" class="btn btn-secondary">Cancel</button>
-          <button id="btn-publish-modal-ok" class="btn btn-primary">Open Pull Request</button>
+          <button id="btn-publish-modal-cancel" class="btn btn-secondary" data-i18n="common.cancel">Cancel</button>
+          <button id="btn-publish-modal-ok" class="btn btn-primary" data-i18n="tabPatcher.publish.form.submitBtn">Open Pull Request</button>
         </div>
       </div>
     </div>

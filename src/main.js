@@ -472,7 +472,7 @@ async function publishPatchToLibrary(patchFolder, { packVer, patchVer } = {}) {
 
   const openPr = async (prUrl) => {
     gLog(`Opened pull request: ${prUrl}`, 'success');
-    await showAlert(`Pull request opened:\n\n${prUrl}`, 'Published');
+    await showAlert(t('tabPatcher.publish.openedMessage', { url: prUrl }), t('tabPatcher.publish.openedTitle'));
     try { await invoke("open_url", { url: prUrl }); } catch (_) {}
   };
 
@@ -492,8 +492,8 @@ async function publishPatchToLibrary(patchFolder, { packVer, patchVer } = {}) {
     // Already in the library: a PR that replaces the payloads is a real thing
     // to want after rebuilding a patch, but never silent.
     const replace = await showConfirm(
-      `"${name}" is already in the patch library.\n\nOpen a pull request that replaces it with the version you just built?`,
-      'Already published'
+      t('tabPatcher.publish.alreadyPublishedMessage', { name }),
+      t('tabPatcher.publish.alreadyPublishedTitle')
     );
     if (!replace) { gLog("Publishing cancelled; the existing entry was kept.", 'warning'); return false; }
     try {
@@ -1105,8 +1105,24 @@ async function refreshCachedPatches() {
 
 // patch_config.json stores "v1.11.1" while the pack scanner reports "1.11.1",
 // so versions must be normalised before any comparison.
+// A trailing ".0" is dropped as well, so "1.11.0" and "v1.11" compare equal.
 function normalizePackVersion(v) {
-  return String(v ?? '').trim().replace(/^v/i, '');
+  return String(v ?? '').trim().replace(/^v/i, '').replace(/(\.0+)+$/, '');
+}
+
+function samePackVersion(a, b) {
+  return normalizePackVersion(a) === normalizePackVersion(b);
+}
+
+// Stops the pipeline when the pack itself is fine but no patch has been
+// published for its version. Not a failure: the user just has to wait.
+class NoPatchForVersion extends Error {
+  constructor(packVersion) {
+    super(packVersion
+      ? `No patch is available for Actions & Stuff ${packVersion} yet.`
+      : 'No patch is available for the installed version of Actions & Stuff yet.');
+    this.packVersion = packVersion || null;
+  }
 }
 
 // Does a scanned pack look like the pack this patch config was built against?
@@ -1181,18 +1197,26 @@ function resolvePatchConfig(selectionMode, detectedCandidate) {
 
       // 2. Fallback to version string
       if (detectedCandidate.version && detectedCandidate.version !== 'Unknown') {
-        const verMatch = sortedConfigs.find(c => c.packVersion === detectedCandidate.version);
+        const verMatch = sortedConfigs.find(c => samePackVersion(c.packVersion, detectedCandidate.version));
         if (verMatch) {
           log(`Patch config resolved via version string fallback: pack ${verMatch.packVersion} (patch ${verMatch.patchVersion || "1.0"})`);
           return verMatch;
         }
       }
+
+      // 3. The pack names its own version and nothing is published for it.
+      // Falling through to the newest patch here would only fail later with a
+      // misleading "corrupted or modified" error.
+      if (detectedCandidate.name_version) {
+        throw new NoPatchForVersion(detectedCandidate.name_version);
+      }
     } else if (typeof detectedCandidate === 'string' && detectedCandidate !== 'Unknown') {
-      const verMatch = sortedConfigs.find(c => c.packVersion === detectedCandidate);
+      const verMatch = sortedConfigs.find(c => samePackVersion(c.packVersion, detectedCandidate));
       if (verMatch) {
         log(`Patch config resolved via version string fallback: pack ${verMatch.packVersion} (patch ${verMatch.patchVersion || "1.0"})`);
         return verMatch;
       }
+      throw new NoPatchForVersion(detectedCandidate);
     }
     // Default to the highest pack version config
     log(`Could not confidently match a detected pack to a patch config, defaulting to the newest available (pack ${(sortedConfigs[0] || patchConfigs[0])?.packVersion})`, 'warning');
@@ -1586,10 +1610,10 @@ function setupUtilities() {
 
   const updateBrButton = () => {
     const ex = brExtract.checked, rn = brRename.checked;
-    brRunBtn.textContent = ex && rn ? 'Extract & Rename Geometries'
-      : rn ? 'Rename Geometries (already extracted)'
-      : ex ? 'Extract Brarchives in Folder'
-      : 'Nothing selected';
+    brRunBtn.textContent = ex && rn ? t('tabUtils.brarchive.runBtn.extractAndRename')
+      : rn ? t('tabUtils.brarchive.runBtn.renameOnly')
+      : ex ? t('tabUtils.brarchive.extractBtn')
+      : t('tabUtils.brarchive.runBtn.nothing');
     brRunBtn.disabled = !ex && !rn;
   };
   try {
@@ -1604,6 +1628,8 @@ function setupUtilities() {
     updateBrButton();
   }));
   updateBrButton();
+  // The label is chosen here rather than by a data-i18n key, so it has to follow a language switch itself.
+  onLocaleChange(() => { if (!brRunBtn.disabled || (!brExtract.checked && !brRename.checked)) updateBrButton(); });
 
   document.getElementById('btn-copy-br-log').addEventListener('click', () => copyLogsFromEl('brarchive-logs', 'btn-copy-br-log'));
   document.getElementById('btn-clear-br-log').addEventListener('click', () => {
@@ -1624,10 +1650,12 @@ function setupUtilities() {
       title.style.cssText = 'font-weight: 600; color: #fff; margin-bottom: 4px; word-break: break-all;';
       title.textContent = p.pack;
       const lines = [
-        `${p.renamed} geometries renamed in ${p.files_changed} files`,
-        p.errors.length ? `⚠ ${p.errors.length} validation error(s): ${p.errors.join('; ')}` : '✓ Validation passed',
-        `Please review: ${s.review} (role conflicts ${s.role_conflicts}, medium-confidence unused models ${s.orphan_medium})`,
-        `Readable but incomplete: ${s.unresolved_suffix} raw variant suffixes, ${s.kept_original} unidentified unused models kept their original ID`,
+        t('tabUtils.brarchive.results.renamed', { renamed: p.renamed, files: p.files_changed }),
+        p.errors.length
+          ? tPlural('tabUtils.brarchive.results.validationErrors', p.errors.length, { errors: p.errors.join('; ') })
+          : t('tabUtils.brarchive.results.validationPassed'),
+        t('tabUtils.brarchive.results.review', { review: s.review, conflicts: s.role_conflicts, medium: s.orphan_medium }),
+        t('tabUtils.brarchive.results.incomplete', { suffixes: s.unresolved_suffix, kept: s.kept_original }),
       ];
       box.appendChild(title);
       lines.forEach((l, i) => {
@@ -1640,7 +1668,7 @@ function setupUtilities() {
       const btn = document.createElement('button');
       btn.className = 'btn btn-secondary btn-xs';
       btn.style.marginTop = '6px';
-      btn.textContent = 'Open manual check list';
+      btn.textContent = t('tabUtils.brarchive.results.openChecklist');
       btn.addEventListener('click', () => invoke('open_in_explorer', { path: p.checklist_path }).catch(e => brLog(`${e}`, 'error')));
       box.appendChild(btn);
       brResults.appendChild(box);
@@ -1656,14 +1684,14 @@ function setupUtilities() {
     const extract = brExtract.checked, rename = brRename.checked;
     if (rename) {
       const ok = await showModal(
-        "The experimental renamer rewrites geometry IDs inside the pack files in this folder.\n\nMake sure you are working on a copy. Continue?",
-        { title: 'Rename geometries (experimental)', confirm: true, okText: 'Rename', cancelText: 'Cancel' });
+        t('tabUtils.brarchive.renameConfirm.message'),
+        { title: t('tabUtils.brarchive.renameConfirm.title'), confirm: true, okText: t('tabUtils.brarchive.renameConfirm.okBtn'), cancelText: t('common.cancel') });
       if (!ok) return;
     }
 
     brRunBtn.disabled = true;
     const label = brRunBtn.textContent;
-    brRunBtn.textContent = 'Working...';
+    brRunBtn.textContent = t('tabUtils.brarchive.runBtn.working');
     brResults.classList.add('hidden-group');
     const t0 = performance.now();
     try {
@@ -1677,7 +1705,7 @@ function setupUtilities() {
       }
     } catch (err) {
       brLog(`Failed: ${err}`, 'error');
-      await showAlert(`Brarchive tool failed:\n${err}`);
+      await showAlert(t('tabUtils.brarchive.alerts.toolFailed', { error: err }));
     } finally {
       brRunBtn.textContent = label;
       updateBrButton();
@@ -2133,7 +2161,7 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
     // STEP 0: SCAN & VERIFY
     // ----------------------------------------
     updateStepState(0, 'active');
-    updateStatus("Verifying Content", "Analyzing patch requirements...", '🔍');
+    updateStatus(t('tabPatcher.status.verifyingTitle'), t('tabPatcher.status.verifyingText'), '🔍');
     updateProgress(10);
     
     if (mode === 'marketplace') {
@@ -2142,7 +2170,8 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
       if (selectionMode === 'manual') {
         const asVer = document.getElementById('select-as-version').value;
         const ptVer = document.getElementById('select-patch-version').value;
-        const selected = patchConfigs.find(c => c.packVersion === asVer && c.patchVersion === ptVer);
+        // Goes through the resolver so "Latest" in the patch list maps to a real entry.
+        const selected = resolvePatchConfig('manual', null);
         if (selected) {
           expectedStats.expectedLogoHash = selected.validation?.logo_hash || null;
           expectedStats.expectedHasLangFile = selected.validation?.has_lang_file || null;
@@ -2175,7 +2204,20 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
           }
         }
       }
-      const candidates = await invoke("scan_marketplace_packs", expectedStats);
+      let candidates;
+      try {
+        candidates = await invoke("scan_marketplace_packs", expectedStats);
+      } catch (err) {
+        // The scanner found Actions & Stuff installed, but none of the patches
+        // it was asked about fits that pack.
+        const noPatch = /^NO_PATCH_FOR_PACK:(.*)$/.exec(String(err));
+        if (!noPatch) throw err;
+        const installed = noPatch[1];
+        if (installed && patchConfigs.some(c => samePackVersion(c.packVersion, installed))) {
+          throw `The installed pack is Actions & Stuff ${installed}, which does not match the selected patch version. Pick that version, or switch version selection to automatic.`;
+        }
+        throw new NoPatchForVersion(installed);
+      }
       log(`Found ${candidates.length} candidate packs in premium cache.`);
       
       candidates.forEach((cand, idx) => {
@@ -2245,8 +2287,8 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
             normalizePackVersion(patchConfigToUse.packVersion) !== normalizePackVersion(detectedVersion)) {
           log(`Warning: Target patch version (${patchConfigToUse.packVersion}) does not match detected pack version (${detectedVersion}).`, 'warning');
           const proceed = await showConfirm(
-            `Warning: The selected patch version (${patchConfigToUse.packVersion}) differs from the installed pack that will be patched (${detectedVersion}).\n\nApplying a patch built for a different version will fail.\n\nDo you want to proceed anyway?`,
-            'Version Mismatch'
+            t('tabPatcher.versionMismatch.message', { selected: patchConfigToUse.packVersion, detected: detectedVersion }),
+            t('tabPatcher.versionMismatch.title')
           );
           if (!proceed) {
             throw "User aborted due to version mismatch.";
@@ -2271,7 +2313,7 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
       const zipOut = `${tempRoot}/${baseName}_vanilla.zip`;
       let targetFolder = sourcePackPath;
 
-      updateStatus("Compressing Pack", "Generating deterministic ZIP of source pack...", '📦');
+      updateStatus(t('tabPatcher.status.compressingTitle'), t('tabPatcher.status.compressingText'), '📦');
       updateProgress(25);
 
       log(`Starting deterministic ZIP compression...`);
@@ -2300,7 +2342,7 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
       updateStepState(0, 'completed');
       
       updateStepState(1, 'active');
-      updateStatus("Extracting & Normalizing", "Unpacking ZIP and removing licensing signatures...", '⚙️');
+      updateStatus(t('tabPatcher.status.extractingTitle'), t('tabPatcher.status.extractingText'), '⚙️');
       updateProgress(20);
       
       const tempRoot = defaultPaths.temp ? defaultPaths.temp.replace(/\\/g, "/") : ".";
@@ -2312,14 +2354,31 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
       log(`  Target Dir: "${tempExtract}"`);
       await invoke("extract_archive", { zipPath: selectedZip, outputDir: tempExtract });
       log("ZIP extraction completed successfully.");
-      
+
+      // Resolved before the slow normalise/compress steps, so an archive that
+      // nothing is published for stops here. Auto mode goes by the version
+      // the pack names itself; without one it falls back to the newest patch.
+      let zipPackVersion = null;
+      if (selectionMode === 'auto') {
+        try {
+          zipPackVersion = await invoke("detect_pack_version", { folder: tempExtract });
+        } catch (_) {}
+        log(`Pack version named by the archive: ${zipPackVersion || "not found"}`);
+      }
+      try {
+        patchConfigToUse = resolvePatchConfig(selectionMode, zipPackVersion);
+      } catch (err) {
+        try { await invoke("delete_folders", { folders: [tempExtract] }); } catch (_) {}
+        throw err;
+      }
+
       log("Normalizing contents: deleting license signatures (contents.json, signatures.json, splashes.json, sounds.json) and injecting custom manifest...");
       log(`  Target Dir: "${tempExtract}"`);
       await invoke("normalize_extracted_pack", { extractDir: tempExtract });
       log("Normalization and custom manifest injection finished.");
 
       const normalizedZip = `${tempRoot}/${baseName}_normalized.zip`;
-      updateStatus("Compressing Normalized", "Generating deterministic ZIP of normalized pack...", '⚙️');
+      updateStatus(t('tabPatcher.status.compressingNormalizedTitle'), t('tabPatcher.status.compressingNormalizedText'), '⚙️');
       updateProgress(35);
       log(`Re-compressing normalized files into deterministic ZIP:`);
       log(`  Compressing:  "${tempExtract}"`);
@@ -2332,8 +2391,7 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
       log("Temporary directory cleaned.");
       
       sourceZipPath = normalizedZip;
-      patchConfigToUse = resolvePatchConfig(selectionMode, null);
-      
+
       updateStepState(1, 'completed');
       
     } else if (mode === 'custom') {
@@ -2354,14 +2412,14 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
       updateStepState(1, 'active');
       
       if (src.endsWith('.zip') || src.endsWith('.mcpack')) {
-        updateStatus("Copying Source", "Using source ZIP...", '📦');
+        updateStatus(t('tabPatcher.status.copyingSourceTitle'), t('tabPatcher.status.copyingSourceText'), '📦');
         updateProgress(30);
         log(`Source is already ZIP. Using directly: "${src}"`);
         sourceZipPath = src;
       } else {
         const tempRoot = defaultPaths.temp ? defaultPaths.temp.replace(/\\/g, "/") : ".";
         const baseName = src.split(/[\\/]/).pop() || "custom";
-        updateStatus("Compressing Custom", "Compressing custom directory...", '📦');
+        updateStatus(t('tabPatcher.status.compressingCustomTitle'), t('tabPatcher.status.compressingCustomText'), '📦');
         updateProgress(30);
         const customZip = `${tempRoot}/${baseName}_custom_source.zip`;
         log(`Source is folder. Creating deterministic zip: "${customZip}" from "${src}"`);
@@ -2375,7 +2433,7 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
     // STEP 2: CLEAN REMNANTS
     updateStepState(2, 'active');
     if (cleanOld) {
-      updateStatus("Cleaning Remnants", "Scanning and deleting old patched resource pack directories...", '🧹');
+      updateStatus(t('tabPatcher.status.cleaningTitle'), t('tabPatcher.status.cleaningText'), '🧹');
       updateProgress(45);
       log("Scanning com.mojang directories for old actions & stuff remnant folders to clean...");
       const cleanable = await invoke("get_cleanable_packs");
@@ -2395,7 +2453,7 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
     
     // STEP 3: ENSURE THE PATCH FILE IS AVAILABLE (download it if it is remote)
     updateStepState(3, 'active');
-    updateStatus("Preparing Patch File", "Locating the patch for your pack...", '📦');
+    updateStatus(t('tabPatcher.status.preparingTitle'), t('tabPatcher.status.locatingPatch'), '📦');
     updateProgress(55);
 
     let patchFilePath = "";
@@ -2438,7 +2496,7 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
 
     // STEP 4: APPLY RTX PATCH
     updateStepState(4, 'active');
-    updateStatus("Applying RTX Patch", "Running high-performance XDelta decoder...", '⚡');
+    updateStatus(t('tabPatcher.status.applyingTitle'), t('tabPatcher.status.applyingText'), '⚡');
     updateProgress(80);
 
     log(`APPLYING PATCH FILE:`);
@@ -2477,7 +2535,7 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
     
     // STEP 5: IMPORT PACK
     updateStepState(5, 'active');
-    updateStatus("Patch Done", "Ready to import into Minecraft!", '🎉');
+    updateStatus(t('tabPatcher.status.doneTitle'), t('tabPatcher.status.doneText'), '🎉');
     updateProgress(100);
     
     finalPatchedPath = finalOutputPath;
@@ -2487,13 +2545,26 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
     log("SUCCESS: Patcher completed all steps. Click 'Install Pack' to import and play!", 'success');
     
   } catch (err) {
-    log(`PIPELINE FAILURE: ${err}`, 'error');
-    updateStatus("Patch Failed", "An error occurred during execution.", '❌');
+    const noPatch = err instanceof NoPatchForVersion;
+    if (noPatch) {
+      log(err.message, 'warning');
+      updateStatus(
+        t('tabPatcher.status.noPatchTitle'),
+        err.packVersion
+          ? t('tabPatcher.status.noPatchForVersion', { version: err.packVersion })
+          : t('tabPatcher.status.noPatchForInstalled'),
+        '🕓'
+      );
+    } else {
+      log(`PIPELINE FAILURE: ${err}`, 'error');
+      updateStatus(t('tabPatcher.status.failedTitle'), t('tabPatcher.status.failedText'), '❌');
+    }
     updateProgress(0);
     document.getElementById('progress-actions-container').classList.remove('hidden-group');
     document.getElementById('btn-install-pack').classList.add('hidden-group');
     document.getElementById('btn-copy-log-large').classList.remove('hidden-group');
-    document.getElementById('btn-report-bug-quick').classList.remove('hidden-group');
+    // A missing patch is nothing to report as a bug.
+    document.getElementById('btn-report-bug-quick').classList.toggle('hidden-group', noPatch);
   } finally {
     document.getElementById('btn-start-patch').disabled = false;
   }
@@ -3181,15 +3252,15 @@ async function checkForUpdates() {
         if (isBetaUpdate) updateType = "Beta";
         else if (isAlphaUpdate) updateType = "Alpha";
         
-        let message = `A new ${updateType} update (v${userFacingVersion}) is available.\n\nWould you like to download and install this update now?`;
-        
+        let message = t('sidebar.update.confirmMessage', { type: updateType, version: userFacingVersion });
+
         if (isAlphaUpdate) {
-          message += `\n\n⚠️ WARNING ⚠️\nAlpha builds are highly unstable, completely untested, and might break your packs or fail entirely. Stuff will NOT work as expected! Proceed at your own risk!`;
+          message += `\n\n${t('sidebar.update.alphaWarning')}`;
         }
 
         const confirmed = await showConfirm(
           message,
-          'Update Available'
+          t('sidebar.update.confirmTitle')
         );
         if (!confirmed) return;
 
@@ -3218,10 +3289,10 @@ async function checkForUpdates() {
           });
           
           log("Update installed successfully. App will relaunch shortly.", "success");
-          alert("Update installed successfully! The application will now restart.");
+          await showAlert(t('sidebar.update.installed'));
         } catch (err) {
           log(`Update installation failed: ${err}`, 'error');
-          alert(`Update installation failed:\n${err}`);
+          await showAlert(t('sidebar.update.installFailed', { error: err }));
           btn.disabled = false;
           btn.setAttribute('data-i18n', 'sidebar.update.updateNow');
           btn.innerText = t('sidebar.update.updateNow');

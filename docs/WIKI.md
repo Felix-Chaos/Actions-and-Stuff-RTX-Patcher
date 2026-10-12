@@ -211,6 +211,7 @@ The most common issues, sorted by category. Nothing here match what you're seein
 ### 📥 Installation & Patcher Errors
 
 - **Error "Pack not found" / the patcher can't locate the resource pack.** This happens when the patcher can't automatically find your premium cache folder. Open `%AppData%/Minecraft Bedrock/premium_cache/resource_packs` yourself and look for the folder containing the A&S logo (it'll have a long, cryptic name). If it's genuinely missing, reinstalling the pack from the Marketplace resets the folder structure.
+- **"There is no patch for Actions & Stuff X yet."** Your pack is fine: the patcher recognised its version, but no patch has been published for it. This usually means Actions & Stuff was updated recently. New patches appear on their own once they are published (see **Refresh patch list**), with no patcher update needed.
 - **Error "Validation failed: Pack seems corrupted or modified" / `XD3_INVALID_INPUT` (xdelta error).** These xdelta errors are almost always a version mismatch, the pack version is either too old or too new for the patch you picked. Check that your version is supported by the patch you're applying. If you're patching a `.zip`, this can also mean the source file itself was modified, make sure you're using an untouched, original download.
 
   ![xdelta validation error example](../assets/faq/xdelta-validation-error.png)
