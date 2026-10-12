@@ -554,6 +554,12 @@ pub async fn publish_patch_to_library(
         )
     })?;
 
+    // The pull may have just brought this entry in from a clone that was
+    // behind, so the check above has to be repeated before anything is replaced.
+    if dest.exists() && !overwrite {
+        return Err(format!("{}: \"{}\" is already published.", ALREADY_EXISTS, name));
+    }
+
     let title = if title.trim().is_empty() {
         format!("Publish {}", name)
     } else {

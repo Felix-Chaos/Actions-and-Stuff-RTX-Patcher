@@ -142,6 +142,7 @@ window.confirm = function(msg) {
 let patchConfigs = [];
 // Slugs of patches downloaded into this user's cache, plus their sizes.
 let cachedPatchSlugs = new Set();
+let cachedPatchVariants = new Map(); // slug -> Set of cached variants
 let cachedPatchInfo = [];
 let optionsProfiles = [];
 let selectedOptionsPath = "";
@@ -850,6 +851,11 @@ function wireVersionControls() {
         btnRefresh.disabled = false;
         btnRefresh.innerHTML = original;
       }
+    // Which variant counts as downloaded depends on the mode, so repaint on a switch.
+    modeRadios.forEach(radio => radio.addEventListener('change', () => {
+      const asSel = document.getElementById('select-as-version');
+      if (asSel && asSel.value) updatePatchVersionsList(asSel.value);
+    }));
     });
   }
 
@@ -996,13 +1002,24 @@ function isPatchDownloaded(config) {
   if (!config) return false;
   const hasRemote = config.patches && Object.values(config.patches).some(v => v && typeof v === 'object' && v.url);
   if (!hasRemote) return true; // bundled with the app
-  return !!(config.slug && cachedPatchSlugs.has(config.slug));
+  return isNeededVariantCached(config);
+}
+
+// A slug can be cached with only one of its variants, so "downloaded" has to
+// mean the variant the current mode applies: encrypted for Marketplace,
+// decrypted otherwise (the same choice the patch step makes).
+function isNeededVariantCached(config) {
+  const mode = document.querySelector('input[name="patch-mode"]:checked')?.value || 'global';
+  const key = mode === 'marketplace' ? 'encrypted' : 'decrypted';
+  const variant = config.patches && config.patches[key];
+  if (!(variant && typeof variant === 'object' && variant.url)) return true; // nothing to download
+  return !!(config.slug && cachedPatchVariants.get(config.slug)?.has(key));
 }
 
 function patchAvailabilityLabel(config) {
   const hasRemote = config.patches && Object.values(config.patches).some(v => v && typeof v === 'object' && v.url);
   if (!hasRemote) return '\u{1F4E6}';
-  if (config.slug && cachedPatchSlugs.has(config.slug)) return '\u2705';
+  if (isNeededVariantCached(config)) return '\u2705';
   const bytes = Math.max(...Object.values(config.patches).map(v => (v && v.size) || 0));
   return bytes ? `\u2B07\uFE0F ${(bytes / 1048576).toFixed(0)} MB` : '\u2B07\uFE0F';
 }
@@ -1073,10 +1090,12 @@ async function refreshCachedPatches() {
 // so versions must be normalised before any comparison.
 function normalizePackVersion(v) {
   return String(v ?? '').trim().replace(/^v/i, '');
+    cachedPatchVariants = new Map(cached.map(c => [c.slug, new Set(c.variants)]));
 }
 
 // Does a scanned pack look like the pack this patch config was built against?
 // v1.11 and v1.11.1 share a logo hash, so file and directory counts are the
+    cachedPatchVariants = new Map();
 // only thing that separates them. Files tolerate a small delta (a user may have
 // added a file); directories must match exactly.
 function candidateMatchesConfig(candidate, config) {

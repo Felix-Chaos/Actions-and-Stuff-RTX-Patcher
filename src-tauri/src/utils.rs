@@ -432,7 +432,7 @@ pub fn scan_cleanable_packs_in_mojang(mojang_path: &Path) -> Vec<PathBuf> {
                     if let Some(name) = entry.file_name().to_str() {
                         let lower_name = name.to_lowercase();
                         let matches = prefixes.iter().any(|prefix| lower_name.starts_with(prefix))
-                            || lower_name.contains(PATCHED_SUFFIX);
+                            || lower_name.ends_with(PATCHED_SUFFIX);
                         if matches {
                             results.push(entry.path());
                         }
