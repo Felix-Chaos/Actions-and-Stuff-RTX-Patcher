@@ -18,6 +18,7 @@
 [![Discord Thread](https://img.shields.io/badge/📢_Discord_Thread-5865F2?style=flat-square)](https://discord.com/channels/691547840463241267/1360688874388455504)
 
 [![Download Latest](https://img.shields.io/badge/Download-Latest_Release-2ea44f?style=for-the-badge&logo=github)](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/latest)
+[![Website](https://img.shields.io/badge/Website-Guide_&_Wiki-22c55e?style=for-the-badge&logo=githubpages&logoColor=white)](https://felix-chaos.github.io/Actions-and-Stuff-RTX-Patcher/)
 
 </td>
 </tr>
