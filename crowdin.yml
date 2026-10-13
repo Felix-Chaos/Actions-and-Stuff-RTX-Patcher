@@ -1,0 +1,7 @@
+# Crowdin reads the English strings from en.json and writes one file per
+# language next to it. A new language still needs its line in
+# src/i18n/registry.js before the patcher offers it.
+preserve_hierarchy: true
+files:
+  - source: /src/i18n/locales/en.json
+    translation: /src/i18n/locales/%two_letters_code%.json

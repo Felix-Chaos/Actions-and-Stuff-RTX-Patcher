@@ -1,8 +1,9 @@
 // Minimal i18n engine for the patcher.
 //
-// The frontend is served unbundled (tauri.conf.json -> frontendDist: "../src"),
-// so locales are plain ES modules rather than JSON: no bundler, no import
-// attributes, no CSP change, and every string stays readable in a diff.
+// The frontend is served unbundled (tauri.conf.json -> frontendDist: "../src").
+// Locales are JSON files, the format translation platforms read and write, and
+// are fetched from the app's own origin: no bundler, no import attributes, no
+// CSP change.
 //
 // * Log and console OUTPUT is never translated. See .agents/I18N.md for the rule.
 import { LOCALES, FALLBACK_LOCALE } from './registry.js';
@@ -16,8 +17,9 @@ const listeners = new Set();
 async function loadDict(code) {
   const entry = LOCALES.find(l => l.code === code)
     ?? LOCALES.find(l => l.code === FALLBACK_LOCALE);
-  const mod = await entry.loader();
-  return flatten(mod.default);
+  const res = await fetch(new URL(`./locales/${entry.code}.json`, import.meta.url));
+  if (!res.ok) throw new Error(`[i18n] could not load locale ${entry.code}: ${res.status}`);
+  return flatten(await res.json());
 }
 
 /** Load the fallback plus the requested locale and translate the document once. */

@@ -4,12 +4,14 @@
 // English with a console warning nobody reads. This turns that into a failure.
 //
 // Usage: node scripts/check-locales.mjs
+import { readFile } from 'node:fs/promises';
 import { LOCALES, FALLBACK_LOCALE } from '../src/i18n/registry.js';
 import { flatten } from '../src/i18n/flatten.js';
 
 const dicts = new Map();
-for (const { code, loader } of LOCALES) {
-  dicts.set(code, flatten((await loader()).default));
+for (const { code } of LOCALES) {
+  const file = new URL(`../src/i18n/locales/${code}.json`, import.meta.url);
+  dicts.set(code, flatten(JSON.parse(await readFile(file, 'utf8'))));
 }
 
 const reference = Object.keys(dicts.get(FALLBACK_LOCALE)).sort();

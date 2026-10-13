@@ -1,15 +1,16 @@
 // Registry of every language the patcher ships.
 //
 // To add a language:
-//   1. Create locales/<code>.js exporting the same key shape as locales/en.js.
+//   1. Create locales/<code>.json with the same key shape as locales/en.json.
 //      Keys you have not translated yet fall back to English on their own, so a
-//      partial file is safe to ship.
+//      partial file is safe to ship. Translations come in through Crowdin
+//      (crowdin.yml), which writes these files; only en.json is edited by hand.
 //   2. Add one line to LOCALES below.
 // Nothing else changes: both language dropdowns are built from this array at
 // runtime, so neither index.html nor main.js needs touching.
 export const LOCALES = [
-  { code: 'en', label: 'English', loader: () => import('./locales/en.js') },
-  { code: 'de', label: 'Deutsch', loader: () => import('./locales/de.js') },
+  { code: 'en', label: 'English' },
+  { code: 'de', label: 'Deutsch' },
 ];
 
 // The language every lookup falls back to. Its locale file must be complete.
