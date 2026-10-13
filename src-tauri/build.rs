@@ -1,4 +1,5 @@
 fn main() {
+    detect_private_modules();
     println!("cargo:rerun-if-changed=../.env");
     if let Ok(content) = std::fs::read_to_string("../.env") {
         for line in content.lines() {
@@ -18,6 +19,21 @@ fn main() {
         }
     }
     tauri_build::build()
+}
+
+// Optional modules that are not part of this repository live in the
+// gitignored src/private folder. Each one found sets a cfg flag, so the crate
+// builds the same way with or without them.
+fn detect_private_modules() {
+    println!("cargo:rustc-check-cfg=cfg(has_encrypt)");
+    if std::path::Path::new("src/private/encrypt.rs").exists() {
+        println!("cargo:rustc-cfg=has_encrypt");
+        println!("cargo:rerun-if-changed=src/private/encrypt.rs");
+    } else {
+        // * A missing path would rerun this script on every build; watching
+        // * src still picks the module up as soon as it is added.
+        println!("cargo:rerun-if-changed=src");
+    }
 }
 
 // Keeps the raw API key out of the binary's plain-text strings table. A

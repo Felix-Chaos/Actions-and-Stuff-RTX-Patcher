@@ -41,6 +41,9 @@ src-tauri/target/
 # Local release builds (installers, portable folders)
 /Releases/
 
+# Optional local modules that are not part of this repository (see build.rs)
+/src-tauri/src/private/
+
 # General / Temporary / Reports
 temp_test_pack/
 *.bak

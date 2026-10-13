@@ -2068,6 +2068,60 @@ pub async fn prepare_patch_target(
     Ok(())
 }
 
+/// Whether this build can encrypt a patch target. That takes a dev build with
+/// the optional `private/encrypt.rs` module, which is not part of this
+/// repository (see `detect_private_modules` in build.rs). Create Patch shows
+/// its "Encrypt Patched Pack" toggle only when this is true.
+#[tauri::command]
+pub fn patch_encryption_available() -> bool {
+    cfg!(all(debug_assertions, has_encrypt))
+}
+
+/// Packs the loose files of Create Patch's temporary copy of the Patched Dir
+/// into `.brarchive` files. The copy stays plain: the decrypted patch is built
+/// against this state, the encrypted one after [`encrypt_patch_target`].
+///
+/// Needs the optional encryption module, see [`patch_encryption_available`].
+#[tauri::command]
+pub async fn build_patch_target_archives(app: tauri::AppHandle, target_dir: String) -> Result<(), String> {
+    #[cfg(all(debug_assertions, has_encrypt))]
+    {
+        tauri::async_runtime::spawn_blocking(move || {
+            crate::encrypt::build_pack_archives(&app, "genpatch-logs", Path::new(&target_dir)).map(|_| ())
+        })
+        .await
+        .map_err(|e| format!("Archive task failed: {}", e))?
+    }
+    #[cfg(not(all(debug_assertions, has_encrypt)))]
+    {
+        let _ = (app, target_dir);
+        Err("Building a patch target's archives is not available in this build.".to_string())
+    }
+}
+
+/// Encrypts Create Patch's temporary copy of the Patched Dir in the format of
+/// a Marketplace download, so the patched pack only loads for accounts that
+/// own the original. The author's own Patched Dir is never touched. Expects
+/// [`build_patch_target_archives`] to have run on the folder.
+///
+/// Needs the optional encryption module, see [`patch_encryption_available`].
+#[tauri::command]
+pub async fn encrypt_patch_target(app: tauri::AppHandle, target_dir: String) -> Result<(), String> {
+    #[cfg(all(debug_assertions, has_encrypt))]
+    {
+        tauri::async_runtime::spawn_blocking(move || {
+            crate::encrypt::encrypt_pack_in_place(&app, "genpatch-logs", Path::new(&target_dir)).map(|_| ())
+        })
+        .await
+        .map_err(|e| format!("Encryption task failed: {}", e))?
+    }
+    #[cfg(not(all(debug_assertions, has_encrypt)))]
+    {
+        let _ = (app, target_dir);
+        Err("Encrypting a patch target is not available in this build.".to_string())
+    }
+}
+
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub struct PatchVersions {
     #[serde(rename = "packVersion")]

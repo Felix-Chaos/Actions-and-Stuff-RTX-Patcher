@@ -284,6 +284,7 @@
       "patchVersionLabel": "Patch-Version",
       "patchVersionPlaceholder": "z. B. 1.1",
       "injectManifest": "Benutzerdefiniertes Manifest einfügen",
+      "encryptTarget": "Gepatchtes Pack verschlüsseln",
       "publishToLibrary": "In Patch-Bibliothek veröffentlichen",
       "createPatchesBtn": "Patches erstellen",
       "publishBtn": "In Bibliothek veröffentlichen",

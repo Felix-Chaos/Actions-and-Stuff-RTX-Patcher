@@ -1,4 +1,9 @@
 pub mod commands;
+// * Optional and not part of this repository: build.rs sets has_encrypt when
+// * src/private/encrypt.rs exists. Dev builds only.
+#[cfg(all(debug_assertions, has_encrypt))]
+#[path = "private/encrypt.rs"]
+pub mod encrypt;
 pub mod patches;
 pub mod renamer;
 pub mod telemetry;
@@ -49,6 +54,9 @@ pub fn run() {
             fetch_motd,
             submit_bug_report,
             prepare_patch_target,
+            patch_encryption_available,
+            build_patch_target_archives,
+            encrypt_patch_target,
             get_patch_versions,
             save_patch_versions,
             load_settings,

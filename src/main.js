@@ -1439,6 +1439,7 @@ function setupUtilities() {
     const packVer      = document.getElementById('gen-pack-version').value.trim() || "1.10.1";
     const patchVer     = document.getElementById('gen-patch-version').value.trim() || "1.0";
     const injectManifest = document.getElementById('gen-inject-manifest').checked;
+    const encryptTarget = document.getElementById('gen-encrypt-target').checked;
 
     if (!patchedDir || !decryptedDir || !encryptedDir || !outputDir) {
       await showAlert(t('tabUtils.genpatch.alerts.missingPaths'));
@@ -1500,13 +1501,31 @@ function setupUtilities() {
       const tgtZip = outputDir + "/_temp_target.zip";
       const tempTargetDir = outputDir + "/_temp_target_dir";
 
+      // A copy left over from a failed run would be merged into the new one.
+      await invoke("delete_folders", { folders: [tempTargetDir] });
       await invoke("prepare_patch_target", {
         rtxDir: patchedDir,
         tempTargetDir: tempTargetDir
       });
 
+      // With encryption there are two targets, both made from the temp copy
+      // only. The decrypted patch leads to the plain pack with its .brarchive
+      // files built; the encrypted patch to that same pack, encrypted.
+      if (encryptTarget) {
+        await invoke("build_patch_target_archives", { targetDir: tempTargetDir });
+      }
+
       await invoke("pack_folder", { folderPath: tempTargetDir, outputZip: tgtZip });
       gLog_fn(`  ✓ Patched target ZIP ready`);
+
+      // The manifest is final by now, which matters: the encrypted pack's
+      // signatures.json holds the manifest hash.
+      const encTgtZip = encryptTarget ? outputDir + "/_temp_target_enc.zip" : tgtZip;
+      if (encryptTarget) {
+        await invoke("encrypt_patch_target", { targetDir: tempTargetDir });
+        await invoke("pack_folder", { folderPath: tempTargetDir, outputZip: encTgtZip });
+        gLog_fn(`  ✓ Encrypted patched target ZIP ready`);
+      }
 
       // Step 4: Generate both patches
       gLog_fn(`[4/4] Generating VCDIFF patches...`);
@@ -1518,7 +1537,7 @@ function setupUtilities() {
       const decPatch = finalOutputDir + "/decrypted.vcdiff";
 
       gLog_fn(`  Encoding encrypted.vcdiff (source: encrypted, target: patched)...`);
-      await invoke("generate_xdelta_patch", { sourceFile: encZip, targetFile: tgtZip, patchFile: encPatch });
+      await invoke("generate_xdelta_patch", { sourceFile: encZip, targetFile: encTgtZip, patchFile: encPatch });
       gLog_fn(`  ✓ encrypted.vcdiff created`);
 
       gLog_fn(`  Encoding decrypted.vcdiff (source: decrypted, target: patched)...`);
@@ -1555,7 +1574,7 @@ function setupUtilities() {
       gLog_fn(`  ✓ patch_config.json created`);
 
       // Clean temp zips and folders
-      await invoke("delete_folders", { folders: [encZip, decZip, tgtZip, tempTargetDir] });
+      await invoke("delete_folders", { folders: [encZip, decZip, tgtZip, encTgtZip, tempTargetDir] });
 
       gLog_fn(`✅ All patches created successfully in: ${finalOutputDir}`, 'success');
       gLog_fn(`   Pack: ${packVer}  |  Patch: ${patchVer}`, 'success');
@@ -3704,6 +3723,15 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
   } catch (e) {
     console.error("Failed to check dev build status:", e);
+  }
+
+  // The encryption module is optional, so its toggle starts hidden
+  try {
+    if (await invoke("patch_encryption_available")) {
+      document.getElementById('gen-encrypt-target-row')?.classList.remove('hidden-group');
+    }
+  } catch (e) {
+    console.error("Failed to check patch encryption support:", e);
   }
 
   // Copy target path button listener
