@@ -795,6 +795,7 @@ kbd {
 .person__contact { color: var(--text-muted); }
 .person--highlight { background: rgba(96, 165, 250, .06); border-color: rgba(96, 165, 250, .25); }
 .person .btn-kofi { margin-top: auto; align-self: flex-start; }
+.person__badge { margin-top: 10px; align-self: flex-start; line-height: 0; }
 .person--highlight .person__role { margin-bottom: 14px; }
 
 /* =========================================================
