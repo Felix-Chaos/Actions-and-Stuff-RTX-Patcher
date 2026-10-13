@@ -16,6 +16,7 @@
 [![FAQ](https://img.shields.io/badge/📖_FAQ-5865F2?style=flat-square)](https://discord.com/channels/691547840463241267/1360688874388455504/1376325634246049792)
 [![BetterRTX](https://img.shields.io/badge/💬_BetterRTX-5865F2?style=flat-square)](https://discord.gg/HPP6J4qFPu)
 [![Discord Thread](https://img.shields.io/badge/📢_Discord_Thread-5865F2?style=flat-square)](https://discord.com/channels/691547840463241267/1360688874388455504)
+[![Crowdin](https://badges.crowdin.net/ans-rtx-patcher/localized.svg)](https://crowdin.com/project/ans-rtx-patcher)
 
 [![Download Latest](https://img.shields.io/badge/Download-Latest_Release-2ea44f?style=for-the-badge&logo=github)](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/latest)
 [![Website](https://img.shields.io/badge/Website-Guide_&_Wiki-22c55e?style=for-the-badge&logo=githubpages&logoColor=white)](https://felix-chaos.github.io/Actions-and-Stuff-RTX-Patcher/)
@@ -143,8 +144,15 @@ The **Patcher** tab covers the basics, but the app ships a lot more than just Ma
 | **@Felix-Chaos** | Project maintenance, patcher updates, releases | [GitHub](https://github.com/Felix-Chaos) · Discord: `felixchaos` |
 | **Demente Parker** | Original creator, source files provider | Discord: `demente_parker` · [Ko-fi](https://ko-fi.com/dementeparker) |
 | **Community Testers** | Bug reporting, testing, feedback | Various Discord contributors |
+| **Translators** | The Patcher in other languages | [Crowdin project](https://crowdin.com/project/ans-rtx-patcher) |
 
 > Contributions welcome! Open a PR or join the [BetterRTX Discord](https://discord.gg/HPP6J4qFPu) / [ChaosDev Projects](https://discord.gg/YrMMmN2kc7).
+
+### 🌍 Translations
+
+[![Crowdin](https://badges.crowdin.net/ans-rtx-patcher/localized.svg)](https://crowdin.com/project/ans-rtx-patcher)
+
+The Patcher is translated on [Crowdin](https://crowdin.com/project/ans-rtx-patcher). Pick your language and translate in the browser; no GitHub account or setup needed. A language is added to the Patcher once it is fully translated.
 
 ---
 
