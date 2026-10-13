@@ -86,8 +86,13 @@
           </div>
           <div class="advanced-toggle-container" style="margin-top: 8px;">
             <span class="toggle-label" data-i18n="sidebar.language">Language</span>
-            <!-- Options are filled from the i18n registry at runtime. -->
-            <select id="sel-language" class="custom-select sidebar-language-select"></select>
+            <!-- Filled from the i18n registry at runtime. The select only holds
+                 the value; the button shows the flag and the menu the names. -->
+            <div class="lang-picker">
+              <select id="sel-language" class="lang-picker-native" tabindex="-1" aria-hidden="true"></select>
+              <button type="button" id="btn-language" class="lang-picker-button" aria-haspopup="listbox" aria-expanded="false" data-i18n-title="sidebar.language" data-i18n-aria-label="sidebar.language" title="Language" aria-label="Language"></button>
+              <div id="language-menu" class="lang-picker-menu hidden-group" role="listbox"></div>
+            </div>
           </div>
         </div>
       </header>

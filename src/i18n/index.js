@@ -61,7 +61,7 @@ export function getLocale() {
 
 /** Every selectable language, for building the dropdowns. */
 export function getLocales() {
-  return LOCALES.map(({ code, label }) => ({ code, label }));
+  return LOCALES.map(({ code, label, flag }) => ({ code, label, flag }));
 }
 
 /** Switch language and re-translate the document in place. */

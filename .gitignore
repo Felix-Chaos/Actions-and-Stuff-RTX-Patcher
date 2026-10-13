@@ -38,6 +38,9 @@ node_modules/
 # Tauri / Rust
 src-tauri/target/
 
+# Local release builds (installers, portable folders)
+/Releases/
+
 # General / Temporary / Reports
 temp_test_pack/
 *.bak

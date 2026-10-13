@@ -1892,11 +1892,79 @@ input:checked + .slider:before {
 
 /* Language picker in the sidebar footer. The row reuses
    .advanced-toggle-container, so it also inherits the collapsed-sidebar hiding
-   rule above; this only shrinks the select to fit the narrow column. */
-.sidebar-language-select {
-  padding: 4px 8px;
-  font-size: 0.8rem;
-  max-width: 110px;
+   rule above. Closed it shows only the flag; the menu lists the names. */
+.lang-picker {
+  position: relative;
+}
+
+.lang-picker-native {
+  display: none;
+}
+
+.lang-picker-button {
+  display: flex;
+  align-items: center;
+  padding: 5px 7px;
+  background: rgba(15, 23, 35, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.lang-picker-button:hover,
+.lang-picker-button[aria-expanded="true"] {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 8px rgba(96, 165, 250, 0.2);
+}
+
+.lang-picker-flag {
+  width: 24px;
+  height: 14px;
+  object-fit: cover;
+  border-radius: 2px;
+  display: block;
+}
+
+/* Opens upwards: the picker sits at the bottom of the sidebar. */
+.lang-picker-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px);
+  min-width: 140px;
+  padding: 4px;
+  background: #1b1b1c;
+  border: 1px solid #262626;
+  border-radius: 8px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+  z-index: 50;
+}
+
+.lang-picker-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-main);
+  font-family: var(--font-family-sans);
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lang-picker-option:hover,
+.lang-picker-option:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+  outline: none;
+}
+
+.lang-picker-option[aria-selected="true"] {
+  color: var(--primary-color);
+  font-weight: 600;
 }
 
 /* Icon-only variant of .btn: the folder picker buttons. Their label moved into

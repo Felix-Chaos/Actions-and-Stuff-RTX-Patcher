@@ -3468,6 +3468,56 @@ window.addEventListener('DOMContentLoaded', async () => {
   });
   syncSelect('sel-language', 'set-language', 'language', code => setLocale(code));
 
+  // Sidebar picker: closed it shows only the flag, opened it lists the names.
+  // The hidden select stays the value holder, so syncSelect keeps working.
+  const langSelect = document.getElementById('sel-language');
+  const langButton = document.getElementById('btn-language');
+  const langMenu = document.getElementById('language-menu');
+  if (langSelect && langButton && langMenu) {
+    const flagImg = (flag) => {
+      const img = document.createElement('img');
+      img.className = 'lang-picker-flag';
+      img.src = flag;
+      img.alt = '';
+      return img;
+    };
+    const closeLangMenu = () => {
+      langMenu.classList.add('hidden-group');
+      langButton.setAttribute('aria-expanded', 'false');
+    };
+    const renderLangPicker = () => {
+      const locales = getLocales();
+      const current = locales.find(l => l.code === getLocale()) || locales[0];
+      langButton.replaceChildren(flagImg(current.flag));
+      langMenu.replaceChildren(...locales.map(({ code, label, flag }) => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'lang-picker-option';
+        item.setAttribute('role', 'option');
+        item.setAttribute('aria-selected', String(code === current.code));
+        const name = document.createElement('span');
+        name.textContent = label;
+        item.append(flagImg(flag), name);
+        item.addEventListener('click', () => {
+          closeLangMenu();
+          if (langSelect.value === code) return;
+          langSelect.value = code;
+          langSelect.dispatchEvent(new Event('change'));
+        });
+        return item;
+      }));
+    };
+    langButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const open = langMenu.classList.toggle('hidden-group') === false;
+      langButton.setAttribute('aria-expanded', String(open));
+    });
+    document.addEventListener('click', (e) => { if (!langMenu.contains(e.target)) closeLangMenu(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLangMenu(); });
+    onLocaleChange(renderLangPicker);
+    renderLangPicker();
+  }
+
   // Sync settings tabs to main UI tabs
   syncToggle('set-advanced-mode', 'chk-advanced-mode', 'advancedMode', true);
   syncToggle('set-beta-updates', 'chk-beta-updates', 'betaUpdates', true);
@@ -3645,6 +3695,12 @@ window.addEventListener('DOMContentLoaded', async () => {
       if (releaseTab) {
         releaseTab.style.display = 'none';
       }
+      // Create Patch is an author tool too
+      const genpatchTab = document.querySelector('button[data-util="genpatch"]');
+      if (genpatchTab) {
+        genpatchTab.style.display = 'none';
+      }
+      document.querySelector('#utils-tool-select option[value="genpatch"]')?.remove();
     }
   } catch (e) {
     console.error("Failed to check dev build status:", e);
