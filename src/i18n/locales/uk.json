@@ -1,0 +1,613 @@
+{
+  "common": {
+    "cancel": "Cancel",
+    "ok": "OK",
+    "browse": "Browse...",
+    "noFolderSelected": "No folder selected"
+  },
+  "tabPatcher": {
+    "installing": "Installing...",
+    "heading": "Select Patch Mode",
+    "mode": {
+      "marketplace": {
+        "title": "Marketplace",
+        "desc": "Patches your purchased Marketplace pack directly from premium cache"
+      },
+      "zip": {
+        "title": "Zip / McPack",
+        "desc": "Normalize and patch an external Minecraft pack file"
+      },
+      "custom": {
+        "title": "Custom Patch",
+        "desc": "Select specific source, target, and .vcdiff patch files manually"
+      },
+      "advancedHint": "Enable Advanced Mode to use this feature"
+    },
+    "disclaimer": "<strong>Disclaimer:</strong> A valid Actions & Stuff license is required for legal usage of this patcher!",
+    "motd": {
+      "offlineDevPreviewTitle": "Service Offline UI Preview (Dev Mode)",
+      "offlineDevPreviewMessage": "This is just a preview of the offline box. The API is actually ONLINE right now.",
+      "offlineDevTitle": "Service Offline (Dev Mode)",
+      "offlineDevMessage": "Could not connect to the Chaos dev backend. This box is only visible in Dev Mode."
+    },
+    "publish": {
+      "noLibraryFolderTitle": "Publishing not configured",
+      "noLibraryFolderMessage": "Set your patch library repo folder first.\n\nApp Settings, Patch Creator Default Options, Patch library repo folder.",
+      "failedTitle": "Publish failed",
+      "failedMessage": "Publishing failed:\n\n{error}",
+      "alreadyPublishedTitle": "Already published",
+      "alreadyPublishedMessage": "\"{name}\" is already in the patch library.\n\nOpen a pull request that replaces it with the version you just built?",
+      "openedTitle": "Published",
+      "openedMessage": "Pull request opened:\n\n{url}",
+      "form": {
+        "title": "Publish to Patch Library",
+        "intro": "Opens a pull request in the patch library repo instead of pushing directly, so it can be reviewed before it reaches everyone.",
+        "creatorLabel": "Your name / handle",
+        "creatorPlaceholder": "Shown as the patch's creator",
+        "titleLabel": "Pull request title",
+        "descriptionLabel": "Description <span style=\"color: var(--text-muted); font-weight: 400;\">(optional)</span>",
+        "descriptionPlaceholder": "What changed in this patch?",
+        "submitBtn": "Open Pull Request"
+      }
+    },
+    "versionMismatch": {
+      "title": "Version Mismatch",
+      "message": "Warning: The selected patch version ({selected}) differs from the installed pack that will be patched ({detected}).\n\nApplying a patch built for a different version will fail.\n\nDo you want to proceed anyway?"
+    },
+    "version": {
+      "modeLabel": "Version Selection Mode:",
+      "autoDetect": "Auto-detect",
+      "manualSelect": "Manual Select",
+      "asVersion": "A&S Version:",
+      "patchVersion": "Patch Version:",
+      "refreshPatches": "<i class=\"fas fa-rotate\"></i> Refresh patch list",
+      "refreshPatchesTooltip": "Check the patch library for newly released patches",
+      "removeDownload": "<i class=\"fas fa-trash-can\"></i> Remove download",
+      "removeDownloadTooltip": "Delete this downloaded patch from disk. It will be downloaded again next time it is used.",
+      "refreshing": "Refreshing...",
+      "latestRecommended": "Latest (Recommended)",
+      "patchItem": "Patch v{version}",
+      "versionOption": "Version {version}",
+      "newPatchesAvailable": {
+        "one": "✨ {count} new patch available",
+        "other": "✨ {count} new patches available"
+      },
+      "includedWithApp": "📦 Included with the app",
+      "downloadedOffline": "✅ Downloaded, ready to use offline",
+      "willBeDownloaded": "⬇️ Will be downloaded",
+      "willBeDownloadedSize": "⬇️ Will be downloaded ({mb} MB)"
+    },
+    "cache": {
+      "empty": "No patches downloaded yet. Patches are downloaded automatically when you use them.",
+      "patchLabel": "{packVersion}, Patch v{patchVersion}",
+      "remove": "Remove",
+      "removing": "Removing...",
+      "summary": {
+        "one": "{count} patch downloaded · {mb} MB total",
+        "other": "{count} patches downloaded · {mb} MB total"
+      },
+      "clearConfirmTitle": "Remove downloaded patches",
+      "clearConfirmMessage": {
+        "one": "Remove the downloaded patch?\n\nThis frees {mb} MB. Patches bundled with the app are not affected, and any removed patch is downloaded again automatically the next time you use it.",
+        "other": "Remove all {count} downloaded patches?\n\nThis frees {mb} MB. Patches bundled with the app are not affected, and any removed patch is downloaded again automatically the next time you use it."
+      }
+    },
+    "zipMode": {
+      "inputFile": "Input File (.zip / .mcpack):",
+      "noFileSelected": "No file selected"
+    },
+    "customMode": {
+      "sourceLabel": "Source (Folder / ZIP):",
+      "noSourceSelected": "No source selected",
+      "targetLabel": "Target File (.mcpack / .zip):",
+      "noTargetSelected": "No target selected",
+      "copyPath": "Copy path to clipboard",
+      "patchLabel": "Patch File (.vcdiff):",
+      "noPatchSelected": "No patch selected"
+    },
+    "options": {
+      "cleanOld": "Delete older patched versions automatically"
+    },
+    "actions": {
+      "applyPatch": "Apply RTX Patch",
+      "installPack": "Install Pack",
+      "copyLog": "📋 Copy Log",
+      "reportBug": "🐞 Report Bug",
+      "backToSelection": "Back to Selection"
+    },
+    "status": {
+      "heading": "Patch Status",
+      "readyTitle": "Ready to Patch",
+      "readySubtitle": "Configure options and click Apply",
+      "preparingTitle": "Preparing Patch File",
+      "downloading": "Downloading {patch} patch ({total} MB)...",
+      "downloadingProgress": "Downloading {patch} patch: {done} / {total} MB ({percent}%)",
+      "downloadingProgressIndeterminate": "Downloading {patch} patch: {done} MB",
+      "locatingPatch": "Locating the patch for your pack...",
+      "verifyingTitle": "Verifying Content",
+      "verifyingText": "Analyzing patch requirements...",
+      "compressingTitle": "Compressing Pack",
+      "compressingText": "Generating deterministic ZIP of source pack...",
+      "extractingTitle": "Extracting & Normalizing",
+      "extractingText": "Unpacking ZIP and removing licensing signatures...",
+      "compressingNormalizedTitle": "Compressing Normalized",
+      "compressingNormalizedText": "Generating deterministic ZIP of normalized pack...",
+      "copyingSourceTitle": "Copying Source",
+      "copyingSourceText": "Using source ZIP...",
+      "compressingCustomTitle": "Compressing Custom",
+      "compressingCustomText": "Compressing custom directory...",
+      "cleaningTitle": "Cleaning Remnants",
+      "cleaningText": "Scanning and deleting old patched resource pack directories...",
+      "applyingTitle": "Applying RTX Patch",
+      "applyingText": "Running high-performance XDelta decoder...",
+      "doneTitle": "Patch Done",
+      "doneText": "Ready to import into Minecraft!",
+      "failedTitle": "Patch Failed",
+      "failedText": "An error occurred during execution.",
+      "noPatchTitle": "No Patch Yet",
+      "noPatchForVersion": "There is no patch for Actions & Stuff {version} yet.",
+      "noPatchForInstalled": "There is no patch for your installed version of Actions & Stuff yet."
+    },
+    "steps": {
+      "scan": "Scan / Verify source contents",
+      "normalize": "Deterministic compression & normalization",
+      "cleanOld": "Clean older versions",
+      "ensurePatch": "Ensure patch file is available",
+      "executePatch": "Execute XDelta RTX patch",
+      "importPack": "Import Minecraft Pack"
+    },
+    "console": {
+      "heading": "Execution Output",
+      "copyTooltip": "Copy log to clipboard",
+      "clearTooltip": "Clear console",
+      "resizeGripTooltip": "Drag down to enlarge the console. Double-click to reset."
+    }
+  },
+  "tabCleaner": {
+    "title": "🧹 Scan & Clean Old Patches",
+    "description": "Locates and deletes leftover Actions & Stuff pack directories from Minecraft resource pack and world folders to keep your installation clean.",
+    "actions": {
+      "scan": "Scan Folders",
+      "deleteSelected": "Delete Selected",
+      "deleteSelectedCount": {
+        "one": "Delete Selected ({count})",
+        "other": "Delete Selected ({count})"
+      },
+      "deleteAll": "Delete All",
+      "deleteAllCount": {
+        "one": "Delete All ({count})",
+        "other": "Delete All ({count})"
+      },
+      "selectAll": "Select all",
+      "selectNone": "Select none"
+    },
+    "results": {
+      "title": "Scan Results:",
+      "noneFound": "0 found",
+      "selectedOfTotal": "{selected} of {total} selected",
+      "placeholder": "Click Scan Folders to begin search...",
+      "clean": "No old Actions & Stuff packs found. Your folders are clean!"
+    },
+    "confirm": {
+      "title": "Confirm Deletion",
+      "message": {
+        "one": "Delete {count} folder?\n\n{description}\n\nThis cannot be undone. You can re-patch and reinstall afterwards.",
+        "other": "Delete {count} folders?\n\n{description}\n\nThis cannot be undone. You can re-patch and reinstall afterwards."
+      },
+      "descAll": "Every patched pack found by the scan will be removed.",
+      "descSelected": "Only the folders you ticked will be removed."
+    },
+    "progress": {
+      "preparing": {
+        "one": "Preparing to delete {count} folder...",
+        "other": "Preparing to delete {count} folders..."
+      },
+      "deleting": "Deleting {current} of {total}: {name}",
+      "done": {
+        "one": "Done. Deleted {count} folder.",
+        "other": "Done. Deleted {count} folders."
+      },
+      "doneWithFailures": {
+        "one": "Done. Deleted {count} folder, {failed} could not be removed.",
+        "other": "Done. Deleted {count} folders, {failed} could not be removed."
+      }
+    }
+  },
+  "tabRtxSettings": {
+    "title": "⚙️ Edit options.txt directly",
+    "description": "Directly modify Minecraft graphics configuration files to force Ray Tracing, Upscaling, and other premium visual toggles.",
+    "profileLabel": "Target options.txt Profile:",
+    "loadingProfiles": "Loading profiles...",
+    "chooseProfile": "-- Choose a Profile --",
+    "placeholder": "Select an options.txt profile to read settings...",
+    "actions": {
+      "setBest": "Set Best Settings",
+      "apply": "Apply Settings"
+    },
+    "fields": {
+      "raytracing": "Ray Tracing",
+      "upscaling": "Upscaling / DLSS",
+      "viewDistance": "Ray Tracing View Distance (Chunks)",
+      "maxFramerate": "Max Framerate",
+      "vsync": "VSync",
+      "blockDithering": "Block Dithering",
+      "mobDithering": "Mob Dithering"
+    },
+    "alerts": {
+      "saveSuccess": "Settings applied successfully!",
+      "saveError": "Failed to save settings:\n{error}",
+      "bestLoaded": "Best settings set in the editor! Click 'Apply Settings' to save them."
+    }
+  },
+  "tabUtils": {
+    "title": "🛠️ Standalone Utilities",
+    "description": "Select a utility tool to execute specialized tasks without running the main patcher pipeline.",
+    "selectTool": "Select Utility Tool:",
+    "pack": {
+      "title": "Deterministic ZIP Packer",
+      "description": "Creates a zip archive with fixed timestamps (Jan 1, 1980) and no compression (stored). Ideal for patch generators.",
+      "folderLabel": "Folder to Pack:",
+      "saveLocationLabel": "Save Zip / McPack Location:",
+      "noOutputZip": "No output zip selected",
+      "compressBtn": "Compress Deterministically",
+      "alerts": {
+        "missingPaths": "Please select both source folder and destination path.",
+        "success": "Pack created successfully at:\n{path}",
+        "failed": "Packing failed:\n{error}"
+      }
+    },
+    "extract": {
+      "title": "Extract ZIP / MCPack",
+      "description": "Extracts any archive file to a destination directory, resolving double-nested folders automatically.",
+      "archiveFileLabel": "Archive file:",
+      "noZipFileSelected": "No zip file selected",
+      "destFolderLabel": "Destination Folder:",
+      "noDestSelected": "No destination selected",
+      "extractBtn": "Extract Files",
+      "alerts": {
+        "missingPaths": "Please select both source archive and destination folder.",
+        "success": "Extraction complete!",
+        "failed": "Extraction failed:\n{error}"
+      }
+    },
+    "genpatch": {
+      "publishing": "Publishing...",
+      "title": "Create Patch (VCDIFF)",
+      "description": "Generates encrypted and decrypted .vcdiff patch files from source and patched pack directories. Matches the V2 patch creator workflow.",
+      "targetFolderLabel": "1. Target Folder <span class=\"label-hint\">(your modified/patched version)</span>",
+      "decryptedFolderLabel": "2. Source Decrypted Folder <span class=\"label-hint\">(vanilla baseline)</span>",
+      "encryptedFolderLabel": "3. Source Encrypted Folder <span class=\"label-hint\">(premium cache / marketplace)</span>",
+      "outputDirLabel": "Output Directory <span class=\"label-hint\">(where .vcdiff files are saved)</span>",
+      "noOutputDirSelected": "No output directory selected",
+      "packVersionLabel": "Pack Version",
+      "packVersionPlaceholder": "e.g. 1.10.1",
+      "patchVersionLabel": "Patch Version",
+      "patchVersionPlaceholder": "e.g. 1.1",
+      "injectManifest": "Inject Custom Manifest",
+      "publishToLibrary": "Publish to Patch Library",
+      "createPatchesBtn": "Create Patches",
+      "publishBtn": "Publish to Library",
+      "console": {
+        "heading": "Patch Creator Log",
+        "copyTooltip": "Copy log",
+        "clearTooltip": "Clear"
+      },
+      "alerts": {
+        "missingPaths": "Please fill in all four folder paths before creating patches.",
+        "failed": "Patch creation failed:\n{error}"
+      }
+    },
+    "brarchive": {
+      "title": "Extract Brarchives",
+      "description": "Recursively scans a workspace directory, deserializes and unpacks <code>.brarchive</code> contents, and cleans up temp pointer files.",
+      "workspaceLabel": "Workspace / Target Folder:",
+      "noFolderSelected": "No workspace folder selected",
+      "extractBtn": "Extract Brarchives in Folder",
+      "extractToggle": "Extract brarchives",
+      "renameToggle": "Rename geometries <span style=\"color: var(--color-warning); font-weight: 600;\">(Experimental)</span>",
+      "renameHint": "Renaming gives the obfuscated <code>geometry.oreville_ans.xxxxxx</code> IDs readable names and rewrites every reference, in place. Only use it on a copy. A mapping (old → new) and a manual check list are saved next to the pack folder.",
+      "runBtn": {
+        "extractAndRename": "Extract & Rename Geometries",
+        "renameOnly": "Rename Geometries (already extracted)",
+        "nothing": "Nothing selected",
+        "working": "Working..."
+      },
+      "renameConfirm": {
+        "title": "Rename geometries (experimental)",
+        "message": "The experimental renamer rewrites geometry IDs inside the pack files in this folder.\n\nMake sure you are working on a copy. Continue?",
+        "okBtn": "Rename"
+      },
+      "results": {
+        "renamed": "{renamed} geometries renamed in {files} files",
+        "validationPassed": "✓ Validation passed",
+        "validationErrors": {
+          "one": "⚠ {count} validation error: {errors}",
+          "other": "⚠ {count} validation errors: {errors}"
+        },
+        "review": "Please review: {review} (role conflicts {conflicts}, medium-confidence unused models {medium})",
+        "incomplete": "Readable but incomplete: {suffixes} raw variant suffixes, {kept} unidentified unused models kept their original ID",
+        "openChecklist": "Open manual check list"
+      },
+      "console": {
+        "heading": "Brarchive Tool Log",
+        "copyTooltip": "Copy log",
+        "clearTooltip": "Clear"
+      },
+      "alerts": {
+        "missingFolder": "Please select a target folder.",
+        "toolFailed": "Brarchive tool failed:\n{error}"
+      }
+    }
+  },
+  "tabSupport": {
+    "title": "💬 Support & Community",
+    "description": "Need help or want to join the community? Check out the servers below.",
+    "chaosServer": {
+      "title": "Chaos dev Projects Server <span class=\"badge\" style=\"background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; margin-left: 8px;\">Recommended</span>",
+      "desc": "The official server for Actions & Stuff RTX Patcher development and updates. The 3D printing and gaming community is also on there!"
+    },
+    "betterRtxServer": {
+      "title": "BetterRTX Discord Server",
+      "desc": "The central hub for all things Minecraft RTX and BetterRTX development."
+    },
+    "joinDiscord": "Join Discord Server",
+    "tags": {
+      "patcher": "Patcher",
+      "patches": "Patches",
+      "otherProjects": "Other Projects",
+      "betterRtx": "Better RTX",
+      "rtxIssues": "RTX Related issues"
+    },
+    "bugReport": {
+      "title": "🐞 Submit a Bug Report",
+      "desc": "Send an automated bug report directly to our developer team via Discord. A case number will be generated for tracking.",
+      "discordLabel": "Your Discord Username (e.g. user#1234)",
+      "discordPlaceholder": "We need this to link the report to you",
+      "descLabel": "Bug Description",
+      "descPlaceholder": "Please describe what went wrong (max 500 characters)",
+      "categoryLabel": "Bug Category <span style=\"color: var(--text-muted); font-weight: 400;\">(select all that apply)</span>",
+      "categories": {
+        "textureMessup": "Texture Messup",
+        "texturePurple": "Texture Purple",
+        "deltaXProblem": "DeltaX Problem",
+        "noDynamicLight": "No dynamic light",
+        "wrongModelMob": "Wrong Model for mob"
+      },
+      "includeAppLog": "Include Application Log",
+      "includePack": "Include Pack (Marketplace Cache / Zip)",
+      "includeContentLog": "Send Minecraft Content Log <span style=\"color: var(--text-muted); font-weight: 400;\">(recommended for rendering bugs)</span>",
+      "includeDriverLog": "Include GPU Driver Events <span style=\"color: var(--text-muted); font-weight: 400;\">(last 7 days, display driver only)</span>",
+      "includeHardware": "Include Hardware Info <span style=\"color: var(--text-muted); font-weight: 400;\">(GPU, driver, RAM, BetterRTX version &amp; RTX settings)</span>",
+      "submitBtn": "Send Bug Report",
+      "alerts": {
+        "enterDiscord": "Please enter your Discord username.",
+        "noSpacesDiscord": "Discord usernames/IDs cannot contain spaces.\nIf you are using your display name/nickname, please use your actual Discord username (which contains no spaces) or your 18-digit Discord User ID instead.",
+        "userNotFound": "{error}\nWould you like to join the Chaos dev project server now?",
+        "joinServerTitle": "Join Server Required",
+        "joinDiscordBtn": "Join Discord"
+      },
+      "status": {
+        "submitting": "Submitting bug report...",
+        "zippingMarketplace": "Zipping Marketplace Pack...",
+        "success": "✅ Bug Report submitted successfully! Case ID: #{caseId}",
+        "replacedOldNote": "Note: You already had a recent issue submitted. Your previous pack file has been replaced to save space.",
+        "failed": "❌ Failed to submit: {error}"
+      }
+    },
+    "knownIssue": {
+      "title": "🟣 Known Issue: Wrong/Missing Mob Textures (NVIDIA)",
+      "desc": "Seeing stretched, black, or purple textures on <b>Zombies, Creepers, or Skeletons</b> on an NVIDIA graphics card? We're actively tracking this specific issue. Use the button below to send a fully <b>anonymous</b> report, no Discord account needed.",
+      "details": "This automatically includes your hardware info, GPU driver events, and Minecraft content log, since diagnosing this bug needs all three. Unlike a regular bug report, this data is kept until the issue is actually fixed instead of being auto-deleted after 30/90 days.",
+      "notesLabel": "Anything else to add? <span style=\"color: var(--text-muted); font-weight: 400;\">(optional)</span>",
+      "notesPlaceholder": "e.g. which subpack, when it started, etc. (optional)",
+      "submitBtn": "Report This Issue Anonymously",
+      "status": {
+        "submitting": "Submitting report...",
+        "success": "✅ Report submitted anonymously! Case ID: #{caseId}",
+        "retentionNotice": "This data will be kept until the issue is resolved, not auto-deleted after 30/90 days like a regular report.",
+        "failed": "❌ Failed to submit: {error}"
+      }
+    },
+    "contentLog": {
+      "checking": "Checking Minecraft content log...",
+      "notSentStatus": "⏸️ Report not sent yet. Minecraft needs to generate a content log first.",
+      "modalTitle": "One more step: Content Log",
+      "instructions": {
+        "loggingOff": "Minecraft's content logging was turned OFF, so no useful log exists yet.\n\n✅ I have already enabled it in your Minecraft settings for you.\n\nPlease:\n1. Restart Minecraft\n2. Join the world where the bug happens\n3. Make sure the broken entity/block is loaded (walk up to it)\n4. Come back and press 'Send Bug Report' again",
+        "tooSmall": "Your newest content log is only {size} MB, too small to contain the error details (needs > 5 MB).\n\nPlease:\n1. Restart Minecraft\n2. Join the world where the bug happens\n3. Make sure the broken entity/block is loaded (walk up to it) and play a minute\n4. Come back and press 'Send Bug Report' again",
+        "tooOld": "Your newest content log is more than an hour old, so it probably doesn't show the current bug.\n\nPlease:\n1. Restart Minecraft\n2. Join the world where the bug happens\n3. Make sure the broken entity/block is loaded (walk up to it)\n4. Come back and press 'Send Bug Report' again (within an hour)",
+        "tooLarge": "Your newest content log is {size} MB, which is over the 500 MB limit and likely full of unrelated spam.\n\nPlease:\n1. Restart Minecraft (this starts a fresh, clean log)\n2. Join the world where the bug happens\n3. Make sure the broken entity/block is loaded (walk up to it), just briefly\n4. Come back and press 'Send Bug Report' again",
+        "noLog": "Content logging is enabled, but no log file exists yet.\n\nPlease:\n1. Restart Minecraft\n2. Join the world where the bug happens\n3. Make sure the broken entity/block is loaded (walk up to it)\n4. Come back and press 'Send Bug Report' again\n\n(Or turn off 'Send Minecraft Content Log' to submit without it.)"
+      }
+    },
+    "telemetry": {
+      "enabledStatus": "Thanks! Hardware ping enabled (checked on every start, only uploaded when something changes).",
+      "disabledStatus": "Hardware ping disabled. Nothing will be sent automatically.",
+      "errorTitle": "Error",
+      "openDiagnosticsError": "Failed to open diagnostics folder: {error}",
+      "deleteConfirmTitle": "Delete My Data",
+      "deleteConfirmMessage": "This deletes all telemetry and bug-report data linked to your random install ID from our server, then rotates the ID locally so old data can never be linked to you again. Continue?",
+      "deleteBtn": "Delete",
+      "deleteSuccess": "✅ Your data has been deleted and your ID rotated.",
+      "deleteError": "❌ Deletion failed: {error}"
+    }
+  },
+  "tabRelease": {
+    "title": "📦 Release Builder",
+    "description": "Edit version metadata and build a distributable release of the patcher.",
+    "versionEditor": {
+      "title": "Version Editor",
+      "appVersionLabel": "App Version (tauri.conf.json)",
+      "placeholder": "e.g. 3.0.1",
+      "applyBtn": "Apply",
+      "loadingVersion": "Loading current version...",
+      "current": "Current: {version}",
+      "currentSaved": "Current: {version} (saved)",
+      "adjustmentsLabel": "Version Adjustments:",
+      "releaseTypeLabel": "Release Type",
+      "types": {
+        "stable": "Stable",
+        "beta": "Beta Version (_b)",
+        "alpha": "Alpha Version (_a)"
+      }
+    },
+    "buildActions": {
+      "title": "Build Actions",
+      "buildAllTitle": "Build All (Installers + Portable)",
+      "buildAllDesc": "Builds MSI, NSIS, and Portable exe",
+      "buildAllBtn": "Build All",
+      "buildInstallersTitle": "Build Installers Only",
+      "buildInstallersDesc": "Builds MSI & NSIS",
+      "buildInstallersBtn": "Build Installers",
+      "buildPortableTitle": "Build Portable Only",
+      "buildPortableDesc": "Builds Portable exe",
+      "buildPortableBtn": "Build Portable",
+      "openBundleTitle": "Open Bundle Folder",
+      "openBundleDesc": "Opens the versioned release folder",
+      "openBundleBtn": "Open Folder"
+    },
+    "console": {
+      "heading": "Build Log",
+      "copyTooltip": "Copy log",
+      "clearTooltip": "Clear"
+    },
+    "confirmOverwrite": {
+      "title": "Build Already Exists",
+      "message": "A release build for version v{version} already exists in the output folder.\n\nDo you want to overwrite it?",
+      "overwriteBtn": "Overwrite"
+    },
+    "alerts": {
+      "enterVersion": "Please enter a version number.",
+      "updateVersionFailed": "Failed to update app version:\n{error}",
+      "buildFailed": "Failed to run release build:\n{error}",
+      "openBundleFailed": "Failed to open bundle folder:\n{error}",
+      "openPatchesFailed": "Failed to open patches folder:\n{error}"
+    }
+  },
+  "modal": {
+    "notificationTitle": "Notification",
+    "confirmTitle": "Confirm",
+    "telemetryConsent": {
+      "title": "Help Us Diagnose Rare RTX Issues",
+      "intro": "Certain rendering issues occur only on specific GPU and driver combinations. With your consent, the patcher can submit a <b>pseudonymous hardware summary</b>",
+      "whatsTheDifference": "what's the difference?",
+      "introAfter": "to help identify these cases. Reporting is opt-in and is requested once, on first launch. Afterward, your hardware is checked on every launch, and a new submission is sent only when the result differs from the previous one, for example after a GPU, driver, or BetterRTX preset change:",
+      "notCollected": "<b>Not collected:</b> your name, files, or serial numbers. Each submission is identified by a randomly generated <b>installation ID</b> and a one-way hash derived from your machine, used solely to recognize repeat submissions from the same installation so it is not counted twice after a reinstall. Because these identifiers persist and link submissions over time, this is described as pseudonymous rather than anonymous. Both identifiers can be deleted at any time from Settings under \"Delete My Data,\" which also removes the corresponding record from the server. Every payload is additionally saved locally as <code>last_hardware_ping.json</code> for review. Uploaded bug-report logs are deleted after 30 days.",
+      "point1": "GPU model, driver version & VRAM",
+      "point2": "CPU model, RAM size, Windows build",
+      "point3": "Minecraft edition (Store / Launcher) & patcher version",
+      "decline": "Decline",
+      "accept": "Enable Reporting"
+    }
+  },
+  "nav": {
+    "patcher": "Patcher",
+    "cleaner": "Cleaner",
+    "rtxSettings": "RTX Settings",
+    "utils": {
+      "label": "Utilities",
+      "pack": "ZIP Packer",
+      "extract": "Extract ZIP",
+      "genpatch": "Create Patch",
+      "brarchive": "Ext Brarchives"
+    },
+    "support": "Support",
+    "release": "Release",
+    "appSettings": "App Settings"
+  },
+  "sidebar": {
+    "toggle": "Toggle Sidebar",
+    "advancedMode": "Advanced Mode",
+    "betaUpdates": "Beta Updates",
+    "language": "Language",
+    "update": {
+      "checking": "Checking...",
+      "upToDate": "Up to Date",
+      "available": "v{version} Available",
+      "updateNow": "Update Now",
+      "updating": "Updating...",
+      "checkFailed": "Check Failed",
+      "confirmTitle": "Update Available",
+      "confirmMessage": "A new {type} update (v{version}) is available.\n\nWould you like to download and install this update now?",
+      "alphaWarning": "⚠️ WARNING ⚠️\nAlpha builds are highly unstable, completely untested, and might break your packs or fail entirely. Stuff will NOT work as expected! Proceed at your own risk!",
+      "installed": "Update installed successfully! The application will now restart.",
+      "installFailed": "Update installation failed:\n{error}"
+    }
+  },
+  "tabAppSettings": {
+    "title": "⚙️ Application Settings",
+    "general": {
+      "heading": "General Options",
+      "enableAdvancedMode": "Enable Advanced Mode UI",
+      "optInBetaUpdates": "Opt-in to Beta Updates"
+    },
+    "language": {
+      "label": "Language",
+      "hint": "Log and console output stays in English."
+    },
+    "defaultPatcherMode": {
+      "label": "Default Patcher Mode",
+      "marketplace": "Marketplace Auto-Detect",
+      "zip": "Manual Zip/Mcpack",
+      "custom": "Custom Modpack (WIP)"
+    },
+    "patcherBehaviors": {
+      "heading": "Patcher Behaviors",
+      "cleanOldRemnants": "Clean Old Patch Remnants"
+    },
+    "console": {
+      "heading": "Console",
+      "description": "Set how tall the execution output console is. You can also drag the grip above the console itself, or double-click it to reset.",
+      "heightLabel": "Console height",
+      "presetSmall": "Small",
+      "presetMedium": "Medium",
+      "presetLarge": "Large",
+      "presetTall": "Tall",
+      "currently": "Currently {px}px."
+    },
+    "downloadedPatches": {
+      "heading": "Downloaded Patches",
+      "description": "Patches are downloaded as you use them and kept for offline use. Removing one only frees disk space; it is downloaded again automatically next time. Patches bundled with the app are never removed.",
+      "keepOnlyRecent": "Keep only the most recently used patch",
+      "removeAll": "<i class=\"fas fa-trash-can\"></i> Remove all downloads"
+    },
+    "patchCreator": {
+      "heading": "Patch Creator Default Options",
+      "description": "Publishing copies a created patch into your local clone of the patch library and opens a pull request for it. Once merged, everyone gets it within a minute, with no patcher update. Requires git and the GitHub CLI (<code>gh</code>) to be set up.",
+      "repoFolderLabel": "Patch library repo folder",
+      "publishAfterCreate": "Publish after creating a patch"
+    },
+    "bugReporter": {
+      "heading": "Bug Reporter Defaults",
+      "includeLogs": "Include Application Logs",
+      "includePack": "Include Pack (Large)",
+      "sendContentLog": "Send Minecraft Content Log",
+      "includeDriverEvents": "Include GPU Driver Events",
+      "includeHardwareInfo": "Include Hardware Info"
+    },
+    "privacy": {
+      "heading": "Privacy & Telemetry",
+      "pingLabel": "Pseudonymous Hardware Ping <span style=\"color: #94a3b8;\">(checked every start, sent only on changes)</span>",
+      "notice": "This data is <b>pseudonymous</b>, not anonymous",
+      "noticeAfter": ", since submissions are linked by a persistent identifier. Reporting is opt-in from first launch; afterward, a submission is sent only when your hardware hash changes, not on every launch. Uploaded logs are deleted automatically after 30 days.",
+      "openDiagnosticsFolder": "Open Diagnostics Folder"
+    },
+    "diagnostics": {
+      "heading": "Diagnostics & Tests",
+      "testGithubBtn": "Test GitHub API",
+      "testBackendBtn": "Test Backend Connection",
+      "testWorkspaceBtn": "Test Workspace Paths",
+      "testingGithub": "Testing GitHub API...",
+      "githubOnline": "✅ Online. Latest release: {tag}",
+      "githubStatusError": "❌ API returned status: {status}",
+      "githubFetchFailed": "❌ Fetch failed: {error}",
+      "pingingBackend": "Pinging Rust Backend...",
+      "backendResponding": "✅ Rust backend is responding: {response}",
+      "backendError": "❌ Backend error: {error}",
+      "testingWorkspace": "Testing Workspace Paths...",
+      "workspaceFound": "✅ Found Workspace: {path}",
+      "workspaceUnknown": "Unknown, check advanced options",
+      "workspaceError": "❌ Workspace error: {error}"
+    }
+  }
+}
