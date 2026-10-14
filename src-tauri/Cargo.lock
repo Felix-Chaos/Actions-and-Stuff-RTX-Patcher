@@ -4143,7 +4143,7 @@ dependencies = [
  "base64 0.23.1",
  "dotenvy",
  "futures-util",
- "getrandom 0.3.4",
+ "getrandom 0.4.3",
  "regex",
  "reqwest",
  "rfd",
