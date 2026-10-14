@@ -284,6 +284,7 @@
       "patchVersionLabel": "Patch Version",
       "patchVersionPlaceholder": "e.g. 1.1",
       "injectManifest": "Inject Custom Manifest",
+      "encryptTarget": "Encrypt Patched Pack",
       "publishToLibrary": "Publish to Patch Library",
       "createPatchesBtn": "Create Patches",
       "publishBtn": "Publish to Library",
