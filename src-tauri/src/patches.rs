@@ -16,6 +16,8 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use tauri::Emitter;
 
+use crate::log_msg;
+use crate::logmsg::emit_msg;
 use crate::utils::{emit_log, user_data_dir};
 
 const PATCH_INDEX_URL: &str = "https://github.com/Felix-Chaos/AS-RTX-Patch-Library/releases/download/patch-library/patch_index.json";
@@ -119,20 +121,20 @@ pub async fn fetch_patch_index(app: tauri::AppHandle) -> Result<serde_json::Valu
     match fetched {
         Ok((body, parsed)) => {
             if let Err(e) = std::fs::write(&cache_path, &body) {
-                emit_log(
+                emit_msg(
                     &app,
                     "main",
-                    &format!("Could not cache the patch index locally: {}", e),
+                    &log_msg!("log.backend.catalogue.cacheWriteFailed", error = e),
                     "warning",
                 );
             }
             Ok(build_result(parsed, "remote"))
         }
         Err(err) => {
-            emit_log(
+            emit_msg(
                 &app,
                 "main",
-                &format!("Could not fetch the remote patch index ({}). Falling back to the local cache.", err),
+                &log_msg!("log.backend.catalogue.fetchFailed", error = &err),
                 "warning",
             );
 
@@ -191,26 +193,26 @@ pub async fn ensure_patch_downloaded(
     if final_path.exists() {
         match verify_cached(&final_path, &meta_path, &sha256, size) {
             Ok(true) => {
-                emit_log(
+                emit_msg(
                     &app,
                     "main",
-                    &format!("Using the cached {} patch for {}.", variant, slug),
+                    &log_msg!("log.backend.download.usingCached", variant = &variant, slug = &slug),
                     "info",
                 );
                 return Ok(final_path.to_string_lossy().to_string());
             }
             Ok(false) => {
-                emit_log(
+                emit_msg(
                     &app,
                     "main",
-                    &format!("Cached {} patch for {} failed verification. Re-downloading.", variant, slug),
+                    &log_msg!("log.backend.download.cachedInvalid", variant = &variant, slug = &slug),
                     "warning",
                 );
                 let _ = std::fs::remove_file(&final_path);
                 let _ = std::fs::remove_file(&meta_path);
             }
             Err(e) => {
-                emit_log(&app, "main", &format!("Could not verify the cached patch ({}). Re-downloading.", e), "warning");
+                emit_msg(&app, "main", &log_msg!("log.backend.download.verifyFailed", error = &e), "warning");
                 let _ = std::fs::remove_file(&final_path);
                 let _ = std::fs::remove_file(&meta_path);
             }
@@ -260,10 +262,15 @@ async fn download_verified(
     use futures_util::StreamExt;
     use std::io::Write;
 
-    emit_log(
+    emit_msg(
         app,
         "main",
-        &format!("Downloading the {} patch for {} ({:.1} MB)...", variant, slug, want_size as f64 / 1_048_576.0),
+        &log_msg!(
+            "log.backend.download.start",
+            variant = variant,
+            slug = slug,
+            mb = format!("{:.1}", want_size as f64 / 1_048_576.0)
+        ),
         "info",
     );
 
@@ -333,13 +340,13 @@ async fn download_verified(
 
     let meta = serde_json::json!({ "sha256": actual_sha, "size": downloaded });
     if let Err(e) = std::fs::write(meta_path, serde_json::to_string_pretty(&meta).unwrap_or_default()) {
-        emit_log(app, "main", &format!("Could not write the patch cache sidecar: {}", e), "warning");
+        emit_msg(app, "main", &log_msg!("log.backend.download.sidecarFailed", error = &e), "warning");
     }
 
-    emit_log(
+    emit_msg(
         app,
         "main",
-        &format!("Patch downloaded and verified: {} ({}).", slug, variant),
+        &log_msg!("log.backend.download.done", slug = slug, variant = variant),
         "success",
     );
     Ok(())
@@ -544,7 +551,7 @@ pub async fn publish_patch_to_library(
         ));
     }
 
-    emit_log(&app, "genpatch-logs", &format!("Updating {}...", base_branch), "info");
+    emit_msg(&app, "genpatch-logs", &log_msg!("log.backend.publish.updating", branch = &base_branch), "info");
     run_git(&app, lib, &["fetch", "origin", &base_branch])
         .map_err(|e| format!("Could not fetch the latest {}: {}", base_branch, e))?;
     run_git(&app, lib, &["pull", "--ff-only", "origin", &base_branch]).map_err(|e| {
@@ -585,10 +592,10 @@ pub async fn publish_patch_to_library(
             .unwrap_or(0)
     );
 
-    emit_log(
+    emit_msg(
         &app,
         "genpatch-logs",
-        &format!("Publishing \"{}\" to the patch library on branch {}...", name, branch),
+        &log_msg!("log.backend.publish.start", name = &name, branch = &branch),
         "info",
     );
 
@@ -598,20 +605,20 @@ pub async fn publish_patch_to_library(
         run_git(&app, lib, &["checkout", "-b", &branch])?;
 
         if dest.exists() {
-            emit_log(&app, "genpatch-logs", "  Replacing the existing entry...", "warning");
+            emit_msg(&app, "genpatch-logs", &log_msg!("log.backend.publish.replacing"), "warning");
             std::fs::remove_dir_all(&dest)
                 .map_err(|e| format!("Could not replace the existing entry: {}", e))?;
         }
 
         copy_dir_all(src, &dest)
             .map_err(|e| format!("Could not copy the patch into the library: {}", e))?;
-        emit_log(&app, "genpatch-logs", &format!("  Copied into {}", rel), "info");
+        emit_msg(&app, "genpatch-logs", &log_msg!("log.backend.publish.copied", path = &rel), "info");
 
         run_git(&app, lib, &["add", "--", &rel])?;
         run_git(&app, lib, &["commit", "-m", &title, "-m", &body])?;
         run_git(&app, lib, &["push", "-u", "origin", &branch])?;
 
-        emit_log(&app, "genpatch-logs", "  Opening the pull request...", "info");
+        emit_msg(&app, "genpatch-logs", &log_msg!("log.backend.publish.openingPr"), "info");
         let pr_output = run_gh(
             &app,
             lib,
@@ -641,13 +648,10 @@ pub async fn publish_patch_to_library(
 
     let pr_url = result?;
 
-    emit_log(
+    emit_msg(
         &app,
         "genpatch-logs",
-        &format!(
-            "Pull request opened: {}. Once merged, the patch library's CI hashes, uploads and rebuilds the catalogue, and every installed patcher offers it without an update.",
-            pr_url
-        ),
+        &log_msg!("log.backend.publish.prOpened", url = &pr_url),
         "success",
     );
 
@@ -731,10 +735,14 @@ pub async fn delete_cached_patch(app: tauri::AppHandle, slug: String) -> Result<
     let freed = dir_size(&dir);
     std::fs::remove_dir_all(&dir)
         .map_err(|e| format!("Failed to remove the downloaded patch {}: {}", slug, e))?;
-    emit_log(
+    emit_msg(
         &app,
         "main",
-        &format!("Removed the downloaded patch {} ({:.1} MB freed).", slug, freed as f64 / 1_048_576.0),
+        &log_msg!(
+            "log.backend.cache.removed",
+            slug = &slug,
+            mb = format!("{:.1}", freed as f64 / 1_048_576.0)
+        ),
         "info",
     );
     Ok(freed)
@@ -765,19 +773,27 @@ pub async fn clear_patch_cache(app: tauri::AppHandle) -> Result<(u32, u64), Stri
                 removed += 1;
                 freed += size;
             }
-            Err(e) => emit_log(
+            Err(e) => emit_msg(
                 &app,
                 "main",
-                &format!("Could not remove {}: {}", entry.file_name().to_string_lossy(), e),
+                &log_msg!(
+                    "log.backend.cache.removeFailed",
+                    name = entry.file_name().to_string_lossy(),
+                    error = e
+                ),
                 "warning",
             ),
         }
     }
 
-    emit_log(
+    emit_msg(
         &app,
         "main",
-        &format!("Removed {} downloaded patch(es), freeing {:.1} MB.", removed, freed as f64 / 1_048_576.0),
+        &log_msg!(
+            "log.backend.cache.clearedAll",
+            count = removed,
+            mb = format!("{:.1}", freed as f64 / 1_048_576.0)
+        ),
         "success",
     );
     Ok((removed, freed))
@@ -808,12 +824,12 @@ pub async fn prune_patch_cache(app: tauri::AppHandle, keep_slug: String) -> Resu
         match std::fs::remove_dir_all(&path) {
             Ok(()) => {
                 removed += 1;
-                emit_log(&app, "main", &format!("Removed the cached patch {}.", name), "info");
+                emit_msg(&app, "main", &log_msg!("log.backend.cache.pruned", name = &name), "info");
             }
-            Err(e) => emit_log(
+            Err(e) => emit_msg(
                 &app,
                 "main",
-                &format!("Could not remove the cached patch {}: {}", name, e),
+                &log_msg!("log.backend.cache.pruneFailed", name = &name, error = e),
                 "warning",
             ),
         }

@@ -1,3 +1,5 @@
+use crate::log_msg;
+use crate::logmsg::emit_msg;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Write};
@@ -37,6 +39,9 @@ pub fn api_key() -> String {
         .collect()
 }
 
+/// Sends untranslated text to a frontend log console. Only for text that is
+/// data rather than prose (tool output, raw error text); prose goes through
+/// `logmsg::emit_msg` so it can be translated.
 pub fn emit_log(app: &tauri::AppHandle, container: &str, msg: &str, log_type: &str) {
     let _ = app.emit(
         "app-log",
@@ -129,16 +134,16 @@ pub fn pack_folder_impl(
     files.sort_by(|a, b| a.1.cmp(&b.1));
 
     if let Some(app_handle) = app {
-        emit_log(
+        emit_msg(
             app_handle,
             container,
-            &format!("Scanning folder to pack: {:?}", folder_path),
+            &log_msg!("log.backend.zip.scanning", path = format!("{:?}", folder_path)),
             "info",
         );
-        emit_log(
+        emit_msg(
             app_handle,
             container,
-            &format!("Found {} files to compress deterministically.", files.len()),
+            &log_msg!("log.backend.zip.found", count = files.len()),
             "info",
         );
     }
@@ -156,13 +161,10 @@ pub fn pack_folder_impl(
     zip.finish()
         .map_err(|e| format!("Failed to finalize zip: {}", e))?;
     if let Some(app_handle) = app {
-        emit_log(
+        emit_msg(
             app_handle,
             container,
-            &format!(
-                "Deterministic pack created successfully at: {:?}",
-                output_zip
-            ),
+            &log_msg!("log.backend.zip.done", path = format!("{:?}", output_zip)),
             "success",
         );
     }
@@ -182,10 +184,10 @@ pub fn extract_archive_impl(
 
     if output_dir.exists() {
         if let Some(app_handle) = app {
-            emit_log(
+            emit_msg(
                 app_handle,
                 container,
-                &format!("Cleaning existing extraction directory: {:?}", output_dir),
+                &log_msg!("log.backend.extract.cleaning", path = format!("{:?}", output_dir)),
                 "info",
             );
         }
@@ -195,13 +197,13 @@ pub fn extract_archive_impl(
         .map_err(|e| format!("Failed to create output dir: {}", e))?;
 
     if let Some(app_handle) = app {
-        emit_log(
+        emit_msg(
             app_handle,
             container,
-            &format!(
-                "Extracting archive {:?} (contains {} files)",
-                zip_path,
-                archive.len()
+            &log_msg!(
+                "log.backend.extract.start",
+                path = format!("{:?}", zip_path),
+                count = archive.len()
             ),
             "info",
         );
@@ -243,12 +245,12 @@ pub fn extract_archive_impl(
     if entries.len() == 1 && entries[0].is_dir() {
         let single_dir = &entries[0];
         if let Some(app_handle) = app {
-            emit_log(
+            emit_msg(
                 app_handle,
                 container,
-                &format!(
-                    "Smart Unwrap: single root folder {:?} detected. Moving contents up...",
-                    single_dir.file_name().unwrap()
+                &log_msg!(
+                    "log.backend.extract.unwrap",
+                    name = format!("{:?}", single_dir.file_name().unwrap())
                 ),
                 "info",
             );
@@ -258,10 +260,13 @@ pub fn extract_archive_impl(
                 let path = entry.path();
                 let dest = output_dir.join(path.file_name().unwrap());
                 if let Some(app_handle) = app {
-                    emit_log(
+                    emit_msg(
                         app_handle,
                         container,
-                        &format!("  [Moving up] -> {:?}", path.file_name().unwrap()),
+                        &log_msg!(
+                            "log.backend.extract.movingUp",
+                            name = format!("{:?}", path.file_name().unwrap())
+                        ),
                         "info",
                     );
                 }
@@ -273,10 +278,10 @@ pub fn extract_archive_impl(
     }
 
     if let Some(app_handle) = app {
-        emit_log(
+        emit_msg(
             app_handle,
             container,
-            &format!("Successfully extracted all files to {:?}", output_dir),
+            &log_msg!("log.backend.extract.done", path = format!("{:?}", output_dir)),
             "success",
         );
     }
@@ -783,16 +788,16 @@ pub fn extract_brarchives_in_workspace_impl(
     }
 
     if let Some(app_handle) = app {
-        emit_log(
+        emit_msg(
             app_handle,
             container,
-            &format!("Scanning workspace for brarchives: {:?}", workspace),
+            &log_msg!("log.backend.brarchive.scanning", path = format!("{:?}", workspace)),
             "info",
         );
-        emit_log(
+        emit_msg(
             app_handle,
             container,
-            &format!("Found {} __brarchive directories.", brarchive_dirs.len()),
+            &log_msg!("log.backend.brarchive.foundDirs", count = brarchive_dirs.len()),
             "info",
         );
     }
@@ -831,10 +836,10 @@ pub fn extract_brarchives_in_workspace_impl(
             let extract_dir = pack_context.join(target_rel_str);
 
             if let Some(app_handle) = app {
-                emit_log(
+                emit_msg(
                     app_handle,
                     container,
-                    &format!("  [Brarchive Found] -> {}", file_name_str),
+                    &log_msg!("log.backend.brarchive.found", name = &file_name_str),
                     "info",
                 );
             }
@@ -848,10 +853,10 @@ pub fn extract_brarchives_in_workspace_impl(
             if data.len() <= 16 {
                 skipped_placeholders += 1;
                 if let Some(app_handle) = app {
-                    emit_log(
+                    emit_msg(
                         app_handle,
                         container,
-                        "    (Skipped placeholder / empty brarchive)",
+                        &log_msg!("log.backend.brarchive.skippedPlaceholder"),
                         "info",
                     );
                 }
@@ -869,10 +874,14 @@ pub fn extract_brarchives_in_workspace_impl(
                     skipped_errors += 1;
                     failed_paths.insert(brarchive_path.clone());
                     if let Some(app_handle) = app {
-                        emit_log(
+                        emit_msg(
                             app_handle,
                             container,
-                            &format!("  [Skipped unreadable brarchive] -> {} ({})", brarchive_path.display(), e),
+                            &log_msg!(
+                                "log.backend.brarchive.skippedUnreadable",
+                                path = brarchive_path.display(),
+                                error = &e
+                            ),
                             "warning",
                         );
                     }
@@ -891,10 +900,10 @@ pub fn extract_brarchives_in_workspace_impl(
             for (entry_name, content) in entry_map {
                 if !is_safe_relative_entry(&entry_name) {
                     if let Some(app_handle) = app {
-                        emit_log(
+                        emit_msg(
                             app_handle,
                             container,
-                            &format!("  [Skipped unsafe entry path] -> {}", entry_name),
+                            &log_msg!("log.backend.brarchive.skippedUnsafe", name = &entry_name),
                             "warning",
                         );
                     }
@@ -949,13 +958,13 @@ pub fn extract_brarchives_in_workspace_impl(
 
         if any_failed_remaining {
             if let Some(app_handle) = app {
-                emit_log(
+                emit_msg(
                     app_handle,
                     container,
-                    &format!(
-                        "Kept raw brarchive folder (preserved {} unreadable archive(s) instead of deleting them): {:?}",
-                        files_in_root.iter().filter(|p| failed_paths.contains(*p)).count(),
-                        brarchive_root.file_name().unwrap_or_default()
+                    &log_msg!(
+                        "log.backend.brarchive.keptRaw",
+                        count = files_in_root.iter().filter(|p| failed_paths.contains(*p)).count(),
+                        name = format!("{:?}", brarchive_root.file_name().unwrap_or_default())
                     ),
                     "warning",
                 );
@@ -968,10 +977,10 @@ pub fn extract_brarchives_in_workspace_impl(
 
         if let Some(app_handle) = app {
             if let Some(dir_name) = brarchive_root.file_name() {
-                emit_log(
+                emit_msg(
                     app_handle,
                     container,
-                    &format!("Cleaning up raw brarchive folder: {:?}", dir_name),
+                    &log_msg!("log.backend.brarchive.cleaning", name = format!("{:?}", dir_name)),
                     "info",
                 );
             }
@@ -985,17 +994,22 @@ pub fn extract_brarchives_in_workspace_impl(
 
     if let Some(app_handle) = app {
         let summary = if skipped_errors > 0 {
-            format!(
-                "Brarchive extraction complete! Extracted {} files from {} archives (skipped {} placeholders, {} unreadable — see warnings above).",
-                extracted_files, brarchives_found, skipped_placeholders, skipped_errors
+            log_msg!(
+                "log.backend.brarchive.doneWithErrors",
+                files = extracted_files,
+                archives = brarchives_found,
+                placeholders = skipped_placeholders,
+                unreadable = skipped_errors
             )
         } else {
-            format!(
-                "Brarchive extraction complete! Extracted {} files from {} archives (skipped {} placeholders).",
-                extracted_files, brarchives_found, skipped_placeholders
+            log_msg!(
+                "log.backend.brarchive.done",
+                files = extracted_files,
+                archives = brarchives_found,
+                placeholders = skipped_placeholders
             )
         };
-        emit_log(app_handle, container, &summary, if skipped_errors > 0 { "warning" } else { "success" });
+        emit_msg(app_handle, container, &summary, if skipped_errors > 0 { "warning" } else { "success" });
     }
 
     Ok(true)

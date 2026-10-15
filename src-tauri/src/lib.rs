@@ -4,6 +4,7 @@ pub mod commands;
 #[cfg(all(debug_assertions, has_encrypt))]
 #[path = "private/encrypt.rs"]
 pub mod encrypt;
+pub mod logmsg;
 pub mod patches;
 pub mod renamer;
 pub mod telemetry;

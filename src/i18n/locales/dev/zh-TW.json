@@ -1,0 +1,137 @@
+{
+  "tabPatcher": {
+    "motd": {
+      "offlineDevPreviewTitle": "離線服務UI預覽（開發人員模式）",
+      "offlineDevPreviewMessage": "This is just a preview of the offline box. The API is actually ONLINE right now.",
+      "offlineDevTitle": "離線服務（開發人員模式）",
+      "offlineDevMessage": "Could not connect to the Chaos dev backend. This box is only visible in Dev Mode."
+    },
+    "publish": {
+      "noLibraryFolderTitle": "Publishing not configured",
+      "noLibraryFolderMessage": "Set your patch library repo folder first.\n\nApp Settings, Patch Creator Default Options, Patch library repo folder.",
+      "failedTitle": "發布失敗",
+      "failedMessage": "發布失敗：\n\n{error}",
+      "alreadyPublishedTitle": "已發布過",
+      "alreadyPublishedMessage": "\"{name}\" is already in the patch library.\n\nOpen a pull request that replaces it with the version you just built?",
+      "openedTitle": "已發布",
+      "openedMessage": "Pull request opened:\n\n{url}",
+      "form": {
+        "title": "發布至補丁庫",
+        "intro": "Opens a pull request in the patch library repo instead of pushing directly, so it can be reviewed before it reaches everyone.",
+        "creatorLabel": "Your name / handle",
+        "creatorPlaceholder": "Shown as the patch's creator",
+        "titleLabel": "Pull request title",
+        "descriptionLabel": "Description <span style=\"color: var(--text-muted); font-weight: 400;\">(optional)</span>",
+        "descriptionPlaceholder": "這個補丁更改了什麼？",
+        "submitBtn": "Open Pull Request"
+      }
+    }
+  },
+  "tabUtils": {
+    "genpatch": {
+      "publishing": "Publishing...",
+      "title": "Create Patch (VCDIFF)",
+      "description": "Generates encrypted and decrypted .vcdiff patch files from source and patched pack directories. Matches the V2 patch creator workflow.",
+      "targetFolderLabel": "1. Target Folder <span class=\"label-hint\">(your modified/patched version)</span>",
+      "decryptedFolderLabel": "2. Source Decrypted Folder <span class=\"label-hint\">(vanilla baseline)</span>",
+      "encryptedFolderLabel": "3. Source Encrypted Folder <span class=\"label-hint\">(premium cache / marketplace)</span>",
+      "outputDirLabel": "Output Directory <span class=\"label-hint\">(where .vcdiff files are saved)</span>",
+      "noOutputDirSelected": "No output directory selected",
+      "packVersionLabel": "Pack Version",
+      "packVersionPlaceholder": "e.g. 1.10.1",
+      "patchVersionLabel": "Patch Version",
+      "patchVersionPlaceholder": "e.g. 1.1",
+      "injectManifest": "Inject Custom Manifest",
+      "encryptTarget": "Encrypt Patched Pack",
+      "publishToLibrary": "發布至補丁庫",
+      "createPatchesBtn": "建立補丁",
+      "publishBtn": "Publish to Library",
+      "console": {
+        "heading": "補丁作者日誌",
+        "copyTooltip": "複製日誌",
+        "clearTooltip": "清除"
+      },
+      "alerts": {
+        "missingPaths": "Please fill in all four folder paths before creating patches.",
+        "failed": "補丁創建失敗：\n{error}"
+      }
+    }
+  },
+  "tabRelease": {
+    "title": "📦 Release Builder",
+    "description": "Edit version metadata and build a distributable release of the patcher.",
+    "versionEditor": {
+      "title": "版本編輯器",
+      "appVersionLabel": "App Version (tauri.conf.json)",
+      "placeholder": "e.g. 3.0.1",
+      "applyBtn": "應用",
+      "loadingVersion": "目前版本載入中...",
+      "current": "目前：{version}",
+      "currentSaved": "目前：{version}（已保存）",
+      "adjustmentsLabel": "版本調整：",
+      "releaseTypeLabel": "Release Type",
+      "types": {
+        "stable": "穩定",
+        "beta": "Beta版本（_b）",
+        "alpha": "Alpha版本（_a）"
+      }
+    },
+    "buildActions": {
+      "title": "Build Actions",
+      "buildAllTitle": "Build All (Installers + Portable)",
+      "buildAllDesc": "Builds MSI, NSIS, and Portable exe",
+      "buildAllBtn": "Build All",
+      "buildInstallersTitle": "Build Installers Only",
+      "buildInstallersDesc": "Builds MSI & NSIS",
+      "buildInstallersBtn": "Build Installers",
+      "buildPortableTitle": "Build Portable Only",
+      "buildPortableDesc": "Builds Portable exe",
+      "buildPortableBtn": "Build Portable",
+      "openBundleTitle": "Open Bundle Folder",
+      "openBundleDesc": "Opens the versioned release folder",
+      "openBundleBtn": "開啟資料夾"
+    },
+    "console": {
+      "heading": "建立日誌",
+      "copyTooltip": "複製日誌",
+      "clearTooltip": "清除"
+    },
+    "confirmOverwrite": {
+      "title": "Build Already Exists",
+      "message": "A release build for version v{version} already exists in the output folder.\n\nDo you want to overwrite it?",
+      "overwriteBtn": "覆寫"
+    },
+    "alerts": {
+      "enterVersion": "Please enter a version number.",
+      "updateVersionFailed": "Failed to update app version:\n{error}",
+      "buildFailed": "Failed to run release build:\n{error}",
+      "openBundleFailed": "Failed to open bundle folder:\n{error}",
+      "openPatchesFailed": "Failed to open patches folder:\n{error}"
+    }
+  },
+  "tabAppSettings": {
+    "patchCreator": {
+      "heading": "Patch Creator Default Options",
+      "description": "Publishing copies a created patch into your local clone of the patch library and opens a pull request for it. Once merged, everyone gets it within a minute, with no patcher update. Requires git and the GitHub CLI (<code>gh</code>) to be set up.",
+      "repoFolderLabel": "Patch library repo folder",
+      "publishAfterCreate": "Publish after creating a patch"
+    },
+    "diagnostics": {
+      "heading": "Diagnostics & Tests",
+      "testGithubBtn": "GitHub API 測試",
+      "testBackendBtn": "Test Backend Connection",
+      "testWorkspaceBtn": "Test Workspace Paths",
+      "testingGithub": "GitHub API 測試中...",
+      "githubOnline": "✅ 已上線。最新更新：{tag}",
+      "githubStatusError": "❌ API returned status: {status}",
+      "githubFetchFailed": "❌ Fetch failed: {error}",
+      "pingingBackend": "Pinging Rust Backend...",
+      "backendResponding": "✅ Rust backend is responding: {response}",
+      "backendError": "❌ Backend error: {error}",
+      "testingWorkspace": "Testing Workspace Paths...",
+      "workspaceFound": "✅ Found Workspace: {path}",
+      "workspaceUnknown": "未知，檢查進階選項",
+      "workspaceError": "❌ Workspace error: {error}"
+    }
+  }
+}
