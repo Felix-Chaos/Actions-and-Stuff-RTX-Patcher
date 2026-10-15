@@ -359,14 +359,13 @@
       "checking": "Checking Minecraft content log...",
       "notSentStatus": "⏸️ Report not sent yet. Minecraft needs to generate a content log first.",
       "modalTitle": "One more step: Content Log",
-      "reasons": {
-        "loggingOff": "Minecraft's content logging was turned OFF, so no useful log exists yet.\n\n✅ I have already enabled it in your Minecraft settings for you.",
-        "tooSmall": "Your newest content log is only {size} MB, too small to contain the error details (needs > 5 MB).",
-        "tooOld": "Your newest content log is more than an hour old, so it probably doesn't show the current bug.",
-        "tooLarge": "Your newest content log is {size} MB, which is over the 500 MB limit and likely full of unrelated spam. Restarting Minecraft starts a fresh, clean log.",
-        "noLog": "Content logging is enabled, but no log file exists yet."
-      },
-      "steps": "Please:\n1. Restart Minecraft\n2. Join the world where the bug happens\n3. Make sure the broken entity/block is loaded (walk up to it) and play for a minute\n4. Come back within an hour and press 'Send Bug Report' again\n\n(Or turn off 'Send Minecraft Content Log' to submit without it.)"
+      "instructions": {
+        "loggingOff": "Minecraft's content logging was turned OFF, so no useful log exists yet.\n\n✅ I have already enabled it in your Minecraft settings for you.\n\nPlease:\n1. Restart Minecraft\n2. Join the world where the bug happens\n3. Make sure the broken entity/block is loaded (walk up to it)\n4. Come back and press 'Send Bug Report' again",
+        "tooSmall": "Your newest content log is only {size} MB, too small to contain the error details (needs > 5 MB).\n\nPlease:\n1. Restart Minecraft\n2. Join the world where the bug happens\n3. Make sure the broken entity/block is loaded (walk up to it) and play a minute\n4. Come back and press 'Send Bug Report' again",
+        "tooOld": "Your newest content log is more than an hour old, so it probably doesn't show the current bug.\n\nPlease:\n1. Restart Minecraft\n2. Join the world where the bug happens\n3. Make sure the broken entity/block is loaded (walk up to it)\n4. Come back and press 'Send Bug Report' again (within an hour)",
+        "tooLarge": "Your newest content log is {size} MB, which is over the 500 MB limit and likely full of unrelated spam.\n\nPlease:\n1. Restart Minecraft (this starts a fresh, clean log)\n2. Join the world where the bug happens\n3. Make sure the broken entity/block is loaded (walk up to it), just briefly\n4. Come back and press 'Send Bug Report' again",
+        "noLog": "Content logging is enabled, but no log file exists yet.\n\nPlease:\n1. Restart Minecraft\n2. Join the world where the bug happens\n3. Make sure the broken entity/block is loaded (walk up to it)\n4. Come back and press 'Send Bug Report' again\n\n(Or turn off 'Send Minecraft Content Log' to submit without it.)"
+      }
     },
     "telemetry": {
       "enabledStatus": "Thanks! Hardware ping enabled (checked on every start, only uploaded when something changes).",
