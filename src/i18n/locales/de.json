@@ -438,7 +438,7 @@
     },
     "language": {
       "label": "Sprache",
-      "hint": "Logs werden in deiner Sprache angezeigt, aber auf Englisch kopiert und gesendet."
+      "hint": "Logs are shown in your language, but copied and sent in English."
     },
     "defaultPatcherMode": {
       "label": "Standard-Patcher-Modus",
