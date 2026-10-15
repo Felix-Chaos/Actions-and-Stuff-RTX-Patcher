@@ -1,0 +1,511 @@
+{
+  "log": {
+    "placeholder": {
+      "waiting": "Warte auf Prozessstart...",
+      "cleared": "Konsole geleert. Warte auf Prozess...",
+      "genpatchReady": "Bereit zum Erstellen von Patches...",
+      "genpatchStarting": "Patch-Erstellung wird gestartet...",
+      "brarchiveReady": "Bereit. Wähle einen Ordner und was ausgeführt werden soll.",
+      "brarchiveCleared": "Log geleert.",
+      "buildReady": "Die Build-Ausgabe erscheint hier...",
+      "buildStarting": "Build wird gestartet ({type})..."
+    },
+    "app": {
+      "initializing": "Actions & Stuff Patcher v3 Frontend wird initialisiert...",
+      "ready": "Systeminitialisierung abgeschlossen. Bereit.",
+      "consoleHeightReset": "Konsolenhöhe auf {px}px zurückgesetzt.",
+      "hardwarePingSent": "Anonymer Hardware-Ping gesendet. Danke für deine Hilfe!",
+      "libraryFolderSet": "Patch-Bibliotheks-Ordner festgelegt: {path}",
+      "libraryFolderFailed": "Patch-Bibliotheks-Ordner konnte nicht festgelegt werden: {error}",
+      "explorerFailed": "Explorer konnte nicht geöffnet werden: {error}",
+      "detectedInstall": "Minecraft-Installation erkannt (Edition: {edition}), premium_cache: {premiumCache}, resource_packs: {resourcePacks}",
+      "editionUwp": "UWP (Microsoft Store)",
+      "editionGdk": "GDK (Roaming)",
+      "detectInstallFailed": "Standardpfade der Minecraft-Installation konnten nicht erkannt werden: {error}",
+      "selected": "Ausgewählt: {path}",
+      "pickerError": "Fehler bei der Auswahl: {error}"
+    },
+    "publish": {
+      "noLibraryFolder": "Es ist kein Patch-Bibliotheks-Ordner festgelegt. Wähle ihn in den App-Einstellungen unter Patch Creator.",
+      "cancelled": "Veröffentlichung abgebrochen.",
+      "openedPr": "Pull Request geöffnet: {url}",
+      "failed": "Veröffentlichung fehlgeschlagen: {error}",
+      "cancelledKept": "Veröffentlichung abgebrochen; der vorhandene Eintrag wurde beibehalten.",
+      "failedPatchFine": "Veröffentlichung fehlgeschlagen, die Patch-Dateien sind aber in Ordnung: {error}"
+    },
+    "catalogue": {
+      "loading": "Patch-Konfigurationen werden geladen...",
+      "bundledFound": "{count} mitgelieferte(s) Patch-Konfigurationsprofil(e) gefunden.",
+      "remoteLoaded": "{count} herunterladbare Patch-Einträge aus der Patch-Bibliothek geladen (Quelle: {source}).",
+      "remoteLoadedUpdated": "{count} herunterladbare Patch-Einträge aus der Patch-Bibliothek geladen (Quelle: {source}, aktualisiert {updated}).",
+      "usingCache": "Die Patch-Bibliothek ist nicht erreichbar; der zuletzt bekannte Katalog wird verwendet.",
+      "noCatalogue": "Kein Katalog der Patch-Bibliothek verfügbar. Nur mitgelieferte Patches können verwendet werden.",
+      "remoteFailed": "Die Online-Patch-Bibliothek konnte nicht geladen werden: {error}",
+      "newPatch": "Neuer Patch verfügbar: {pack} Patch {patch}",
+      "totalAvailable": "Insgesamt {count} Patch-Konfigurationsprofil(e) verfügbar.",
+      "loadFailed": "Patch-Konfigurationen konnten nicht geladen werden: {error}"
+    },
+    "cache": {
+      "removed": "Heruntergeladener Patch {slug} entfernt ({mb} MB freigegeben).",
+      "removedRedownload": "Heruntergeladener Patch {slug} entfernt ({mb} MB freigegeben). Er wird bei der nächsten Verwendung erneut heruntergeladen.",
+      "removeFailed": "Der heruntergeladene Patch konnte nicht entfernt werden: {error}",
+      "clearedAll": "{count} heruntergeladene(n) Patch(es) entfernt, {mb} MB freigegeben.",
+      "clearFailed": "Die heruntergeladenen Patches konnten nicht entfernt werden: {error}",
+      "pruned": "{count} ältere(n) heruntergeladene(n) Patch(es) entfernt, um Speicherplatz zu sparen.",
+      "tidyFailed": "Die heruntergeladenen Patches konnten nicht aufgeräumt werden: {error}"
+    },
+    "download": {
+      "slugMissing": "Dem Online-Patch-Eintrag fehlt seine ID (Slug).",
+      "notBundled": "Die Patch-Datei für Pack {packVersion} (Patch {patchVersion}) ist nicht mitgeliefert; sie wird aus der Patch-Bibliothek geladen.",
+      "variant": "  Variante: {variant}  |  Größe: {mb} MB",
+      "ready": "Patch-Datei bereit: „{path}“"
+    },
+    "resolve": {
+      "byStats": "Patch-Konfiguration über Statistik/logo_hash zugeordnet: Pack {packVersion} (Patch {patchVersion})",
+      "byVersion": "Patch-Konfiguration über die Versionsangabe zugeordnet: Pack {packVersion} (Patch {patchVersion})",
+      "noConfidentMatch": "Das erkannte Pack konnte keiner Patch-Konfiguration sicher zugeordnet werden, die neueste verfügbare wird verwendet (Pack {packVersion})",
+      "noPatchForVersion": "Für Actions & Stuff {version} gibt es noch keinen Patch.",
+      "noPatchForInstalled": "Für die installierte Version von Actions & Stuff gibt es noch keinen Patch."
+    },
+    "utils": {
+      "packStart": "Deterministisches Packen gestartet: {path}",
+      "packDone": "Deterministisches Pack erfolgreich erstellt unter {path}",
+      "packFailed": "Packen fehlgeschlagen: {error}",
+      "extractStart": "Entpacke: {src} nach {dst}",
+      "extractDone": "Dateien erfolgreich entpackt nach {path}",
+      "extractFailed": "Entpacken fehlgeschlagen: {error}"
+    },
+    "genpatch": {
+      "versions": "Pack-Version: {pack}  |  Patch-Version: {patch}",
+      "injectingBaseline": "  Basis-Manifest wird in die Quellordner eingefügt...",
+      "injectBaselineFailed": "  ⚠️ Basis-Manifest konnte nicht eingefügt werden: {error}",
+      "injectingVersioned": "  Versioniertes Manifest wird in das gepatchte Ziel eingefügt...",
+      "injectVersionedFailed": "  ⚠️ Versioniertes Manifest konnte nicht eingefügt werden: {error}",
+      "step1": "[1/4] Verschlüsselte Quelle wird komprimiert: {path}",
+      "encSourceReady": "  ✓ ZIP der verschlüsselten Quelle bereit",
+      "step2": "[2/4] Entschlüsselte Quelle wird komprimiert: {path}",
+      "decSourceReady": "  ✓ ZIP der entschlüsselten Quelle bereit",
+      "step3": "[3/4] Gepatchtes Ziel wird vorbereitet: {path}",
+      "targetReady": "  ✓ ZIP des gepatchten Ziels bereit",
+      "encTargetReady": "  ✓ ZIP des verschlüsselten gepatchten Ziels bereit",
+      "step4": "[4/4] VCDIFF-Patches werden erstellt...",
+      "encodingEnc": "  encrypted.vcdiff wird erstellt (Quelle: verschlüsselt, Ziel: gepatcht)...",
+      "encCreated": "  ✓ encrypted.vcdiff erstellt",
+      "encodingDec": "  decrypted.vcdiff wird erstellt (Quelle: entschlüsselt, Ziel: gepatcht)...",
+      "decCreated": "  ✓ decrypted.vcdiff erstellt",
+      "calcStats": "  Patch-Statistik wird berechnet aus {path}...",
+      "statsDone": "  ✓ Statistik berechnet: {files} Dateien, {dirs} Ordner",
+      "statsFailed": "  ⚠️ Statistik konnte nicht berechnet werden: {error}",
+      "configCreated": "  ✓ patch_config.json erstellt",
+      "allDone": "✅ Alle Patches erfolgreich erstellt in: {path}",
+      "summary": "   Pack: {pack}  |  Patch: {patch}",
+      "failed": "❌ Patch-Erstellung fehlgeschlagen: {error}"
+    },
+    "brarchive": {
+      "finished": "Fertig in {secs}s.",
+      "nothingRenamed": "Es wurde nichts umbenannt. Siehe die Meldungen oben.",
+      "failed": "Fehlgeschlagen: {error}"
+    },
+    "options": {
+      "profilesFound": "{count} options.txt-Profil(e) gefunden: {labels}",
+      "none": "keine",
+      "profilesFailed": "options.txt-Profile konnten nicht aufgelistet werden: {error}",
+      "reading": "Options-Datei wird gelesen: {path}",
+      "readFailed": "Optionen konnten nicht gelesen werden: {error}",
+      "saving": "Konfigurationsänderungen werden gespeichert...",
+      "saved": "options.txt erfolgreich aktualisiert!",
+      "saveFailed": "Einstellungen konnten nicht geschrieben werden: {error}",
+      "bestLoaded": "Optimale RTX-Einstellungen automatisch in den Editor geladen. Klicke auf „Einstellungen anwenden“, um sie in die options.txt zu schreiben."
+    },
+    "cleaner": {
+      "scanning": "Minecraft-Ordner werden nach alten RTX-Packs durchsucht...",
+      "scanClean": "Scan abgeschlossen. Alles sauber.",
+      "scanFound": "Scan abgeschlossen. {count} bereinigbare Pfade gefunden.",
+      "deleting": "{count} Ordner wird/werden gelöscht...",
+      "couldNotDelete": "Konnte nicht gelöscht werden: {path}",
+      "deleteFailed": "Löschen von „{path}“ fehlgeschlagen: {error}",
+      "summary": "Cleaner: {deleted} Ordner gelöscht.",
+      "summaryWithFailures": "Cleaner: {deleted} Ordner gelöscht, {failed} fehlgeschlagen.",
+      "scanFailed": "Scan fehlgeschlagen: {error}"
+    },
+    "patcher": {
+      "start": "Patch-Pipeline im Modus [{mode}] gestartet.",
+      "selectionMode": "Modus der Konfigurationsauswahl: {mode}",
+      "cleanupOption": "Automatisches Bereinigen von Überresten: {state}",
+      "enabled": "Aktiviert",
+      "disabled": "Deaktiviert",
+      "scanningMarketplace": "Premium-Cache wird nach dem gekauften Marketplace-Pack durchsucht...",
+      "candidatesFound": "{count} mögliche Packs im Premium-Cache gefunden.",
+      "candidate": "Kandidat [{index}]:",
+      "candFolder": "  Ordnername:  {value}",
+      "candPath": "  Pfad:        {value}",
+      "candVersion": "  Version:     {value}",
+      "candContents": "  Inhalt:      {files} Dateien, {dirs} Ordner",
+      "candScore": "  Trefferwert: {value}",
+      "noMarketplacePack": "Kein gültiges Marketplace-Pack gefunden. Manuelle Ordnerauswahl wird angefordert...",
+      "manualBrowsed": "Manuell ausgewählter Pack-Ordner wird verwendet: {path}",
+      "noCandidateMatches": "Keines der erkannten Packs passt zur ausgewählten Patch-Version ({version}).",
+      "selectedCandidate": "Ausgewähltes Pack:",
+      "selPath": "  Pfad: „{path}“",
+      "selVersion": "  Version: {version}",
+      "selComplexity": "  Umfang: {files} Dateien und {dirs} Ordner",
+      "versionMismatch": "Achtung: Die Ziel-Patch-Version ({selected}) passt nicht zur erkannten Pack-Version ({detected}).",
+      "zipStart": "Deterministische ZIP-Komprimierung wird gestartet...",
+      "sourceZipCreated": "Deterministisches Quell-ZIP erfolgreich erstellt: „{path}“",
+      "noFilePreselected": "Keine Datei vorausgewählt, Auswahldialog wird geöffnet...",
+      "selectedArchive": "Ausgewähltes Pack-Archiv: „{path}“",
+      "extractingZip": "ZIP-Datei wird in einen temporären Ordner entpackt:",
+      "extractDone": "ZIP erfolgreich entpackt.",
+      "archiveVersion": "Vom Archiv genannte Pack-Version: {version}",
+      "notFound": "nicht gefunden",
+      "normalizing": "Inhalte werden normalisiert: Lizenzsignaturen werden gelöscht (contents.json, signatures.json, splashes.json, sounds.json) und das eigene Manifest wird eingefügt...",
+      "normalizeDone": "Normalisierung und Einfügen des Manifests abgeschlossen.",
+      "recompressing": "Normalisierte Dateien werden erneut deterministisch gezippt:",
+      "recompressDone": "Erneute Komprimierung abgeschlossen.",
+      "deletingTemp": "Temporärer Entpack-Ordner wird gelöscht: „{path}“",
+      "tempCleaned": "Temporärer Ordner bereinigt.",
+      "customParams": "Parameter des benutzerdefinierten Patches:",
+      "sourceIsZip": "Quelle ist bereits ein ZIP. Wird direkt verwendet: „{path}“",
+      "sourceIsFolder": "Quelle ist ein Ordner. Deterministisches ZIP wird erstellt: „{zip}“ aus „{src}“",
+      "scanningRemnants": "com.mojang-Ordner werden nach alten Actions & Stuff-Überresten durchsucht...",
+      "remnantsFound": "{count} Überrest-Ordner gefunden:",
+      "remnant": "  Überrest: „{path}“",
+      "deletingRemnants": "Überrest-Ordner werden gelöscht...",
+      "remnantsRemoved": "{count} alte Pack-Ordner erfolgreich entfernt.",
+      "noRemnants": "Keine alten Überreste gefunden.",
+      "remnantsSkipped": "Bereinigen von Überresten laut Einstellung übersprungen.",
+      "applying": "PATCH-DATEI WIRD ANGEWENDET:",
+      "runningXdelta": "XDelta-Patch wird ausgeführt...",
+      "applyDone": "Patch erfolgreich angewendet!",
+      "cleaningTempZip": "Temporäres Quell-ZIP wird bereinigt: „{path}“",
+      "tempZipCleaned": "Temporäres Quell-ZIP bereinigt.",
+      "success": "ERFOLG: Der Patcher hat alle Schritte abgeschlossen. Klicke auf „Pack installieren“, um es zu importieren und loszuspielen!",
+      "pipelineFailure": "PIPELINE-FEHLER: {error}",
+      "launchingInstaller": "Installer wird gestartet für: {path}",
+      "installed": "Pack erfolgreich installiert nach: {path}",
+      "installFailed": "Installation fehlgeschlagen: {error}",
+      "field": {
+        "compressing": "  Komprimiere:  „{path}“",
+        "outputZip": "  Ausgabe-ZIP:  „{path}“",
+        "sourceZip": "  Quell-ZIP:  „{path}“",
+        "targetDir": "  Zielordner: „{path}“",
+        "source": "  Quelle: „{path}“",
+        "target": "  Ziel:   „{path}“",
+        "patch": "  Patch:  „{path}“",
+        "output": "  Ausgabe: „{path}“"
+      },
+      "errors": {
+        "installedMismatch": "Das installierte Pack ist Actions & Stuff {version} und passt nicht zur ausgewählten Patch-Version. Wähle diese Version oder stelle die Versionsauswahl auf automatisch.",
+        "browseCancelled": "Manuelle Auswahl abgebrochen. Patch abgebrochen.",
+        "validationFailed": "Validierung fehlgeschlagen: Das Pack scheint beschädigt oder verändert zu sein! Erwartet wurden ca. {expectedFiles} Dateien und {expectedDirs} Ordner, gefunden wurden {files} Dateien und {dirs} Ordner.",
+        "versionMismatchAborted": "Wegen eines Versionskonflikts abgebrochen.",
+        "noFileSelected": "Keine Datei ausgewählt. Patch abgebrochen.",
+        "customMissingPaths": "Der benutzerdefinierte Modus benötigt Quell-, Ziel- und Patch-Pfad.",
+        "noConfig": "Keine passende Patch-Konfiguration gefunden."
+      }
+    },
+    "update": {
+      "checking": "Suche nach Software-Updates...",
+      "betaSkipped": "Software-Update v{version} ist eine Beta-Version, und Beta-Updates sind deaktiviert.",
+      "alphaSkipped": "Software-Update v{version} ist eine Alpha-Version. Dafür müssen Beta-Updates und der erweiterte Modus aktiviert sein.",
+      "available": "Neues Update verfügbar: v{version}",
+      "downloadingInstalling": "Update wird heruntergeladen und installiert...",
+      "missingRid": "In den Update-Metadaten fehlt die rid.",
+      "downloadProgress": "Update wird heruntergeladen: {bytes} Bytes...",
+      "downloadFinished": "Download abgeschlossen.",
+      "installed": "Update erfolgreich installiert. Die App startet gleich neu.",
+      "installFailed": "Installation des Updates fehlgeschlagen: {error}",
+      "upToDate": "Die Software ist aktuell.",
+      "checkFailed": "Update-Prüfung fehlgeschlagen: {error}"
+    },
+    "release": {
+      "updateVersionFailed": "App-Version konnte nicht aktualisiert werden: {error}",
+      "buildFailed": "Build konnte nicht ausgeführt werden: {error}",
+      "openBundleFailed": "Bundle-Ordner konnte nicht geöffnet werden: {error}",
+      "openPatchesFailed": "Patches-Ordner konnte nicht geöffnet werden: {error}"
+    },
+    "backend": {
+      "zip": {
+        "scanning": "Ordner zum Packen wird durchsucht: {path}",
+        "found": "{count} Dateien zum deterministischen Komprimieren gefunden.",
+        "done": "Deterministisches Pack erfolgreich erstellt unter: {path}"
+      },
+      "extract": {
+        "cleaning": "Vorhandener Entpack-Ordner wird bereinigt: {path}",
+        "start": "Archiv {path} wird entpackt (enthält {count} Dateien)",
+        "unwrap": "Smart Unwrap: einzelner Stammordner {name} erkannt. Inhalt wird nach oben verschoben...",
+        "movingUp": "  [Nach oben verschoben] -> {name}",
+        "done": "Alle Dateien erfolgreich entpackt nach {path}"
+      },
+      "brarchive": {
+        "scanning": "Arbeitsordner wird nach Brarchives durchsucht: {path}",
+        "foundDirs": "{count} __brarchive-Ordner gefunden.",
+        "found": "  [Brarchive gefunden] -> {name}",
+        "skippedPlaceholder": "    (Platzhalter / leeres Brarchive übersprungen)",
+        "skippedUnreadable": "  [Unlesbares Brarchive übersprungen] -> {path} ({error})",
+        "skippedUnsafe": "  [Unsicherer Eintragspfad übersprungen] -> {name}",
+        "keptRaw": "Roher Brarchive-Ordner behalten ({count} unlesbare(s) Archiv(e) bewahrt statt gelöscht): {name}",
+        "cleaning": "Roher Brarchive-Ordner wird bereinigt: {name}",
+        "doneWithErrors": "Brarchive-Entpacken abgeschlossen! {files} Dateien aus {archives} Archiven entpackt ({placeholders} Platzhalter und {unreadable} unlesbare übersprungen — siehe Warnungen oben).",
+        "done": "Brarchive-Entpacken abgeschlossen! {files} Dateien aus {archives} Archiven entpackt ({placeholders} Platzhalter übersprungen)."
+      },
+      "catalogue": {
+        "cacheWriteFailed": "Der Patch-Index konnte nicht lokal zwischengespeichert werden: {error}",
+        "fetchFailed": "Der Online-Patch-Index konnte nicht abgerufen werden ({error}). Der lokale Cache wird verwendet."
+      },
+      "download": {
+        "usingCached": "Zwischengespeicherter {variant}-Patch für {slug} wird verwendet.",
+        "cachedInvalid": "Zwischengespeicherter {variant}-Patch für {slug} hat die Prüfung nicht bestanden. Wird erneut heruntergeladen.",
+        "verifyFailed": "Der zwischengespeicherte Patch konnte nicht geprüft werden ({error}). Wird erneut heruntergeladen.",
+        "start": "{variant}-Patch für {slug} wird heruntergeladen ({mb} MB)...",
+        "sidecarFailed": "Die Begleitdatei des Patch-Caches konnte nicht geschrieben werden: {error}",
+        "done": "Patch heruntergeladen und geprüft: {slug} ({variant})."
+      },
+      "publish": {
+        "updating": "{branch} wird aktualisiert...",
+        "start": "„{name}“ wird auf Branch {branch} in der Patch-Bibliothek veröffentlicht...",
+        "replacing": "  Vorhandener Eintrag wird ersetzt...",
+        "copied": "  Kopiert nach {path}",
+        "openingPr": "  Pull Request wird geöffnet...",
+        "prOpened": "Pull Request geöffnet: {url}. Nach dem Mergen hasht, lädt und baut die CI der Patch-Bibliothek den Katalog neu, und jeder installierte Patcher bietet den Patch ohne Update an."
+      },
+      "cache": {
+        "removed": "Heruntergeladener Patch {slug} entfernt ({mb} MB freigegeben).",
+        "removeFailed": "{name} konnte nicht entfernt werden: {error}",
+        "clearedAll": "{count} heruntergeladene(n) Patch(es) entfernt, {mb} MB freigegeben.",
+        "pruned": "Zwischengespeicherter Patch {name} entfernt.",
+        "pruneFailed": "Zwischengespeicherter Patch {name} konnte nicht entfernt werden: {error}"
+      },
+      "scan": {
+        "noFolder": "Marketplace-Scan: kein Ordner unter {path}",
+        "checking": "Marketplace-Scan: prüfe {path}",
+        "skipped": "  [Übersprungen] {name}: kein Actions & Stuff-Pack",
+        "done": "Marketplace-Scan abgeschlossen: {count} Kandidat(en) gefunden."
+      },
+      "xdelta": {
+        "start": "XDelta-Patch wird gestartet...",
+        "executable": "  [Programm] -> {path}",
+        "sourceZip": "  [Quell-ZIP] -> {path}",
+        "patchFile": "  [Patch-Datei] -> {path}",
+        "outputFile": "  [Ausgabedatei] -> {path}",
+        "removingOutput": "Vorhandene Ausgabedatei wird entfernt...",
+        "stdout": "XDelta stdout: {output}",
+        "stderr": "XDelta stderr: {output}",
+        "done": "XDelta-Patch erfolgreich dekodiert."
+      },
+      "encode": {
+        "start": "Patch wird mit XDelta kodiert...",
+        "sourceFile": "  [Quelldatei] -> {path}",
+        "targetFile": "  [Zieldatei] -> {path}",
+        "patchOutput": "  [Patch-Ausgabe] -> {path}",
+        "removingExisting": "Vorhandene Patch-Datei wird entfernt...",
+        "done": "XDelta-Patch erfolgreich erstellt."
+      },
+      "install": {
+        "failed": "Installation nach {path} fehlgeschlagen: {error}"
+      },
+      "normalize": {
+        "start": "Entpackter Pack-Ordner wird normalisiert: {path}",
+        "removedFile": "  [Signatur-/Lizenzdatei entfernt] -> {name}",
+        "removedDir": "  [texts-/Übersetzungsordner entfernt] -> {name}",
+        "injecting": "Eigene manifest.json wird für die Kompatibilität eingefügt.",
+        "injected": "Eigene manifest.json erfolgreich eingefügt.",
+        "baselineMissing": "Achtung: Basis der eigenen manifest.json wurde in den Ressourcen nicht gefunden."
+      },
+      "brtool": {
+        "extracting": "Brarchives werden entpackt in: {path}",
+        "nothingToExtract": "Keine __brarchive-Ordner gefunden - nichts zu entpacken.",
+        "stillPacked": "Dieser Ordner enthält noch gepackte __brarchive-Ordner. Das Umbenennen sieht nur entpackte Dateien - aktiviere „Brarchive entpacken“, um sie zuerst zu entpacken.",
+        "renamerStarted": "[Experimentell] Geometrie-Umbenennung gestartet.",
+        "noPack": "Kein entpacktes Resource Pack gefunden (benötigt einen Ordner mit manifest.json und models/).",
+        "pack": "Pack: {path}",
+        "error": "  FEHLER: {error}",
+        "renamed": "  {renamed} Geometrien in {files} Dateien umbenannt. Vollständig benannt: {named} | über Molang benannt: {molang} | Vanilla unverändert: {vanilla}",
+        "unused": "  Ungenutzte Modelle: {high} hoch, {medium} mittel, {kept} nicht erkannt (ursprüngliche ID behalten)",
+        "manualCheck": "  Manuelle Prüfung: {review} zu prüfen (Rollenkonflikte {conflicts}, mittlere Waisen {medium}), {suffixes} mit rohem Varianten-Suffix, {kept} haben ihre ursprüngliche ID behalten.",
+        "validationPassed": "  Validierung bestanden: keine kaputten Referenzen, keine verbliebenen verschleierten IDs, alle JSON-Dateien weiterhin gültig.",
+        "checklist": "  Prüfliste: {path}",
+        "mapping": "  Zuordnung (alt -> neu, zum Rückgängigmachen aufbewahren): {path}"
+      },
+      "renamer": {
+        "reading": "  Modelle, Entities, Attachables und Render Controller werden gelesen...",
+        "jsonFailures": "  {count} JSON-Datei(en) konnte(n) nicht gelesen werden und wurde(n) übersprungen (sie bleiben unverändert).",
+        "alreadyRenamed": "  Keine verschleierten Geometrie-IDs mehr - dieses Pack scheint bereits umbenannt zu sein. Wird übersprungen.",
+        "noGeometries": "  Keine Actions & Stuff-Geometrien in diesem Pack gefunden. Wird übersprungen.",
+        "found": "  {defs} Geometrie-Definitionen gefunden ({obfuscated} verschleiert), {used} referenziert.",
+        "resolvingMolang": "  Molang der Render Controller wird aufgelöst...",
+        "identifyingOrphans": "  Nicht referenzierte Geometrien werden erkannt (Atlas-Überlappung, Farbreihen, Formen, Knochennamen)...",
+        "rewriting": "  {count} Geometrie-IDs werden im Pack umgeschrieben...",
+        "nothingLeft": "  Nichts mehr umzubenennen - dieses Pack wurde bereits umbenannt. Vorhandene Berichte wurden behalten.",
+        "validating": "  Umbenanntes Pack wird validiert...",
+        "molangErrors": "  {count} Render-Controller-Ausdruck/-Ausdrücke konnte(n) nicht gelesen werden; ihre Rollen greifen auf die statische Tabelle zurück."
+      },
+      "release": {
+        "updatingTauriConf": "Version wird in tauri.conf.json auf {version} (Semver: {semver}) aktualisiert...",
+        "tauriConfUpdated": "tauri.conf.json und Fenstertitel erfolgreich aktualisiert.",
+        "tauriConfMissing": "Achtung: tauri.conf.json wurde am erwarteten Pfad nicht gefunden: {path}",
+        "updatingPackageJson": "Version in package.json wird auf {version} aktualisiert...",
+        "packageJsonUpdated": "package.json erfolgreich aktualisiert.",
+        "packageJsonMissing": "Achtung: package.json wurde am erwarteten Pfad nicht gefunden: {path}",
+        "updatingUpdaterJson": "Version wird in updater.json auf {version} (Semver: {semver}) aktualisiert...",
+        "updaterJsonUpdated": "updater.json erfolgreich aktualisiert.",
+        "updaterJsonMissing": "Achtung: updater.json wurde am erwarteten Pfad nicht gefunden: {path}"
+      },
+      "build": {
+        "start": "Release-Build des Projekts wird gestartet...",
+        "command": "Befehl wird ausgeführt: {command}",
+        "envLoaded": "Umgebungsvariablen aus der .env-Datei geladen.",
+        "succeeded": "Build erfolgreich abgeschlossen! updater.json wird automatisch angepasst...",
+        "sorting": "Build-Artefakte werden nach Releases/v{version} sortiert...",
+        "zipping": "Portables Release-Paket wird als ZIP komprimiert...",
+        "zipFailed": "Portables ZIP konnte nicht erstellt werden: {error}",
+        "zipDone": "ZIP des portablen Release-Pakets erfolgreich erstellt.",
+        "signatureInjected": "Neue Signatur und URL erfolgreich in updater.json eingetragen!",
+        "noSig": "Keine .sig-Datei zum Eintragen in updater.json gefunden",
+        "failedStatus": "Build fehlgeschlagen mit Exit-Status: {status}",
+        "waitFailed": "Fehler beim Warten auf den Build-Prozess: {error}",
+        "startFailed": "Build-Prozess konnte nicht gestartet werden: {error}"
+      },
+      "target": {
+        "start": "Vorbereitung des Patch-Ziels wird gestartet...",
+        "copying": "Geänderte Assets werden kopiert...",
+        "ready": "Patch-Ziel bereit."
+      }
+    }
+  },
+  "tabPatcher": {
+    "motd": {
+      "offlineDevPreviewTitle": "Vorschau: Dienst offline (Dev-Modus)",
+      "offlineDevPreviewMessage": "Dies ist nur eine Vorschau der Offline-Box. Die API ist derzeit tatsächlich ONLINE.",
+      "offlineDevTitle": "Dienst offline (Dev-Modus)",
+      "offlineDevMessage": "Verbindung zum Chaos-Dev-Backend fehlgeschlagen. Diese Box ist nur im Dev-Modus sichtbar."
+    },
+    "publish": {
+      "noLibraryFolderTitle": "Veröffentlichung nicht konfiguriert",
+      "noLibraryFolderMessage": "Lege zuerst deinen Patch-Bibliotheks-Ordner fest.\n\nApp-Einstellungen, Patch-Creator-Standardoptionen, Patch-Bibliotheks-Repository-Ordner.",
+      "failedTitle": "Veröffentlichung fehlgeschlagen",
+      "failedMessage": "Veröffentlichung fehlgeschlagen:\n\n{error}",
+      "alreadyPublishedTitle": "Bereits veröffentlicht",
+      "alreadyPublishedMessage": "„{name}“ ist bereits in der Patch-Bibliothek vorhanden.\n\nEinen Pull Request öffnen, der ihn durch die soeben erstellte Version ersetzt?",
+      "openedTitle": "Veröffentlicht",
+      "openedMessage": "Pull Request geöffnet:\n\n{url}",
+      "form": {
+        "title": "In der Patch-Bibliothek veröffentlichen",
+        "intro": "Öffnet einen Pull Request im Repository der Patch-Bibliothek, statt direkt zu pushen. So kann der Patch geprüft werden, bevor er alle erreicht.",
+        "creatorLabel": "Dein Name / Handle",
+        "creatorPlaceholder": "Wird als Ersteller des Patches angezeigt",
+        "titleLabel": "Titel des Pull Requests",
+        "descriptionLabel": "Beschreibung <span style=\"color: var(--text-muted); font-weight: 400;\">(optional)</span>",
+        "descriptionPlaceholder": "Was hat sich in diesem Patch geändert?",
+        "submitBtn": "Pull Request öffnen"
+      }
+    }
+  },
+  "tabUtils": {
+    "genpatch": {
+      "publishing": "Wird veröffentlicht...",
+      "title": "Patch erstellen (VCDIFF)",
+      "description": "Erstellt verschlüsselte und entschlüsselte .vcdiff-Patch-Dateien aus Quell- und gepatchten Pack-Verzeichnissen. Entspricht dem V2-Patch-Creator-Workflow.",
+      "targetFolderLabel": "1. Zielordner <span class=\"label-hint\">(deine modifizierte/gepatchte Version)</span>",
+      "decryptedFolderLabel": "2. Entschlüsselter Quellordner <span class=\"label-hint\">(Vanilla-Baseline)</span>",
+      "encryptedFolderLabel": "3. Verschlüsselter Quellordner <span class=\"label-hint\">(Premium-Cache / Marketplace)</span>",
+      "outputDirLabel": "Ausgabeordner <span class=\"label-hint\">(wo .vcdiff-Dateien gespeichert werden)</span>",
+      "noOutputDirSelected": "Kein Ausgabeordner ausgewählt",
+      "packVersionLabel": "Pack-Version",
+      "packVersionPlaceholder": "z. B. 1.10.1",
+      "patchVersionLabel": "Patch-Version",
+      "patchVersionPlaceholder": "z. B. 1.1",
+      "injectManifest": "Benutzerdefiniertes Manifest einfügen",
+      "encryptTarget": "Gepatchtes Pack verschlüsseln",
+      "publishToLibrary": "In Patch-Bibliothek veröffentlichen",
+      "createPatchesBtn": "Patches erstellen",
+      "publishBtn": "In Bibliothek veröffentlichen",
+      "console": {
+        "heading": "Patch-Creator-Log",
+        "copyTooltip": "Log kopieren",
+        "clearTooltip": "Leeren"
+      },
+      "alerts": {
+        "missingPaths": "Bitte fülle alle vier Ordnerpfade aus, bevor du Patches erstellst.",
+        "failed": "Patch-Erstellung fehlgeschlagen:\n{error}"
+      }
+    }
+  },
+  "tabRelease": {
+    "title": "📦 Release-Builder",
+    "description": "Versions-Metadaten bearbeiten und einen verteilbaren Release des Patchers erstellen.",
+    "versionEditor": {
+      "title": "Versions-Editor",
+      "appVersionLabel": "App-Version (tauri.conf.json)",
+      "placeholder": "z. B. 3.0.1",
+      "applyBtn": "Übernehmen",
+      "loadingVersion": "Aktuelle Version wird geladen...",
+      "current": "Aktuell: {version}",
+      "currentSaved": "Aktuell: {version} (gespeichert)",
+      "adjustmentsLabel": "Versions-Anpassungen:",
+      "releaseTypeLabel": "Release-Typ",
+      "types": {
+        "stable": "Stabil",
+        "beta": "Beta-Version (_b)",
+        "alpha": "Alpha-Version (_a)"
+      }
+    },
+    "buildActions": {
+      "title": "Build-Aktionen",
+      "buildAllTitle": "Alles erstellen (Installer + Portable)",
+      "buildAllDesc": "Erstellt MSI, NSIS und Portable-exe",
+      "buildAllBtn": "Alles erstellen",
+      "buildInstallersTitle": "Nur Installer erstellen",
+      "buildInstallersDesc": "Erstellt MSI & NSIS",
+      "buildInstallersBtn": "Installer erstellen",
+      "buildPortableTitle": "Nur Portable erstellen",
+      "buildPortableDesc": "Erstellt Portable-exe",
+      "buildPortableBtn": "Portable erstellen",
+      "openBundleTitle": "Bundle-Ordner öffnen",
+      "openBundleDesc": "Öffnet den versionierten Release-Ordner",
+      "openBundleBtn": "Ordner öffnen"
+    },
+    "console": {
+      "heading": "Build-Log",
+      "copyTooltip": "Log kopieren",
+      "clearTooltip": "Leeren"
+    },
+    "confirmOverwrite": {
+      "title": "Build existiert bereits",
+      "message": "Ein Release-Build für Version v{version} existiert bereits im Ausgabeordner.\n\nMöchtest du ihn überschreiben?",
+      "overwriteBtn": "Überschreiben"
+    },
+    "alerts": {
+      "enterVersion": "Bitte gib eine Versionsnummer ein.",
+      "updateVersionFailed": "Fehler beim Aktualisieren der App-Version:\n{error}",
+      "buildFailed": "Fehler beim Ausführen des Release-Builds:\n{error}",
+      "openBundleFailed": "Fehler beim Öffnen des Bundle-Ordners:\n{error}",
+      "openPatchesFailed": "Fehler beim Öffnen des Patches-Ordners:\n{error}"
+    }
+  },
+  "tabAppSettings": {
+    "patchCreator": {
+      "heading": "Patch-Creator-Standardoptionen",
+      "description": "Beim Veröffentlichen wird ein erstellter Patch in deinen lokalen Klon der Patch-Bibliothek kopiert und ein Pull Request dafür geöffnet. Nach dem Mergen erhält ihn jeder innerhalb einer Minute, ganz ohne Patcher-Update. Erfordert ein eingerichtetes Git und die GitHub CLI (<code>gh</code>).",
+      "repoFolderLabel": "Patch-Bibliotheks-Repository-Ordner",
+      "publishAfterCreate": "Nach dem Erstellen eines Patches veröffentlichen"
+    },
+    "diagnostics": {
+      "heading": "Diagnose & Tests",
+      "testGithubBtn": "GitHub-API testen",
+      "testBackendBtn": "Backend-Verbindung testen",
+      "testWorkspaceBtn": "Arbeitsbereichspfade testen",
+      "testingGithub": "GitHub-API wird getestet...",
+      "githubOnline": "✅ Online. Neueste Version: {tag}",
+      "githubStatusError": "❌ API gab Status zurück: {status}",
+      "githubFetchFailed": "❌ Abruf fehlgeschlagen: {error}",
+      "pingingBackend": "Rust-Backend wird angepingt...",
+      "backendResponding": "✅ Rust-Backend antwortet: {response}",
+      "backendError": "❌ Backend-Fehler: {error}",
+      "testingWorkspace": "Arbeitsbereichspfade werden getestet...",
+      "workspaceFound": "✅ Arbeitsbereich gefunden: {path}",
+      "workspaceUnknown": "Unbekannt, erweiterte Optionen prüfen",
+      "workspaceError": "❌ Arbeitsbereichsfehler: {error}"
+    }
+  }
+}
