@@ -28,11 +28,12 @@ rfd = "0.15"
 reqwest = { version = "0.13.4", features = ["json", "stream"] }
 futures-util = "0.3"
 sha2 = "0.11.0"
-dotenvy = "0.15.7"
 base64 = "0.23.1"
 walkdir = "2.5.0"
 uuid = { version = "1", features = ["v4"] }
 regex = "1"
+# Used by the optional, git-ignored src/private/encrypt.rs (see build.rs,
+# cfg has_encrypt). Unused in builds without it, but keep them.
 aes = "0.8"
 getrandom = "0.4"
 
