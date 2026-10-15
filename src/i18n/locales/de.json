@@ -24,32 +24,6 @@
       "advancedHint": "Aktiviere den erweiterten Modus, um diese Funktion zu nutzen"
     },
     "disclaimer": "<strong>Haftungsausschluss:</strong> Eine gültige Actions & Stuff-Lizenz ist für die legale Nutzung dieses Patchers erforderlich!",
-    "motd": {
-      "offlineDevPreviewTitle": "Vorschau: Dienst offline (Dev-Modus)",
-      "offlineDevPreviewMessage": "Dies ist nur eine Vorschau der Offline-Box. Die API ist derzeit tatsächlich ONLINE.",
-      "offlineDevTitle": "Dienst offline (Dev-Modus)",
-      "offlineDevMessage": "Verbindung zum Chaos-Dev-Backend fehlgeschlagen. Diese Box ist nur im Dev-Modus sichtbar."
-    },
-    "publish": {
-      "noLibraryFolderTitle": "Veröffentlichung nicht konfiguriert",
-      "noLibraryFolderMessage": "Lege zuerst deinen Patch-Bibliotheks-Ordner fest.\n\nApp-Einstellungen, Patch-Creator-Standardoptionen, Patch-Bibliotheks-Repository-Ordner.",
-      "failedTitle": "Veröffentlichung fehlgeschlagen",
-      "failedMessage": "Veröffentlichung fehlgeschlagen:\n\n{error}",
-      "alreadyPublishedTitle": "Bereits veröffentlicht",
-      "alreadyPublishedMessage": "„{name}“ ist bereits in der Patch-Bibliothek vorhanden.\n\nEinen Pull Request öffnen, der ihn durch die soeben erstellte Version ersetzt?",
-      "openedTitle": "Veröffentlicht",
-      "openedMessage": "Pull Request geöffnet:\n\n{url}",
-      "form": {
-        "title": "In der Patch-Bibliothek veröffentlichen",
-        "intro": "Öffnet einen Pull Request im Repository der Patch-Bibliothek, statt direkt zu pushen. So kann der Patch geprüft werden, bevor er alle erreicht.",
-        "creatorLabel": "Dein Name / Handle",
-        "creatorPlaceholder": "Wird als Ersteller des Patches angezeigt",
-        "titleLabel": "Titel des Pull Requests",
-        "descriptionLabel": "Beschreibung <span style=\"color: var(--text-muted); font-weight: 400;\">(optional)</span>",
-        "descriptionPlaceholder": "Was hat sich in diesem Patch geändert?",
-        "submitBtn": "Pull Request öffnen"
-      }
-    },
     "versionMismatch": {
       "title": "Versionskonflikt",
       "message": "Achtung: Die ausgewählte Patch-Version ({selected}) weicht vom installierten Pack ab, das gepatcht wird ({detected}).\n\nEin Patch, der für eine andere Version erstellt wurde, schlägt fehl.\n\nMöchtest du trotzdem fortfahren?"
@@ -270,34 +244,6 @@
         "failed": "Entpacken fehlgeschlagen:\n{error}"
       }
     },
-    "genpatch": {
-      "publishing": "Wird veröffentlicht...",
-      "title": "Patch erstellen (VCDIFF)",
-      "description": "Erstellt verschlüsselte und entschlüsselte .vcdiff-Patch-Dateien aus Quell- und gepatchten Pack-Verzeichnissen. Entspricht dem V2-Patch-Creator-Workflow.",
-      "targetFolderLabel": "1. Zielordner <span class=\"label-hint\">(deine modifizierte/gepatchte Version)</span>",
-      "decryptedFolderLabel": "2. Entschlüsselter Quellordner <span class=\"label-hint\">(Vanilla-Baseline)</span>",
-      "encryptedFolderLabel": "3. Verschlüsselter Quellordner <span class=\"label-hint\">(Premium-Cache / Marketplace)</span>",
-      "outputDirLabel": "Ausgabeordner <span class=\"label-hint\">(wo .vcdiff-Dateien gespeichert werden)</span>",
-      "noOutputDirSelected": "Kein Ausgabeordner ausgewählt",
-      "packVersionLabel": "Pack-Version",
-      "packVersionPlaceholder": "z. B. 1.10.1",
-      "patchVersionLabel": "Patch-Version",
-      "patchVersionPlaceholder": "z. B. 1.1",
-      "injectManifest": "Benutzerdefiniertes Manifest einfügen",
-      "encryptTarget": "Gepatchtes Pack verschlüsseln",
-      "publishToLibrary": "In Patch-Bibliothek veröffentlichen",
-      "createPatchesBtn": "Patches erstellen",
-      "publishBtn": "In Bibliothek veröffentlichen",
-      "console": {
-        "heading": "Patch-Creator-Log",
-        "copyTooltip": "Log kopieren",
-        "clearTooltip": "Leeren"
-      },
-      "alerts": {
-        "missingPaths": "Bitte fülle alle vier Ordnerpfade aus, bevor du Patches erstellst.",
-        "failed": "Patch-Erstellung fehlgeschlagen:\n{error}"
-      }
-    },
     "brarchive": {
       "title": "Brarchive entpacken",
       "description": "Durchsucht ein Arbeitsverzeichnis rekursiv, deserialisiert und entpackt <code>.brarchive</code>-Inhalte und bereinigt temporäre Pointer-Dateien.",
@@ -433,58 +379,6 @@
       "deleteError": "❌ Löschen fehlgeschlagen: {error}"
     }
   },
-  "tabRelease": {
-    "title": "📦 Release-Builder",
-    "description": "Versions-Metadaten bearbeiten und einen verteilbaren Release des Patchers erstellen.",
-    "versionEditor": {
-      "title": "Versions-Editor",
-      "appVersionLabel": "App-Version (tauri.conf.json)",
-      "placeholder": "z. B. 3.0.1",
-      "applyBtn": "Übernehmen",
-      "loadingVersion": "Aktuelle Version wird geladen...",
-      "current": "Aktuell: {version}",
-      "currentSaved": "Aktuell: {version} (gespeichert)",
-      "adjustmentsLabel": "Versions-Anpassungen:",
-      "releaseTypeLabel": "Release-Typ",
-      "types": {
-        "stable": "Stabil",
-        "beta": "Beta-Version (_b)",
-        "alpha": "Alpha-Version (_a)"
-      }
-    },
-    "buildActions": {
-      "title": "Build-Aktionen",
-      "buildAllTitle": "Alles erstellen (Installer + Portable)",
-      "buildAllDesc": "Erstellt MSI, NSIS und Portable-exe",
-      "buildAllBtn": "Alles erstellen",
-      "buildInstallersTitle": "Nur Installer erstellen",
-      "buildInstallersDesc": "Erstellt MSI & NSIS",
-      "buildInstallersBtn": "Installer erstellen",
-      "buildPortableTitle": "Nur Portable erstellen",
-      "buildPortableDesc": "Erstellt Portable-exe",
-      "buildPortableBtn": "Portable erstellen",
-      "openBundleTitle": "Bundle-Ordner öffnen",
-      "openBundleDesc": "Öffnet den versionierten Release-Ordner",
-      "openBundleBtn": "Ordner öffnen"
-    },
-    "console": {
-      "heading": "Build-Log",
-      "copyTooltip": "Log kopieren",
-      "clearTooltip": "Leeren"
-    },
-    "confirmOverwrite": {
-      "title": "Build existiert bereits",
-      "message": "Ein Release-Build für Version v{version} existiert bereits im Ausgabeordner.\n\nMöchtest du ihn überschreiben?",
-      "overwriteBtn": "Überschreiben"
-    },
-    "alerts": {
-      "enterVersion": "Bitte gib eine Versionsnummer ein.",
-      "updateVersionFailed": "Fehler beim Aktualisieren der App-Version:\n{error}",
-      "buildFailed": "Fehler beim Ausführen des Release-Builds:\n{error}",
-      "openBundleFailed": "Fehler beim Öffnen des Bundle-Ordners:\n{error}",
-      "openPatchesFailed": "Fehler beim Öffnen des Patches-Ordners:\n{error}"
-    }
-  },
   "modal": {
     "notificationTitle": "Benachrichtigung",
     "confirmTitle": "Bestätigen",
@@ -544,7 +438,7 @@
     },
     "language": {
       "label": "Sprache",
-      "hint": "Log- und Konsolenausgabe bleibt auf Englisch."
+      "hint": "Logs werden in deiner Sprache angezeigt, aber auf Englisch kopiert und gesendet."
     },
     "defaultPatcherMode": {
       "label": "Standard-Patcher-Modus",
@@ -572,12 +466,6 @@
       "keepOnlyRecent": "Nur den zuletzt verwendeten Patch behalten",
       "removeAll": "<i class=\"fas fa-trash-can\"></i> Alle Downloads entfernen"
     },
-    "patchCreator": {
-      "heading": "Patch-Creator-Standardoptionen",
-      "description": "Beim Veröffentlichen wird ein erstellter Patch in deinen lokalen Klon der Patch-Bibliothek kopiert und ein Pull Request dafür geöffnet. Nach dem Mergen erhält ihn jeder innerhalb einer Minute, ganz ohne Patcher-Update. Erfordert ein eingerichtetes Git und die GitHub CLI (<code>gh</code>).",
-      "repoFolderLabel": "Patch-Bibliotheks-Repository-Ordner",
-      "publishAfterCreate": "Nach dem Erstellen eines Patches veröffentlichen"
-    },
     "bugReporter": {
       "heading": "Fehlerbericht-Standardeinstellungen",
       "includeLogs": "Anwendungs-Logs beifügen",
@@ -592,23 +480,6 @@
       "notice": "Diese Daten sind <b>pseudonym</b>, nicht anonym",
       "noticeAfter": ", da Übermittlungen über eine dauerhafte Kennung verknüpft sind. Die Übermittlung ist ab dem ersten Start zustimmungspflichtig; danach wird nur dann eine Meldung gesendet, wenn sich dein Hardware-Hash ändert, nicht bei jedem Start. Hochgeladene Logs werden nach 30 Tagen automatisch gelöscht.",
       "openDiagnosticsFolder": "Diagnoseordner öffnen"
-    },
-    "diagnostics": {
-      "heading": "Diagnose & Tests",
-      "testGithubBtn": "GitHub-API testen",
-      "testBackendBtn": "Backend-Verbindung testen",
-      "testWorkspaceBtn": "Arbeitsbereichspfade testen",
-      "testingGithub": "GitHub-API wird getestet...",
-      "githubOnline": "✅ Online. Neueste Version: {tag}",
-      "githubStatusError": "❌ API gab Status zurück: {status}",
-      "githubFetchFailed": "❌ Abruf fehlgeschlagen: {error}",
-      "pingingBackend": "Rust-Backend wird angepingt...",
-      "backendResponding": "✅ Rust-Backend antwortet: {response}",
-      "backendError": "❌ Backend-Fehler: {error}",
-      "testingWorkspace": "Arbeitsbereichspfade werden getestet...",
-      "workspaceFound": "✅ Arbeitsbereich gefunden: {path}",
-      "workspaceUnknown": "Unbekannt, erweiterte Optionen prüfen",
-      "workspaceError": "❌ Arbeitsbereichsfehler: {error}"
     }
   }
 }

@@ -1,6 +1,6 @@
 // JavaScript Controller for Actions & Stuff RTX Patcher v3
 
-import { initI18n, setLocale, getLocale, getLocales, onLocaleChange, t, tPlural } from './i18n/index.js';
+import { initI18n, setLocale, getLocale, getLocales, onLocaleChange, t, tEn, tPlural, msg, msgPlural, renderMessage, LogMessage } from './i18n/index.js';
 
 // applyTranslations only reaches text annotated in index.html. Anything a
 // function writes into the DOM at runtime keeps the language it was rendered
@@ -34,6 +34,7 @@ onLocaleChange(() => {
     () => renderCleanerResults(),
     () => updateCleanerButtons(),
     () => updateConsoleHeightReadout(appSettings.consoleHeight),
+    () => repaintLogLines(),
   ];
 
   for (const region of regions) {
@@ -52,11 +53,14 @@ const { listen } = window.__TAURI__ ? window.__TAURI__.event : { listen: () => {
 // Listen for backend log messages and route them to correct UI console
 if (window.__TAURI__) {
   listen('app-log', (event) => {
-    const { container, message, log_type } = event.payload;
+    const { container, message, log_type, key, vars } = event.payload;
+    // Keyed backend lines translate like any other; `message` is their English
+    // text, shown as is if this frontend does not know the key.
+    const line = key ? new LogMessage(key, vars, message) : message;
     if (container === 'main') {
-      log(message, log_type);
+      log(line, log_type);
     } else {
-      logTo(container, message, log_type);
+      logTo(container, line, log_type);
     }
   });
 }
@@ -157,12 +161,56 @@ const versionSelectGroup = document.getElementById('version-select-group');
 const consoleLogs = document.getElementById('console-logs');
 
 // Console Log Helpers
-function log(msg, type = 'info') {
+//
+// A log line is a LogMessage (see i18n/index.js), or a plain string for text
+// that is data rather than prose (raw backend/tool output, error text). Each
+// line keeps its message, so it is shown in the active language, repainted on
+// a language switch, and copied or exported in English.
+function logLineText(line, english = false) {
+  const entry = line._log;
+  if (entry) {
+    const text = renderMessage(entry.msg, { english });
+    return entry.time ? `[${entry.time}] ${text}` : text;
+  }
+  // Static placeholder lines carry a plain data-i18n key instead.
+  const key = line.getAttribute('data-i18n');
+  if (key) return english ? tEn(key) : t(key);
+  return line.innerText;
+}
+
+function makeLogLine(m, type, { timestamp = true } = {}) {
   const line = document.createElement('div');
   line.className = `log-line ${type}`;
-  line.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
-  consoleLogs.appendChild(line);
-  consoleLogs.scrollTop = consoleLogs.scrollHeight;
+  line._log = { msg: m, time: timestamp ? new Date().toLocaleTimeString() : null };
+  line.innerText = logLineText(line);
+  return line;
+}
+
+function appendLogLine(el, m, type) {
+  el.appendChild(makeLogLine(m, type));
+  el.scrollTop = el.scrollHeight;
+}
+
+// Empties a console down to one untimed status line.
+function resetLog(el, m, type = 'system') {
+  if (!el) return;
+  el.replaceChildren(makeLogLine(m, type, { timestamp: false }));
+}
+
+function repaintLogLines() {
+  document.querySelectorAll('.log-line').forEach(line => {
+    if (line._log) line.innerText = logLineText(line);
+  });
+}
+
+// Every log line under `root`, in English, one per line.
+function englishLogText(root = document) {
+  return Array.from(root.querySelectorAll('.log-line'))
+    .map(l => logLineText(l, true)).join('\n');
+}
+
+function log(m, type = 'info') {
+  appendLogLine(consoleLogs, m, type);
 }
 
 // Shows a busy label on a button while `fn` runs. A button that carries an
@@ -182,18 +230,14 @@ async function withBusyLabel(btn, busyHtml, fn) {
   }
 }
 
-function logTo(container, msg, type = 'info') {
+function logTo(container, m, type = 'info') {
   const el = document.getElementById(container);
   if (!el) return;
-  const line = document.createElement('div');
-  line.className = `log-line ${type}`;
-  line.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
-  el.appendChild(line);
-  el.scrollTop = el.scrollHeight;
+  appendLogLine(el, m, type);
 }
 
 function clearConsole() {
-  consoleLogs.innerHTML = '<div class="log-line system">Console cleared. Waiting for process...</div>';
+  resetLog(consoleLogs, msg('log.placeholder.cleared'));
 }
 
 // Update Status Helper
@@ -231,13 +275,13 @@ function resetSteps() {
   }
 }
 
-// Copy log helper
+// Copy log helper. Always copies English, whatever language is on screen, so
+// pasted logs read the same for whoever has to debug them.
 function copyLogsFromEl(elId, btnId) {
   const el = document.getElementById(elId);
   const btn = document.getElementById(btnId);
   if (!el) return;
-  const text = Array.from(el.querySelectorAll('.log-line'))
-    .map(l => l.innerText).join('\n');
+  const text = englishLogText(el);
   navigator.clipboard.writeText(text).then(() => {
     if (btn) {
       btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check"><path d="M20 6 9 17l-5-5"/></svg>`;
@@ -435,11 +479,11 @@ function showPublishDetailsForm({ creator = '', title = '', description = '' } =
 // pull request for it, so CI there (hashing, upload, catalogue rebuild) runs
 // against a reviewable change instead of a direct push to main.
 async function publishPatchToLibrary(patchFolder, { packVer, patchVer } = {}) {
-  const gLog = (msg, type = 'info') => logTo('genpatch-logs', msg, type);
+  const gLog = (m, type = 'info') => logTo('genpatch-logs', m, type);
   const libraryDir = appSettings.patchLibraryDir;
 
   if (!libraryDir) {
-    gLog("No patch library folder is set. Choose it in App Settings under Patch Creator.", 'warning');
+    gLog(msg('log.publish.noLibraryFolder'), 'warning');
     await showAlert(
       t('tabPatcher.publish.noLibraryFolderMessage'),
       t('tabPatcher.publish.noLibraryFolderTitle')
@@ -457,7 +501,7 @@ async function publishPatchToLibrary(patchFolder, { packVer, patchVer } = {}) {
     title: defaultTitle,
     description: appSettings.lastPatchPrDescription || '',
   });
-  if (!details) { gLog("Publishing cancelled.", 'warning'); return false; }
+  if (!details) { gLog(msg('log.publish.cancelled'), 'warning'); return false; }
 
   const { creator, title, description } = details;
   // Remembered for next time, so these fields don't need retyping.
@@ -471,7 +515,7 @@ async function publishPatchToLibrary(patchFolder, { packVer, patchVer } = {}) {
   });
 
   const openPr = async (prUrl) => {
-    gLog(`Opened pull request: ${prUrl}`, 'success');
+    gLog(msg('log.publish.openedPr', { url: prUrl }), 'success');
     await showAlert(t('tabPatcher.publish.openedMessage', { url: prUrl }), t('tabPatcher.publish.openedTitle'));
     try { await invoke("open_url", { url: prUrl }); } catch (_) {}
   };
@@ -482,7 +526,7 @@ async function publishPatchToLibrary(patchFolder, { packVer, patchVer } = {}) {
   } catch (err) {
     const text = String(err);
     if (!text.includes("ALREADY_EXISTS")) {
-      gLog(`Publishing failed: ${text}`, 'error');
+      gLog(msg('log.publish.failed', { error: text }), 'error');
       await showAlert(
         t('tabPatcher.publish.failedMessage', { error: text }),
         t('tabPatcher.publish.failedTitle')
@@ -495,12 +539,12 @@ async function publishPatchToLibrary(patchFolder, { packVer, patchVer } = {}) {
       t('tabPatcher.publish.alreadyPublishedMessage', { name }),
       t('tabPatcher.publish.alreadyPublishedTitle')
     );
-    if (!replace) { gLog("Publishing cancelled; the existing entry was kept.", 'warning'); return false; }
+    if (!replace) { gLog(msg('log.publish.cancelledKept'), 'warning'); return false; }
     try {
       const prUrl = await attempt(true);
       await openPr(prUrl);
     } catch (err2) {
-      gLog(`Publishing failed: ${err2}`, 'error');
+      gLog(msg('log.publish.failed', { error: err2 }), 'error');
       await showAlert(
         t('tabPatcher.publish.failedMessage', { error: err2 }),
         t('tabPatcher.publish.failedTitle')
@@ -588,12 +632,12 @@ function setupCatalogueAutoRefresh() {
 // Safe to call more than once: it only rebuilds the dropdowns. The one-time
 // event wiring lives in wireVersionControls().
 async function loadPatchConfigs({ quiet = false } = {}) {
-  const say = (msg, type) => { if (!quiet) log(msg, type); };
+  const say = (m, type) => { if (!quiet) log(m, type); };
   let newlyAdded = 0;
   try {
-    say("Loading patch configurations...");
+    say(msg('log.catalogue.loading'));
     const bundled = await invoke("get_patch_configs");
-    say(`Found ${bundled.length} bundled patch configuration profile(s).`);
+    say(msg('log.catalogue.bundledFound', { count: bundled.length }));
 
     // Merge in the remote patch library. Bundled entries win on conflict, so a
     // patch shipped inside the installer is always preferred over downloading
@@ -605,15 +649,17 @@ async function loadPatchConfigs({ quiet = false } = {}) {
       remote = (index.entries || []).filter(
         e => !bundledKeys.has(`${e.packVersion}|${e.patchVersion || "1.0"}`)
       );
-      say(`Loaded ${remote.length} downloadable patch entries from the patch library (source: ${index.source}${index.updated ? `, updated ${index.updated}` : ''}).`);
+      say(index.updated
+        ? msg('log.catalogue.remoteLoadedUpdated', { count: remote.length, source: index.source, updated: index.updated })
+        : msg('log.catalogue.remoteLoaded', { count: remote.length, source: index.source }));
       if (index.source === 'cache') {
-        say("The patch library could not be reached; using the last known catalogue.", 'warning');
+        say(msg('log.catalogue.usingCache'), 'warning');
       } else if (index.source === 'none') {
-        say("No patch library catalogue is available. Only bundled patches can be used.", 'warning');
+        say(msg('log.catalogue.noCatalogue'), 'warning');
       }
       lastCatalogueStamp = index.updated || null;
     } catch (err) {
-      say(`Could not load the remote patch library: ${err}`, 'warning');
+      say(msg('log.catalogue.remoteFailed', { error: err }), 'warning');
     }
 
     // Announce anything that appeared since the last look, so a patch released
@@ -622,13 +668,16 @@ async function loadPatchConfigs({ quiet = false } = {}) {
     const nowKeys = new Set(patchConfigsKeys([...bundled, ...remote]));
     if (seenBefore) {
       const added = [...nowKeys].filter(k => !seenBefore.has(k));
-      added.forEach(k => log(`New patch available: ${k.replace('|', ' patch ')}`, 'success'));
+      added.forEach(k => {
+        const [pack, patch] = k.split('|');
+        log(msg('log.catalogue.newPatch', { pack, patch }), 'success');
+      });
       newlyAdded = added.length;
     }
     knownPatchKeys = nowKeys;
 
     patchConfigs = [...bundled, ...remote];
-    say(`${patchConfigs.length} patch configuration profile(s) available in total.`);
+    say(msg('log.catalogue.totalAvailable', { count: patchConfigs.length }));
 
     // Extract unique packVersion strings and sort descending
     const uniqueAsVersions = Array.from(new Set(patchConfigs.map(c => c.packVersion)))
@@ -655,7 +704,7 @@ async function loadPatchConfigs({ quiet = false } = {}) {
     // After the rebuild, so the notice is not immediately overwritten by it.
     if (newlyAdded) flashPatchListUpdated(newlyAdded);
   } catch (err) {
-    log(`Failed to load patch configs: ${err}`, 'error');
+    log(msg('log.catalogue.loadFailed', { error: err }), 'error');
   }
 }
 
@@ -745,7 +794,7 @@ function setupConsoleResize() {
 
   handle.addEventListener('dblclick', () => {
     setConsoleHeight(CONSOLE_HEIGHT_DEFAULT);
-    log(`Console height reset to ${CONSOLE_HEIGHT_DEFAULT}px.`);
+    log(msg('log.app.consoleHeightReset', { px: CONSOLE_HEIGHT_DEFAULT }));
   });
 
   // A saved height can exceed the window after a resize or a screen change.
@@ -794,10 +843,10 @@ function renderDownloadedPatchesSettings() {
       btn.innerText = t('tabPatcher.cache.removing');
       try {
         const freed = await invoke("delete_cached_patch", { slug: entry.slug });
-        log(`Removed downloaded patch ${entry.slug} (${(freed / 1048576).toFixed(1)} MB freed).`, 'success');
+        log(msg('log.cache.removed', { slug: entry.slug, mb: (freed / 1048576).toFixed(1) }), 'success');
         await refreshCachedPatches();
       } catch (err) {
-        log(`Could not remove the downloaded patch: ${err}`, 'error');
+        log(msg('log.cache.removeFailed', { error: err }), 'error');
         btn.disabled = false;
         btn.innerText = t('tabPatcher.cache.remove');
       }
@@ -884,10 +933,10 @@ function wireVersionControls() {
       btnRemoveSelected.disabled = true;
       try {
         const freed = await invoke("delete_cached_patch", { slug });
-        log(`Removed downloaded patch ${slug} (${(freed / 1048576).toFixed(1)} MB freed). It will be downloaded again next time it is used.`, 'success');
+        log(msg('log.cache.removedRedownload', { slug, mb: (freed / 1048576).toFixed(1) }), 'success');
         await refreshCachedPatches();
       } catch (err) {
-        log(`Could not remove the downloaded patch: ${err}`, 'error');
+        log(msg('log.cache.removeFailed', { error: err }), 'error');
       } finally {
         btnRemoveSelected.disabled = false;
       }
@@ -911,11 +960,11 @@ function wireVersionControls() {
       try {
         await withBusyLabel(btnClearCache, `<i class="fas fa-spinner fa-spin"></i> ${t('tabPatcher.cache.removing')}`, async () => {
           const [removed, freed] = await invoke("clear_patch_cache");
-          log(`Removed ${removed} downloaded patch(es), freeing ${(freed / 1048576).toFixed(1)} MB.`, 'success');
+          log(msg('log.cache.clearedAll', { count: removed, mb: (freed / 1048576).toFixed(1) }), 'success');
           await refreshCachedPatches();
         });
       } catch (err) {
-        log(`Could not clear the downloaded patches: ${err}`, 'error');
+        log(msg('log.cache.clearFailed', { error: err }), 'error');
       } finally {
         btnClearCache.disabled = cachedPatchInfo.length === 0;
       }
@@ -929,11 +978,11 @@ function wireVersionControls() {
 // immediately and emits no progress events.
 async function downloadPatchVariant(config, patchKey, variant) {
   const slug = config.slug;
-  if (!slug) throw "Remote patch entry is missing its id (slug).";
+  if (!slug) throw msg('log.download.slugMissing');
 
   const totalMb = variant.size ? (variant.size / 1048576).toFixed(1) : "?";
-  log(`Patch file for pack ${config.packVersion} (patch ${config.patchVersion || "1.0"}) is not bundled; fetching it from the patch library.`);
-  log(`  Variant: ${patchKey}  |  Size: ${totalMb} MB`);
+  log(msg('log.download.notBundled', { packVersion: config.packVersion, patchVersion: config.patchVersion || "1.0" }));
+  log(msg('log.download.variant', { variant: patchKey, mb: totalMb }));
   updateStatus(
     t('tabPatcher.status.preparingTitle'),
     t('tabPatcher.status.downloading', { patch: patchKey, total: totalMb }),
@@ -975,7 +1024,7 @@ async function downloadPatchVariant(config, patchKey, variant) {
     });
 
     updateProgress(75);
-    log(`Patch file ready: "${path}"`, 'success');
+    log(msg('log.download.ready', { path }), 'success');
     return path;
   } finally {
     if (unlisten) {
@@ -1118,9 +1167,11 @@ function samePackVersion(a, b) {
 // published for its version. Not a failure: the user just has to wait.
 class NoPatchForVersion extends Error {
   constructor(packVersion) {
-    super(packVersion
-      ? `No patch is available for Actions & Stuff ${packVersion} yet.`
-      : 'No patch is available for the installed version of Actions & Stuff yet.');
+    const logMessage = packVersion
+      ? msg('log.resolve.noPatchForVersion', { version: packVersion })
+      : msg('log.resolve.noPatchForInstalled');
+    super(logMessage.toString());
+    this.logMessage = logMessage;
     this.packVersion = packVersion || null;
   }
 }
@@ -1191,7 +1242,7 @@ function resolvePatchConfig(selectionMode, detectedCandidate) {
       });
 
       if (exactMatch) {
-        log(`Patch config resolved via stats/logo_hash match: pack ${exactMatch.packVersion} (patch ${exactMatch.patchVersion || "1.0"})`);
+        log(msg('log.resolve.byStats', { packVersion: exactMatch.packVersion, patchVersion: exactMatch.patchVersion || "1.0" }));
         return exactMatch;
       }
 
@@ -1199,7 +1250,7 @@ function resolvePatchConfig(selectionMode, detectedCandidate) {
       if (detectedCandidate.version && detectedCandidate.version !== 'Unknown') {
         const verMatch = sortedConfigs.find(c => samePackVersion(c.packVersion, detectedCandidate.version));
         if (verMatch) {
-          log(`Patch config resolved via version string fallback: pack ${verMatch.packVersion} (patch ${verMatch.patchVersion || "1.0"})`);
+          log(msg('log.resolve.byVersion', { packVersion: verMatch.packVersion, patchVersion: verMatch.patchVersion || "1.0" }));
           return verMatch;
         }
       }
@@ -1213,13 +1264,13 @@ function resolvePatchConfig(selectionMode, detectedCandidate) {
     } else if (typeof detectedCandidate === 'string' && detectedCandidate !== 'Unknown') {
       const verMatch = sortedConfigs.find(c => samePackVersion(c.packVersion, detectedCandidate));
       if (verMatch) {
-        log(`Patch config resolved via version string fallback: pack ${verMatch.packVersion} (patch ${verMatch.patchVersion || "1.0"})`);
+        log(msg('log.resolve.byVersion', { packVersion: verMatch.packVersion, patchVersion: verMatch.patchVersion || "1.0" }));
         return verMatch;
       }
       throw new NoPatchForVersion(detectedCandidate);
     }
     // Default to the highest pack version config
-    log(`Could not confidently match a detected pack to a patch config, defaulting to the newest available (pack ${(sortedConfigs[0] || patchConfigs[0])?.packVersion})`, 'warning');
+    log(msg('log.resolve.noConfidentMatch', { packVersion: (sortedConfigs[0] || patchConfigs[0])?.packVersion }), 'warning');
     return sortedConfigs[0] || patchConfigs[0];
   } else {
     const selAsVal = document.getElementById('select-as-version').value;
@@ -1242,7 +1293,7 @@ async function openInExplorer(path) {
   try {
     await invoke("open_in_explorer", { path });
   } catch (err) {
-    log(`Could not open explorer: ${err}`, 'warning');
+    log(msg('log.app.explorerFailed', { error: err }), 'warning');
   }
 }
 
@@ -1281,10 +1332,12 @@ async function bindPickers() {
   
   try {
     defaultPaths = await invoke("get_default_paths");
-    const edition = (defaultPaths.premium_cache || "").includes("MinecraftUWP") ? "UWP (Microsoft Store)" : "GDK (Roaming)";
-    log(`Detected Minecraft install (edition: ${edition}), premium_cache: ${defaultPaths.premium_cache}, resource_packs: ${defaultPaths.resource_packs}`);
+    const edition = (defaultPaths.premium_cache || "").includes("MinecraftUWP")
+      ? msg('log.app.editionUwp')
+      : msg('log.app.editionGdk');
+    log(msg('log.app.detectedInstall', { edition, premiumCache: defaultPaths.premium_cache, resourcePacks: defaultPaths.resource_packs }));
   } catch (err) {
-    log(`Could not detect default Minecraft install paths: ${err}`, 'warning');
+    log(msg('log.app.detectInstallFailed', { error: err }), 'warning');
     defaultPaths = {};
   }
 
@@ -1309,10 +1362,10 @@ async function bindPickers() {
         }
         if (result) {
           input.value = result;
-          log(`Selected: ${result}`);
+          log(msg('log.app.selected', { path: result }));
         }
       } catch (err) {
-        log(`Picker error: ${err}`, 'error');
+        log(msg('log.app.pickerError', { error: err }), 'error');
       }
     });
   };
@@ -1400,12 +1453,12 @@ function setupUtilities() {
     }
     
     try {
-      log(`Starting deterministic pack of: ${src}`);
+      log(msg('log.utils.packStart', { path: src }));
       await invoke("pack_folder", { folderPath: src, outputZip: dst });
-      log(`Successfully created deterministic pack at ${dst}`, 'success');
+      log(msg('log.utils.packDone', { path: dst }), 'success');
       await showAlert(t('tabUtils.pack.alerts.success', { path: dst }));
     } catch (err) {
-      log(`Packing failed: ${err}`, 'error');
+      log(msg('log.utils.packFailed', { error: err }), 'error');
       await showAlert(t('tabUtils.pack.alerts.failed', { error: err }));
     }
   });
@@ -1420,12 +1473,12 @@ function setupUtilities() {
     }
     
     try {
-      log(`Extracting: ${src} to ${dst}`);
+      log(msg('log.utils.extractStart', { src, dst }));
       await invoke("extract_archive", { zipPath: src, outputDir: dst });
-      log(`Successfully extracted files to ${dst}`, 'success');
+      log(msg('log.utils.extractDone', { path: dst }), 'success');
       await showAlert(t('tabUtils.extract.alerts.success'));
     } catch (err) {
-      log(`Extraction failed: ${err}`, 'error');
+      log(msg('log.utils.extractFailed', { error: err }), 'error');
       await showAlert(t('tabUtils.extract.alerts.failed', { error: err }));
     }
   });
@@ -1447,13 +1500,13 @@ function setupUtilities() {
     }
 
     const gLog = document.getElementById('genpatch-logs');
-    const gLog_fn = (msg, type = 'info') => logTo('genpatch-logs', msg, type);
+    const gLog_fn = (m, type = 'info') => logTo('genpatch-logs', m, type);
 
-    gLog.innerHTML = '<div class="log-line system">Starting patch creation...</div>';
+    resetLog(gLog, msg('log.placeholder.genpatchStarting'));
     document.getElementById('btn-run-gen-patch').disabled = true;
 
     try {
-      gLog_fn(`Pack Version: ${packVer}  |  Patch Version: ${patchVer}`);
+      gLog_fn(msg('log.genpatch.versions', { pack: packVer, patch: patchVer }));
 
       if (injectManifest) {
           // identitySourceDir always points at the Encrypted Dir, not whichever
@@ -1461,26 +1514,26 @@ function setupUtilities() {
           // easily already carry a custom manifest from a previous run (and
           // so no longer have the pack's real purchased uuid at all), while
           // the raw Encrypted Dir — untouched Marketplace cache — always does.
-          gLog_fn(`  Injecting baseline custom manifest into source directories...`);
+          gLog_fn(msg('log.genpatch.injectingBaseline'));
           try {
               await invoke("inject_custom_manifest_to_target", { targetDir: decryptedDir, packVer: "", patchVer: "", identitySourceDir: encryptedDir });
           } catch (e) {
-              gLog_fn(`  ⚠️ Could not inject baseline manifest: ${e}`, "warning");
+              gLog_fn(msg('log.genpatch.injectBaselineFailed', { error: e }), "warning");
           }
 
-          gLog_fn(`  Injecting versioned custom manifest into patched target...`);
+          gLog_fn(msg('log.genpatch.injectingVersioned'));
           try {
               await invoke("inject_custom_manifest_to_target", { targetDir: patchedDir, packVer: packVer, patchVer: patchVer, identitySourceDir: encryptedDir });
           } catch (e) {
-              gLog_fn(`  ⚠️ Could not inject versioned manifest: ${e}`, "warning");
+              gLog_fn(msg('log.genpatch.injectVersionedFailed', { error: e }), "warning");
           }
       }
 
       // Step 1: Compress the Encrypted (Marketplace) source → encrypted.vcdiff source
-      gLog_fn(`[1/4] Compressing encrypted source: ${encryptedDir}`);
+      gLog_fn(msg('log.genpatch.step1', { path: encryptedDir }));
       const encZip = outputDir + "/_temp_source_enc.zip";
       await invoke("pack_folder", { folderPath: encryptedDir, outputZip: encZip });
-      gLog_fn(`  ✓ Encrypted source ZIP ready`);
+      gLog_fn(msg('log.genpatch.encSourceReady'));
 
       // Step 2: Compress the Decrypted (vanilla) source → decrypted.vcdiff source
       // Excludes the same 4 files normalize_extracted_pack strips from a real
@@ -1490,14 +1543,14 @@ function setupUtilities() {
       // the patch's expected source, which then can never byte-match what
       // normalize_extracted_pack produces at apply time — xdelta3 fails with
       // a target window checksum mismatch on every single application.
-      gLog_fn(`[2/4] Compressing decrypted source: ${decryptedDir}`);
+      gLog_fn(msg('log.genpatch.step2', { path: decryptedDir }));
       const decZip = outputDir + "/_temp_source_dec.zip";
       const NORMALIZED_AWAY_FILES = ["contents.json", "signatures.json", "splashes.json", "sounds.json"];
       await invoke("pack_folder", { folderPath: decryptedDir, outputZip: decZip, excludeNames: NORMALIZED_AWAY_FILES });
-      gLog_fn(`  ✓ Decrypted source ZIP ready`);
+      gLog_fn(msg('log.genpatch.decSourceReady'));
 
       // Step 3: Compress patched (target) folder → target ZIP
-      gLog_fn(`[3/4] Preparing patched target: ${patchedDir}`);
+      gLog_fn(msg('log.genpatch.step3', { path: patchedDir }));
       const tgtZip = outputDir + "/_temp_target.zip";
       const tempTargetDir = outputDir + "/_temp_target_dir";
 
@@ -1516,7 +1569,7 @@ function setupUtilities() {
       }
 
       await invoke("pack_folder", { folderPath: tempTargetDir, outputZip: tgtZip });
-      gLog_fn(`  ✓ Patched target ZIP ready`);
+      gLog_fn(msg('log.genpatch.targetReady'));
 
       // The manifest is final by now, which matters: the encrypted pack's
       // signatures.json holds the manifest hash.
@@ -1524,11 +1577,11 @@ function setupUtilities() {
       if (encryptTarget) {
         await invoke("encrypt_patch_target", { targetDir: tempTargetDir });
         await invoke("pack_folder", { folderPath: tempTargetDir, outputZip: encTgtZip });
-        gLog_fn(`  ✓ Encrypted patched target ZIP ready`);
+        gLog_fn(msg('log.genpatch.encTargetReady'));
       }
 
       // Step 4: Generate both patches
-      gLog_fn(`[4/4] Generating VCDIFF patches...`);
+      gLog_fn(msg('log.genpatch.step4'));
 
       const folderName = `Actions & Stuff for RTX ${packVer} V${patchVer}`;
       const finalOutputDir = outputDir + "/" + folderName;
@@ -1536,22 +1589,22 @@ function setupUtilities() {
       const encPatch = finalOutputDir + "/encrypted.vcdiff";
       const decPatch = finalOutputDir + "/decrypted.vcdiff";
 
-      gLog_fn(`  Encoding encrypted.vcdiff (source: encrypted, target: patched)...`);
+      gLog_fn(msg('log.genpatch.encodingEnc'));
       await invoke("generate_xdelta_patch", { sourceFile: encZip, targetFile: encTgtZip, patchFile: encPatch });
-      gLog_fn(`  ✓ encrypted.vcdiff created`);
+      gLog_fn(msg('log.genpatch.encCreated'));
 
-      gLog_fn(`  Encoding decrypted.vcdiff (source: decrypted, target: patched)...`);
+      gLog_fn(msg('log.genpatch.encodingDec'));
       await invoke("generate_xdelta_patch", { sourceFile: decZip, targetFile: tgtZip, patchFile: decPatch });
-      gLog_fn(`  ✓ decrypted.vcdiff created`);
-      
+      gLog_fn(msg('log.genpatch.decCreated'));
+
       // Calculate patch stats from the encrypted directory
-      gLog_fn(`  Calculating patch stats from ${encryptedDir}...`);
+      gLog_fn(msg('log.genpatch.calcStats', { path: encryptedDir }));
       let patchStats = null;
       try {
           patchStats = await invoke("calculate_patch_stats", { folderPath: encryptedDir });
-          gLog_fn(`  ✓ Stats calculated: ${patchStats.files} files, ${patchStats.dirs} dirs`);
+          gLog_fn(msg('log.genpatch.statsDone', { files: patchStats.files, dirs: patchStats.dirs }));
       } catch (err) {
-          gLog_fn(`  ⚠️ Failed to calculate stats: ${err}`, "warning");
+          gLog_fn(msg('log.genpatch.statsFailed', { error: err }), "warning");
       }
 
       // Generate patch_config.json
@@ -1571,13 +1624,13 @@ function setupUtilities() {
           }
       };
       await invoke("write_text_file", { path: configPath, content: JSON.stringify(configData, null, 4) });
-      gLog_fn(`  ✓ patch_config.json created`);
+      gLog_fn(msg('log.genpatch.configCreated'));
 
       // Clean temp zips and folders
       await invoke("delete_folders", { folders: [encZip, decZip, tgtZip, encTgtZip, tempTargetDir] });
 
-      gLog_fn(`✅ All patches created successfully in: ${finalOutputDir}`, 'success');
-      gLog_fn(`   Pack: ${packVer}  |  Patch: ${patchVer}`, 'success');
+      gLog_fn(msg('log.genpatch.allDone', { path: finalOutputDir }), 'success');
+      gLog_fn(msg('log.genpatch.summary', { pack: packVer, patch: patchVer }), 'success');
 
       // Save current patch version persistently
       try {
@@ -1597,7 +1650,7 @@ function setupUtilities() {
         try {
           await publishPatchToLibrary(finalOutputDir, { packVer, patchVer });
         } catch (err) {
-          gLog_fn(`Publishing failed, but the patch files are fine: ${err}`, 'warning');
+          gLog_fn(msg('log.publish.failedPatchFine', { error: err }), 'warning');
         }
       }
 
@@ -1605,7 +1658,7 @@ function setupUtilities() {
       try { await invoke("open_in_explorer", { path: finalOutputDir }); } catch (_) {}
 
     } catch (err) {
-      gLog_fn(`❌ Patch creation failed: ${err}`, 'error');
+      gLog_fn(msg('log.genpatch.failed', { error: err }), 'error');
       await showAlert(t('tabUtils.genpatch.alerts.failed', { error: err }));
     } finally {
       document.getElementById('btn-run-gen-patch').disabled = false;
@@ -1617,7 +1670,7 @@ function setupUtilities() {
   if (btnCopyGenpatch) btnCopyGenpatch.addEventListener('click', () => copyLogsFromEl('genpatch-logs', 'btn-copy-genpatch-log'));
   const btnClearGenpatch = document.getElementById('btn-clear-genpatch-log');
   if (btnClearGenpatch) btnClearGenpatch.addEventListener('click', () => {
-    document.getElementById('genpatch-logs').innerHTML = '<div class="log-line system">Ready to create patches...</div>';
+    resetLog(document.getElementById('genpatch-logs'), msg('log.placeholder.genpatchReady'));
   });
 
   // Brarchive tool: extract switch, experimental geometry-rename switch, own console
@@ -1625,7 +1678,7 @@ function setupUtilities() {
   const brRename = document.getElementById('util-br-rename');
   const brRunBtn = document.getElementById('btn-run-util-br');
   const brResults = document.getElementById('util-br-results');
-  const brLog = (msg, type = 'info') => logTo('brarchive-logs', msg, type);
+  const brLog = (m, type = 'info') => logTo('brarchive-logs', m, type);
 
   const updateBrButton = () => {
     const ex = brExtract.checked, rn = brRename.checked;
@@ -1652,7 +1705,7 @@ function setupUtilities() {
 
   document.getElementById('btn-copy-br-log').addEventListener('click', () => copyLogsFromEl('brarchive-logs', 'btn-copy-br-log'));
   document.getElementById('btn-clear-br-log').addEventListener('click', () => {
-    document.getElementById('brarchive-logs').innerHTML = '<div class="log-line system">Log cleared.</div>';
+    resetLog(document.getElementById('brarchive-logs'), msg('log.placeholder.brarchiveCleared'));
   });
 
   const renderBrResults = (packs) => {
@@ -1718,12 +1771,12 @@ function setupUtilities() {
       const secs = ((performance.now() - t0) / 1000).toFixed(1);
       renderBrResults(res.packs || []);
       const errs = (res.packs || []).reduce((n, p) => n + p.errors.length, 0);
-      brLog(`Finished in ${secs}s.`, errs ? 'warning' : 'success');
+      brLog(msg('log.brarchive.finished', { secs }), errs ? 'warning' : 'success');
       if (rename && !(res.packs || []).some(p => p.renamed > 0) && !(res.packs || []).some(p => p.already_renamed)) {
-        brLog('Nothing was renamed. See the messages above.', 'warning');
+        brLog(msg('log.brarchive.nothingRenamed'), 'warning');
       }
     } catch (err) {
-      brLog(`Failed: ${err}`, 'error');
+      brLog(msg('log.brarchive.failed', { error: err }), 'error');
       await showAlert(t('tabUtils.brarchive.alerts.toolFailed', { error: err }));
     } finally {
       brRunBtn.textContent = label;
@@ -1816,7 +1869,10 @@ function setupUtilities() {
 async function loadOptionsProfiles() {
   try {
     optionsProfiles = await invoke("get_options_paths");
-    log(`Found ${optionsProfiles.length} options.txt profile(s): ${optionsProfiles.map(p => p.label).join(", ") || "none"}`);
+    log(msg('log.options.profilesFound', {
+      count: optionsProfiles.length,
+      labels: optionsProfiles.map(p => p.label).join(", ") || msg('log.options.none'),
+    }));
     const select = document.getElementById('options-file-select');
     select.innerHTML = `<option value="" data-i18n="tabRtxSettings.chooseProfile">${t('tabRtxSettings.chooseProfile')}</option>`;
 
@@ -1838,13 +1894,13 @@ async function loadOptionsProfiles() {
       }
     });
   } catch (err) {
-    log(`Failed to list options.txt profiles: ${err}`, 'error');
+    log(msg('log.options.profilesFailed', { error: err }), 'error');
   }
 }
 
 async function loadOptionsData(path) {
   try {
-    log(`Reading options file: ${path}`);
+    log(msg('log.options.reading', { path }));
     const data = await invoke("read_options", { path });
     
     const rtxKeys = {
@@ -1907,7 +1963,7 @@ async function loadOptionsData(path) {
     document.getElementById('btn-save-settings').disabled = false;
     document.getElementById('btn-best-settings').disabled = false;
   } catch (err) {
-    log(`Failed to read options: ${err}`, 'error');
+    log(msg('log.options.readFailed', { error: err }), 'error');
   }
 }
 
@@ -1925,12 +1981,12 @@ document.getElementById('btn-save-settings').addEventListener('click', async () 
   });
   
   try {
-    log(`Saving configuration edits...`);
+    log(msg('log.options.saving'));
     await invoke("write_options", { path: selectedOptionsPath, changes });
-    log(`Successfully updated options.txt config!`, 'success');
+    log(msg('log.options.saved'), 'success');
     await showAlert(t('tabRtxSettings.alerts.saveSuccess'));
   } catch (err) {
-    log(`Failed to write settings: ${err}`, 'error');
+    log(msg('log.options.saveFailed', { error: err }), 'error');
     await showAlert(t('tabRtxSettings.alerts.saveError', { error: err }));
   }
 });
@@ -1948,7 +2004,7 @@ document.getElementById('btn-best-settings').addEventListener('click', async () 
   if (db) db.checked = false;
   if (dm) dm.checked = false;
   
-  log("Automatically loaded best RTX settings into the editor. Click 'Apply Settings' to write them to options.txt.", "info");
+  log(msg('log.options.bestLoaded'), "info");
   await showAlert(t('tabRtxSettings.alerts.bestLoaded'));
 });
 
@@ -2044,14 +2100,14 @@ function renderCleanerResults() {
 }
 
 async function runCleanerScan({ quiet = false } = {}) {
-  if (!quiet) log("Scanning Minecraft folders for old RTX packs...");
+  if (!quiet) log(msg('log.cleaner.scanning'));
   cleanablePacksPaths = await invoke("get_cleanable_packs");
   cleanSelectedPaths = new Set(cleanablePacksPaths); // default to everything selected
   renderCleanerResults();
   if (!quiet) {
     log(cleanablePacksPaths.length === 0
-      ? "Scan finished. Clean state verified."
-      : `Scan finished. Found ${cleanablePacksPaths.length} cleanable paths.`);
+      ? msg('log.cleaner.scanClean')
+      : msg('log.cleaner.scanFound', { count: cleanablePacksPaths.length }));
   }
 }
 
@@ -2082,7 +2138,7 @@ async function deleteCleanerPaths(paths, description) {
   let deleted = 0;
   let failed = 0;
   try {
-    log(`Deleting ${paths.length} folder(s)...`);
+    log(msg('log.cleaner.deleting', { count: paths.length }));
     setCleanProgress(0, paths.length, tPlural('tabCleaner.progress.preparing', paths.length));
 
     for (let i = 0; i < paths.length; i++) {
@@ -2090,10 +2146,10 @@ async function deleteCleanerPaths(paths, description) {
       setCleanProgress(i, paths.length, t('tabCleaner.progress.deleting', { current: i + 1, total: paths.length, name }));
       try {
         const count = await invoke("delete_folders", { folders: [paths[i]] });
-        if (count > 0) { deleted++; } else { failed++; log(`Could not delete: ${paths[i]}`, 'warning'); }
+        if (count > 0) { deleted++; } else { failed++; log(msg('log.cleaner.couldNotDelete', { path: paths[i] }), 'warning'); }
       } catch (err) {
         failed++;
-        log(`Failed to delete "${paths[i]}": ${err}`, 'error');
+        log(msg('log.cleaner.deleteFailed', { path: paths[i], error: err }), 'error');
       }
     }
 
@@ -2101,7 +2157,9 @@ async function deleteCleanerPaths(paths, description) {
       ? tPlural('tabCleaner.progress.doneWithFailures', deleted, { failed })
       : tPlural('tabCleaner.progress.done', deleted);
     setCleanProgress(paths.length, paths.length, doneLabel);
-    log(`Cleaner: deleted ${deleted} folder(s)${failed ? `, ${failed} failed` : ''}.`, failed ? 'warning' : 'success');
+    log(failed
+      ? msg('log.cleaner.summaryWithFailures', { deleted, failed })
+      : msg('log.cleaner.summary', { deleted }), failed ? 'warning' : 'success');
   } finally {
     buttons.forEach(b => { b.disabled = false; });
     // Re-scan so the list reflects what is actually left, including anything
@@ -2118,7 +2176,7 @@ document.getElementById('btn-scan-cleaner').addEventListener('click', async () =
   try {
     await runCleanerScan();
   } catch (err) {
-    log(`Scan failed: ${err}`, 'error');
+    log(msg('log.cleaner.scanFailed', { error: err }), 'error');
   }
 });
 
@@ -2164,9 +2222,9 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
   document.querySelector('.controls-panel').classList.add('hidden-group');
   document.querySelector('.progress-panel').classList.remove('hidden-group');
   
-  log(`Starting patch pipeline in [${mode}] mode.`);
-  log(`Configuration selection mode: ${selectionMode}`);
-  log(`Automatic remnant cleanup option: ${cleanOld ? "Enabled" : "Disabled"}`);
+  log(msg('log.patcher.start', { mode }));
+  log(msg('log.patcher.selectionMode', { mode: selectionMode }));
+  log(msg('log.patcher.cleanupOption', { state: msg(cleanOld ? 'log.patcher.enabled' : 'log.patcher.disabled') }));
 
   try {
     let sourceZipPath = "";
@@ -2184,7 +2242,7 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
     updateProgress(10);
     
     if (mode === 'marketplace') {
-      log("Scanning premium cache locations for purchased Marketplace pack candidate...");
+      log(msg('log.patcher.scanningMarketplace'));
       let expectedStats = { expectedLogoHash: null, expectedHasLangFile: null, validStatsList: null };
       if (selectionMode === 'manual') {
         const asVer = document.getElementById('select-as-version').value;
@@ -2233,28 +2291,28 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
         if (!noPatch) throw err;
         const installed = noPatch[1];
         if (installed && patchConfigs.some(c => samePackVersion(c.packVersion, installed))) {
-          throw `The installed pack is Actions & Stuff ${installed}, which does not match the selected patch version. Pick that version, or switch version selection to automatic.`;
+          throw msg('log.patcher.errors.installedMismatch', { version: installed });
         }
         throw new NoPatchForVersion(installed);
       }
-      log(`Found ${candidates.length} candidate packs in premium cache.`);
-      
+      log(msg('log.patcher.candidatesFound', { count: candidates.length }));
+
       candidates.forEach((cand, idx) => {
-        log(`Candidate [${idx + 1}]:`);
-        log(`  Folder Name: ${cand.folder_name}`);
-        log(`  Full Path:   ${cand.path}`);
-        log(`  Version:     ${cand.version}`);
-        log(`  Contents:    ${cand.files_count} files, ${cand.dirs_count} directories`);
-        log(`  Match Score: ${cand.score}`);
+        log(msg('log.patcher.candidate', { index: idx + 1 }));
+        log(msg('log.patcher.candFolder', { value: cand.folder_name }));
+        log(msg('log.patcher.candPath', { value: cand.path }));
+        log(msg('log.patcher.candVersion', { value: cand.version }));
+        log(msg('log.patcher.candContents', { files: cand.files_count, dirs: cand.dirs_count }));
+        log(msg('log.patcher.candScore', { value: cand.score }));
       });
-      
+
       if (candidates.length === 0) {
-        log("No valid Marketplace pack found. Requesting manual folder selection...");
+        log(msg('log.patcher.noMarketplacePack'));
         const browsePath = await invoke("select_directory", { title: "Browse and select your Actions & Stuff pack folder manually" });
         if (!browsePath) {
-          throw "User cancelled manual browse. Patch aborted.";
+          throw msg('log.patcher.errors.browseCancelled');
         }
-        log(`Using manually browsed pack directory: ${browsePath}`);
+        log(msg('log.patcher.manualBrowsed', { path: browsePath }));
         browsedPackPath = browsePath;
         patchConfigToUse = resolvePatchConfig(selectionMode, null);
       } else {
@@ -2269,15 +2327,15 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
           if (match) {
             best = match;
           } else if (wanted) {
-            log(`None of the detected packs match the selected patch version (${wanted.packVersion}).`, 'warning');
+            log(msg('log.patcher.noCandidateMatches', { version: wanted.packVersion }), 'warning');
           }
         }
         selectedCandidate = best;
 
-        log(`Selected candidate pack:`);
-        log(`  Path: "${best.path}"`);
-        log(`  Version: ${best.version}`);
-        log(`  Complexity: ${best.files_count} files and ${best.dirs_count} folders`);
+        log(msg('log.patcher.selectedCandidate'));
+        log(msg('log.patcher.selPath', { path: best.path }));
+        log(msg('log.patcher.selVersion', { version: best.version }));
+        log(msg('log.patcher.selComplexity', { files: best.files_count, dirs: best.dirs_count }));
 
         patchConfigToUse = resolvePatchConfig(selectionMode, best);
 
@@ -2292,7 +2350,9 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
               dirMatch = stats.dirs === best.dirs_count;
           }
           if (!fileMatch || !dirMatch) {
-              throw `Validation failed: Pack seems corrupted or modified! Expected ~${stats.files} files and ${stats.dirs} folders, but found ${best.files_count} files and ${best.dirs_count} folders.`;
+              throw msg('log.patcher.errors.validationFailed', {
+                expectedFiles: stats.files, expectedDirs: stats.dirs, files: best.files_count, dirs: best.dirs_count,
+              });
           }
         }
 
@@ -2304,13 +2364,13 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
 
         if (selectionMode === 'manual' && patchConfigToUse &&
             normalizePackVersion(patchConfigToUse.packVersion) !== normalizePackVersion(detectedVersion)) {
-          log(`Warning: Target patch version (${patchConfigToUse.packVersion}) does not match detected pack version (${detectedVersion}).`, 'warning');
+          log(msg('log.patcher.versionMismatch', { selected: patchConfigToUse.packVersion, detected: detectedVersion }), 'warning');
           const proceed = await showConfirm(
             t('tabPatcher.versionMismatch.message', { selected: patchConfigToUse.packVersion, detected: detectedVersion }),
             t('tabPatcher.versionMismatch.title')
           );
           if (!proceed) {
-            throw "User aborted due to version mismatch.";
+            throw msg('log.patcher.errors.versionMismatchAborted');
           }
         }
       }
@@ -2335,11 +2395,11 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
       updateStatus(t('tabPatcher.status.compressingTitle'), t('tabPatcher.status.compressingText'), '📦');
       updateProgress(25);
 
-      log(`Starting deterministic ZIP compression...`);
-      log(`  Compressing:  "${targetFolder}"`);
-      log(`  Output ZIP:   "${zipOut}"`);
+      log(msg('log.patcher.zipStart'));
+      log(msg('log.patcher.field.compressing', { path: targetFolder }));
+      log(msg('log.patcher.field.outputZip', { path: zipOut }));
       await invoke("pack_folder", { folderPath: targetFolder, outputZip: zipOut });
-      log(`Successfully created deterministic source ZIP: "${zipOut}"`);
+      log(msg('log.patcher.sourceZipCreated', { path: zipOut }));
 
       sourceZipPath = zipOut;
       updateStepState(1, 'completed');
@@ -2348,16 +2408,16 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
       // Use pre-selected file from the Zip mode file picker
       let selectedZip = document.getElementById('zip-input-file') ? document.getElementById('zip-input-file').value : '';
       if (!selectedZip) {
-        log("No file pre-selected, prompting picker...");
+        log(msg('log.patcher.noFilePreselected'));
         selectedZip = await invoke("select_file", {
           title: "Select Minecraft Resource Pack to Patch",
           filter: "Minecraft Packs (*.zip *.mcpack)|*.zip;*.mcpack"
         });
       }
       if (!selectedZip) {
-        throw "No file selected. Patch aborted.";
+        throw msg('log.patcher.errors.noFileSelected');
       }
-      log(`Selected pack archive: "${selectedZip}"`);
+      log(msg('log.patcher.selectedArchive', { path: selectedZip }));
       updateStepState(0, 'completed');
       
       updateStepState(1, 'active');
@@ -2368,11 +2428,11 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
       const baseName = selectedZip.split(/[\\/]/).pop() || "pack";
       
       const tempExtract = `${tempRoot}/${baseName}_extracted`;
-      log(`Extracting ZIP file to temp directory:`);
-      log(`  Source ZIP: "${selectedZip}"`);
-      log(`  Target Dir: "${tempExtract}"`);
+      log(msg('log.patcher.extractingZip'));
+      log(msg('log.patcher.field.sourceZip', { path: selectedZip }));
+      log(msg('log.patcher.field.targetDir', { path: tempExtract }));
       await invoke("extract_archive", { zipPath: selectedZip, outputDir: tempExtract });
-      log("ZIP extraction completed successfully.");
+      log(msg('log.patcher.extractDone'));
 
       // Resolved before the slow normalise/compress steps, so an archive that
       // nothing is published for stops here. Auto mode goes by the version
@@ -2382,7 +2442,7 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
         try {
           zipPackVersion = await invoke("detect_pack_version", { folder: tempExtract });
         } catch (_) {}
-        log(`Pack version named by the archive: ${zipPackVersion || "not found"}`);
+        log(msg('log.patcher.archiveVersion', { version: zipPackVersion || msg('log.patcher.notFound') }));
       }
       try {
         patchConfigToUse = resolvePatchConfig(selectionMode, zipPackVersion);
@@ -2391,23 +2451,23 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
         throw err;
       }
 
-      log("Normalizing contents: deleting license signatures (contents.json, signatures.json, splashes.json, sounds.json) and injecting custom manifest...");
-      log(`  Target Dir: "${tempExtract}"`);
+      log(msg('log.patcher.normalizing'));
+      log(msg('log.patcher.field.targetDir', { path: tempExtract }));
       await invoke("normalize_extracted_pack", { extractDir: tempExtract });
-      log("Normalization and custom manifest injection finished.");
+      log(msg('log.patcher.normalizeDone'));
 
       const normalizedZip = `${tempRoot}/${baseName}_normalized.zip`;
       updateStatus(t('tabPatcher.status.compressingNormalizedTitle'), t('tabPatcher.status.compressingNormalizedText'), '⚙️');
       updateProgress(35);
-      log(`Re-compressing normalized files into deterministic ZIP:`);
-      log(`  Compressing:  "${tempExtract}"`);
-      log(`  Output ZIP:   "${normalizedZip}"`);
+      log(msg('log.patcher.recompressing'));
+      log(msg('log.patcher.field.compressing', { path: tempExtract }));
+      log(msg('log.patcher.field.outputZip', { path: normalizedZip }));
       await invoke("pack_folder", { folderPath: tempExtract, outputZip: normalizedZip });
-      log("Re-compression complete.");
-      
-      log(`Deleting temporary extraction directory: "${tempExtract}"`);
+      log(msg('log.patcher.recompressDone'));
+
+      log(msg('log.patcher.deletingTemp', { path: tempExtract }));
       await invoke("delete_folders", { folders: [tempExtract] });
-      log("Temporary directory cleaned.");
+      log(msg('log.patcher.tempCleaned'));
       
       sourceZipPath = normalizedZip;
 
@@ -2419,13 +2479,13 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
       const patch = document.getElementById('custom-patch').value;
       
       if (!src || !tgt || !patch) {
-        throw "Custom mode requires specifying source, target, and patch paths.";
+        throw msg('log.patcher.errors.customMissingPaths');
       }
-      
-      log(`Custom Patch parameters:`);
-      log(`  Source: "${src}"`);
-      log(`  Target: "${tgt}"`);
-      log(`  Patch:  "${patch}"`);
+
+      log(msg('log.patcher.customParams'));
+      log(msg('log.patcher.field.source', { path: src }));
+      log(msg('log.patcher.field.target', { path: tgt }));
+      log(msg('log.patcher.field.patch', { path: patch }));
       
       updateStepState(0, 'completed');
       updateStepState(1, 'active');
@@ -2433,7 +2493,7 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
       if (src.endsWith('.zip') || src.endsWith('.mcpack')) {
         updateStatus(t('tabPatcher.status.copyingSourceTitle'), t('tabPatcher.status.copyingSourceText'), '📦');
         updateProgress(30);
-        log(`Source is already ZIP. Using directly: "${src}"`);
+        log(msg('log.patcher.sourceIsZip', { path: src }));
         sourceZipPath = src;
       } else {
         const tempRoot = defaultPaths.temp ? defaultPaths.temp.replace(/\\/g, "/") : ".";
@@ -2441,7 +2501,7 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
         updateStatus(t('tabPatcher.status.compressingCustomTitle'), t('tabPatcher.status.compressingCustomText'), '📦');
         updateProgress(30);
         const customZip = `${tempRoot}/${baseName}_custom_source.zip`;
-        log(`Source is folder. Creating deterministic zip: "${customZip}" from "${src}"`);
+        log(msg('log.patcher.sourceIsFolder', { zip: customZip, src }));
         await invoke("pack_folder", { folderPath: src, outputZip: customZip });
         sourceZipPath = customZip;
       }
@@ -2454,19 +2514,19 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
     if (cleanOld) {
       updateStatus(t('tabPatcher.status.cleaningTitle'), t('tabPatcher.status.cleaningText'), '🧹');
       updateProgress(45);
-      log("Scanning com.mojang directories for old actions & stuff remnant folders to clean...");
+      log(msg('log.patcher.scanningRemnants'));
       const cleanable = await invoke("get_cleanable_packs");
       if (cleanable.length > 0) {
-        log(`Found ${cleanable.length} remnant folders:`);
-        cleanable.forEach(p => log(`  Remnant: "${p}"`));
-        log(`Deleting remnant folders...`);
+        log(msg('log.patcher.remnantsFound', { count: cleanable.length }));
+        cleanable.forEach(p => log(msg('log.patcher.remnant', { path: p })));
+        log(msg('log.patcher.deletingRemnants'));
         const cleaned = await invoke("delete_folders", { folders: cleanable });
-        log(`Successfully removed ${cleaned} old pack directories.`);
+        log(msg('log.patcher.remnantsRemoved', { count: cleaned }));
       } else {
-        log("No old remnant directories found.");
+        log(msg('log.patcher.noRemnants'));
       }
     } else {
-      log("Remnant cleaning skipped by user preference.");
+      log(msg('log.patcher.remnantsSkipped'));
     }
     updateStepState(2, 'completed');
     
@@ -2484,7 +2544,7 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
       finalOutputPath = document.getElementById('custom-tgt').value;
     } else {
       if (!patchConfigToUse) {
-        throw "No valid patch configuration found to match targets.";
+        throw msg('log.patcher.errors.noConfig');
       }
 
       const isEncrypted = mode === 'marketplace';
@@ -2518,11 +2578,11 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
     updateStatus(t('tabPatcher.status.applyingTitle'), t('tabPatcher.status.applyingText'), '⚡');
     updateProgress(80);
 
-    log(`APPLYING PATCH FILE:`);
-    log(`  Patch:  "${patchFilePath}"`);
-    log(`  Source: "${sourceZipPath}"`);
-    log(`  Output: "${finalOutputPath}"`);
-    log("Running XDelta patch execution...");
+    log(msg('log.patcher.applying'));
+    log(msg('log.patcher.field.patch', { path: patchFilePath }));
+    log(msg('log.patcher.field.source', { path: sourceZipPath }));
+    log(msg('log.patcher.field.output', { path: finalOutputPath }));
+    log(msg('log.patcher.runningXdelta'));
 
     await invoke("run_xdelta_patch", {
       sourceZip: sourceZipPath,
@@ -2530,7 +2590,7 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
       outputFile: finalOutputPath
     });
 
-    log("Patch application completed successfully!", 'success');
+    log(msg('log.patcher.applyDone'), 'success');
     updateStepState(4, 'completed');
 
     // Housekeeping only: never allowed to fail the run, since the patch is
@@ -2538,18 +2598,18 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
     try {
       if (appSettings.autoCleanPatchCache && usedPatchSlug) {
         const removed = await invoke("prune_patch_cache", { keepSlug: usedPatchSlug });
-        if (removed > 0) log(`Removed ${removed} older downloaded patch(es) to save space.`);
+        if (removed > 0) log(msg('log.cache.pruned', { count: removed }));
       }
       await refreshCachedPatches();
     } catch (err) {
-      log(`Could not tidy the downloaded patches: ${err}`, 'warning');
+      log(msg('log.cache.tidyFailed', { error: err }), 'warning');
     }
-    
+
     // Clean intermediate zip
     if (mode === 'marketplace' || mode === 'zip' || (mode === 'custom' && !document.getElementById('custom-src').value.endsWith('.zip'))) {
-      log(`Cleaning temporary source ZIP: "${sourceZipPath}"`);
+      log(msg('log.patcher.cleaningTempZip', { path: sourceZipPath }));
       await invoke("delete_folders", { folders: [sourceZipPath] });
-      log("Temporary source ZIP cleaned.");
+      log(msg('log.patcher.tempZipCleaned'));
     }
     
     // STEP 5: IMPORT PACK
@@ -2561,12 +2621,12 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
     document.getElementById('progress-actions-container').classList.remove('hidden-group');
     document.getElementById('btn-install-pack').classList.remove('hidden-group');
     document.getElementById('btn-copy-log-large').classList.remove('hidden-group');
-    log("SUCCESS: Patcher completed all steps. Click 'Install Pack' to import and play!", 'success');
-    
+    log(msg('log.patcher.success'), 'success');
+
   } catch (err) {
     const noPatch = err instanceof NoPatchForVersion;
     if (noPatch) {
-      log(err.message, 'warning');
+      log(err.logMessage, 'warning');
       updateStatus(
         t('tabPatcher.status.noPatchTitle'),
         err.packVersion
@@ -2575,7 +2635,7 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
         '🕓'
       );
     } else {
-      log(`PIPELINE FAILURE: ${err}`, 'error');
+      log(msg('log.patcher.pipelineFailure', { error: err }), 'error');
       updateStatus(t('tabPatcher.status.failedTitle'), t('tabPatcher.status.failedText'), '❌');
     }
     updateProgress(0);
@@ -2597,13 +2657,13 @@ document.getElementById('btn-install-pack').addEventListener('click', async () =
   btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('tabPatcher.installing')}`;
 
   try {
-    log(`Launching installer for: ${finalPatchedPath}`);
+    log(msg('log.patcher.launchingInstaller', { path: finalPatchedPath }));
     const actualMcpack = await invoke("install_mcpack", { outputFile: finalPatchedPath });
-    log(`Successfully installed pack to: ${actualMcpack}`, 'success');
+    log(msg('log.patcher.installed', { path: actualMcpack }), 'success');
     updateStepState(5, 'completed');
     btn.classList.add('hidden-group');
   } catch (err) {
-    log(`Install failed: ${err}`, 'error');
+    log(msg('log.patcher.installFailed', { error: err }), 'error');
     btn.disabled = false;
     btn.innerHTML = originalText;
   }
@@ -2710,7 +2770,7 @@ function formatVersion(parsed) {
 // =====================================================================
 function setupReleaseBuilder() {
   const buildLog = document.getElementById('build-logs');
-  const bLog = (msg, type = 'info') => logTo('build-logs', msg, type);
+  const bLog = (m, type = 'info') => logTo('build-logs', m, type);
 
   // Load current version from tauri.conf.json via a simple read
   const versionBadge = document.getElementById('app-version-badge');
@@ -2778,7 +2838,7 @@ function setupReleaseBuilder() {
         if (relHint) relHint.innerText = t('tabRelease.versionEditor.currentSaved', { version: `v${newVer}` });
         if (versionBadge) versionBadge.innerText = `v${newVer}`;
       } catch (err) {
-        bLog(`Failed to update app version: ${err}`, 'error');
+        bLog(msg('log.release.updateVersionFailed', { error: err }), 'error');
         await showAlert(t('tabRelease.alerts.updateVersionFailed', { error: err }));
       }
     });
@@ -2813,7 +2873,7 @@ function setupReleaseBuilder() {
     }
 
     const buildLog = document.getElementById('build-logs');
-    buildLog.innerHTML = `<div class="log-line system">Starting build (${buildType})...</div>`;
+    resetLog(buildLog, msg('log.placeholder.buildStarting', { type: buildType }));
     
     if (btnBuildAll) btnBuildAll.disabled = true;
     if (btnBuildInstallers) btnBuildInstallers.disabled = true;
@@ -2822,7 +2882,7 @@ function setupReleaseBuilder() {
     try {
       await invoke("run_release_build", { buildType: buildType });
     } catch (err) {
-      buildLog.innerHTML += `<div class="log-line error">Failed to run build: ${err}</div>`;
+      buildLog.appendChild(makeLogLine(msg('log.release.buildFailed', { error: err }), 'error', { timestamp: false }));
       await showAlert(t('tabRelease.alerts.buildFailed', { error: err }));
     } finally {
       if (btnBuildAll) btnBuildAll.disabled = false;
@@ -2848,7 +2908,7 @@ function setupReleaseBuilder() {
       try {
         await invoke("open_project_dir", { name: "bundle" });
       } catch (err) {
-        log(`Failed to open bundle folder: ${err}`, 'error');
+        log(msg('log.release.openBundleFailed', { error: err }), 'error');
         await showAlert(t('tabRelease.alerts.openBundleFailed', { error: err }));
       }
     });
@@ -2861,7 +2921,7 @@ function setupReleaseBuilder() {
       try {
         await invoke("open_project_dir", { name: "patches" });
       } catch (err) {
-        log(`Failed to open patches folder: ${err}`, 'error');
+        log(msg('log.release.openPatchesFailed', { error: err }), 'error');
         await showAlert(t('tabRelease.alerts.openPatchesFailed', { error: err }));
       }
     });
@@ -2909,7 +2969,7 @@ function setupReleaseBuilder() {
   if (btnCopyBuild) btnCopyBuild.addEventListener('click', () => copyLogsFromEl('build-logs', 'btn-copy-build-log'));
   const btnClearBuild = document.getElementById('btn-clear-build-log');
   if (btnClearBuild) btnClearBuild.addEventListener('click', () => {
-    if (buildLog) buildLog.innerHTML = '<div class="log-line system">Build output will appear here...</div>';
+    resetLog(buildLog, msg('log.placeholder.buildReady'));
   });
 }
 
@@ -2934,7 +2994,7 @@ async function setupTelemetry() {
       if (consent) {
         // Fire the ping (self-guards: consent + only uploads if something changed).
         const res = await invoke('submit_hardware_ping');
-        if (res && res.sent) log('Anonymous hardware ping sent. Thank you for helping!');
+        if (res && res.sent) log(msg('log.app.hardwarePingSent'));
       }
     } catch (e) {
       console.error('Telemetry consent update failed', e);
@@ -3073,7 +3133,8 @@ async function setupBugReporter() {
 
       if (includeLog) {
         logPath = "patcher.log";
-        const logContent = Array.from(document.querySelectorAll('.log-line')).map(el => el.innerText).join('\n');
+        // English, like the copy buttons: the report is read by the developers.
+        const logContent = englishLogText();
         await invoke("write_text_file", { path: logPath, content: logContent });
       }
 
@@ -3222,7 +3283,7 @@ async function checkForUpdates() {
 
 
   try {
-    log("Checking for software updates...");
+    log(msg('log.update.checking'));
     const update = await invoke("plugin:updater|check");
 
     if (update) {
@@ -3238,7 +3299,7 @@ async function checkForUpdates() {
 
       // If beta update but beta updates are disabled, ignore it
       if (isBetaUpdate && !allowBetaUpdates) {
-        log(`Software update v${userFacingVersion} is a Beta version, and Beta updates are disabled.`);
+        log(msg('log.update.betaSkipped', { version: userFacingVersion }));
         badge.className = "update-badge state-uptodate";
         delete badge.dataset.updateVersion;
       badge.setAttribute('data-i18n', 'sidebar.update.upToDate');
@@ -3249,7 +3310,7 @@ async function checkForUpdates() {
 
       // If alpha update but (beta updates are disabled OR advanced mode is disabled), ignore it
       if (isAlphaUpdate && (!allowBetaUpdates || !isAdvanced)) {
-        log(`Software update v${userFacingVersion} is an Alpha version. It requires both Beta updates and Advanced Mode to be enabled.`);
+        log(msg('log.update.alphaSkipped', { version: userFacingVersion }));
         badge.className = "update-badge state-uptodate";
         delete badge.dataset.updateVersion;
       badge.setAttribute('data-i18n', 'sidebar.update.upToDate');
@@ -3258,7 +3319,7 @@ async function checkForUpdates() {
         return;
       }
 
-      log(`New update available: v${userFacingVersion}`);
+      log(msg('log.update.available', { version: userFacingVersion }));
       badge.className = "update-badge state-available";
       badge.removeAttribute('data-i18n');
       badge.dataset.updateVersion = userFacingVersion;
@@ -3286,19 +3347,19 @@ async function checkForUpdates() {
         btn.disabled = true;
         btn.setAttribute('data-i18n', 'sidebar.update.updating');
         btn.innerText = t('sidebar.update.updating');
-        log("Downloading and installing update...");
+        log(msg('log.update.downloadingInstalling'));
         try {
           if (!update.rid) {
-            throw "Update metadata missing rid.";
+            throw msg('log.update.missingRid');
           }
-          
+
           const onEvent = new Channel();
           onEvent.onmessage = (event) => {
             if (event.event === "Progress") {
               const current = event.data.chunkLength || 0;
-              log(`Downloading update: ${current} bytes...`);
+              log(msg('log.update.downloadProgress', { bytes: current }));
             } else if (event.event === "Finished") {
-              log("Download finished.");
+              log(msg('log.update.downloadFinished'));
             }
           };
 
@@ -3307,10 +3368,10 @@ async function checkForUpdates() {
             onEvent: onEvent
           });
           
-          log("Update installed successfully. App will relaunch shortly.", "success");
+          log(msg('log.update.installed'), "success");
           await showAlert(t('sidebar.update.installed'));
         } catch (err) {
-          log(`Update installation failed: ${err}`, 'error');
+          log(msg('log.update.installFailed', { error: err }), 'error');
           await showAlert(t('sidebar.update.installFailed', { error: err }));
           btn.disabled = false;
           btn.setAttribute('data-i18n', 'sidebar.update.updateNow');
@@ -3318,7 +3379,7 @@ async function checkForUpdates() {
         }
       };
     } else {
-      log("Software is up to date.");
+      log(msg('log.update.upToDate'));
       badge.className = "update-badge state-uptodate";
       delete badge.dataset.updateVersion;
       badge.setAttribute('data-i18n', 'sidebar.update.upToDate');
@@ -3326,7 +3387,7 @@ async function checkForUpdates() {
       btn.classList.add('hidden-group');
     }
   } catch (err) {
-    log(`Update check failed: ${err}`, 'warning');
+    log(msg('log.update.checkFailed', { error: err }), 'warning');
     badge.className = "update-badge state-error";
     badge.setAttribute('data-i18n', 'sidebar.update.checkFailed');
     badge.innerText = t('sidebar.update.checkFailed');
@@ -3379,7 +3440,7 @@ async function saveSettings() {
 
 // Initialize everything on page load
 window.addEventListener('DOMContentLoaded', async () => {
-  log("Initializing Actions & Stuff Patcher v3 Frontend...");
+  log(msg('log.app.initializing'));
 
   // Load user settings
   await loadSettings();
@@ -3387,6 +3448,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   // * Must run before any settings-dependent UI is wired up: the handlers below
   // * read labels out of an already-translated DOM.
   await initI18n(appSettings.language);
+  // Lines logged before the locales loaded showed their bare key.
+  repaintLogLines();
 
   const updateSetting = async (key, val) => {
     appSettings[key] = val;
@@ -3555,9 +3618,9 @@ window.addEventListener('DOMContentLoaded', async () => {
         if (!dir) return;
         if (libDirInput) libDirInput.value = dir;
         await updateSetting('patchLibraryDir', dir);
-        log(`Patch library folder set to: ${dir}`);
+        log(msg('log.app.libraryFolderSet', { path: dir }));
       } catch (err) {
-        log(`Could not set the patch library folder: ${err}`, 'error');
+        log(msg('log.app.libraryFolderFailed', { error: err }), 'error');
       }
     });
   }
@@ -3704,7 +3767,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   setupKnownIssueReporter();
   await loadMotd();
   await loadOptionsProfiles();
-  log("System initialization complete. Ready.");
+  log(msg('log.app.ready'));
   
   // Hide release builder tab in non-dev builds
   try {
