@@ -1,7 +1,381 @@
 {
+  "log": {
+    "placeholder": {
+      "waiting": "Waiting for process start...",
+      "cleared": "Console cleared. Waiting for process...",
+      "genpatchReady": "Ready to create patches...",
+      "genpatchStarting": "Starting patch creation...",
+      "brarchiveReady": "Ready. Pick a folder and choose what to run.",
+      "brarchiveCleared": "Log cleared.",
+      "buildReady": "Build output will appear here...",
+      "buildStarting": "Starting build ({type})..."
+    },
+    "app": {
+      "initializing": "Initializing Actions & Stuff Patcher v3 Frontend...",
+      "ready": "System initialization complete. Ready.",
+      "consoleHeightReset": "Console height reset to {px}px.",
+      "hardwarePingSent": "Anonymous hardware ping sent. Thank you for helping!",
+      "libraryFolderSet": "Patch library folder set to: {path}",
+      "libraryFolderFailed": "Could not set the patch library folder: {error}",
+      "explorerFailed": "Could not open explorer: {error}",
+      "detectedInstall": "Detected Minecraft install (edition: {edition}), premium_cache: {premiumCache}, resource_packs: {resourcePacks}",
+      "editionUwp": "UWP (Microsoft Store)",
+      "editionGdk": "GDK (Roaming)",
+      "detectInstallFailed": "Could not detect default Minecraft install paths: {error}",
+      "selected": "Selected: {path}",
+      "pickerError": "Picker error: {error}"
+    },
+    "publish": {
+      "noLibraryFolder": "No patch library folder is set. Choose it in App Settings under Patch Creator.",
+      "cancelled": "Publishing cancelled.",
+      "openedPr": "Opened pull request: {url}",
+      "failed": "Publishing failed: {error}",
+      "cancelledKept": "Publishing cancelled; the existing entry was kept.",
+      "failedPatchFine": "Publishing failed, but the patch files are fine: {error}"
+    },
+    "catalogue": {
+      "loading": "Loading patch configurations...",
+      "bundledFound": "Found {count} bundled patch configuration profile(s).",
+      "remoteLoaded": "Loaded {count} downloadable patch entries from the patch library (source: {source}).",
+      "remoteLoadedUpdated": "Loaded {count} downloadable patch entries from the patch library (source: {source}, updated {updated}).",
+      "usingCache": "The patch library could not be reached; using the last known catalogue.",
+      "noCatalogue": "No patch library catalogue is available. Only bundled patches can be used.",
+      "remoteFailed": "Could not load the remote patch library: {error}",
+      "newPatch": "New patch available: {pack} patch {patch}",
+      "totalAvailable": "{count} patch configuration profile(s) available in total.",
+      "loadFailed": "Failed to load patch configs: {error}"
+    },
+    "cache": {
+      "removed": "Removed downloaded patch {slug} ({mb} MB freed).",
+      "removedRedownload": "Removed downloaded patch {slug} ({mb} MB freed). It will be downloaded again next time it is used.",
+      "removeFailed": "Could not remove the downloaded patch: {error}",
+      "clearedAll": "Removed {count} downloaded patch(es), freeing {mb} MB.",
+      "clearFailed": "Could not clear the downloaded patches: {error}",
+      "pruned": "Removed {count} older downloaded patch(es) to save space.",
+      "tidyFailed": "Could not tidy the downloaded patches: {error}"
+    },
+    "download": {
+      "slugMissing": "Remote patch entry is missing its id (slug).",
+      "notBundled": "Patch file for pack {packVersion} (patch {patchVersion}) is not bundled; fetching it from the patch library.",
+      "variant": "  Variant: {variant}  |  Size: {mb} MB",
+      "ready": "Patch file ready: \"{path}\""
+    },
+    "resolve": {
+      "byStats": "Patch config resolved via stats/logo_hash match: pack {packVersion} (patch {patchVersion})",
+      "byVersion": "Patch config resolved via version string fallback: pack {packVersion} (patch {patchVersion})",
+      "noConfidentMatch": "Could not confidently match a detected pack to a patch config, defaulting to the newest available (pack {packVersion})",
+      "noPatchForVersion": "No patch is available for Actions & Stuff {version} yet.",
+      "noPatchForInstalled": "No patch is available for the installed version of Actions & Stuff yet."
+    },
+    "utils": {
+      "packStart": "Starting deterministic pack of: {path}",
+      "packDone": "Successfully created deterministic pack at {path}",
+      "packFailed": "Packing failed: {error}",
+      "extractStart": "Extracting: {src} to {dst}",
+      "extractDone": "Successfully extracted files to {path}",
+      "extractFailed": "Extraction failed: {error}"
+    },
+    "genpatch": {
+      "versions": "Pack Version: {pack}  |  Patch Version: {patch}",
+      "injectingBaseline": "  Injecting baseline custom manifest into source directories...",
+      "injectBaselineFailed": "  ⚠️ Could not inject baseline manifest: {error}",
+      "injectingVersioned": "  Injecting versioned custom manifest into patched target...",
+      "injectVersionedFailed": "  ⚠️ Could not inject versioned manifest: {error}",
+      "step1": "[1/4] Compressing encrypted source: {path}",
+      "encSourceReady": "  ✓ Encrypted source ZIP ready",
+      "step2": "[2/4] Compressing decrypted source: {path}",
+      "decSourceReady": "  ✓ Decrypted source ZIP ready",
+      "step3": "[3/4] Preparing patched target: {path}",
+      "targetReady": "  ✓ Patched target ZIP ready",
+      "encTargetReady": "  ✓ Encrypted patched target ZIP ready",
+      "step4": "[4/4] Generating VCDIFF patches...",
+      "encodingEnc": "  Encoding encrypted.vcdiff (source: encrypted, target: patched)...",
+      "encCreated": "  ✓ encrypted.vcdiff created",
+      "encodingDec": "  Encoding decrypted.vcdiff (source: decrypted, target: patched)...",
+      "decCreated": "  ✓ decrypted.vcdiff created",
+      "calcStats": "  Calculating patch stats from {path}...",
+      "statsDone": "  ✓ Stats calculated: {files} files, {dirs} dirs",
+      "statsFailed": "  ⚠️ Failed to calculate stats: {error}",
+      "configCreated": "  ✓ patch_config.json created",
+      "allDone": "✅ All patches created successfully in: {path}",
+      "summary": "   Pack: {pack}  |  Patch: {patch}",
+      "failed": "❌ Patch creation failed: {error}"
+    },
+    "brarchive": {
+      "finished": "Finished in {secs}s.",
+      "nothingRenamed": "Nothing was renamed. See the messages above.",
+      "failed": "Failed: {error}"
+    },
+    "options": {
+      "profilesFound": "Found {count} options.txt profile(s): {labels}",
+      "none": "none",
+      "profilesFailed": "Failed to list options.txt profiles: {error}",
+      "reading": "Reading options file: {path}",
+      "readFailed": "Failed to read options: {error}",
+      "saving": "Saving configuration edits...",
+      "saved": "Successfully updated options.txt config!",
+      "saveFailed": "Failed to write settings: {error}",
+      "bestLoaded": "Automatically loaded best RTX settings into the editor. Click 'Apply Settings' to write them to options.txt."
+    },
+    "cleaner": {
+      "scanning": "Scanning Minecraft folders for old RTX packs...",
+      "scanClean": "Scan finished. Clean state verified.",
+      "scanFound": "Scan finished. Found {count} cleanable paths.",
+      "deleting": "Deleting {count} folder(s)...",
+      "couldNotDelete": "Could not delete: {path}",
+      "deleteFailed": "Failed to delete \"{path}\": {error}",
+      "summary": "Cleaner: deleted {deleted} folder(s).",
+      "summaryWithFailures": "Cleaner: deleted {deleted} folder(s), {failed} failed.",
+      "scanFailed": "Scan failed: {error}"
+    },
+    "patcher": {
+      "start": "Starting patch pipeline in [{mode}] mode.",
+      "selectionMode": "Configuration selection mode: {mode}",
+      "cleanupOption": "Automatic remnant cleanup option: {state}",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "scanningMarketplace": "Scanning premium cache locations for purchased Marketplace pack candidate...",
+      "candidatesFound": "Found {count} candidate packs in premium cache.",
+      "candidate": "Candidate [{index}]:",
+      "candFolder": "  Folder Name: {value}",
+      "candPath": "  Full Path:   {value}",
+      "candVersion": "  Version:     {value}",
+      "candContents": "  Contents:    {files} files, {dirs} directories",
+      "candScore": "  Match Score: {value}",
+      "noMarketplacePack": "No valid Marketplace pack found. Requesting manual folder selection...",
+      "manualBrowsed": "Using manually browsed pack directory: {path}",
+      "noCandidateMatches": "None of the detected packs match the selected patch version ({version}).",
+      "selectedCandidate": "Selected candidate pack:",
+      "selPath": "  Path: \"{path}\"",
+      "selVersion": "  Version: {version}",
+      "selComplexity": "  Complexity: {files} files and {dirs} folders",
+      "versionMismatch": "Warning: Target patch version ({selected}) does not match detected pack version ({detected}).",
+      "zipStart": "Starting deterministic ZIP compression...",
+      "sourceZipCreated": "Successfully created deterministic source ZIP: \"{path}\"",
+      "noFilePreselected": "No file pre-selected, prompting picker...",
+      "selectedArchive": "Selected pack archive: \"{path}\"",
+      "extractingZip": "Extracting ZIP file to temp directory:",
+      "extractDone": "ZIP extraction completed successfully.",
+      "archiveVersion": "Pack version named by the archive: {version}",
+      "notFound": "not found",
+      "normalizing": "Normalizing contents: deleting license signatures (contents.json, signatures.json, splashes.json, sounds.json) and injecting custom manifest...",
+      "normalizeDone": "Normalization and custom manifest injection finished.",
+      "recompressing": "Re-compressing normalized files into deterministic ZIP:",
+      "recompressDone": "Re-compression complete.",
+      "deletingTemp": "Deleting temporary extraction directory: \"{path}\"",
+      "tempCleaned": "Temporary directory cleaned.",
+      "customParams": "Custom Patch parameters:",
+      "sourceIsZip": "Source is already ZIP. Using directly: \"{path}\"",
+      "sourceIsFolder": "Source is folder. Creating deterministic zip: \"{zip}\" from \"{src}\"",
+      "scanningRemnants": "Scanning com.mojang directories for old actions & stuff remnant folders to clean...",
+      "remnantsFound": "Found {count} remnant folders:",
+      "remnant": "  Remnant: \"{path}\"",
+      "deletingRemnants": "Deleting remnant folders...",
+      "remnantsRemoved": "Successfully removed {count} old pack directories.",
+      "noRemnants": "No old remnant directories found.",
+      "remnantsSkipped": "Remnant cleaning skipped by user preference.",
+      "applying": "APPLYING PATCH FILE:",
+      "runningXdelta": "Running XDelta patch execution...",
+      "applyDone": "Patch application completed successfully!",
+      "cleaningTempZip": "Cleaning temporary source ZIP: \"{path}\"",
+      "tempZipCleaned": "Temporary source ZIP cleaned.",
+      "success": "SUCCESS: Patcher completed all steps. Click 'Install Pack' to import and play!",
+      "pipelineFailure": "PIPELINE FAILURE: {error}",
+      "launchingInstaller": "Launching installer for: {path}",
+      "installed": "Successfully installed pack to: {path}",
+      "installFailed": "Install failed: {error}",
+      "field": {
+        "compressing": "  Compressing:  \"{path}\"",
+        "outputZip": "  Output ZIP:   \"{path}\"",
+        "sourceZip": "  Source ZIP: \"{path}\"",
+        "targetDir": "  Target Dir: \"{path}\"",
+        "source": "  Source: \"{path}\"",
+        "target": "  Target: \"{path}\"",
+        "patch": "  Patch:  \"{path}\"",
+        "output": "  Output: \"{path}\""
+      },
+      "errors": {
+        "installedMismatch": "The installed pack is Actions & Stuff {version}, which does not match the selected patch version. Pick that version, or switch version selection to automatic.",
+        "browseCancelled": "User cancelled manual browse. Patch aborted.",
+        "validationFailed": "Validation failed: Pack seems corrupted or modified! Expected ~{expectedFiles} files and {expectedDirs} folders, but found {files} files and {dirs} folders.",
+        "versionMismatchAborted": "User aborted due to version mismatch.",
+        "noFileSelected": "No file selected. Patch aborted.",
+        "customMissingPaths": "Custom mode requires specifying source, target, and patch paths.",
+        "noConfig": "No valid patch configuration found to match targets."
+      }
+    },
+    "update": {
+      "checking": "Checking for software updates...",
+      "betaSkipped": "Software update v{version} is a Beta version, and Beta updates are disabled.",
+      "alphaSkipped": "Software update v{version} is an Alpha version. It requires both Beta updates and Advanced Mode to be enabled.",
+      "available": "New update available: v{version}",
+      "downloadingInstalling": "Downloading and installing update...",
+      "missingRid": "Update metadata missing rid.",
+      "downloadProgress": "Downloading update: {bytes} bytes...",
+      "downloadFinished": "Download finished.",
+      "installed": "Update installed successfully. App will relaunch shortly.",
+      "installFailed": "Update installation failed: {error}",
+      "upToDate": "Software is up to date.",
+      "checkFailed": "Update check failed: {error}"
+    },
+    "release": {
+      "updateVersionFailed": "Failed to update app version: {error}",
+      "buildFailed": "Failed to run build: {error}",
+      "openBundleFailed": "Failed to open bundle folder: {error}",
+      "openPatchesFailed": "Failed to open patches folder: {error}"
+    },
+    "backend": {
+      "zip": {
+        "scanning": "Scanning folder to pack: {path}",
+        "found": "Found {count} files to compress deterministically.",
+        "done": "Deterministic pack created successfully at: {path}"
+      },
+      "extract": {
+        "cleaning": "Cleaning existing extraction directory: {path}",
+        "start": "Extracting archive {path} (contains {count} files)",
+        "unwrap": "Smart Unwrap: single root folder {name} detected. Moving contents up...",
+        "movingUp": "  [Moving up] -> {name}",
+        "done": "Successfully extracted all files to {path}"
+      },
+      "brarchive": {
+        "scanning": "Scanning workspace for brarchives: {path}",
+        "foundDirs": "Found {count} __brarchive directories.",
+        "found": "  [Brarchive Found] -> {name}",
+        "skippedPlaceholder": "    (Skipped placeholder / empty brarchive)",
+        "skippedUnreadable": "  [Skipped unreadable brarchive] -> {path} ({error})",
+        "skippedUnsafe": "  [Skipped unsafe entry path] -> {name}",
+        "keptRaw": "Kept raw brarchive folder (preserved {count} unreadable archive(s) instead of deleting them): {name}",
+        "cleaning": "Cleaning up raw brarchive folder: {name}",
+        "doneWithErrors": "Brarchive extraction complete! Extracted {files} files from {archives} archives (skipped {placeholders} placeholders, {unreadable} unreadable — see warnings above).",
+        "done": "Brarchive extraction complete! Extracted {files} files from {archives} archives (skipped {placeholders} placeholders)."
+      },
+      "catalogue": {
+        "cacheWriteFailed": "Could not cache the patch index locally: {error}",
+        "fetchFailed": "Could not fetch the remote patch index ({error}). Falling back to the local cache."
+      },
+      "download": {
+        "usingCached": "Using the cached {variant} patch for {slug}.",
+        "cachedInvalid": "Cached {variant} patch for {slug} failed verification. Re-downloading.",
+        "verifyFailed": "Could not verify the cached patch ({error}). Re-downloading.",
+        "start": "Downloading the {variant} patch for {slug} ({mb} MB)...",
+        "sidecarFailed": "Could not write the patch cache sidecar: {error}",
+        "done": "Patch downloaded and verified: {slug} ({variant})."
+      },
+      "publish": {
+        "updating": "Updating {branch}...",
+        "start": "Publishing \"{name}\" to the patch library on branch {branch}...",
+        "replacing": "  Replacing the existing entry...",
+        "copied": "  Copied into {path}",
+        "openingPr": "  Opening the pull request...",
+        "prOpened": "Pull request opened: {url}. Once merged, the patch library's CI hashes, uploads and rebuilds the catalogue, and every installed patcher offers it without an update."
+      },
+      "cache": {
+        "removed": "Removed the downloaded patch {slug} ({mb} MB freed).",
+        "removeFailed": "Could not remove {name}: {error}",
+        "clearedAll": "Removed {count} downloaded patch(es), freeing {mb} MB.",
+        "pruned": "Removed the cached patch {name}.",
+        "pruneFailed": "Could not remove the cached patch {name}: {error}"
+      },
+      "scan": {
+        "noFolder": "Marketplace scan: no folder at {path}",
+        "checking": "Marketplace scan: checking {path}",
+        "skipped": "  [Skipped] {name}: not an Actions & Stuff pack",
+        "done": "Marketplace scan complete: {count} candidate(s) found."
+      },
+      "xdelta": {
+        "start": "Initiating XDelta patch execution...",
+        "executable": "  [Executable] -> {path}",
+        "sourceZip": "  [Source ZIP] -> {path}",
+        "patchFile": "  [Patch File] -> {path}",
+        "outputFile": "  [Output File] -> {path}",
+        "removingOutput": "Removing pre-existing output file...",
+        "stdout": "XDelta stdout: {output}",
+        "stderr": "XDelta stderr: {output}",
+        "done": "XDelta patch decoding completed successfully."
+      },
+      "encode": {
+        "start": "Encoding patch via XDelta...",
+        "sourceFile": "  [Source File] -> {path}",
+        "targetFile": "  [Target File] -> {path}",
+        "patchOutput": "  [Patch Output] -> {path}",
+        "removingExisting": "Removing existing patch file...",
+        "done": "XDelta patch generation successful."
+      },
+      "install": {
+        "failed": "Failed to install to {path}: {error}"
+      },
+      "normalize": {
+        "start": "Normalizing extracted pack directory: {path}",
+        "removedFile": "  [Removed signature/license file] -> {name}",
+        "removedDir": "  [Removed texts/translation folder] -> {name}",
+        "injecting": "Injecting custom manifest.json to ensure compatibility.",
+        "injected": "Custom manifest.json injected successfully.",
+        "baselineMissing": "Warning: Custom manifest.json baseline not found in resources."
+      },
+      "brtool": {
+        "extracting": "Extracting brarchives in: {path}",
+        "nothingToExtract": "No __brarchive folders found - nothing to extract.",
+        "stillPacked": "This folder still contains packed __brarchive folders. The renamer only sees extracted files - turn on 'Extract brarchives' to unpack them first.",
+        "renamerStarted": "[Experimental] Geometry renamer started.",
+        "noPack": "No extracted resource pack found (needs a folder with manifest.json and models/).",
+        "pack": "Pack: {path}",
+        "error": "  ERROR: {error}",
+        "renamed": "  Renamed {renamed} geometries in {files} files. Fully named: {named} | named from Molang: {molang} | vanilla untouched: {vanilla}",
+        "unused": "  Unused models: {high} high, {medium} medium, {kept} not identified (original ID kept)",
+        "manualCheck": "  Manual check: {review} to review (role conflicts {conflicts}, medium orphans {medium}), {suffixes} with a raw variant suffix, {kept} kept their original ID.",
+        "validationPassed": "  Validation passed: no broken references, no leftover obfuscated IDs, all JSON still valid.",
+        "checklist": "  Check list: {path}",
+        "mapping": "  Mapping (old -> new, keep it to undo): {path}"
+      },
+      "renamer": {
+        "reading": "  Reading models, entities, attachables and render controllers...",
+        "jsonFailures": "  {count} JSON file(s) could not be parsed and were skipped (they are left untouched).",
+        "alreadyRenamed": "  No obfuscated geometry IDs left - this pack looks already renamed. Skipping.",
+        "noGeometries": "  No Actions & Stuff geometries found in this pack. Skipping.",
+        "found": "  Found {defs} geometry definitions ({obfuscated} obfuscated), {used} referenced.",
+        "resolvingMolang": "  Resolving render-controller Molang...",
+        "identifyingOrphans": "  Identifying unreferenced geometries (atlas overlap, dye series, shapes, bone names)...",
+        "rewriting": "  Rewriting {count} geometry IDs across the pack...",
+        "nothingLeft": "  Nothing left to rename - this pack was already renamed. Existing reports were kept.",
+        "validating": "  Validating renamed pack...",
+        "molangErrors": "  {count} render-controller expression(s) could not be parsed; their roles fall back to the static table."
+      },
+      "release": {
+        "updatingTauriConf": "Updating version to {version} (semver: {semver}) in tauri.conf.json...",
+        "tauriConfUpdated": "Successfully updated tauri.conf.json and window title.",
+        "tauriConfMissing": "Warning: tauri.conf.json not found at expected path: {path}",
+        "updatingPackageJson": "Updating package.json version to {version}...",
+        "packageJsonUpdated": "Successfully updated package.json.",
+        "packageJsonMissing": "Warning: package.json not found at expected path: {path}",
+        "updatingUpdaterJson": "Updating version to {version} (semver: {semver}) in updater.json...",
+        "updaterJsonUpdated": "Successfully updated updater.json.",
+        "updaterJsonMissing": "Warning: updater.json not found at expected path: {path}"
+      },
+      "build": {
+        "start": "Starting project release build...",
+        "command": "Executing command: {command}",
+        "envLoaded": "Loaded environment variables from .env file.",
+        "succeeded": "Build finished successfully! Automating updater.json...",
+        "sorting": "Sorting build artifacts into Releases/v{version}...",
+        "zipping": "Compressing portable release package into ZIP...",
+        "zipFailed": "Failed to create portable ZIP: {error}",
+        "zipDone": "Portable release package ZIP created successfully.",
+        "signatureInjected": "Successfully injected new signature and URL into updater.json!",
+        "noSig": "Could not find .sig file to inject into updater.json",
+        "failedStatus": "Build failed with exit status: {status}",
+        "waitFailed": "Error waiting for build process: {error}",
+        "startFailed": "Failed to start build process: {error}"
+      },
+      "target": {
+        "start": "Starting patch target preparation...",
+        "copying": "Copying modified assets...",
+        "ready": "Patch target ready."
+      }
+    }
+  },
   "tabPatcher": {
     "motd": {
-      "offlineDevPreviewTitle": "Предварительный просмотр пользовательского интерфейса в автономном режиме(Режим Разработчика)",
+      "offlineDevPreviewTitle": "Service Offline UI Preview (Dev Mode)",
       "offlineDevPreviewMessage": "This is just a preview of the offline box. The API is actually ONLINE right now.",
       "offlineDevTitle": "Service Offline (Dev Mode)",
       "offlineDevMessage": "Could not connect to the Chaos dev backend. This box is only visible in Dev Mode."
