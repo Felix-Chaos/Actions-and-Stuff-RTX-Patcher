@@ -32,9 +32,9 @@ base64 = "0.23.1"
 walkdir = "2.5.0"
 uuid = { version = "1", features = ["v4"] }
 regex = "1"
-# Only used by the optional, git-ignored src/private/encrypt.rs (see build.rs,
-# cfg has_encrypt). Uncomment both when building with that module.
-# aes = "0.8"
-# getrandom = "0.4"
+# Used by the optional, git-ignored src/private/encrypt.rs (see build.rs,
+# cfg has_encrypt). Unused in builds without it, but keep them.
+aes = "0.8"
+getrandom = "0.4"
 
 
