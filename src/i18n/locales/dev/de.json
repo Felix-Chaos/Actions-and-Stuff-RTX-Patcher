@@ -417,9 +417,9 @@
       "patchVersionPlaceholder": "z. B. 1.1",
       "injectManifest": "Benutzerdefiniertes Manifest einfügen",
       "encryptTarget": "Gepatchtes Pack verschlüsseln",
-      "publishToLibrary": "In Patch-Bibliothek veröffentlichen",
+      "publishToLibrary": "Zusätzlich einen Pull Request für die Patch-Bibliothek öffnen",
       "createPatchesBtn": "Patches erstellen",
-      "publishBtn": "In Bibliothek veröffentlichen",
+      "publishBtn": "Pull Request für erstellten Patch öffnen",
       "console": {
         "heading": "Patch-Creator-Log",
         "copyTooltip": "Log kopieren",

@@ -417,9 +417,9 @@
       "patchVersionPlaceholder": "e.g. 1.1",
       "injectManifest": "Inject Custom Manifest",
       "encryptTarget": "Encrypt Patched Pack",
-      "publishToLibrary": "Publish to Patch Library",
+      "publishToLibrary": "Also open a Patch Library pull request",
       "createPatchesBtn": "Create Patches",
-      "publishBtn": "Publish to Library",
+      "publishBtn": "Open Pull Request for Created Patch",
       "console": {
         "heading": "Patch Creator Log",
         "copyTooltip": "Copy log",
