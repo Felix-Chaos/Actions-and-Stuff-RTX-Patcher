@@ -1,3 +1,5 @@
+use crate::log_msg;
+use crate::logmsg::emit_msg;
 use crate::utils::*;
 use std::collections::HashMap;
 use std::io::BufRead;
@@ -84,19 +86,19 @@ pub async fn scan_marketplace_packs(
 
     for base_path in base_paths {
         if !base_path.exists() {
-            emit_log(&app, "main", &format!("Marketplace scan: no folder at {:?}", base_path), "info");
+            emit_msg(&app, "main", &log_msg!("log.backend.scan.noFolder", path = format!("{:?}", base_path)), "info");
             continue;
         }
-        emit_log(&app, "main", &format!("Marketplace scan: checking {:?}", base_path), "info");
+        emit_msg(&app, "main", &log_msg!("log.backend.scan.checking", path = format!("{:?}", base_path)), "info");
         if let Ok(entries) = std::fs::read_dir(base_path) {
             for entry in entries.flatten() {
                 let path = entry.path();
                 if path.is_dir() {
                     if !is_actions_and_stuff_pack(&path) {
-                        emit_log(
+                        emit_msg(
                             &app,
                             "main",
-                            &format!("  [Skipped] {:?}: not an Actions & Stuff pack", entry.file_name()),
+                            &log_msg!("log.backend.scan.skipped", name = format!("{:?}", entry.file_name())),
                             "info",
                         );
                         continue;
@@ -206,7 +208,7 @@ pub async fn scan_marketplace_packs(
     
     candidates.sort_by(|a, b| b.score.cmp(&a.score));
 
-    emit_log(&app, "main", &format!("Marketplace scan complete: {} candidate(s) found.", candidates.len()), "info");
+    emit_msg(&app, "main", &log_msg!("log.backend.scan.done", count = candidates.len()), "info");
 
     // If we have expected stats and no candidate fits, throw error
     if (valid_stats_list.is_some() || expected_logo_hash.is_some()) && candidates.is_empty() {
@@ -291,29 +293,29 @@ pub async fn run_xdelta_patch(
     }
     let resolved_patch_str = actual_patch_file.to_string_lossy().to_string();
 
-    emit_log(&app, "main", "Initiating XDelta patch execution...", "info");
-    emit_log(
+    emit_msg(&app, "main", &log_msg!("log.backend.xdelta.start"), "info");
+    emit_msg(
         &app,
         "main",
-        &format!("  [Executable] -> {:?}", xdelta_path),
+        &log_msg!("log.backend.xdelta.executable", path = format!("{:?}", xdelta_path)),
         "info",
     );
-    emit_log(
+    emit_msg(
         &app,
         "main",
-        &format!("  [Source ZIP] -> {}", source_zip),
+        &log_msg!("log.backend.xdelta.sourceZip", path = &source_zip),
         "info",
     );
-    emit_log(
+    emit_msg(
         &app,
         "main",
-        &format!("  [Patch File] -> {}", resolved_patch_str),
+        &log_msg!("log.backend.xdelta.patchFile", path = &resolved_patch_str),
         "info",
     );
-    emit_log(
+    emit_msg(
         &app,
         "main",
-        &format!("  [Output File] -> {}", output_file),
+        &log_msg!("log.backend.xdelta.outputFile", path = &output_file),
         "info",
     );
 
@@ -324,7 +326,7 @@ pub async fn run_xdelta_patch(
     }
 
     if out_path.exists() {
-        emit_log(&app, "main", "Removing pre-existing output file...", "info");
+        emit_msg(&app, "main", &log_msg!("log.backend.xdelta.removingOutput"), "info");
         let _ = std::fs::remove_file(out_path);
     }
 
@@ -350,10 +352,10 @@ pub async fn run_xdelta_patch(
     let stderr = String::from_utf8_lossy(&output.stderr);
 
     if !stdout.trim().is_empty() {
-        emit_log(&app, "main", &format!("XDelta stdout: {}", stdout), "info");
+        emit_msg(&app, "main", &log_msg!("log.backend.xdelta.stdout", output = &stdout), "info");
     }
     if !stderr.trim().is_empty() {
-        emit_log(&app, "main", &format!("XDelta stderr: {}", stderr), "info");
+        emit_msg(&app, "main", &log_msg!("log.backend.xdelta.stderr", output = &stderr), "info");
     }
 
     if !output.status.success() {
@@ -361,12 +363,7 @@ pub async fn run_xdelta_patch(
         return Err(format!("Patching failed: {}", err_msg));
     }
 
-    emit_log(
-        &app,
-        "main",
-        "XDelta patch decoding completed successfully.",
-        "success",
-    );
+    emit_msg(&app, "main", &log_msg!("log.backend.xdelta.done"), "success");
     Ok("Patch applied successfully.".to_string())
 }
 
@@ -401,7 +398,12 @@ pub async fn install_mcpack(app: tauri::AppHandle, output_file: String) -> Resul
         let dest_dir = packs_dir.join(file_stem);
 
         if let Err(e) = extract_archive_impl(Some(&app), src_path, &dest_dir, "main") {
-            crate::utils::emit_log(&app, "main", &format!("Failed to install to {:?}: {}", dest_dir, e), "error");
+            emit_msg(
+                &app,
+                "main",
+                &log_msg!("log.backend.install.failed", path = format!("{:?}", dest_dir), error = e),
+                "error",
+            );
         } else {
             last_dest = dest_dir.to_string_lossy().into_owned();
         }
@@ -581,10 +583,10 @@ pub async fn normalize_extracted_pack(app: tauri::AppHandle, extract_dir: String
         return Err("Extraction directory does not exist".to_string());
     }
 
-    emit_log(
+    emit_msg(
         &app,
         "main",
-        &format!("Normalizing extracted pack directory: {:?}", dir),
+        &log_msg!("log.backend.normalize.start", path = format!("{:?}", dir)),
         "info",
     );
 
@@ -609,10 +611,10 @@ pub async fn normalize_extracted_pack(app: tauri::AppHandle, extract_dir: String
 
     for f in &files_deleted {
         if let Some(file_name) = f.file_name() {
-            emit_log(
+            emit_msg(
                 &app,
                 "main",
-                &format!("  [Removed signature/license file] -> {:?}", file_name),
+                &log_msg!("log.backend.normalize.removedFile", name = format!("{:?}", file_name)),
                 "info",
             );
         }
@@ -620,10 +622,10 @@ pub async fn normalize_extracted_pack(app: tauri::AppHandle, extract_dir: String
     }
     for d in &dirs_deleted {
         if let Some(dir_name) = d.file_name() {
-            emit_log(
+            emit_msg(
                 &app,
                 "main",
-                &format!("  [Removed texts/translation folder] -> {:?}", dir_name),
+                &log_msg!("log.backend.normalize.removedDir", name = format!("{:?}", dir_name)),
                 "info",
             );
         }
@@ -632,12 +634,7 @@ pub async fn normalize_extracted_pack(app: tauri::AppHandle, extract_dir: String
     let resource_manifest = resolve_asset_path(&app, "assets/resources/manifest.json")?;
 
     if resource_manifest.exists() {
-        emit_log(
-            &app,
-            "main",
-            "Injecting custom manifest.json to ensure compatibility.",
-            "info",
-        );
+        emit_msg(&app, "main", &log_msg!("log.backend.normalize.injecting"), "info");
         // Preserves this pack's own header/module uuid+version (from the
         // manifest.json still sitting in `dir` right now, before this
         // overwrites it) — see build_manifest_json's doc comment for why:
@@ -646,19 +643,9 @@ pub async fn normalize_extracted_pack(app: tauri::AppHandle, extract_dir: String
         let modified_content = build_manifest_json(&resource_manifest, dir, "", "")?;
         std::fs::write(dir.join("manifest.json"), modified_content)
             .map_err(|e| format!("Failed to write manifest.json: {}", e))?;
-        emit_log(
-            &app,
-            "main",
-            "Custom manifest.json injected successfully.",
-            "success",
-        );
+        emit_msg(&app, "main", &log_msg!("log.backend.normalize.injected"), "success");
     } else {
-        emit_log(
-            &app,
-            "main",
-            "Warning: Custom manifest.json baseline not found in resources.",
-            "warning",
-        );
+        emit_msg(&app, "main", &log_msg!("log.backend.normalize.baselineMissing"), "warning");
     }
     Ok(())
 }
@@ -864,34 +851,29 @@ pub async fn run_brarchive_tool(
         let mut result = BrarchiveToolResult { extracted: false, packs: Vec::new() };
 
         if extract {
-            emit_log(&app, LOG, &format!("Extracting brarchives in: {}", workspace), "system");
+            emit_msg(&app, LOG, &log_msg!("log.backend.brtool.extracting", path = &workspace), "system");
             result.extracted = extract_brarchives_in_workspace_impl(Some(&app), ws, LOG)?;
             if !result.extracted {
-                emit_log(&app, LOG, "No __brarchive folders found - nothing to extract.", "warning");
+                emit_msg(&app, LOG, &log_msg!("log.backend.brtool.nothingToExtract"), "warning");
             }
         } else if crate::renamer::has_packed_brarchives(ws) {
-            emit_log(
-                &app,
-                LOG,
-                "This folder still contains packed __brarchive folders. The renamer only sees extracted files - turn on 'Extract brarchives' to unpack them first.",
-                "warning",
-            );
+            emit_msg(&app, LOG, &log_msg!("log.backend.brtool.stillPacked"), "warning");
         }
 
         if rename {
-            emit_log(&app, LOG, "[Experimental] Geometry renamer started.", "system");
+            emit_msg(&app, LOG, &log_msg!("log.backend.brtool.renamerStarted"), "system");
             let roots = crate::renamer::find_pack_roots(ws);
             if roots.is_empty() {
-                emit_log(&app, LOG, "No extracted resource pack found (needs a folder with manifest.json and models/).", "warning");
+                emit_msg(&app, LOG, &log_msg!("log.backend.brtool.noPack"), "warning");
             }
             for root in roots {
-                emit_log(&app, LOG, &format!("Pack: {}", root.display()), "system");
+                emit_msg(&app, LOG, &log_msg!("log.backend.brtool.pack", path = root.display()), "system");
                 let app_log = app.clone();
                 // One pack failing must not throw away the reports of the packs already done.
-                let report = match crate::renamer::rename_pack(&root, &move |m, l| emit_log(&app_log, LOG, &format!("  {}", m), l)) {
+                let report = match crate::renamer::rename_pack(&root, &move |m, l| emit_msg(&app_log, LOG, m, l)) {
                     Ok(report) => report,
                     Err(e) => {
-                        emit_log(&app, LOG, &format!("  ERROR: {}", e), "error");
+                        emit_msg(&app, LOG, &log_msg!("log.backend.brtool.error", error = &e), "error");
                         result.packs.push(crate::renamer::PackReport {
                             pack: root.to_string_lossy().to_string(),
                             errors: vec![e],
@@ -905,53 +887,53 @@ pub async fn run_brarchive_tool(
                     continue;
                 }
                 let t = |k: &str| report.tiers.get(k).copied().unwrap_or(0);
-                emit_log(
+                emit_msg(
                     &app,
                     LOG,
-                    &format!(
-                        "  Renamed {} geometries in {} files. Fully named: {} | named from Molang: {} | vanilla untouched: {}",
-                        report.renamed,
-                        report.files_changed,
-                        t("referenced_ok"),
-                        t("referenced_named_by_molang"),
-                        t("vanilla_untouched")
+                    &log_msg!(
+                        "log.backend.brtool.renamed",
+                        renamed = report.renamed,
+                        files = report.files_changed,
+                        named = t("referenced_ok"),
+                        molang = t("referenced_named_by_molang"),
+                        vanilla = t("vanilla_untouched")
                     ),
                     "success",
                 );
-                emit_log(
+                emit_msg(
                     &app,
                     LOG,
-                    &format!(
-                        "  Unused models: {} high, {} medium, {} not identified (original ID kept)",
-                        t("orphan_high"),
-                        t("orphan_medium"),
-                        t("kept_original")
+                    &log_msg!(
+                        "log.backend.brtool.unused",
+                        high = t("orphan_high"),
+                        medium = t("orphan_medium"),
+                        kept = t("kept_original")
                     ),
                     "info",
                 );
                 let s = &report.summary;
-                emit_log(
+                emit_msg(
                     &app,
                     LOG,
-                    &format!(
-                        "  Manual check: {} to review (role conflicts {}, medium orphans {}), {} with a raw variant suffix, {} kept their original ID.",
-                        s.review,
-                        s.role_conflicts,
-                        s.orphan_medium,
-                        s.unresolved_suffix,
-                        s.kept_original
+                    &log_msg!(
+                        "log.backend.brtool.manualCheck",
+                        review = s.review,
+                        conflicts = s.role_conflicts,
+                        medium = s.orphan_medium,
+                        suffixes = s.unresolved_suffix,
+                        kept = s.kept_original
                     ),
                     if s.review > 0 { "warning" } else { "info" },
                 );
                 if report.errors.is_empty() {
-                    emit_log(&app, LOG, "  Validation passed: no broken references, no leftover obfuscated IDs, all JSON still valid.", "success");
+                    emit_msg(&app, LOG, &log_msg!("log.backend.brtool.validationPassed"), "success");
                 } else {
                     for e in &report.errors {
-                        emit_log(&app, LOG, &format!("  ERROR: {}", e), "error");
+                        emit_msg(&app, LOG, &log_msg!("log.backend.brtool.error", error = e), "error");
                     }
                 }
-                emit_log(&app, LOG, &format!("  Check list: {}", report.checklist_path), "info");
-                emit_log(&app, LOG, &format!("  Mapping (old -> new, keep it to undo): {}", report.mapping_path), "info");
+                emit_msg(&app, LOG, &log_msg!("log.backend.brtool.checklist", path = &report.checklist_path), "info");
+                emit_msg(&app, LOG, &log_msg!("log.backend.brtool.mapping", path = &report.mapping_path), "info");
                 result.packs.push(report);
             }
         }
@@ -981,34 +963,29 @@ pub async fn generate_xdelta_patch(
         ));
     }
 
-    emit_log(
+    emit_msg(&app, "genpatch-logs", &log_msg!("log.backend.encode.start"), "info");
+    emit_msg(
         &app,
         "genpatch-logs",
-        "Encoding patch via XDelta...",
+        &log_msg!("log.backend.xdelta.executable", path = format!("{:?}", xdelta_path)),
         "info",
     );
-    emit_log(
+    emit_msg(
         &app,
         "genpatch-logs",
-        &format!("  [Executable] -> {:?}", xdelta_path),
+        &log_msg!("log.backend.encode.sourceFile", path = &source_file),
         "info",
     );
-    emit_log(
+    emit_msg(
         &app,
         "genpatch-logs",
-        &format!("  [Source File] -> {}", source_file),
+        &log_msg!("log.backend.encode.targetFile", path = &target_file),
         "info",
     );
-    emit_log(
+    emit_msg(
         &app,
         "genpatch-logs",
-        &format!("  [Target File] -> {}", target_file),
-        "info",
-    );
-    emit_log(
-        &app,
-        "genpatch-logs",
-        &format!("  [Patch Output] -> {}", patch_file),
+        &log_msg!("log.backend.encode.patchOutput", path = &patch_file),
         "info",
     );
 
@@ -1019,12 +996,7 @@ pub async fn generate_xdelta_patch(
     }
 
     if patch_path.exists() {
-        emit_log(
-            &app,
-            "genpatch-logs",
-            "Removing existing patch file...",
-            "info",
-        );
+        emit_msg(&app, "genpatch-logs", &log_msg!("log.backend.encode.removingExisting"), "info");
         let _ = std::fs::remove_file(patch_path);
     }
 
@@ -1042,20 +1014,10 @@ pub async fn generate_xdelta_patch(
     let stderr = String::from_utf8_lossy(&output.stderr);
 
     if !stdout.trim().is_empty() {
-        emit_log(
-            &app,
-            "genpatch-logs",
-            &format!("XDelta stdout: {}", stdout),
-            "info",
-        );
+        emit_msg(&app, "genpatch-logs", &log_msg!("log.backend.xdelta.stdout", output = &stdout), "info");
     }
     if !stderr.trim().is_empty() {
-        emit_log(
-            &app,
-            "genpatch-logs",
-            &format!("XDelta stderr: {}", stderr),
-            "info",
-        );
+        emit_msg(&app, "genpatch-logs", &log_msg!("log.backend.xdelta.stderr", output = &stderr), "info");
     }
 
     if !output.status.success() {
@@ -1063,12 +1025,7 @@ pub async fn generate_xdelta_patch(
         return Err(format!("Patch generation failed: {}", err_msg));
     }
 
-    emit_log(
-        &app,
-        "genpatch-logs",
-        "XDelta patch generation successful.",
-        "success",
-    );
+    emit_msg(&app, "genpatch-logs", &log_msg!("log.backend.encode.done"), "success");
     Ok("Patch generated successfully.".to_string())
 }
 
@@ -1247,13 +1204,10 @@ pub fn update_app_version(app: tauri::AppHandle, version: String) -> Result<(), 
     // 1. Update tauri.conf.json
     let tauri_conf_path = project_root.join("src-tauri/tauri.conf.json");
     if tauri_conf_path.exists() {
-        emit_log(
+        emit_msg(
             &app,
             "build-logs",
-            &format!(
-                "Updating version to {} (semver: {}) in tauri.conf.json...",
-                version, semver_version
-            ),
+            &log_msg!("log.backend.release.updatingTauriConf", version = &version, semver = &semver_version),
             "info",
         );
         let content = std::fs::read_to_string(&tauri_conf_path)
@@ -1287,20 +1241,12 @@ pub fn update_app_version(app: tauri::AppHandle, version: String) -> Result<(), 
             .map_err(|e| format!("Failed to serialize tauri.conf.json: {}", e))?;
         std::fs::write(&tauri_conf_path, updated_content)
             .map_err(|e| format!("Failed to write tauri.conf.json: {}", e))?;
-        emit_log(
-            &app,
-            "build-logs",
-            "Successfully updated tauri.conf.json and window title.",
-            "success",
-        );
+        emit_msg(&app, "build-logs", &log_msg!("log.backend.release.tauriConfUpdated"), "success");
     } else {
-        emit_log(
+        emit_msg(
             &app,
             "build-logs",
-            &format!(
-                "Warning: tauri.conf.json not found at expected path: {:?}",
-                tauri_conf_path
-            ),
+            &log_msg!("log.backend.release.tauriConfMissing", path = format!("{:?}", tauri_conf_path)),
             "warning",
         );
     }
@@ -1313,10 +1259,10 @@ pub fn update_app_version(app: tauri::AppHandle, version: String) -> Result<(), 
     // 2. Update package.json (base version only)
     let package_json_path = project_root.join("package.json");
     if package_json_path.exists() {
-        emit_log(
+        emit_msg(
             &app,
             "build-logs",
-            &format!("Updating package.json version to {}...", base_version),
+            &log_msg!("log.backend.release.updatingPackageJson", version = &base_version),
             "info",
         );
         let content = std::fs::read_to_string(&package_json_path)
@@ -1333,20 +1279,12 @@ pub fn update_app_version(app: tauri::AppHandle, version: String) -> Result<(), 
             .map_err(|e| format!("Failed to serialize package.json: {}", e))?;
         std::fs::write(&package_json_path, updated_content)
             .map_err(|e| format!("Failed to write package.json: {}", e))?;
-        emit_log(
-            &app,
-            "build-logs",
-            "Successfully updated package.json.",
-            "success",
-        );
+        emit_msg(&app, "build-logs", &log_msg!("log.backend.release.packageJsonUpdated"), "success");
     } else {
-        emit_log(
+        emit_msg(
             &app,
             "build-logs",
-            &format!(
-                "Warning: package.json not found at expected path: {:?}",
-                package_json_path
-            ),
+            &log_msg!("log.backend.release.packageJsonMissing", path = format!("{:?}", package_json_path)),
             "warning",
         );
     }
@@ -1354,13 +1292,10 @@ pub fn update_app_version(app: tauri::AppHandle, version: String) -> Result<(), 
     // 3. Update updater.json
     let updater_json_path = project_root.join("updater.json");
     if updater_json_path.exists() {
-        emit_log(
+        emit_msg(
             &app,
             "build-logs",
-            &format!(
-                "Updating version to {} (semver: {}) in updater.json...",
-                version, semver_version
-            ),
+            &log_msg!("log.backend.release.updatingUpdaterJson", version = &version, semver = &semver_version),
             "info",
         );
         let content = std::fs::read_to_string(&updater_json_path)
@@ -1397,20 +1332,12 @@ pub fn update_app_version(app: tauri::AppHandle, version: String) -> Result<(), 
             .map_err(|e| format!("Failed to serialize updater.json: {}", e))?;
         std::fs::write(&updater_json_path, updated_content)
             .map_err(|e| format!("Failed to write updater.json: {}", e))?;
-        emit_log(
-            &app,
-            "build-logs",
-            "Successfully updated updater.json.",
-            "success",
-        );
+        emit_msg(&app, "build-logs", &log_msg!("log.backend.release.updaterJsonUpdated"), "success");
     } else {
-        emit_log(
+        emit_msg(
             &app,
             "build-logs",
-            &format!(
-                "Warning: updater.json not found at expected path: {:?}",
-                updater_json_path
-            ),
+            &log_msg!("log.backend.release.updaterJsonMissing", path = format!("{:?}", updater_json_path)),
             "warning",
         );
     }
@@ -1444,18 +1371,8 @@ pub fn run_release_build(app: tauri::AppHandle, build_type: String) -> Result<()
             _ => "npm run tauri build",
         };
 
-        emit_log(
-            &app_clone,
-            "build-logs",
-            "Starting project release build...",
-            "info",
-        );
-        emit_log(
-            &app_clone,
-            "build-logs",
-            &format!("Executing command: {}", cmd_str),
-            "info",
-        );
+        emit_msg(&app_clone, "build-logs", &log_msg!("log.backend.build.start"), "info");
+        emit_msg(&app_clone, "build-logs", &log_msg!("log.backend.build.command", command = cmd_str), "info");
 
         let mut cmd = std::process::Command::new("cmd");
         cmd.args(&["/c", cmd_str]);
@@ -1463,12 +1380,7 @@ pub fn run_release_build(app: tauri::AppHandle, build_type: String) -> Result<()
 
         // Simple .env parser to pass TAURI_SIGNING_PRIVATE_KEY during local builds
         if let Ok(env_content) = std::fs::read_to_string(project_root.join(".env")) {
-            emit_log(
-                &app_clone,
-                "build-logs",
-                "Loaded environment variables from .env file.",
-                "info",
-            );
+            emit_msg(&app_clone, "build-logs", &log_msg!("log.backend.build.envLoaded"), "info");
             for line in env_content.lines() {
                 let line = line.trim();
                 if line.is_empty() || line.starts_with('#') {
@@ -1524,12 +1436,7 @@ pub fn run_release_build(app: tauri::AppHandle, build_type: String) -> Result<()
                 match child.wait() {
                     Ok(status) => {
                         if status.success() {
-                            emit_log(
-                                &app_clone,
-                                "build-logs",
-                                "Build finished successfully! Automating updater.json...",
-                                "info",
-                            );
+                            emit_msg(&app_clone, "build-logs", &log_msg!("log.backend.build.succeeded"), "info");
 
                             // Automate updater.json signature injection and copy artifacts
                             let conf_path = project_root.join("src-tauri/tauri.conf.json");
@@ -1543,7 +1450,7 @@ pub fn run_release_build(app: tauri::AppHandle, build_type: String) -> Result<()
                                         let release_dir = project_root.join(format!("Releases/v{}", version));
                                         let _ = std::fs::create_dir_all(&release_dir);
                                         
-                                        emit_log(&app_clone, "build-logs", &format!("Sorting build artifacts into Releases/v{}...", version), "info");
+                                        emit_msg(&app_clone, "build-logs", &log_msg!("log.backend.build.sorting", version = version), "info");
                                         
                                         // Package portable build into zip
                                         let portable_src = project_root.join("src-tauri/target/release/tauri-app.exe");
@@ -1563,11 +1470,11 @@ pub fn run_release_build(app: tauri::AppHandle, build_type: String) -> Result<()
                                             
                                             // Pack staging folder
                                             let zip_dest = release_dir.join(format!("Actions.and.Stuff.RTX.Patcher_{}_portable.zip", version));
-                                            emit_log(&app_clone, "build-logs", "Compressing portable release package into ZIP...", "info");
+                                            emit_msg(&app_clone, "build-logs", &log_msg!("log.backend.build.zipping"), "info");
                                             if let Err(e) = pack_folder_impl(None, &staging_dir, &zip_dest, "build-logs", &[]) {
-                                                emit_log(&app_clone, "build-logs", &format!("Failed to create portable ZIP: {}", e), "error");
+                                                emit_msg(&app_clone, "build-logs", &log_msg!("log.backend.build.zipFailed", error = e), "error");
                                             } else {
-                                                emit_log(&app_clone, "build-logs", "Portable release package ZIP created successfully.", "info");
+                                                emit_msg(&app_clone, "build-logs", &log_msg!("log.backend.build.zipDone"), "info");
                                             }
                                             
                                             // Clean up staging
@@ -1637,40 +1544,40 @@ pub fn run_release_build(app: tauri::AppHandle, build_type: String) -> Result<()
                                                             &updater_path,
                                                             new_content,
                                                         );
-                                                        emit_log(&app_clone, "build-logs", "Successfully injected new signature and URL into updater.json!", "success");
+                                                        emit_msg(&app_clone, "build-logs", &log_msg!("log.backend.build.signatureInjected"), "success");
                                                     }
                                                 }
                                             }
                                         } else {
-                                            emit_log(&app_clone, "build-logs", "Could not find .sig file to inject into updater.json", "warning");
+                                            emit_msg(&app_clone, "build-logs", &log_msg!("log.backend.build.noSig"), "warning");
                                         }
                                     }
                                 }
                             }
                         } else {
-                            emit_log(
+                            emit_msg(
                                 &app_clone,
                                 "build-logs",
-                                &format!("Build failed with exit status: {}", status),
+                                &log_msg!("log.backend.build.failedStatus", status = status),
                                 "error",
                             );
                         }
                     }
                     Err(e) => {
-                        emit_log(
+                        emit_msg(
                             &app_clone,
                             "build-logs",
-                            &format!("Error waiting for build process: {}", e),
+                            &log_msg!("log.backend.build.waitFailed", error = e),
                             "error",
                         );
                     }
                 }
             }
             Err(e) => {
-                emit_log(
+                emit_msg(
                     &app_clone,
                     "build-logs",
-                    &format!("Failed to start build process: {}", e),
+                    &log_msg!("log.backend.build.startFailed", error = e),
                     "error",
                 );
             }
@@ -2054,16 +1961,16 @@ pub async fn prepare_patch_target(
     let rtx_path = Path::new(&rtx_dir);
     let tgt_path = Path::new(&temp_target_dir);
 
-    emit_log(&app, "genpatch-logs", "Starting patch target preparation...", "info");
+    emit_msg(&app, "genpatch-logs", &log_msg!("log.backend.target.start"), "info");
 
     if !tgt_path.exists() {
         std::fs::create_dir_all(tgt_path).map_err(|e| e.to_string())?;
     }
 
-    emit_log(&app, "genpatch-logs", "Copying modified assets...", "info");
+    emit_msg(&app, "genpatch-logs", &log_msg!("log.backend.target.copying"), "info");
     copy_dir_all(rtx_path, tgt_path).map_err(|e| format!("Failed to copy RTX dir: {}", e))?;
 
-    emit_log(&app, "genpatch-logs", "Patch target ready.", "success");
+    emit_msg(&app, "genpatch-logs", &log_msg!("log.backend.target.ready"), "success");
 
     Ok(())
 }

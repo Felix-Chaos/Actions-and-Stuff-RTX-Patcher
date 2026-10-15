@@ -1,0 +1,485 @@
+{
+  "common": {
+    "cancel": "取消",
+    "ok": "確定",
+    "browse": "瀏覽...",
+    "noFolderSelected": "無選取中的資料夾"
+  },
+  "tabPatcher": {
+    "installing": "安裝中...",
+    "heading": "選擇補丁模式",
+    "mode": {
+      "marketplace": {
+        "title": "市集",
+        "desc": "直接從特惠快取補丁你已購買的市集包"
+      },
+      "zip": {
+        "title": "Zip / McPack",
+        "desc": "Normalize and patch an external Minecraft pack file"
+      },
+      "custom": {
+        "title": "自訂補丁",
+        "desc": "Select specific source, target, and .vcdiff patch files manually"
+      },
+      "advancedHint": "啟用進階模式以使用這功能"
+    },
+    "disclaimer": "<strong>免責聲明：</strong>使用此補丁程式需要正版的 Actions & Stuff 憑證！",
+    "versionMismatch": {
+      "title": "版本不相容",
+      "message": "Warning: The selected patch version ({selected}) differs from the installed pack that will be patched ({detected}).\n\nApplying a patch built for a different version will fail.\n\nDo you want to proceed anyway?"
+    },
+    "version": {
+      "modeLabel": "版本選擇模式：",
+      "autoDetect": "自動偵測",
+      "manualSelect": "Manual Select",
+      "asVersion": "A&S的版本：",
+      "patchVersion": "補丁版本：",
+      "refreshPatches": "<i class=\"fas fa-rotate\"></i> 刷新補丁列表",
+      "refreshPatchesTooltip": "Check the patch library for newly released patches",
+      "removeDownload": "<i class=\"fas fa-trash-can\"></i> 移除已下載",
+      "removeDownloadTooltip": "將這個已下載的補丁從磁碟刪除。這補丁會在下次使用時重新下載。",
+      "refreshing": "正在重新載入...",
+      "latestRecommended": "最新版本（推薦）",
+      "patchItem": "補丁版本 v{version}",
+      "versionOption": "版本 {version}",
+      "newPatchesAvailable": {
+        "one": "✨️ 發現{count}個新補丁",
+        "other": "✨️ 共{count}個新補丁可用"
+      },
+      "includedWithApp": "📦 Included with the app",
+      "downloadedOffline": "✅ 已下載，可在離線時使用",
+      "willBeDownloaded": "⬇️ 即將下載",
+      "willBeDownloadedSize": "⬇️ 即將下載（{mb} MB）"
+    },
+    "cache": {
+      "empty": "還沒有已下載的補丁。補丁會在你使用它時自動下載。",
+      "patchLabel": "{packVersion}，補丁版本 v{patchVersion}",
+      "remove": "移除",
+      "removing": "正在移除……",
+      "summary": {
+        "one": "已下載{count}個補丁 · 共{mb} MB",
+        "other": "已下載{count}個多補丁 · 共{mb} MB"
+      },
+      "clearConfirmTitle": "移除已下載的補丁",
+      "clearConfirmMessage": {
+        "one": "Remove the downloaded patch?\n\nThis frees {mb} MB. Patches bundled with the app are not affected, and any removed patch is downloaded again automatically the next time you use it.",
+        "other": "Remove all {count} downloaded patches?\n\nThis frees {mb} MB. Patches bundled with the app are not affected, and any removed patch is downloaded again automatically the next time you use it."
+      }
+    },
+    "zipMode": {
+      "inputFile": "Input File (.zip / .mcpack):",
+      "noFileSelected": "無選取中的檔案"
+    },
+    "customMode": {
+      "sourceLabel": "來源（資料夾 / ZIP）：",
+      "noSourceSelected": "無選取中的來源",
+      "targetLabel": "目標檔案（.mcpack / .zip）：",
+      "noTargetSelected": "無選取中的目標",
+      "copyPath": "複製路徑至剪貼簿",
+      "patchLabel": "補丁檔案（.vcdiff）：",
+      "noPatchSelected": "無選取中的補丁"
+    },
+    "options": {
+      "cleanOld": "自動刪除舊版的已補丁版本"
+    },
+    "actions": {
+      "applyPatch": "Apply RTX Patch",
+      "installPack": "Install Pack",
+      "copyLog": "📋 複製日誌",
+      "reportBug": "🐞 回報錯誤",
+      "backToSelection": "Back to Selection"
+    },
+    "status": {
+      "heading": "補丁狀態",
+      "readyTitle": "準備補丁",
+      "readySubtitle": "Configure options and click Apply",
+      "preparingTitle": "補丁檔案準備中",
+      "downloading": "正在下載 {patch}補丁（{total} MB）...",
+      "downloadingProgress": "Downloading {patch} patch: {done} / {total} MB ({percent}%)",
+      "downloadingProgressIndeterminate": "Downloading {patch} patch: {done} MB",
+      "locatingPatch": "Locating the patch for your pack...",
+      "verifyingTitle": "驗證內容中",
+      "verifyingText": "Analyzing patch requirements...",
+      "compressingTitle": "Compressing Pack",
+      "compressingText": "Generating deterministic ZIP of source pack...",
+      "extractingTitle": "Extracting & Normalizing",
+      "extractingText": "Unpacking ZIP and removing licensing signatures...",
+      "compressingNormalizedTitle": "Compressing Normalized",
+      "compressingNormalizedText": "Generating deterministic ZIP of normalized pack...",
+      "copyingSourceTitle": "複製來源中",
+      "copyingSourceText": "來源ZIP使用中...",
+      "compressingCustomTitle": "Compressing Custom",
+      "compressingCustomText": "Compressing custom directory...",
+      "cleaningTitle": "清理殘餘檔案中",
+      "cleaningText": "Scanning and deleting old patched resource pack directories...",
+      "applyingTitle": "Applying RTX Patch",
+      "applyingText": "Running high-performance XDelta decoder...",
+      "doneTitle": "補丁完成",
+      "doneText": "可以導入至Minecraft中了！",
+      "failedTitle": "補丁失敗",
+      "failedText": "An error occurred during execution.",
+      "noPatchTitle": "還無任何補丁",
+      "noPatchForVersion": "Actions & Stuff {version}還沒有任何補丁。",
+      "noPatchForInstalled": "你已下載的Actions & Stuff版本目前還沒有任何補丁可用。"
+    },
+    "steps": {
+      "scan": "掃描 / 驗證來源內容",
+      "normalize": "Deterministic compression & normalization",
+      "cleanOld": "清理舊版本",
+      "ensurePatch": "確保補丁檔案是可用的",
+      "executePatch": "Execute XDelta RTX patch",
+      "importPack": "Import Minecraft Pack"
+    },
+    "console": {
+      "heading": "Execution Output",
+      "copyTooltip": "複製日誌至剪貼簿",
+      "clearTooltip": "清除控制台",
+      "resizeGripTooltip": "Drag down to enlarge the console. Double-click to reset."
+    }
+  },
+  "tabCleaner": {
+    "title": "🧹 掃描 & 清理舊版補丁",
+    "description": "Locates and deletes leftover Actions & Stuff pack directories from Minecraft resource pack and world folders to keep your installation clean.",
+    "actions": {
+      "scan": "掃描資料夾",
+      "deleteSelected": "刪除已選取",
+      "deleteSelectedCount": {
+        "one": "刪除已選取 共（{count}）項",
+        "other": "刪除已選取 共（{count}）項"
+      },
+      "deleteAll": "刪除全部",
+      "deleteAllCount": {
+        "one": "刪除全部 共（{count}）項",
+        "other": "全部刪除（{count}）"
+      },
+      "selectAll": "全部選取",
+      "selectNone": "無任何選取"
+    },
+    "results": {
+      "title": "掃描結果：",
+      "noneFound": "找到0個",
+      "selectedOfTotal": "{selected} of {total} selected",
+      "placeholder": "點選 掃描資料夾 來開始搜尋...",
+      "clean": "No old Actions & Stuff packs found. Your folders are clean!"
+    },
+    "confirm": {
+      "title": "確認刪除",
+      "message": {
+        "one": "刪除{count}個資料夾？\n\n{description}\n\n這個舉動無法復原。你還是可以在之後重新補丁跟重新下載。",
+        "other": "刪除{count}個資料夾？\n\n{description}\n\n這個舉動無法復原。你還是可以在之後重新補丁跟重新下載。"
+      },
+      "descAll": "Every patched pack found by the scan will be removed.",
+      "descSelected": "只有你勾選的資料夾會被刪除。"
+    },
+    "progress": {
+      "preparing": {
+        "one": "準備刪除{count}個資料夾……",
+        "other": "準備刪除{count}個資料夾..."
+      },
+      "deleting": "Deleting {current} of {total}: {name}",
+      "done": {
+        "one": "成功。已刪除{count}個資料夾。",
+        "other": "成功。已刪除{count}個資料夾。"
+      },
+      "doneWithFailures": {
+        "one": "成功。已刪除{count}個資料夾，{failed}個無法被移除。",
+        "other": "成功。已刪除{count}個資料夾，{failed}個無法被移除。"
+      }
+    }
+  },
+  "tabRtxSettings": {
+    "title": "⚙️ Edit options.txt directly",
+    "description": "Directly modify Minecraft graphics configuration files to force Ray Tracing, Upscaling, and other premium visual toggles.",
+    "profileLabel": "Target options.txt Profile:",
+    "loadingProfiles": "Loading profiles...",
+    "chooseProfile": "-- Choose a Profile --",
+    "placeholder": "Select an options.txt profile to read settings...",
+    "actions": {
+      "setBest": "採用最佳設定",
+      "apply": "應用設定"
+    },
+    "fields": {
+      "raytracing": "光線追蹤",
+      "upscaling": "Upscaling / DLSS",
+      "viewDistance": "Ray Tracing View Distance (Chunks)",
+      "maxFramerate": "Max Framerate",
+      "vsync": "VSync",
+      "blockDithering": "Block Dithering",
+      "mobDithering": "Mob Dithering"
+    },
+    "alerts": {
+      "saveSuccess": "Settings applied successfully!",
+      "saveError": "設定儲存失敗：\n{error}",
+      "bestLoaded": "Best settings set in the editor! Click 'Apply Settings' to save them."
+    }
+  },
+  "tabUtils": {
+    "title": "🛠️ Standalone Utilities",
+    "description": "Select a utility tool to execute specialized tasks without running the main patcher pipeline.",
+    "selectTool": "Select Utility Tool:",
+    "pack": {
+      "title": "Deterministic ZIP Packer",
+      "description": "Creates a zip archive with fixed timestamps (Jan 1, 1980) and no compression (stored). Ideal for patch generators.",
+      "folderLabel": "Folder to Pack:",
+      "saveLocationLabel": "Save Zip / McPack Location:",
+      "noOutputZip": "No output zip selected",
+      "compressBtn": "Compress Deterministically",
+      "alerts": {
+        "missingPaths": "Please select both source folder and destination path.",
+        "success": "Pack created successfully at:\n{path}",
+        "failed": "Packing failed:\n{error}"
+      }
+    },
+    "extract": {
+      "title": "Extract ZIP / MCPack",
+      "description": "Extracts any archive file to a destination directory, resolving double-nested folders automatically.",
+      "archiveFileLabel": "Archive file:",
+      "noZipFileSelected": "無zip檔案選取中",
+      "destFolderLabel": "Destination Folder:",
+      "noDestSelected": "No destination selected",
+      "extractBtn": "Extract Files",
+      "alerts": {
+        "missingPaths": "Please select both source archive and destination folder.",
+        "success": "Extraction complete!",
+        "failed": "Extraction failed:\n{error}"
+      }
+    },
+    "brarchive": {
+      "title": "Extract Brarchives",
+      "description": "Recursively scans a workspace directory, deserializes and unpacks <code>.brarchive</code> contents, and cleans up temp pointer files.",
+      "workspaceLabel": "Workspace / Target Folder:",
+      "noFolderSelected": "No workspace folder selected",
+      "extractBtn": "Extract Brarchives in Folder",
+      "extractToggle": "Extract brarchives",
+      "renameToggle": "Rename geometries <span style=\"color: var(--color-warning); font-weight: 600;\">(Experimental)</span>",
+      "renameHint": "Renaming gives the obfuscated <code>geometry.oreville_ans.xxxxxx</code> IDs readable names and rewrites every reference, in place. Only use it on a copy. A mapping (old → new) and a manual check list are saved next to the pack folder.",
+      "runBtn": {
+        "extractAndRename": "Extract & Rename Geometries",
+        "renameOnly": "Rename Geometries (already extracted)",
+        "nothing": "Nothing selected",
+        "working": "Working..."
+      },
+      "renameConfirm": {
+        "title": "Rename geometries (experimental)",
+        "message": "The experimental renamer rewrites geometry IDs inside the pack files in this folder.\n\nMake sure you are working on a copy. Continue?",
+        "okBtn": "重新命名"
+      },
+      "results": {
+        "renamed": "{renamed} geometries renamed in {files} files",
+        "validationPassed": "✓ Validation passed",
+        "validationErrors": {
+          "one": "⚠ {count} validation error: {errors}",
+          "other": "⚠ {count} validation errors: {errors}"
+        },
+        "review": "Please review: {review} (role conflicts {conflicts}, medium-confidence unused models {medium})",
+        "incomplete": "Readable but incomplete: {suffixes} raw variant suffixes, {kept} unidentified unused models kept their original ID",
+        "openChecklist": "Open manual check list"
+      },
+      "console": {
+        "heading": "Brarchive Tool Log",
+        "copyTooltip": "複製日誌",
+        "clearTooltip": "清除"
+      },
+      "alerts": {
+        "missingFolder": "Please select a target folder.",
+        "toolFailed": "Brarchive tool failed:\n{error}"
+      }
+    }
+  },
+  "tabSupport": {
+    "title": "💬 協助 & 社群",
+    "description": "需要協助或是想加入社群嗎？看看以下這些伺服器。",
+    "chaosServer": {
+      "title": "Chaos dev Projects伺服器<span class=\"badge\" style=\"background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; margin-left: 8px;\">建議</span>",
+      "desc": "開發和更新 Actions & Stuff RTX Patcher 的官方伺服器。 3D列印和遊戲社群也在這裡！"
+    },
+    "betterRtxServer": {
+      "title": "BetterRTX的Discord伺服器",
+      "desc": "開發所有 Minecraft RTX 和 BetterRTX 相關的主要中心。"
+    },
+    "joinDiscord": "加入Discord伺服器",
+    "tags": {
+      "patcher": "補丁程式",
+      "patches": "補丁",
+      "otherProjects": "其他專案",
+      "betterRtx": "Better RTX",
+      "rtxIssues": "RTX相關問題"
+    },
+    "bugReport": {
+      "title": "🐞 提交問題回報",
+      "desc": "Send an automated bug report directly to our developer team via Discord. A case number will be generated for tracking.",
+      "discordLabel": "你的Discord使用者名稱（例：user#1234）",
+      "discordPlaceholder": "We need this to link the report to you",
+      "descLabel": "問題描述",
+      "descPlaceholder": "請描述發生了什麼錯誤（最多500字元）",
+      "categoryLabel": "問題類別<span style=\"color: var(--text-muted); font-weight: 400;\">（選取任何有符合的）</span>",
+      "categories": {
+        "textureMessup": "材質混亂",
+        "texturePurple": "材質全紫",
+        "deltaXProblem": "DeltaX的問題",
+        "noDynamicLight": "無動態光源",
+        "wrongModelMob": "生物模型錯誤"
+      },
+      "includeAppLog": "包含應用程式日誌",
+      "includePack": "Include Pack (Marketplace Cache / Zip)",
+      "includeContentLog": "Send Minecraft Content Log <span style=\"color: var(--text-muted); font-weight: 400;\">(recommended for rendering bugs)</span>",
+      "includeDriverLog": "Include GPU Driver Events <span style=\"color: var(--text-muted); font-weight: 400;\">(last 7 days, display driver only)</span>",
+      "includeHardware": "Include Hardware Info <span style=\"color: var(--text-muted); font-weight: 400;\">(GPU, driver, RAM, BetterRTX version &amp; RTX settings)</span>",
+      "submitBtn": "傳送問題回報",
+      "alerts": {
+        "enterDiscord": "請輸入你的Discord使用者名稱。",
+        "noSpacesDiscord": "Discord的使用者名稱/ID內並無空格。\n如果你輸入了你的名字/暱稱，請輸入你真正的Discord使用者名稱（沒有空格的那個）或是改輸入你18位數字的Discord使用者ID。",
+        "userNotFound": "{error}\n你要現在加入Chaos dev project的伺服器嗎？",
+        "joinServerTitle": "加入伺服器是必須的",
+        "joinDiscordBtn": "加入Discord"
+      },
+      "status": {
+        "submitting": "提交問題回報中...",
+        "zippingMarketplace": "Zipping Marketplace Pack...",
+        "success": "✅ 問題回報提交成功！案件ID：#{caseId}",
+        "replacedOldNote": "Note: You already had a recent issue submitted. Your previous pack file has been replaced to save space.",
+        "failed": "❌ 提交失敗：{error}"
+      }
+    },
+    "knownIssue": {
+      "title": "🟣 Known Issue: Wrong/Missing Mob Textures (NVIDIA)",
+      "desc": "Seeing stretched, black, or purple textures on <b>Zombies, Creepers, or Skeletons</b> on an NVIDIA graphics card? We're actively tracking this specific issue. Use the button below to send a fully <b>anonymous</b> report, no Discord account needed.",
+      "details": "This automatically includes your hardware info, GPU driver events, and Minecraft content log, since diagnosing this bug needs all three. Unlike a regular bug report, this data is kept until the issue is actually fixed instead of being auto-deleted after 30/90 days.",
+      "notesLabel": "Anything else to add? <span style=\"color: var(--text-muted); font-weight: 400;\">(optional)</span>",
+      "notesPlaceholder": "e.g. which subpack, when it started, etc. (optional)",
+      "submitBtn": "匿名回報這個問題",
+      "status": {
+        "submitting": "提交回報中...",
+        "success": "✅ 匿名回報提交成功！案件ID：#{caseId}",
+        "retentionNotice": "This data will be kept until the issue is resolved, not auto-deleted after 30/90 days like a regular report.",
+        "failed": "❌ 提交失敗：{error}"
+      }
+    },
+    "contentLog": {
+      "checking": "Checking Minecraft content log...",
+      "notSentStatus": "⏸️ Report not sent yet. Minecraft needs to generate a content log first.",
+      "modalTitle": "One more step: Content Log",
+      "instructions": {
+        "loggingOff": "Minecraft's content logging was turned OFF, so no useful log exists yet.\n\n✅ I have already enabled it in your Minecraft settings for you.\n\nPlease:\n1. Restart Minecraft\n2. Join the world where the bug happens\n3. Make sure the broken entity/block is loaded (walk up to it)\n4. Come back and press 'Send Bug Report' again",
+        "tooSmall": "Your newest content log is only {size} MB, too small to contain the error details (needs > 5 MB).\n\nPlease:\n1. Restart Minecraft\n2. Join the world where the bug happens\n3. Make sure the broken entity/block is loaded (walk up to it) and play a minute\n4. Come back and press 'Send Bug Report' again",
+        "tooOld": "Your newest content log is more than an hour old, so it probably doesn't show the current bug.\n\nPlease:\n1. Restart Minecraft\n2. Join the world where the bug happens\n3. Make sure the broken entity/block is loaded (walk up to it)\n4. Come back and press 'Send Bug Report' again (within an hour)",
+        "tooLarge": "Your newest content log is {size} MB, which is over the 500 MB limit and likely full of unrelated spam.\n\nPlease:\n1. Restart Minecraft (this starts a fresh, clean log)\n2. Join the world where the bug happens\n3. Make sure the broken entity/block is loaded (walk up to it), just briefly\n4. Come back and press 'Send Bug Report' again",
+        "noLog": "Content logging is enabled, but no log file exists yet.\n\nPlease:\n1. Restart Minecraft\n2. Join the world where the bug happens\n3. Make sure the broken entity/block is loaded (walk up to it)\n4. Come back and press 'Send Bug Report' again\n\n(Or turn off 'Send Minecraft Content Log' to submit without it.)"
+      }
+    },
+    "telemetry": {
+      "enabledStatus": "Thanks! Hardware ping enabled (checked on every start, only uploaded when something changes).",
+      "disabledStatus": "Hardware ping disabled. Nothing will be sent automatically.",
+      "errorTitle": "錯誤",
+      "openDiagnosticsError": "Failed to open diagnostics folder: {error}",
+      "deleteConfirmTitle": "刪除我的資料",
+      "deleteConfirmMessage": "這會刪除所有在我們的伺服器上與你的隨機安裝 ID 關聯的所有遙測數據和錯誤報告數據，然後在本地輪換該 ID，以確保舊數據永遠不會再次與你關聯。繼續嗎？",
+      "deleteBtn": "刪除",
+      "deleteSuccess": "✅ 你的資料已刪除，你的ID已輪換。",
+      "deleteError": "❌ 刪除失敗：{error}"
+    }
+  },
+  "modal": {
+    "notificationTitle": "通知",
+    "confirmTitle": "確認",
+    "telemetryConsent": {
+      "title": "Help Us Diagnose Rare RTX Issues",
+      "intro": "Certain rendering issues occur only on specific GPU and driver combinations. With your consent, the patcher can submit a <b>pseudonymous hardware summary</b>",
+      "whatsTheDifference": "差別在哪？",
+      "introAfter": "to help identify these cases. Reporting is opt-in and is requested once, on first launch. Afterward, your hardware is checked on every launch, and a new submission is sent only when the result differs from the previous one, for example after a GPU, driver, or BetterRTX preset change:",
+      "notCollected": "<b>Not collected:</b> your name, files, or serial numbers. Each submission is identified by a randomly generated <b>installation ID</b> and a one-way hash derived from your machine, used solely to recognize repeat submissions from the same installation so it is not counted twice after a reinstall. Because these identifiers persist and link submissions over time, this is described as pseudonymous rather than anonymous. Both identifiers can be deleted at any time from Settings under \"Delete My Data,\" which also removes the corresponding record from the server. Every payload is additionally saved locally as <code>last_hardware_ping.json</code> for review. Uploaded bug-report logs are deleted after 30 days.",
+      "point1": "GPU model, driver version & VRAM",
+      "point2": "CPU model, RAM size, Windows build",
+      "point3": "Minecraft edition (Store / Launcher) & patcher version",
+      "decline": "拒絕",
+      "accept": "啟用回報"
+    }
+  },
+  "nav": {
+    "patcher": "Patcher",
+    "cleaner": "Cleaner",
+    "rtxSettings": "RTX設定",
+    "utils": {
+      "label": "Utilities",
+      "pack": "ZIP Packer",
+      "extract": "解壓縮ZIP",
+      "genpatch": "建立補丁",
+      "brarchive": "Ext Brarchives"
+    },
+    "support": "協助",
+    "release": "釋出",
+    "appSettings": "程式設定"
+  },
+  "sidebar": {
+    "toggle": "Toggle Sidebar",
+    "advancedMode": "進階模式",
+    "betaUpdates": "Beta更新",
+    "language": "語言",
+    "update": {
+      "checking": "檢查中...",
+      "upToDate": "已是最新版本",
+      "available": "v{version} 可用",
+      "updateNow": "立即更新",
+      "updating": "正在更新...",
+      "checkFailed": "檢查失敗",
+      "confirmTitle": "有更新可用",
+      "confirmMessage": "A new {type} update (v{version}) is available.\n\nWould you like to download and install this update now?",
+      "alphaWarning": "⚠️ WARNING ⚠️\nAlpha builds are highly unstable, completely untested, and might break your packs or fail entirely. Stuff will NOT work as expected! Proceed at your own risk!",
+      "installed": "更新安裝成功！應用程式將重新啟動。",
+      "installFailed": "更新安裝內容失敗：\n{error}"
+    }
+  },
+  "tabAppSettings": {
+    "title": "⚙️ 程式設定",
+    "general": {
+      "heading": "一般類別",
+      "enableAdvancedMode": "啟用進階模式UI",
+      "optInBetaUpdates": "Opt-in to Beta Updates"
+    },
+    "language": {
+      "label": "語言",
+      "hint": "Logs are shown in your language, but copied and sent in English."
+    },
+    "defaultPatcherMode": {
+      "label": "Default Patcher Mode",
+      "marketplace": "Marketplace Auto-Detect",
+      "zip": "Manual Zip/Mcpack",
+      "custom": "Custom Modpack (WIP)"
+    },
+    "patcherBehaviors": {
+      "heading": "Patcher Behaviors",
+      "cleanOldRemnants": "Clean Old Patch Remnants"
+    },
+    "console": {
+      "heading": "控制台",
+      "description": "Set how tall the execution output console is. You can also drag the grip above the console itself, or double-click it to reset.",
+      "heightLabel": "控制台高度",
+      "presetSmall": "小",
+      "presetMedium": "中",
+      "presetLarge": "大",
+      "presetTall": "高度",
+      "currently": "目前{px}px。"
+    },
+    "downloadedPatches": {
+      "heading": "Downloaded Patches",
+      "description": "Patches are downloaded as you use them and kept for offline use. Removing one only frees disk space; it is downloaded again automatically next time. Patches bundled with the app are never removed.",
+      "keepOnlyRecent": "Keep only the most recently used patch",
+      "removeAll": "<i class=\"fas fa-trash-can\"></i> Remove all downloads"
+    },
+    "bugReporter": {
+      "heading": "Bug Reporter Defaults",
+      "includeLogs": "Include Application Logs",
+      "includePack": "Include Pack (Large)",
+      "sendContentLog": "Send Minecraft Content Log",
+      "includeDriverEvents": "Include GPU Driver Events",
+      "includeHardwareInfo": "Include Hardware Info"
+    },
+    "privacy": {
+      "heading": "Privacy & Telemetry",
+      "pingLabel": "Pseudonymous Hardware Ping <span style=\"color: #94a3b8;\">(checked every start, sent only on changes)</span>",
+      "notice": "This data is <b>pseudonymous</b>, not anonymous",
+      "noticeAfter": ", since submissions are linked by a persistent identifier. Reporting is opt-in from first launch; afterward, a submission is sent only when your hardware hash changes, not on every launch. Uploaded logs are deleted automatically after 30 days.",
+      "openDiagnosticsFolder": "Open Diagnostics Folder"
+    }
+  }
+}

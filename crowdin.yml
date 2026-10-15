@@ -1,11 +1,25 @@
-# Crowdin reads the English strings from en.json and writes one file per
-# language next to it. A new language still needs its line in
+# Crowdin reads the English strings from each source file and writes one file
+# per language next to it. A new language still needs its line in
 # src/i18n/registry.js before the patcher offers it.
+#
+# Two files, matching the BUNDLES in src/i18n/registry.js:
+#   en.json      -- the user-facing UI.
+#   dev/en.json  -- log/console output and the author-only dev tools.
+# ! A key moved between these files keeps its translation only if the target
+# ! language file moves with it. After such a move, run "Sync Translations to
+# ! Crowdin" once in the GitHub integration (it does not import on its own).
 preserve_hierarchy: true
 files:
   - source: /src/i18n/locales/en.json
     translation: /src/i18n/locales/%two_letters_code%.json
     # Languages that share a two-letter code need a file name of their own.
+    languages_mapping:
+      two_letters_code:
+        pt-BR: pt-BR
+        zh-CN: zh-CN
+        zh-TW: zh-TW
+  - source: /src/i18n/locales/dev/en.json
+    translation: /src/i18n/locales/dev/%two_letters_code%.json
     languages_mapping:
       two_letters_code:
         pt-BR: pt-BR

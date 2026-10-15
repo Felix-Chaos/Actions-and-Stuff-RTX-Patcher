@@ -16,6 +16,8 @@
 //! Vanilla geometry IDs (`geometry.boat`, `geometry.humanoid.*`, ...) are never renamed.
 //! Results the user should double-check are written to a plain-text report.
 
+use crate::log_msg;
+use crate::logmsg::LogMsg;
 use regex::Regex;
 use serde::Serialize;
 use serde_json::{json, Value};
@@ -1790,22 +1792,17 @@ pub fn has_packed_brarchives(workspace: &Path) -> bool {
 
 /// Renames every obfuscated geometry in one extracted pack, in place.
 /// `log(message, level)` receives progress lines (levels: info, success, warning, error).
-pub fn rename_pack(root: &Path, log: &dyn Fn(&str, &str)) -> Result<PackReport, String> {
+/// Messages are translatable [`LogMsg`]s; their `Display` is the English text.
+pub fn rename_pack(root: &Path, log: &dyn Fn(&LogMsg, &str)) -> Result<PackReport, String> {
     let mut report = PackReport {
         pack: root.to_string_lossy().to_string(),
         ..Default::default()
     };
-    log(
-        "Reading models, entities, attachables and render controllers...",
-        "info",
-    );
+    log(&log_msg!("log.backend.renamer.reading"), "info");
     let pack = Pack::load(root);
     if !pack.json_failures.is_empty() {
         log(
-            &format!(
-                "{} JSON file(s) could not be parsed and were skipped (they are left untouched).",
-                pack.json_failures.len()
-            ),
+            &log_msg!("log.backend.renamer.jsonFailures", count = pack.json_failures.len()),
             "warning",
         );
     }
@@ -1816,36 +1813,33 @@ pub fn rename_pack(root: &Path, log: &dyn Fn(&str, &str)) -> Result<PackReport, 
         report.already_renamed = already;
         report.geometries = pack.defs.len();
         log(
-            if already {
-                "No obfuscated geometry IDs left - this pack looks already renamed. Skipping."
+            &if already {
+                log_msg!("log.backend.renamer.alreadyRenamed")
             } else {
-                "No Actions & Stuff geometries found in this pack. Skipping."
+                log_msg!("log.backend.renamer.noGeometries")
             },
             "warning",
         );
         return Ok(report);
     }
     log(
-        &format!(
-            "Found {} geometry definitions ({} obfuscated), {} referenced.",
-            pack.defs.len(),
-            obf_defs,
-            pack.uses.len()
+        &log_msg!(
+            "log.backend.renamer.found",
+            defs = pack.defs.len(),
+            obfuscated = obf_defs,
+            used = pack.uses.len()
         ),
         "info",
     );
 
     let roles = role_dictionary();
     let dec = BoneDecoder::new(&pack.vocab);
-    log("Resolving render-controller Molang...", "info");
+    log(&log_msg!("log.backend.renamer.resolvingMolang"), "info");
     let (branches, molang_errors) = resolve_render_controllers(&pack);
     report.molang_parse_errors = molang_errors;
     let per_entity = controller_labels_per_entity(&pack, &branches);
 
-    log(
-        "Identifying unreferenced geometries (atlas overlap, dye series, shapes, bone names)...",
-        "info",
-    );
+    log(&log_msg!("log.backend.renamer.identifyingOrphans"), "info");
     let orphans = resolve_orphans(&pack, &dec);
 
     // 1. base names
@@ -2069,10 +2063,7 @@ pub fn rename_pack(root: &Path, log: &dyn Fn(&str, &str)) -> Result<PackReport, 
         .filter(|(o, n)| o != n && is_obfuscated(o))
         .map(|(o, n)| (o.as_str(), n.as_str()))
         .collect();
-    log(
-        &format!("Rewriting {} geometry IDs across the pack...", active.len()),
-        "info",
-    );
+    log(&log_msg!("log.backend.renamer.rewriting", count = active.len()), "info");
     let id_re = Regex::new(r"geometry\.oreville_ans\.[a-z0-9_]+").unwrap();
     // Every rewrite is worked out before the disk is touched, and the originals are kept
     // until all of them are written, so a file that cannot be written (open in the game or
@@ -2133,17 +2124,14 @@ pub fn rename_pack(root: &Path, log: &dyn Fn(&str, &str)) -> Result<PackReport, 
     if active.is_empty() {
         // Already renamed: keep the reports of the run that did the renaming (its mapping is
         // the only way back to the original IDs), so write nothing.
-        log(
-            "Nothing left to rename - this pack was already renamed. Existing reports were kept.",
-            "warning",
-        );
+        log(&log_msg!("log.backend.renamer.nothingLeft"), "warning");
         report.already_renamed = true;
         report.geometries = rename.len();
         return Ok(report);
     }
 
     // 5. validate the rewritten pack
-    log("Validating renamed pack...", "info");
+    log(&log_msg!("log.backend.renamer.validating"), "info");
     let after = Pack::load(root);
     let broken_before: HashSet<&String> = pack
         .uses
@@ -2210,7 +2198,7 @@ pub fn rename_pack(root: &Path, log: &dyn Fn(&str, &str)) -> Result<PackReport, 
         ));
     }
     if molang_errors > 0 {
-        log(&format!("{} render-controller expression(s) could not be parsed; their roles fall back to the static table.", molang_errors), "warning");
+        log(&log_msg!("log.backend.renamer.molangErrors", count = molang_errors), "warning");
     }
 
     // 6. outputs

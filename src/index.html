@@ -305,7 +305,7 @@
                   </div>
                 </div>
                 <div class="console-body" id="console-logs">
-                  <div class="log-line system">Waiting for process start...</div>
+                  <div class="log-line system" data-i18n="log.placeholder.waiting">Waiting for process start...</div>
                 </div>
                 <div class="console-resize-grip" id="console-resize-handle" data-i18n-title="tabPatcher.console.resizeGripTooltip" title="Drag down to enlarge the console. Double-click to reset."></div>
               </div>
@@ -510,7 +510,7 @@
                       </label>
                     </div>
                     <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-                      <span style="font-size: 0.85rem; color: #ffffff; font-weight: 500;" data-i18n="tabUtils.genpatch.publishToLibrary">Publish to Patch Library</span>
+                      <span style="font-size: 0.85rem; color: #ffffff; font-weight: 500;" data-i18n="tabUtils.genpatch.publishToLibrary">Also open a Patch Library pull request</span>
                       <label class="mc-toggle" style="margin-left: 0;">
                         <input type="checkbox" id="gen-publish-library" />
                         <span class="mc-slider"></span>
@@ -518,7 +518,7 @@
                     </div>
                     <div class="genpatch-actions" style="margin-top: 16px;">
                       <button id="btn-run-gen-patch" class="btn btn-gold-3d" style="width: 100%;" data-i18n="tabUtils.genpatch.createPatchesBtn">Create Patches</button>
-                      <button id="btn-publish-last-patch" class="btn btn-secondary hidden-group" style="width: 100%; margin-top: 8px;" data-i18n="tabUtils.genpatch.publishBtn">Publish to Library</button>
+                      <button id="btn-publish-last-patch" class="btn btn-secondary hidden-group" style="width: 100%; margin-top: 8px;" data-i18n="tabUtils.genpatch.publishBtn">Open Pull Request for Created Patch</button>
                     </div>
                     <div class="genpatch-status" id="genpatch-status" style="margin-top: 12px; display: none;">
                       <div id="genpatch-status-text" class="status-hint"></div>
@@ -540,7 +540,7 @@
                   </div>
                   </div>
                   <div class="console-body" id="genpatch-logs" style="height: 140px;">
-                    <div class="log-line system">Ready to create patches...</div>
+                    <div class="log-line system" data-i18n="log.placeholder.genpatchReady">Ready to create patches...</div>
                   </div>
                 </div>
               </div>
@@ -591,7 +591,7 @@
                     </div>
                   </div>
                   <div class="console-body" id="brarchive-logs" style="height: 180px;">
-                    <div class="log-line system">Ready. Pick a folder and choose what to run.</div>
+                    <div class="log-line system" data-i18n="log.placeholder.brarchiveReady">Ready. Pick a folder and choose what to run.</div>
                   </div>
                 </div>
               </div>
@@ -813,7 +813,7 @@
               </div>
               </div>
               <div class="console-body" id="build-logs" style="height: 160px;">
-                <div class="log-line system">Build output will appear here...</div>
+                <div class="log-line system" data-i18n="log.placeholder.buildReady">Build output will appear here...</div>
               </div>
             </div>
 
@@ -835,7 +835,7 @@
                   <label for="set-language" data-i18n="tabAppSettings.language.label">Language</label>
                   <!-- Options are filled from the i18n registry at runtime. -->
                   <select id="set-language" class="custom-select"></select>
-                  <small style="display: block; margin-top: 4px; font-size: 0.75rem; opacity: 0.7;" data-i18n="tabAppSettings.language.hint">Log and console output stays in English.</small>
+                  <small style="display: block; margin-top: 4px; font-size: 0.75rem; opacity: 0.7;" data-i18n="tabAppSettings.language.hint">Logs are shown in your language, but copied and sent in English.</small>
                 </div>
                 <div class="form-group" style="margin-bottom: 12px;">
                   <label for="set-default-mode" data-i18n="tabAppSettings.defaultPatcherMode.label">Default Patcher Mode</label>
