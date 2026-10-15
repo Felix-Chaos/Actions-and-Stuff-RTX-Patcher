@@ -3069,18 +3069,21 @@ async function prepareContentLogOrInstruct(statusEl, btnSubmit) {
     return clRes.zip_path;
   }
 
-  let instruction;
+  // Each situation only explains why the log is unusable; the steps to fix it
+  // are the same every time, so they are one string translated once.
+  let reason;
   if (clRes.status === 'logging_was_off') {
-    instruction = t('tabSupport.contentLog.instructions.loggingOff');
+    reason = t('tabSupport.contentLog.reasons.loggingOff');
   } else if (clRes.status === 'log_too_small') {
-    instruction = t('tabSupport.contentLog.instructions.tooSmall', { size: clRes.log_size_mb });
+    reason = t('tabSupport.contentLog.reasons.tooSmall', { size: clRes.log_size_mb });
   } else if (clRes.status === 'log_too_old') {
-    instruction = t('tabSupport.contentLog.instructions.tooOld');
+    reason = t('tabSupport.contentLog.reasons.tooOld');
   } else if (clRes.status === 'log_too_large') {
-    instruction = t('tabSupport.contentLog.instructions.tooLarge', { size: clRes.log_size_mb });
+    reason = t('tabSupport.contentLog.reasons.tooLarge', { size: clRes.log_size_mb });
   } else { // no_log
-    instruction = t('tabSupport.contentLog.instructions.noLog');
+    reason = t('tabSupport.contentLog.reasons.noLog');
   }
+  const instruction = `${reason}\n\n${t('tabSupport.contentLog.steps')}`;
   statusEl.innerText = t('tabSupport.contentLog.notSentStatus');
   statusEl.className = "status-hint";
   btnSubmit.disabled = false;

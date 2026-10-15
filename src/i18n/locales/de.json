@@ -359,13 +359,14 @@
       "checking": "Minecraft-Content-Log wird geprüft...",
       "notSentStatus": "⏸️ Bericht noch nicht gesendet. Minecraft muss zuerst ein Content-Log erstellen.",
       "modalTitle": "Noch ein Schritt: Content-Log",
-      "instructions": {
-        "loggingOff": "Das Content-Logging von Minecraft war DEAKTIVIERT, daher existiert noch kein nützliches Log.\n\n✅ Ich habe es in deinen Minecraft-Einstellungen bereits für dich aktiviert.\n\nBitte:\n1. Starte Minecraft neu\n2. Betritt die Welt, in der der Fehler auftritt\n3. Stelle sicher, dass das fehlerhafte Entity/der fehlerhafte Block geladen ist (gehe darauf zu)\n4. Kehre hierher zurück und klicke erneut auf „Fehlerbericht senden“",
-        "tooSmall": "Dein neuestes Content-Log ist nur {size} MB groß, zu klein, um die Fehlerdetails zu enthalten (benötigt > 5 MB).\n\nBitte:\n1. Starte Minecraft neu\n2. Betritt die Welt, in der der Fehler auftritt\n3. Stelle sicher, dass das fehlerhafte Entity/der fehlerhafte Block geladen ist (gehe darauf zu) und spiele eine Minute\n4. Kehre hierher zurück und klicke erneut auf „Fehlerbericht senden“",
-        "tooOld": "Dein neuestes Content-Log ist älter als eine Stunde und zeigt daher wahrscheinlich nicht den aktuellen Fehler.\n\nBitte:\n1. Starte Minecraft neu\n2. Betritt die Welt, in der der Fehler auftritt\n3. Stelle sicher, dass das fehlerhafte Entity/der fehlerhafte Block geladen ist (gehe darauf zu)\n4. Kehre hierher zurück und klicke erneut auf „Fehlerbericht senden“ (innerhalb einer Stunde)",
-        "tooLarge": "Dein neuestes Content-Log ist {size} MB groß, was über dem Limit von 500 MB liegt und wahrscheinlich voll von irrelevantem Spam ist.\n\nBitte:\n1. Starte Minecraft neu (dies startet ein frisches, sauberes Log)\n2. Betritt die Welt, in der der Fehler auftritt\n3. Stelle sicher, dass das fehlerhafte Entity/der fehlerhafte Block geladen ist (gehe kurz darauf zu)\n4. Kehre hierher zurück und klicke erneut auf „Fehlerbericht senden“",
-        "noLog": "Content-Logging ist aktiviert, aber es existiert noch keine Log-Datei.\n\nBitte:\n1. Starte Minecraft neu\n2. Betritt die Welt, in der der Fehler auftritt\n3. Stelle sicher, dass das fehlerhafte Entity/der fehlerhafte Block geladen ist (gehe darauf zu)\n4. Kehre hierher zurück und klicke erneut auf „Fehlerbericht senden“\n\n(Oder deaktiviere „Minecraft-Content-Log senden“, um ohne Log einzureichen.)"
-      }
+      "reasons": {
+        "loggingOff": "Das Content-Logging von Minecraft war DEAKTIVIERT, daher existiert noch kein nützliches Log.\n\n✅ Ich habe es in deinen Minecraft-Einstellungen bereits für dich aktiviert.",
+        "tooSmall": "Dein neuestes Content-Log ist nur {size} MB groß, zu klein, um die Fehlerdetails zu enthalten (benötigt > 5 MB).",
+        "tooOld": "Dein neuestes Content-Log ist älter als eine Stunde und zeigt daher wahrscheinlich nicht den aktuellen Fehler.",
+        "tooLarge": "Dein neuestes Content-Log ist {size} MB groß, was über dem Limit von 500 MB liegt und wahrscheinlich voll von irrelevantem Spam ist. Ein Neustart von Minecraft startet ein frisches, sauberes Log.",
+        "noLog": "Content-Logging ist aktiviert, aber es existiert noch keine Log-Datei."
+      },
+      "steps": "Bitte:\n1. Starte Minecraft neu\n2. Betritt die Welt, in der der Fehler auftritt\n3. Stelle sicher, dass das fehlerhafte Entity/der fehlerhafte Block geladen ist (gehe darauf zu), und spiele eine Minute\n4. Kehre innerhalb einer Stunde hierher zurück und klicke erneut auf „Fehlerbericht senden“\n\n(Oder deaktiviere „Minecraft-Content-Log senden“, um ohne Log einzureichen.)"
     },
     "telemetry": {
       "enabledStatus": "Danke! Hardware-Ping aktiviert (wird bei jedem Start geprüft, nur bei Änderungen hochgeladen).",
