@@ -1,11 +1,11 @@
 {
-  "notes": "Initial Tauri V3 release with advanced patch creators, cleaner utilities, direct option edits, and native explorer browses.",
+  "notes": "Security update. Includes all changes since 2.2.14.",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSWVdLUE5ZT0Zxa1JlTkRaSDdEc1ZnMDMyNnlucVhLTExvdDlLZDVJUC9BTnNOVGlaTitQSnUvaldmYkk3R1dZVmJvb1VlUXNvNlorS1E2dXZZSU9STko2cCtVR2g3dHc0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg4ODYyNzM0CWZpbGU6QWN0aW9ucyBhbmQgU3R1ZmYgUlRYIFBhdGNoZXJfMi4yLjE0LTBfeDY0LXNldHVwLmV4ZQpuWTc4ZXB0OSt3ZUhDQjFmU2wwU0pQRlU4ZkNIdUpRVmd1aC96L1VyaW9raFJvTmtKU0xhVDlhR2lUNXh3aFMwMno3YnFab3doZXlhNmxoRFFzTTZCZz09Cg==",
-      "url": "https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/download/V2.2.14b/Actions.and.Stuff.RTX.Patcher_2.2.14-0_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSWVdLUE5ZT0Zxa2JnVS9LSXlYU2Q3d2VYSk5rN1NHejJXWmdxSERoTjdvbWRlRjVtZmdlMk9KMXdUekJ0UnV4U1EwTE80YzRFcktDaGRNWCs3V0JlMXY2a0VLQy9jWXc4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMTU5MTgxCWZpbGU6QWN0aW9ucyBhbmQgU3R1ZmYgUlRYIFBhdGNoZXJfMi4zLjEtMF94NjQtc2V0dXAuZXhlCXZlcnNpb246Mi4zLjEtMAovNUkwNFdTQUpaUnUvWGJTaDU2OSsvSWVmckw5WDd5UG5EOGc0T0ZCRjQ5Q1BOZmhzNVJGOE5Ob0tieEZ2OSt2ZEJNTWhDN2pDV2FhOEFVVm5ab0ZDQT09Cg==",
+      "url": "https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/download/V2.3.1/Actions.and.Stuff.RTX.Patcher_2.3.1-0_x64-setup.exe"
     }
   },
-  "pub_date": "2026-07-13T20:51:27Z",
-  "version": "2.2.14-0"
+  "pub_date": "2026-10-16T14:13:21Z",
+  "version": "2.3.1-0"
 }
