@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="../style.css" />
+  <link rel="stylesheet" href="../style.css?v=20261022b" />
   <style>
     .uptodate { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 32px 16px 48px; text-align: center; position: relative; overflow: hidden; }
     .uptodate__question { margin: 0; font-size: clamp(1.1rem, 3.5vw, 1.6rem); font-weight: 700; color: var(--text-muted); }
@@ -157,7 +157,7 @@
       fine.textContent = `Marketplace: A&S ${normalize(asVersion)} · Newest patch: A&S ${newestPatched.version}`;
     };
 
-    const getJson = (url) => fetch(url).then((r) => (r.ok ? r.json() : Promise.reject(r.status)));
+    const getJson = (url) => fetch(url, { cache: "no-cache" }).then((r) => (r.ok ? r.json() : Promise.reject(r.status)));
     Promise.all([
       getJson(PATCH_INDEX_URL),
       getJson(AS_VERSION_URL).catch(() => ({ version: null })),

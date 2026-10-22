@@ -242,6 +242,7 @@
   if (patchBox) {
     const PATCH_INDEX_URL = "https://raw.githubusercontent.com/Felix-Chaos/AS-RTX-Patch-Library/main/patch_index.json";
     const PATCH_CACHE_KEY = "asrtx-latest-patch-v2";
+    const PATCH_CACHE_TTL = 5 * 60 * 1000;
     const patchEl = (key) => patchBox.querySelector(`[data-patch="${key}"]`);
     const versionParts = (v) => String(v).replace(/^v/i, "").split(".").map((n) => parseInt(n, 10) || 0);
     const compareVersions = (a, b) => {
@@ -266,13 +267,14 @@
     let cachedPatch = null;
     try {
       const c = JSON.parse(sessionStorage.getItem(PATCH_CACHE_KEY) || "null");
-      if (c && Date.now() - c.time < CACHE_TTL) cachedPatch = c.data;
+      if (c && Date.now() - c.time < PATCH_CACHE_TTL) cachedPatch = c.data;
     } catch { /* storage unavailable */ }
 
     if (cachedPatch) {
       renderPatch(cachedPatch);
     } else {
-      fetch(PATCH_INDEX_URL)
+      // no-cache: revalidate with GitHub, so a just-published patch shows up right away.
+      fetch(PATCH_INDEX_URL, { cache: "no-cache" })
         .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
         .then((index) => {
           const entries = (index.entries || []).slice().sort((a, b) =>
