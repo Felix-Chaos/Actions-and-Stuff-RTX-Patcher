@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Is A&amp;S RTX Up to Date?</title>
+  <meta name="description" content="Does the A&amp;S RTX patch work with the newest Actions &amp; Stuff yet? One word answer, plus cats." />
+  <link rel="canonical" href="https://rtx.chaosdev.dev/uptodate/" />
+  <meta name="theme-color" content="#22c55e" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Actions &amp; Stuff RTX Patcher" />
+  <meta property="og:url" content="https://rtx.chaosdev.dev/uptodate/" />
+  <meta property="og:title" content="Is A&amp;S RTX up to date yet?" />
+  <meta property="og:description" content="Click to find out. Spoiler: there are cats either way." />
+  <meta property="og:image" content="https://rtx.chaosdev.dev/assets/og-image.jpg" />
+  <link rel="icon" type="image/png" href="../assets/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../style.css" />
+  <style>
+    .uptodate { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 32px 16px 48px; text-align: center; position: relative; overflow: hidden; }
+    .uptodate__question { margin: 0; font-size: clamp(1.1rem, 3.5vw, 1.6rem); font-weight: 700; color: var(--text-muted); }
+    .uptodate__answer { margin: 0; font-weight: 800; line-height: .9; letter-spacing: -.04em; font-size: clamp(6rem, 30vw, 16rem); }
+    .uptodate[data-state="yes"] .uptodate__answer { color: var(--primary-light); text-shadow: 0 0 40px rgba(34, 197, 94, .45); animation: bounce 1s ease-in-out infinite alternate; }
+    .uptodate[data-state="no"] .uptodate__answer { color: var(--color-danger); text-shadow: 0 0 40px rgba(248, 113, 113, .35); }
+    .uptodate[data-state="unknown"] .uptodate__answer { color: var(--color-warning); font-size: clamp(4rem, 18vw, 9rem); }
+    .uptodate[data-state="loading"] .uptodate__answer { color: var(--text-muted); font-size: clamp(3rem, 12vw, 6rem); }
+    .uptodate__detail { margin: 0; max-width: 34rem; font-size: 1.05rem; color: var(--text-main); }
+    .uptodate__detail strong { color: var(--primary-light); }
+    .uptodate[data-state="no"] .uptodate__detail strong { color: var(--color-warning); }
+    .uptodate__meme { width: min(320px, 80vw); display: grid; gap: 6px; }
+    .uptodate__meme iframe { width: 100%; aspect-ratio: 1; border: 0; border-radius: 12px; background: var(--panel-bg); pointer-events: none; }
+    .uptodate__credit { font-size: .75rem; color: var(--text-muted); }
+    .uptodate__credit a { color: inherit; }
+    .uptodate__links { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+    .uptodate__fine { margin: 0; font-size: .78rem; color: var(--text-muted); font-family: var(--font-mono); }
+    .beta-tag { display: inline-block; margin-left: 6px; vertical-align: middle; }
+    .confetti { position: fixed; top: -12px; width: 10px; height: 14px; pointer-events: none; animation: fall linear forwards; z-index: 0; }
+    .uptodate > * { position: relative; z-index: 1; }
+    @keyframes bounce { from { transform: translateY(0) rotate(-2deg); } to { transform: translateY(-14px) rotate(2deg); } }
+    @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
+    @media (prefers-reduced-motion: reduce) {
+      .uptodate[data-state="yes"] .uptodate__answer { animation: none; }
+      .confetti { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="uptodate" data-state="loading" aria-live="polite">
+    <p class="uptodate__question">Is A&amp;S RTX up to date yet?</p>
+    <p class="uptodate__answer" id="answer">…</p>
+    <p class="uptodate__detail" id="detail">Asking the cats…</p>
+    <figure class="uptodate__meme" id="meme" hidden>
+      <iframe id="meme-frame" title="Cat GIF" loading="lazy" allowfullscreen></iframe>
+      <figcaption class="uptodate__credit"><a id="meme-credit" href="https://giphy.com/" rel="noopener" target="_blank">via GIPHY</a></figcaption>
+    </figure>
+    <div class="uptodate__links">
+      <a class="btn btn-gold-3d" href="../">Get the Patcher</a>
+      <a class="btn btn-secondary" href="https://discord.gg/YrMMmN2kc7" rel="noopener">Discord</a>
+    </div>
+    <p class="uptodate__fine" id="fine"></p>
+  </main>
+
+  <script>
+  (() => {
+    const PATCH_INDEX_URL = "https://raw.githubusercontent.com/Felix-Chaos/AS-RTX-Patch-Library/main/patch_index.json";
+    const AS_VERSION_URL = "https://api.chaosdev.dev/api/patcher/as-version";
+    const GIFS = {
+      yes: ["DFexVkRG7gX9oCy68r", "l3vRapk1RjAlRtKx2"],
+      no: ["4PEFw6j61P2o5ZtUqZ", "3o6Zt7StAisetJ7ntC", "46hkdcVpGZNNAjCOKj"],
+    };
+
+    const page = document.querySelector(".uptodate");
+    const answer = document.getElementById("answer");
+    const detail = document.getElementById("detail");
+    const fine = document.getElementById("fine");
+
+    // "v1.11.0" and "1.11" name the same pack version.
+    const normalize = (v) => {
+      const parts = String(v || "").trim().replace(/^v/i, "").split(".");
+      while (parts.length > 1 && /^0+$/.test(parts[parts.length - 1])) parts.pop();
+      return parts.join(".");
+    };
+    const compare = (a, b) => {
+      const pa = normalize(a).split(".").map(Number), pb = normalize(b).split(".").map(Number);
+      for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+        const d = (pa[i] || 0) - (pb[i] || 0);
+        if (d) return d;
+      }
+      return 0;
+    };
+    // Same rule as the Patch Library: an explicit flag wins, otherwise 0.x is beta.
+    const isBeta = (e) => (typeof e.beta === "boolean" ? e.beta : /^v?0(\.|$)/i.test(String(e.patchVersion)));
+    const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+    const showGif = (kind) => {
+      const list = GIFS[kind];
+      const id = list[Math.floor(Math.random() * list.length)];
+      document.getElementById("meme-frame").src = `https://giphy.com/embed/${id}`;
+      document.getElementById("meme-credit").href = `https://giphy.com/gifs/${id}`;
+      document.getElementById("meme").hidden = false;
+    };
+
+    const confetti = () => {
+      const colors = ["#22c55e", "#4ade80", "#facc15", "#f472b6", "#60a5fa", "#f97316"];
+      for (let i = 0; i < 90; i++) {
+        const c = document.createElement("span");
+        c.className = "confetti";
+        c.style.left = `${Math.random() * 100}vw`;
+        c.style.background = colors[i % colors.length];
+        c.style.animationDuration = `${2.5 + Math.random() * 3}s`;
+        c.style.animationDelay = `${Math.random() * 2}s`;
+        page.appendChild(c);
+        c.addEventListener("animationend", () => c.remove());
+      }
+    };
+
+    const render = (entries, asVersion) => {
+      // Newest patch per A&S version; a version counts as released once any non-beta patch covers it.
+      const byVersion = new Map();
+      for (const e of entries) {
+        const v = normalize(e.packVersion);
+        const cur = byVersion.get(v) || { version: v, beta: true };
+        cur.beta = cur.beta && isBeta(e);
+        byVersion.set(v, cur);
+      }
+      const newestPatched = [...byVersion.values()].sort((a, b) => compare(b.version, a.version))[0];
+      if (!newestPatched) throw new Error("empty patch index");
+
+      if (!asVersion) {
+        page.dataset.state = "unknown";
+        answer.textContent = "PROBABLY?";
+        detail.innerHTML = `The newest patch is for <strong>A&amp;S ${esc(newestPatched.version)}</strong>${newestPatched.beta ? ' <span class="update-badge state-available beta-tag">Beta</span>' : ""}. We don't know the current Marketplace version right now, so check your A&amp;S version.`;
+        showGif("yes");
+        return;
+      }
+
+      const current = byVersion.get(normalize(asVersion));
+      if (current || compare(newestPatched.version, asVersion) > 0) {
+        // A stale Marketplace value older than the newest patch: talk about the newest patch.
+        const covered = compare(newestPatched.version, asVersion) > 0 ? newestPatched : current;
+        page.dataset.state = "yes";
+        answer.textContent = "YES";
+        detail.innerHTML = `The patch works with <strong>A&amp;S ${esc(covered.version)}</strong>, the newest version on the Marketplace.${covered.beta ? ' <span class="update-badge state-available beta-tag">Beta</span> It is still in beta, so expect the odd visual bug.' : " Go patch and play!"}`;
+        showGif("yes");
+        confetti();
+      } else {
+        page.dataset.state = "no";
+        answer.textContent = "NO";
+        detail.innerHTML = `A&amp;S <strong>${esc(normalize(asVersion))}</strong> is out, but the patch only works with <strong>A&amp;S ${esc(newestPatched.version)}</strong> so far${newestPatched.beta ? " (beta)" : ""}. A new patch is on its way. Keep A&amp;S ${esc(newestPatched.version)} for now, or wait for it in the Discord.`;
+        showGif("no");
+      }
+      fine.textContent = `Marketplace: A&S ${normalize(asVersion)} · Newest patch: A&S ${newestPatched.version}`;
+    };
+
+    const getJson = (url) => fetch(url).then((r) => (r.ok ? r.json() : Promise.reject(r.status)));
+    Promise.all([
+      getJson(PATCH_INDEX_URL),
+      getJson(AS_VERSION_URL).catch(() => ({ version: null })),
+    ])
+      .then(([index, as]) => render(index.entries || [], as.version))
+      .catch(() => {
+        page.dataset.state = "unknown";
+        answer.textContent = "???";
+        detail.textContent = "Couldn't reach the patch library. Even the cats are confused. Try again in a minute.";
+      });
+  })();
+  </script>
+</body>
+</html>
