@@ -377,7 +377,12 @@
       "deleteConfirmMessage": "This deletes all telemetry and bug-report data linked to your random install ID from our server, then rotates the ID locally so old data can never be linked to you again. Continue?",
       "deleteBtn": "Delete",
       "deleteSuccess": "✅ Your data has been deleted and your ID rotated.",
-      "deleteError": "❌ Deletion failed: {error}"
+      "deleteError": "❌ Deletion failed: {error}",
+      "exportBtn": "Download My Data",
+      "exportRunning": "Fetching your data from the server…",
+      "exportSuccess": "✅ Saved to {path}",
+      "exportCancelled": "Download cancelled.",
+      "exportError": "❌ Download failed: {error}"
     }
   },
   "modal": {

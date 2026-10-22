@@ -68,6 +68,7 @@ pub fn run() {
             collect_hardware_info,
             submit_hardware_ping,
             telemetry_delete_my_data,
+            telemetry_export_my_data,
             collect_driver_events,
             prepare_content_log,
             fetch_patch_index,

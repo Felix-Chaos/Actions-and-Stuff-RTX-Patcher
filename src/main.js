@@ -3035,6 +3035,18 @@ async function setupTelemetry() {
     }
   });
 
+  document.getElementById('btn-export-telemetry-data')?.addEventListener('click', async () => {
+    if (statusEl) statusEl.innerText = t('tabSupport.telemetry.exportRunning');
+    try {
+      const res = await invoke('telemetry_export_my_data');
+      if (statusEl) statusEl.innerText = res.saved
+        ? t('tabSupport.telemetry.exportSuccess', { path: res.path })
+        : t('tabSupport.telemetry.exportCancelled');
+    } catch (e) {
+      if (statusEl) statusEl.innerText = t('tabSupport.telemetry.exportError', { error: e });
+    }
+  });
+
   document.getElementById('btn-delete-telemetry-data')?.addEventListener('click', async () => {
     const confirmed = await showModal(
       t('tabSupport.telemetry.deleteConfirmMessage'),
