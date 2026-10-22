@@ -241,7 +241,7 @@
   const patchBox = document.querySelector('[data-patch="box"]');
   if (patchBox) {
     const PATCH_INDEX_URL = "https://raw.githubusercontent.com/Felix-Chaos/AS-RTX-Patch-Library/main/patch_index.json";
-    const PATCH_CACHE_KEY = "asrtx-latest-patch";
+    const PATCH_CACHE_KEY = "asrtx-latest-patch-v2";
     const patchEl = (key) => patchBox.querySelector(`[data-patch="${key}"]`);
     const versionParts = (v) => String(v).replace(/^v/i, "").split(".").map((n) => parseInt(n, 10) || 0);
     const compareVersions = (a, b) => {
@@ -259,6 +259,7 @@
       patchEl("pack").textContent = `A&S ${latest.packVersion}`;
       patchEl("version").textContent = `Patch V${latest.patchVersion}`;
       patchEl("beta").hidden = !latest.beta;
+      patchEl("hotpatch").hidden = !latest.hotpatch;
       patchBox.hidden = false;
     };
 
@@ -277,7 +278,7 @@
           const entries = (index.entries || []).slice().sort((a, b) =>
             compareVersions(b.packVersion, a.packVersion) || compareVersions(b.patchVersion, a.patchVersion));
           if (!entries.length) return;
-          const latest = { packVersion: entries[0].packVersion, patchVersion: entries[0].patchVersion, beta: isBetaPatch(entries[0]) };
+          const latest = { packVersion: entries[0].packVersion, patchVersion: entries[0].patchVersion, beta: isBetaPatch(entries[0]), hotpatch: entries[0].hotpatch === true };
           try { sessionStorage.setItem(PATCH_CACHE_KEY, JSON.stringify({ time: Date.now(), data: latest })); } catch { /* storage unavailable */ }
           renderPatch(latest);
         })

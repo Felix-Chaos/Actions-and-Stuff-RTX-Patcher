@@ -92,6 +92,8 @@
     };
     // Same rule as the Patch Library: an explicit flag wins, otherwise 0.x is beta.
     const isBeta = (e) => (typeof e.beta === "boolean" ? e.beta : /^v?0(\.|$)/i.test(String(e.patchVersion)));
+    const badge = (text) => ` <span class="update-badge state-available beta-tag">${text}</span>`;
+    const badges = (c) => (c.hotpatch ? badge("Hotpatch") : "") + (c.beta ? badge("Beta") : "");
     const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
     const showGif = (kind) => {
@@ -121,8 +123,9 @@
       const byVersion = new Map();
       for (const e of entries) {
         const v = normalize(e.packVersion);
-        const cur = byVersion.get(v) || { version: v, beta: true };
+        const cur = byVersion.get(v) || { version: v, beta: true, hotpatch: true };
         cur.beta = cur.beta && isBeta(e);
+        cur.hotpatch = cur.hotpatch && e.hotpatch === true;
         byVersion.set(v, cur);
       }
       const newestPatched = [...byVersion.values()].sort((a, b) => compare(b.version, a.version))[0];
@@ -131,7 +134,7 @@
       if (!asVersion) {
         page.dataset.state = "unknown";
         answer.textContent = "PROBABLY?";
-        detail.innerHTML = `The newest patch is for <strong>A&amp;S ${esc(newestPatched.version)}</strong>${newestPatched.beta ? ' <span class="update-badge state-available beta-tag">Beta</span>' : ""}. We don't know the current Marketplace version right now, so check your A&amp;S version.`;
+        detail.innerHTML = `The newest patch is for <strong>A&amp;S ${esc(newestPatched.version)}</strong>${badges(newestPatched)}. We don't know the current Marketplace version right now, so check your A&amp;S version.`;
         showGif("yes");
         return;
       }
@@ -142,13 +145,13 @@
         const covered = compare(newestPatched.version, asVersion) > 0 ? newestPatched : current;
         page.dataset.state = "yes";
         answer.textContent = "YES";
-        detail.innerHTML = `The patch works with <strong>A&amp;S ${esc(covered.version)}</strong>, the newest version on the Marketplace.${covered.beta ? ' <span class="update-badge state-available beta-tag">Beta</span> It is still in beta, so expect the odd visual bug.' : " Go patch and play!"}`;
+        detail.innerHTML = `The patch works with <strong>A&amp;S ${esc(covered.version)}</strong>, the newest version on the Marketplace.${badges(covered)}${covered.beta ? " It is still in beta, so expect the odd visual bug." : " Go patch and play!"}`;
         showGif("yes");
         confetti();
       } else {
         page.dataset.state = "no";
         answer.textContent = "NO";
-        detail.innerHTML = `A&amp;S <strong>${esc(normalize(asVersion))}</strong> is out, but the patch only works with <strong>A&amp;S ${esc(newestPatched.version)}</strong> so far${newestPatched.beta ? " (beta)" : ""}. A new patch is on its way. Keep A&amp;S ${esc(newestPatched.version)} for now, or wait for it in the Discord.`;
+        detail.innerHTML = `A&amp;S <strong>${esc(normalize(asVersion))}</strong> is out, but the patch only works with <strong>A&amp;S ${esc(newestPatched.version)}</strong> so far${badges(newestPatched)}. A new patch is on its way. Keep A&amp;S ${esc(newestPatched.version)} for now, or wait for it in the Discord.`;
         showGif("no");
       }
       fine.textContent = `Marketplace: A&S ${normalize(asVersion)} · Newest patch: A&S ${newestPatched.version}`;
