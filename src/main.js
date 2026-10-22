@@ -1483,6 +1483,14 @@ function setupUtilities() {
     }
   });
 
+  // Hotpatch toggle reveals the "made from" version field.
+  const genHotpatch = document.getElementById('gen-hotpatch');
+  if (genHotpatch) {
+    genHotpatch.addEventListener('change', () => {
+      document.getElementById('gen-hotpatch-base-row').classList.toggle('hidden-group', !genHotpatch.checked);
+    });
+  }
+
   // ---- V2-style Create Patch ----
   document.getElementById('btn-run-gen-patch').addEventListener('click', async () => {
     const patchedDir   = document.getElementById('gen-patched-dir').value;
@@ -1493,6 +1501,8 @@ function setupUtilities() {
     const patchVer     = document.getElementById('gen-patch-version').value.trim() || "1.0";
     const injectManifest = document.getElementById('gen-inject-manifest').checked;
     const encryptTarget = document.getElementById('gen-encrypt-target').checked;
+    const hotpatch = document.getElementById('gen-hotpatch').checked;
+    const hotpatchBase = document.getElementById('gen-hotpatch-base').value.trim().replace(/^v/i, '');
 
     if (!patchedDir || !decryptedDir || !encryptedDir || !outputDir) {
       await showAlert(t('tabUtils.genpatch.alerts.missingPaths'));
@@ -1623,6 +1633,11 @@ function setupUtilities() {
               has_lang_file: patchStats ? patchStats.has_lang_file : true
           }
       };
+      // A hotpatch carries the RTX work of an older A&S version over to a new one.
+      if (hotpatch) {
+          configData.hotpatch = true;
+          if (hotpatchBase) configData.basedOn = `v${hotpatchBase}`;
+      }
       await invoke("write_text_file", { path: configPath, content: JSON.stringify(configData, null, 4) });
       gLog_fn(msg('log.genpatch.configCreated'));
 
@@ -2545,6 +2560,11 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
     } else {
       if (!patchConfigToUse) {
         throw msg('log.patcher.errors.noConfig');
+      }
+      if (patchConfigToUse.hotpatch) {
+        log(patchConfigToUse.basedOn
+          ? msg('log.patcher.hotpatch', { packVersion: patchConfigToUse.packVersion, basedOn: patchConfigToUse.basedOn })
+          : msg('log.patcher.hotpatchNoBase', { packVersion: patchConfigToUse.packVersion }), 'warning');
       }
 
       const isEncrypted = mode === 'marketplace';
