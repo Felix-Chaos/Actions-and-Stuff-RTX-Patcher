@@ -19,7 +19,7 @@
 [![Crowdin](https://badges.crowdin.net/ans-rtx-patcher/localized.svg)](https://crowdin.com/project/ans-rtx-patcher)
 
 [![Download Latest](https://img.shields.io/badge/Download-Latest_Release-2ea44f?style=for-the-badge&logo=github)](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/latest)
-[![Website](https://img.shields.io/badge/Website-Guide_&_Wiki-22c55e?style=for-the-badge&logo=githubpages&logoColor=white)](https://felix-chaos.github.io/Actions-and-Stuff-RTX-Patcher/)
+[![Website](https://img.shields.io/badge/Website-Guide_&_Wiki-22c55e?style=for-the-badge&logo=githubpages&logoColor=white)](https://rtx.chaosdev.dev/)
 
 </td>
 </tr>
@@ -30,6 +30,8 @@
 - 🔧 Converts the **Actions & Stuff** Marketplace pack into an **RTX-compatible version**
 - 💡 Adds full **BetterRTX lighting**, reflections, and **PBR materials**
 - 📦 Supports **Marketplace auto-detect**, `.zip`, and `.mcpack` input formats
+- 📚 Downloads new patches from the **Patch Library** on demand, so a new A&S version needs no patcher update
+- 🔄 **Auto-updates** itself and is translated by the community into many languages
 - 🔒 Does **not redistribute** any original pack assets, your copy, your patch
 
 ---
@@ -47,7 +49,7 @@
 | | Repository | Description | Link |
 | :---: | :--- | :--- | :---: |
 | ⚡ | **A&S RTX Patcher** | Main patcher, Marketplace & Zip support, GUI, automated patching | [This Repo](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher) |
-| 📦 | **Archive** | All binary patch files (`.xdelta` / `.vcdiff`) and the legacy V1 patcher source | [Repo](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher-Archive) |
+| 📦 | **Archive** | Older binary patch files (`.xdelta` / `.vcdiff`) and the legacy V1 patcher source | [Repo](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher-Archive) |
 | 🧰 | **External Tools** | Brarchive extractor and other tools for the patcher | [Repo →](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher-External_Tools) |
 | 📚 | **Patch Library** | The patch catalogue the patcher downloads from. New patches ship from here, with no patcher update | [Repo →](https://github.com/Felix-Chaos/AS-RTX-Patch-Library) |
 
@@ -61,6 +63,7 @@
 
 | | Requirement | Details |
 | :---: | :--- | :--- |
+| 💻 | **Windows 10/11 (x64)** | With an RTX-capable GPU |
 | 🎮 | [**BetterRTX**](https://bedrock.graphics/) | Must be installed |
 | 📦 | [**Actions & Stuff**](https://www.minecraft.net/en-us/marketplace/pdp/oreville-studios/actions--stuff-1.6/61c7a786-d7ad-49e0-a710-817121cd9795) | Marketplace, `.zip`, or `.mcpack` |
 
@@ -69,7 +72,7 @@
 
 [![⬇ Download](https://img.shields.io/badge/⬇_Download_Latest-2ea44f?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/latest)
 
-[![⬇ Beta](https://img.shields.io/badge/⬇_Beta-f58220?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/tag/V2.0.4b)
+[![All Releases](https://img.shields.io/badge/All_Releases-f58220?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases)
 
 [![📖 Wiki](https://img.shields.io/badge/📖_Wiki_&_Full_Guide-0969da?style=for-the-badge)](./docs/WIKI.md)
 
@@ -85,13 +88,14 @@
 The patcher uses **binary diffing** to transform your own copy of Actions & Stuff into an RTX-compatible version. No original assets are ever distributed.
 
 ```
-Your A&S Copy ──→ xdelta3 + .vcdiff patch ──→ A&S Enhanced for RTX (.mcpack)
+Your A&S Copy ──→ xdelta3 + .vcdiff patch (from the Patch Library) ──→ A&S Enhanced for RTX (.mcpack)
 ```
 
 1. **Detect**: Locates your installed A&S pack (Marketplace auto-detect or manual selection)
-2. **Extract**: Unpacks the source files from `.brarchive`, `.zip`, or `.mcpack`
-3. **Patch**: Applies binary diffs (`.vcdiff`) via [xdelta3](https://github.com/jmacd/xdelta) to add RTX materials, PBR textures, and lighting fixes
-4. **Package**: Bundles everything into a ready-to-install `.mcpack` with an updated manifest
+2. **Fetch**: Downloads the matching patch from the [Patch Library](https://github.com/Felix-Chaos/AS-RTX-Patch-Library), checks its SHA-256 and caches it for offline use (the newest patch also ships inside the installer as a fallback)
+3. **Extract**: Unpacks the source files from `.brarchive`, `.zip`, or `.mcpack`
+4. **Patch**: Applies binary diffs (`.vcdiff`) via [xdelta3](https://github.com/jmacd/xdelta) to add RTX materials, PBR textures, and lighting fixes
+5. **Package**: Bundles everything into a ready-to-install `.mcpack` with an updated manifest
 
 > [!TIP]
 > The patcher can also auto-adjust your Minecraft video settings for optimal RTX performance, no manual config needed.
@@ -116,10 +120,24 @@ The **Patcher** tab covers the basics, but the app ships a lot more than just Ma
 - 🔍 **How patching actually works** (the `encrypted.vcdiff` / `decrypted.vcdiff` split, and why both exist)
 - 🚀 **All three Patch Modes**: Marketplace (default), Zip / McPack, and Custom Patch, plus what **Advanced Mode** unlocks
 - 📦 **Extract Brarchives**: what the `__brarchive` container format actually is, and the real answer for when you need it (short version: almost never as a regular end user)
-- 🔧 **Building Custom Patches**: the full **Create Patch (VCDIFF)** workflow patch developers use to generate new `.vcdiff` releases, including every input folder and toggle
+- 🔧 **Building Custom Patches**: the full **Create Patch (VCDIFF)** workflow patch developers use to generate new `.vcdiff` releases, including every input folder and toggle (Create Patch is only in dev builds)
 - 🧰 **A tool-by-tool reference**: Cleaner, RTX Settings/`options.txt` editor, the Deterministic ZIP Packer, the Extract ZIP/MCPack utility, the Bug Reporter, and the maintainer-only Release Builder
 - ⚙️ **A full App Settings table** explaining what every toggle actually defaults to and controls
 - 🩹 **Troubleshooting** for the most common "something looks broken" and "patch didn't apply" cases
+
+Maintainers: how patches are published without a patcher release is described in **[Patch Library](./docs/PATCH_LIBRARY.md)**.
+
+---
+
+## 🔒 Privacy
+
+Telemetry is **opt-in**. Nothing is sent until you agree on first launch, and you can turn it off any time in **App Settings**.
+
+- Hardware and RTX info is sent only when it changes, linked to a random install ID and a one-way hash of your Windows MachineGuid (pseudonymous, not anonymous)
+- Every payload that leaves your PC is also saved locally, so you can see exactly what was sent
+- **Download My Data** and **Delete My Data** are built in, and uploaded logs are deleted automatically after 30 days
+
+Full details: [Privacy Policy](https://legal.chaosdev.dev/privacy)
 
 ---
 
@@ -132,6 +150,7 @@ The **Patcher** tab covers the basics, but the app ships a lot more than just Ma
 | **JavaScript** | UI logic and app orchestration |
 | **HTML/CSS** | UI layout and styling |
 | **xdelta3** | Binary patch creation & application |
+| **Crowdin** | Community translations |
 | **Blockbench** | Model editing & RTX material authoring |
 
 ---
@@ -152,7 +171,7 @@ The **Patcher** tab covers the basics, but the app ships a lot more than just Ma
 
 [![Crowdin](https://badges.crowdin.net/ans-rtx-patcher/localized.svg)](https://crowdin.com/project/ans-rtx-patcher)
 
-The Patcher is translated on [Crowdin](https://crowdin.com/project/ans-rtx-patcher). Pick your language and translate in the browser; no GitHub account or setup needed. A language is added to the Patcher once it is fully translated.
+The Patcher is translated on [Crowdin](https://crowdin.com/project/ans-rtx-patcher), with 30 languages set up so far. Pick your language and translate in the browser; no GitHub account or setup needed. A language is added to the Patcher once it is fully translated.
 
 ---
 
@@ -180,7 +199,7 @@ The **original creator** who made the source files available is **Demente Parker
 > It is **not affiliated with or endorsed** by Oreville Studios or Mojang/Microsoft.
 > All original assets remain property of their respective owners.
 >
-> 🤖 The overhaul of this project, including code refactoring, UI improvements, and the automated build system, was developed with the assistance of **Google DeepMind's AI models** to accelerate development for the community.
+> 🤖 The overhaul of this project, including code refactoring, UI improvements, and the automated build system, was developed with the assistance of AI (**Google DeepMind's models**, and later **Claude by Anthropic**) to accelerate development for the community.
 
 ---
 
