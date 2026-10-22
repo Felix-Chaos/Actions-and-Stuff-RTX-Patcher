@@ -22,8 +22,8 @@
     .uptodate { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 32px 16px 48px; text-align: center; position: relative; overflow: hidden; }
     .uptodate__question { margin: 0; font-size: clamp(1.1rem, 3.5vw, 1.6rem); font-weight: 700; color: var(--text-muted); }
     .uptodate__answer { margin: 0; font-weight: 800; line-height: .9; letter-spacing: -.04em; font-size: clamp(6rem, 30vw, 16rem); }
-    .uptodate[data-state="yes"] .uptodate__answer { color: var(--primary-light); text-shadow: 0 0 40px rgba(34, 197, 94, .45); animation: bounce 1s ease-in-out infinite alternate; }
-    .uptodate[data-state="no"] .uptodate__answer { color: var(--color-danger); text-shadow: 0 0 40px rgba(248, 113, 113, .35); }
+    .uptodate[data-state="yes"] .uptodate__answer { color: var(--primary-light); animation: bounce 1s ease-in-out infinite alternate; }
+    .uptodate[data-state="no"] .uptodate__answer { color: var(--color-danger); }
     .uptodate[data-state="unknown"] .uptodate__answer { color: var(--color-warning); font-size: clamp(4rem, 18vw, 9rem); }
     .uptodate[data-state="loading"] .uptodate__answer { color: var(--text-muted); font-size: clamp(3rem, 12vw, 6rem); }
     .uptodate__detail { margin: 0; max-width: 34rem; font-size: 1.05rem; color: var(--text-main); }
