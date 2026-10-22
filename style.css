@@ -500,6 +500,8 @@ kbd {
 .installer__title { font-size: 1.25rem; font-weight: 600; margin-bottom: 6px; }
 .installer__row { display: flex; gap: 10px; flex-wrap: wrap; }
 .installer__row .btn { flex: 1 1 10rem; }
+.patch-info { border-top: 1px solid var(--panel-border); padding-top: 14px; }
+.patch-info__version { font-size: .85rem; font-weight: 600; color: #e5e7eb; }
 .installer__checklist { border-top: 1px solid var(--panel-border); padding-top: 14px; }
 .installer__checklist ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: .88rem; color: #e5e7eb; }
 .installer__checklist li { display: flex; align-items: center; gap: 8px; }

@@ -119,6 +119,15 @@
             <p class="status-hint" data-release="details">Loading release info…</p>
           </div>
 
+          <div class="patch-info" data-patch="box" hidden>
+            <p class="field-label">Latest patch:</p>
+            <div class="logo-badges">
+              <span class="version-badge" data-patch="pack"></span>
+              <span class="patch-info__version" data-patch="version"></span>
+              <span class="update-badge state-available" data-patch="beta" hidden>Beta</span>
+            </div>
+          </div>
+
           <div class="disclaimer-box disclaimer-box--warn" data-release="beta-warning" hidden>
             <span class="disclaimer-icon" aria-hidden="true">⚠️</span>
             <span>Beta builds get new features first and may still contain bugs.</span>

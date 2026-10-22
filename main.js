@@ -237,6 +237,54 @@
     try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ time: Date.now(), data })); } catch { /* storage unavailable */ }
   };
 
+  /* ---------- Latest patch from the Patch Library ---------- */
+  const patchBox = document.querySelector('[data-patch="box"]');
+  if (patchBox) {
+    const PATCH_INDEX_URL = "https://raw.githubusercontent.com/Felix-Chaos/AS-RTX-Patch-Library/main/patch_index.json";
+    const PATCH_CACHE_KEY = "asrtx-latest-patch";
+    const patchEl = (key) => patchBox.querySelector(`[data-patch="${key}"]`);
+    const versionParts = (v) => String(v).replace(/^v/i, "").split(".").map((n) => parseInt(n, 10) || 0);
+    const compareVersions = (a, b) => {
+      const pa = versionParts(a), pb = versionParts(b);
+      for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+        const d = (pa[i] || 0) - (pb[i] || 0);
+        if (d) return d;
+      }
+      return 0;
+    };
+    // Same rule as the library's index generator: an explicit flag wins, otherwise 0.x is beta.
+    const isBetaPatch = (e) => (typeof e.beta === "boolean" ? e.beta : /^v?0(\.|$)/i.test(String(e.patchVersion)));
+
+    const renderPatch = (latest) => {
+      patchEl("pack").textContent = `A&S ${latest.packVersion}`;
+      patchEl("version").textContent = `Patch V${latest.patchVersion}`;
+      patchEl("beta").hidden = !latest.beta;
+      patchBox.hidden = false;
+    };
+
+    let cachedPatch = null;
+    try {
+      const c = JSON.parse(sessionStorage.getItem(PATCH_CACHE_KEY) || "null");
+      if (c && Date.now() - c.time < CACHE_TTL) cachedPatch = c.data;
+    } catch { /* storage unavailable */ }
+
+    if (cachedPatch) {
+      renderPatch(cachedPatch);
+    } else {
+      fetch(PATCH_INDEX_URL)
+        .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
+        .then((index) => {
+          const entries = (index.entries || []).slice().sort((a, b) =>
+            compareVersions(b.packVersion, a.packVersion) || compareVersions(b.patchVersion, a.patchVersion));
+          if (!entries.length) return;
+          const latest = { packVersion: entries[0].packVersion, patchVersion: entries[0].patchVersion, beta: isBetaPatch(entries[0]) };
+          try { sessionStorage.setItem(PATCH_CACHE_KEY, JSON.stringify({ time: Date.now(), data: latest })); } catch { /* storage unavailable */ }
+          renderPatch(latest);
+        })
+        .catch(() => { /* leave the row hidden */ });
+    }
+  }
+
   const cached = readCache();
   if (cached) {
     render(cached);
