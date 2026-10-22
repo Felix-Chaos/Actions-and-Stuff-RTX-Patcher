@@ -299,6 +299,7 @@ $mg = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Cryptography' -Name Mach
         "bedrock_gdk": gdk_installed,
         "bedrock_uwp": uwp_installed,
         "rtx": collect_rtx_environment(),
+        "as_pack_versions": crate::commands::installed_pack_name_versions(),
     });
     Ok(payload)
 }
