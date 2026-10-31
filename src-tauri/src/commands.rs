@@ -24,6 +24,38 @@ pub async fn detect_pack_version(folder: String) -> Option<String> {
     get_pack_name_version(Path::new(&folder))
 }
 
+/// Every Marketplace premium_cache resource_packs folder Minecraft may use, for the
+/// Store (UWP), Preview and Launcher (GDK) installs. Folders may not exist.
+fn premium_resource_pack_dirs() -> Vec<PathBuf> {
+    let mut dirs = Vec::new();
+    if let Ok(lad) = std::env::var("LOCALAPPDATA") {
+        dirs.push(PathBuf::from(&lad).join(r"Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\LocalState\premium_cache\resource_packs"));
+        dirs.push(PathBuf::from(&lad).join(r"Packages\Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe\LocalState\premium_cache\resource_packs"));
+    }
+    if let Ok(ad) = std::env::var("APPDATA") {
+        dirs.push(PathBuf::from(&ad).join(r"Minecraft Bedrock\premium_cache\resource_packs"));
+        dirs.push(PathBuf::from(&ad).join(r"Minecraft Bedrock Preview\premium_cache\resource_packs"));
+    }
+    dirs
+}
+
+/// The Actions & Stuff versions installed from the Marketplace, as the packs name
+/// themselves ("1.11.1"), sorted and without duplicates. Read for telemetry so the
+/// server can tell when a new A&S version is out that no patch covers yet.
+pub(crate) fn installed_pack_name_versions() -> Vec<String> {
+    let mut versions: Vec<String> = premium_resource_pack_dirs()
+        .into_iter()
+        .filter_map(|dir| std::fs::read_dir(dir).ok())
+        .flat_map(|entries| entries.flatten())
+        .map(|entry| entry.path())
+        .filter(|path| path.is_dir() && is_actions_and_stuff_pack(path))
+        .filter_map(|path| get_pack_name_version(&path))
+        .collect();
+    versions.sort();
+    versions.dedup();
+    versions
+}
+
 #[derive(serde::Deserialize, Debug, Clone)]
 pub struct ValidStats {
     pub files: usize,
@@ -40,7 +72,7 @@ pub struct ValidStats {
 // Stuff candidates — it must never be what decides "is this even Actions &
 // Stuff", since several of its signals (has_lang_file, a manifest version
 // number, a files/dirs count) can coincidentally match an unrelated pack too.
-fn is_actions_and_stuff_pack(path: &Path) -> bool {
+pub(crate) fn is_actions_and_stuff_pack(path: &Path) -> bool {
     for lang_rel in ["texts/en_US.lang", "texts/en_US.txt", "en_US.lang", "en_US.txt"] {
         if let Ok(content) = std::fs::read_to_string(path.join(lang_rel)) {
             for line in content.lines() {
@@ -69,22 +101,8 @@ pub async fn scan_marketplace_packs(
 ) -> Result<Vec<MarketplaceCandidate>, String> {
     let mut candidates = Vec::new();
     let mut unmatched_versions: Vec<String> = Vec::new();
-    let mut base_paths = Vec::new();
-    let local_app_data = std::env::var("LOCALAPPDATA").ok();
-    let app_data = std::env::var("APPDATA").ok();
 
-    if let Some(ref lad) = local_app_data {
-        base_paths.push(PathBuf::from(lad).join(r"Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\LocalState\premium_cache\resource_packs"));
-        base_paths.push(PathBuf::from(lad).join(r"Packages\Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe\LocalState\premium_cache\resource_packs"));
-    }
-    if let Some(ref ad) = app_data {
-        base_paths.push(PathBuf::from(ad).join(r"Minecraft Bedrock\premium_cache\resource_packs"));
-        base_paths.push(
-            PathBuf::from(ad).join(r"Minecraft Bedrock Preview\premium_cache\resource_packs"),
-        );
-    }
-
-    for base_path in base_paths {
+    for base_path in premium_resource_pack_dirs() {
         if !base_path.exists() {
             emit_msg(&app, "main", &log_msg!("log.backend.scan.noFolder", path = format!("{:?}", base_path)), "info");
             continue;

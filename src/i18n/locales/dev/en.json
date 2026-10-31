@@ -202,7 +202,9 @@
         "noFileSelected": "No file selected. Patch aborted.",
         "customMissingPaths": "Custom mode requires specifying source, target, and patch paths.",
         "noConfig": "No valid patch configuration found to match targets."
-      }
+      },
+      "hotpatch": "Hotpatch: made from the RTX patch for A&S {basedOn} and updated for A&S {packVersion}. Content that is new in this A&S version may not have RTX materials yet.",
+      "hotpatchNoBase": "Hotpatch: made from an RTX patch for an older A&S version and updated for A&S {packVersion}. Content that is new in this A&S version may not have RTX materials yet."
     },
     "update": {
       "checking": "Checking for software updates...",
@@ -417,6 +419,9 @@
       "patchVersionPlaceholder": "e.g. 1.1",
       "injectManifest": "Inject Custom Manifest",
       "encryptTarget": "Encrypt Patched Pack",
+      "hotpatch": "Hotpatch",
+      "hotpatchBaseLabel": "Made from the RTX patch for A&S",
+      "hotpatchBasePlaceholder": "e.g. 1.11.1",
       "publishToLibrary": "Also open a Patch Library pull request",
       "createPatchesBtn": "Create Patches",
       "publishBtn": "Open Pull Request for Created Patch",
