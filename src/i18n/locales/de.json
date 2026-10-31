@@ -377,7 +377,12 @@
       "deleteConfirmMessage": "Dadurch werden alle mit deiner zufälligen Installations-ID verknüpften Telemetrie- und Fehlerberichtsdaten von unserem Server gelöscht und die ID lokal erneuert, sodass alte Daten dir nie wieder zugeordnet werden können. Fortfahren?",
       "deleteBtn": "Löschen",
       "deleteSuccess": "✅ Deine Daten wurden gelöscht und deine ID wurde erneuert.",
-      "deleteError": "❌ Löschen fehlgeschlagen: {error}"
+      "deleteError": "❌ Löschen fehlgeschlagen: {error}",
+      "exportBtn": "Meine Daten herunterladen",
+      "exportRunning": "Deine Daten werden vom Server abgerufen…",
+      "exportSuccess": "✅ Gespeichert unter {path}",
+      "exportCancelled": "Download abgebrochen.",
+      "exportError": "❌ Download fehlgeschlagen: {error}"
     }
   },
   "modal": {
