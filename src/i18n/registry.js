@@ -13,6 +13,8 @@
 export const LOCALES = [
   { code: 'en', label: 'English', flag: 'assets/flags/gb.svg' },
   { code: 'de', label: 'Deutsch', flag: 'assets/flags/de.svg' },
+  // The dev bundle is still partial; its missing keys fall back to English.
+  { code: 'pt-BR', label: 'Português (Brasil)', flag: 'assets/flags/br.svg', partialBundles: ['dev'] },
 ];
 
 // The language every lookup falls back to. Its locale files must be complete.

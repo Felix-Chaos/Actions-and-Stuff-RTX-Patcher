@@ -40,7 +40,7 @@
       "removeDownloadTooltip": "Exclua este patch baixado do disco. Ele será baixado novamente na próxima vez que for usado.",
       "refreshing": "Recarregando...",
       "latestRecommended": "Mais recente (Recomendado)",
-      "patchItem": "Versão do Patch:",
+      "patchItem": "Patch v{version}",
       "versionOption": "Versão {version}",
       "newPatchesAvailable": {
         "one": "✨ {count} novo patch disponível",
