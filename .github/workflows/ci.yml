@@ -7,14 +7,18 @@ on:
       - 'src-tauri/**'
       - 'src/**'
       - 'scripts/**'
-      - '.github/workflows/ci.yml'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/**'
   push:
     branches: [main]
     paths:
       - 'src-tauri/**'
       - 'src/**'
       - 'scripts/**'
-      - '.github/workflows/ci.yml'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/**'
 
 permissions:
   contents: read
