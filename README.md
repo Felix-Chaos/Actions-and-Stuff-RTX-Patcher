@@ -31,7 +31,7 @@
 - Adds full **BetterRTX lighting**, reflections, and **PBR materials**
 - Supports **Marketplace auto-detect**, `.zip`, and `.mcpack` input formats
 - Downloads new patches from the **Patch Library** on demand, so a new A&S version needs no patcher update
-- **Auto-updates** itself, available in English and German with more languages coming via Crowdin
+- **Auto-updates** itself, available in English, German and Brazilian Portuguese with more languages coming via Crowdin
 - Does **not redistribute** any original pack assets, your copy, your patch
 
 ---
@@ -171,7 +171,7 @@ Full details: [Privacy Policy](https://legal.chaosdev.dev/privacy)
 
 [![Crowdin](https://badges.crowdin.net/ans-rtx-patcher/localized.svg)](https://crowdin.com/project/ans-rtx-patcher)
 
-The Patcher is translated on [Crowdin](https://crowdin.com/project/ans-rtx-patcher), English and German ship today, and more languages are in progress. Pick your language and translate in the browser; no GitHub account or setup needed. A language is added to the Patcher once it is fully translated.
+The Patcher is translated on [Crowdin](https://crowdin.com/project/ans-rtx-patcher), English, German and Brazilian Portuguese ship today, and more languages are in progress. Pick your language and translate in the browser; no GitHub account or setup needed. A language is added to the Patcher once it is fully translated.
 
 ---
 

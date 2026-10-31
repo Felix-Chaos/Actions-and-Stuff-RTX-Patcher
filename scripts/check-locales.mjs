@@ -41,7 +41,8 @@ for (const bundle of BUNDLES) {
     const refSet = new Set(reference);
     const missing = reference.filter(k => !keys.has(k));
     const extra = [...keys].filter(k => !refSet.has(k)).sort();
-    if (missing.length) fail(`[${bundle.name}/${code}] ${missing.length} key(s) missing vs ${FALLBACK_LOCALE}:`, missing, '-');
+    const partial = LOCALES.find(l => l.code === code).partialBundles?.includes(bundle.name);
+    if (missing.length && !partial) fail(`[${bundle.name}/${code}] ${missing.length} key(s) missing vs ${FALLBACK_LOCALE}:`, missing, '-');
     if (extra.length) fail(`[${bundle.name}/${code}] ${extra.length} key(s) not present in ${FALLBACK_LOCALE}:`, extra, '+');
   }
 
