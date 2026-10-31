@@ -162,6 +162,7 @@ Full details: [Privacy Policy](https://legal.chaosdev.dev/privacy)
 | **@J4vi3r6003** | Patch development, subpacks, bug fixes | Discord: `error90099900#0000` |
 | **@Felix-Chaos** | Project maintenance, patcher updates, releases | [GitHub](https://github.com/Felix-Chaos) · Discord: `felixchaos` |
 | **Demente Parker** | Original creator, source files provider | Discord: `demente_parker` · [Ko-fi](https://ko-fi.com/dementeparker) |
+| **Klaus >///<** | Brazilian Portuguese translation | Discord: `klauspicoli` |
 | **Community Testers** | Bug reporting, testing, feedback | Various Discord contributors |
 | **Translators** | The Patcher in other languages | [Crowdin project](https://crowdin.com/project/ans-rtx-patcher) |
 
