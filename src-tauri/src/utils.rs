@@ -218,7 +218,11 @@ pub fn extract_archive_impl(
             None => continue,
         };
 
-        if file.name().ends_with('/') {
+        if file
+            .name()
+            .map_err(|e| format!("Failed to read zip entry name: {}", e))?
+            .ends_with('/')
+        {
             std::fs::create_dir_all(&outpath)
                 .map_err(|e| format!("Failed to create directory: {}", e))?;
         } else {

@@ -202,7 +202,9 @@
         "noFileSelected": "Keine Datei ausgewählt. Patch abgebrochen.",
         "customMissingPaths": "Der benutzerdefinierte Modus benötigt Quell-, Ziel- und Patch-Pfad.",
         "noConfig": "Keine passende Patch-Konfiguration gefunden."
-      }
+      },
+      "hotpatch": "Hotpatch: erstellt aus dem RTX-Patch für A&S {basedOn} und für A&S {packVersion} angepasst. Inhalte, die in dieser A&S-Version neu sind, haben eventuell noch keine RTX-Materialien.",
+      "hotpatchNoBase": "Hotpatch: erstellt aus einem RTX-Patch für eine ältere A&S-Version und für A&S {packVersion} angepasst. Inhalte, die in dieser A&S-Version neu sind, haben eventuell noch keine RTX-Materialien."
     },
     "update": {
       "checking": "Suche nach Software-Updates...",
@@ -417,6 +419,9 @@
       "patchVersionPlaceholder": "z. B. 1.1",
       "injectManifest": "Benutzerdefiniertes Manifest einfügen",
       "encryptTarget": "Gepatchtes Pack verschlüsseln",
+      "hotpatch": "Hotpatch",
+      "hotpatchBaseLabel": "Erstellt aus dem RTX-Patch für A&S",
+      "hotpatchBasePlaceholder": "z. B. 1.11.1",
       "publishToLibrary": "Zusätzlich einen Pull Request für die Patch-Bibliothek öffnen",
       "createPatchesBtn": "Patches erstellen",
       "publishBtn": "Pull Request für erstellten Patch öffnen",

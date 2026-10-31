@@ -510,6 +510,17 @@
                       </label>
                     </div>
                     <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
+                      <span style="font-size: 0.85rem; color: #ffffff; font-weight: 500;" data-i18n="tabUtils.genpatch.hotpatch">Hotpatch</span>
+                      <label class="mc-toggle" style="margin-left: 0;">
+                        <input type="checkbox" id="gen-hotpatch" />
+                        <span class="mc-slider"></span>
+                      </label>
+                    </div>
+                    <div class="form-group hidden-group" id="gen-hotpatch-base-row" style="margin-bottom: 8px;">
+                      <label for="gen-hotpatch-base" data-i18n="tabUtils.genpatch.hotpatchBaseLabel">Made from the RTX patch for A&amp;S</label>
+                      <input type="text" id="gen-hotpatch-base" class="custom-input" placeholder="e.g. 1.11.1" data-i18n-placeholder="tabUtils.genpatch.hotpatchBasePlaceholder" style="width: 100%;" />
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
                       <span style="font-size: 0.85rem; color: #ffffff; font-weight: 500;" data-i18n="tabUtils.genpatch.publishToLibrary">Also open a Patch Library pull request</span>
                       <label class="mc-toggle" style="margin-left: 0;">
                         <input type="checkbox" id="gen-publish-library" />
@@ -994,6 +1005,7 @@
                 </p>
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                   <button class="btn btn-secondary btn-xs" id="btn-view-telemetry-payload" data-i18n="tabAppSettings.privacy.openDiagnosticsFolder">Open Diagnostics Folder</button>
+                  <button class="btn btn-secondary btn-xs" id="btn-export-telemetry-data" data-i18n="tabSupport.telemetry.exportBtn">Download My Data</button>
                   <button class="btn btn-secondary btn-xs" id="btn-delete-telemetry-data" style="color: #f87171;" data-i18n="tabSupport.telemetry.deleteConfirmTitle">Delete My Data</button>
                 </div>
                 <p id="telemetry-settings-status" style="margin-top: 8px; font-size: 0.8rem; color: #94a3b8;"></p>

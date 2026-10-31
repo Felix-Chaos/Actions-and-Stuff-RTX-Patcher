@@ -112,6 +112,34 @@ pub fn open_diagnostics_folder(app: tauri::AppHandle) -> Result<(), String> {
 }
 
 // ---------------------------------------------------------------------------
+// Hardware fingerprint
+// ---------------------------------------------------------------------------
+
+/// One-way SHA-256 of the MachineGuid: the `hardware_id` the server knows this PC by.
+fn hash_machine_guid(guid: &str) -> String {
+    use sha2::{Digest, Sha256};
+    let mut hasher = Sha256::new();
+    hasher.update(guid.as_bytes());
+    hasher.finalize().iter().map(|b| format!("{:02x}", b)).collect::<String>()
+}
+
+/// This PC's `hardware_id`, or None if the MachineGuid can't be read. Export and
+/// delete send it along: after a reinstall the server keeps this PC's data under
+/// the first install id, so the current install id alone would not find it.
+fn current_hardware_id() -> Option<String> {
+    let out = run_powershell(
+        "(Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Cryptography' -Name MachineGuid -ErrorAction SilentlyContinue).MachineGuid",
+    )
+    .ok()?;
+    let guid = out.trim();
+    if guid.is_empty() {
+        None
+    } else {
+        Some(hash_machine_guid(guid))
+    }
+}
+
+// ---------------------------------------------------------------------------
 // PowerShell helper
 // ---------------------------------------------------------------------------
 
@@ -243,12 +271,7 @@ $mg = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Cryptography' -Name Mach
         .and_then(|obj| obj.remove("machine_guid"))
         .and_then(|v| v.as_str().map(str::to_string))
         .filter(|s| !s.is_empty())
-        .map(|guid| {
-            use sha2::{Digest, Sha256};
-            let mut hasher = Sha256::new();
-            hasher.update(guid.as_bytes());
-            hasher.finalize().iter().map(|b| format!("{:02x}", b)).collect::<String>()
-        });
+        .map(|guid| hash_machine_guid(&guid));
 
     // Detect which Bedrock editions are installed (paths are NOT included, only flags).
     let gdk_installed = std::env::var("APPDATA")
@@ -276,6 +299,7 @@ $mg = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Cryptography' -Name Mach
         "bedrock_gdk": gdk_installed,
         "bedrock_uwp": uwp_installed,
         "rtx": collect_rtx_environment(),
+        "as_pack_versions": crate::commands::installed_pack_name_versions(),
     });
     Ok(payload)
 }
@@ -498,19 +522,53 @@ pub async fn submit_hardware_ping(app: tauri::AppHandle) -> Result<serde_json::V
     Ok(serde_json::json!({ "sent": true }))
 }
 
+/// Right of access (Art. 15/20 DSGVO): fetches everything the server stores for
+/// this install id and PC, and saves it as a JSON file the user picks.
+#[tauri::command]
+pub async fn telemetry_export_my_data(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
+    let state = load_state(&app)?;
+    let api_url = std::option_env!("PATCHER_API_URL").unwrap_or("http://localhost:3000");
+    let api_key = crate::utils::api_key();
+    let hardware_id = tauri::async_runtime::spawn_blocking(current_hardware_id).await.unwrap_or(None);
+    let res = reqwest::Client::new()
+        .post(&format!("{}/api/patcher/export-my-data", api_url))
+        .header("Authorization", format!("Bearer {}", api_key))
+        .json(&serde_json::json!({ "install_id": state.install_id, "hardware_id": hardware_id }))
+        .send()
+        .await
+        .map_err(|e| format!("Request failed: {}", e))?;
+    if !res.status().is_success() {
+        return Err(format!("Server returned {}", res.status()));
+    }
+    let data: serde_json::Value = res.json().await.map_err(|e| format!("Invalid server answer: {}", e))?;
+
+    let target = rfd::AsyncFileDialog::new()
+        .set_file_name("as-rtx-patcher-my-data.json")
+        .add_filter("JSON", &["json"])
+        .save_file()
+        .await;
+    let Some(target) = target else {
+        return Ok(serde_json::json!({ "saved": false }));
+    };
+    let text = serde_json::to_string_pretty(&data).map_err(|e| e.to_string())?;
+    std::fs::write(target.path(), text).map_err(|e| format!("Could not save the file: {}", e))?;
+    Ok(serde_json::json!({ "saved": true, "path": target.path().to_string_lossy() }))
+}
+
 /// Right to erasure (Art. 17 DSGVO): asks the server to delete everything tied
-/// to this install id, then rotates the local id so past and future data can
-/// never be linked.
+/// to this install id and PC, then rotates the local id so past and future data
+/// can never be linked.
 #[tauri::command]
 pub async fn telemetry_delete_my_data(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
     let state = load_state(&app)?;
     let api_url = std::option_env!("PATCHER_API_URL").unwrap_or("http://localhost:3000");
     let api_key = crate::utils::api_key();
+    let hardware_id = tauri::async_runtime::spawn_blocking(current_hardware_id).await.unwrap_or(None);
     let client = reqwest::Client::new();
     let res = client
         .post(&format!("{}/api/patcher/delete-my-data", api_url))
         .header("Authorization", format!("Bearer {}", api_key))
-        .json(&serde_json::json!({ "install_id": state.install_id }))
+        .json(&serde_json::json!({ "install_id": state.install_id, "hardware_id": hardware_id }))
         .send()
         .await
         .map_err(|e| format!("Request failed: {}", e))?;
