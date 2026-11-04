@@ -14,9 +14,8 @@
   <meta property="og:description" content="Click to find out. Spoiler: there are cats either way." />
   <meta property="og:image" content="https://rtx.chaosdev.dev/assets/og-image.jpg" />
   <link rel="icon" type="image/png" href="../assets/logo.png" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/fonts/fonts.css" />
+  <script src="../consent.js?v=20261104"></script>
   <link rel="stylesheet" href="../style.css?v=20261022b" />
   <style>
     .uptodate { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 32px 16px 48px; text-align: center; position: relative; overflow: hidden; }
@@ -60,6 +59,11 @@
       <a class="btn btn-secondary" href="https://discord.gg/YrMMmN2kc7" rel="noopener">Discord</a>
     </div>
     <p class="uptodate__fine" id="fine"></p>
+    <p class="uptodate__fine">
+      <a href="https://legal.chaosdev.dev/impressum">Impressum</a> ·
+      <a href="https://legal.chaosdev.dev/privacy#rtx-site">Privacy Policy</a> ·
+      <a href="#" data-consent-open>Privacy settings</a>
+    </p>
   </main>
 
   <script>
@@ -99,9 +103,11 @@
     const showGif = (kind) => {
       const list = GIFS[kind];
       const id = list[Math.floor(Math.random() * list.length)];
-      document.getElementById("meme-frame").src = `https://giphy.com/embed/${id}`;
-      document.getElementById("meme-credit").href = `https://giphy.com/gifs/${id}`;
-      document.getElementById("meme").hidden = false;
+      window.rtxConsent.onGrant(() => {
+        document.getElementById("meme-frame").src = `https://giphy.com/embed/${id}`;
+        document.getElementById("meme-credit").href = `https://giphy.com/gifs/${id}`;
+        document.getElementById("meme").hidden = false;
+      });
     };
 
     const confetti = () => {

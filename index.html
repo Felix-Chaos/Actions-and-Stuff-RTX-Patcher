@@ -29,9 +29,7 @@
 
   <link rel="icon" type="image/png" href="assets/logo.png" />
   <link rel="apple-touch-icon" href="assets/logo.png" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/fonts/fonts.css" />
   <link rel="stylesheet" href="style.css?v=20261022b" />
 </head>
 <body>
@@ -430,7 +428,7 @@
             <h3>Translators</h3>
             <p class="person__role">The Patcher in your language</p>
             <p class="person__contact">Help translate on <a href="https://crowdin.com/project/ans-rtx-patcher">Crowdin</a></p>
-            <a class="person__badge" href="https://crowdin.com/project/ans-rtx-patcher"><img src="https://badges.crowdin.net/ans-rtx-patcher/localized.svg" alt="Translation progress on Crowdin" width="110" height="20" loading="lazy" /></a>
+            <a class="person__badge" href="https://crowdin.com/project/ans-rtx-patcher"><img data-consent-src="https://badges.crowdin.net/ans-rtx-patcher/localized.svg" hidden alt="Translation progress on Crowdin" width="110" height="20" loading="lazy" /></a>
           </article>
         </div>
       </div>
@@ -475,6 +473,11 @@
         <p class="footer__credits">
           Built by the A&amp;S RTX community · Site design inspired by <a class="footer-link" href="https://bedrock.graphics/">bedrock.graphics</a>
         </p>
+        <p class="footer__credits">
+          <a class="footer-link" href="https://legal.chaosdev.dev/impressum">Impressum</a> ·
+          <a class="footer-link" href="https://legal.chaosdev.dev/privacy#rtx-site">Privacy Policy</a> ·
+          <a class="footer-link" href="#" data-consent-open>Privacy settings</a>
+        </p>
       </div>
     </div>
   </footer>
@@ -484,6 +487,7 @@
     <img id="lightbox-img" alt="" />
   </dialog>
 
+  <script src="consent.js?v=20261104"></script>
   <script src="main.js?v=20261022b" defer></script>
 </body>
 </html>
