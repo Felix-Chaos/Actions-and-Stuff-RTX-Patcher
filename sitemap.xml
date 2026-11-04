@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://rtx.chaosdev.dev/</loc></url>
-  <url><loc>https://rtx.chaosdev.dev/wiki.html</loc></url>
-  <url><loc>https://rtx.chaosdev.dev/uptodate/</loc></url>
+  <url><loc>https://rtx.chaosdev.dev/</loc><lastmod>2026-11-04</lastmod></url>
+  <url><loc>https://rtx.chaosdev.dev/wiki.html</loc><lastmod>2026-11-04</lastmod></url>
+  <url><loc>https://rtx.chaosdev.dev/uptodate/</loc><lastmod>2026-11-04</lastmod></url>
 </urlset>
