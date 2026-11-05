@@ -201,6 +201,10 @@ kbd {
 .nav-btn-icon { width: 16px; height: 16px; fill: currentColor; display: block; }
 
 .pixel-icon { display: block; shape-rendering: crispEdges; image-rendering: pixelated; flex-shrink: 0; }
+/* Minecraft-style item icons from assets/icons.svg (16x16, scaled in whole pixels) */
+.mc-icon { display: block; width: 32px; height: 32px; shape-rendering: crispEdges; flex-shrink: 0; }
+.disclaimer-icon .mc-icon { width: 20px; height: 20px; }
+.mode-icon .mc-icon { margin-inline: auto; }
 
 /* =========================================================
    Badges, switches, checkboxes, alerts — ported from the patcher
@@ -351,7 +355,6 @@ kbd {
 }
 .nav-tab:hover { color: var(--text-main); background: rgba(255, 255, 255, .04); }
 .nav-tab.active { color: var(--text-main); background: rgba(34, 197, 94, .08); border-color: rgba(34, 197, 94, .25); }
-.tab-icon { font-size: 1rem; line-height: 1; }
 
 .nav__actions {
   display: flex; align-items: center; gap: 8px;
@@ -363,9 +366,6 @@ kbd {
 
 .nav__toggle { display: none; margin-left: auto; }
 
-@media (max-width: 1100px) {
-  .nav-tab .tab-icon { display: none; }
-}
 @media (max-width: 920px) {
   .nav__toggle { display: inline-flex; }
   .nav__menu {
@@ -379,15 +379,11 @@ kbd {
   }
   .nav__menu.is-open { display: flex; animation: fadeIn .25s ease; }
   .nav-tab { padding: 10px 14px; font-size: .95rem; }
-  .nav-tab .tab-icon { display: inline; }
   .nav__actions {
     margin: 8px 0 0; padding: 16px 0 0;
     border-left: 0; border-top: 1px solid var(--sidebar-border);
   }
   .nav__download { flex: 1; }
-}
-@media (max-width: 380px) {
-  .nav__version { display: none; }
 }
 
 /* =========================================================
@@ -415,22 +411,6 @@ kbd {
     repeating-linear-gradient(0deg, transparent 0 3px, rgba(255, 255, 255, .025) 3px 4px),
     repeating-linear-gradient(90deg, transparent 0 3px, rgba(255, 255, 255, .025) 3px 4px);
 }
-
-.announcement {
-  display: flex; align-items: center; gap: 10px;
-  width: fit-content; max-width: calc(100% - 2rem);
-  margin: 0 auto clamp(2rem, 5vw, 3.5rem);
-  padding: 6px 14px 6px 8px;
-  background: rgba(22, 22, 22, .85);
-  border: 1px solid var(--panel-border);
-  border-radius: 999px;
-  color: var(--text-main); text-decoration: none; font-size: .88rem;
-  animation: rise .6s ease both;
-}
-.announcement:hover { color: #fff; border-color: rgba(34, 197, 94, .45); }
-.announcement .update-badge { text-transform: uppercase; letter-spacing: .05em; }
-.announcement__arrow { color: var(--primary-color); transition: transform .2s; }
-.announcement:hover .announcement__arrow { transform: translateX(3px); }
 
 .hero-stage {
   width: min(var(--container), 100% - 2rem);
@@ -466,23 +446,10 @@ kbd {
   text-shadow: 0 1px .75rem rgba(0, 0, 0, .5); text-wrap: pretty;
   animation: rise .7s .2s ease both;
 }
-.hero-heading__chips {
-  list-style: none; margin: 0; padding: 0;
-  display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
-  animation: rise .7s .3s ease both;
-}
-.hero-heading__chips li {
-  font-size: .78rem; font-weight: 600;
-  padding: 3px 10px; border-radius: 20px;
-  background: rgba(34, 197, 94, .1); border: 1px solid rgba(34, 197, 94, .28); color: var(--primary-light);
-  backdrop-filter: blur(6px);
-}
-
 @media (min-width: 960px) {
   .hero-stage { flex-direction: row; align-items: center; justify-content: space-between; }
   .hero-heading { text-align: left; }
   .hero-heading__title { align-items: flex-start; }
-  .hero-heading__chips { justify-content: flex-start; }
   .installer { flex: 0 0 27rem; }
 }
 

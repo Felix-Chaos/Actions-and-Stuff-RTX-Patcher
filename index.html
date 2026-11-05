@@ -46,7 +46,7 @@
   <link rel="icon" type="image/png" href="assets/logo.png" />
   <link rel="apple-touch-icon" href="assets/logo.png" />
   <link rel="stylesheet" href="assets/fonts/fonts.css" />
-  <link rel="stylesheet" href="style.css?v=20261022b" />
+  <link rel="stylesheet" href="style.css?v=20261105" />
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to main content</a>
@@ -60,14 +60,13 @@
           <span class="accent-text">RTX PATCHER</span>
         </span>
       </a>
-      <span class="version-badge nav__version" data-release="nav-version" hidden></span>
 
       <nav id="nav-menu" class="nav__menu" aria-label="Main">
-        <a class="nav-tab" href="#setup"><span class="tab-icon" aria-hidden="true"></span><span>Setup</span></a>
-        <a class="nav-tab" href="#showcase"><span class="tab-icon" aria-hidden="true"></span><span>Showcase</span></a>
-        <a class="nav-tab" href="#features"><span class="tab-icon" aria-hidden="true"></span><span>Features</span></a>
-        <a class="nav-tab" href="wiki.html"><span class="tab-icon" aria-hidden="true"></span><span>Wiki</span></a>
-        <a class="nav-tab" href="wiki.html#troubleshooting"><span class="tab-icon" aria-hidden="true"></span><span>FAQ</span></a>
+        <a class="nav-tab" href="#setup"><span>Setup</span></a>
+        <a class="nav-tab" href="#showcase"><span>Showcase</span></a>
+        <a class="nav-tab" href="#features"><span>Features</span></a>
+        <a class="nav-tab" href="wiki.html"><span>Wiki</span></a>
+        <a class="nav-tab" href="wiki.html#troubleshooting"><span>FAQ</span></a>
         <div class="nav__actions">
           <a class="btn btn-secondary btn-square" href="https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher" title="GitHub" aria-label="GitHub">
             <svg class="nav-btn-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.68 0-1.26.45-2.28 1.19-3.08-.12-.3-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.75.11 3.05.74.8 1.19 1.82 1.19 3.08 0 4.41-2.7 5.38-5.26 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
@@ -89,13 +88,6 @@
     <!-- ============ HERO ============ -->
     <section class="hero" id="top">
       <div class="hero__backdrop" aria-hidden="true"></div>
-<!-- Hero Info Pillbox temp-->
-      <a class="announcement" href="https://github.com/Felix-Chaos/AS-RTX-Patch-Library">
-        <span class="update-badge state-available">New</span>
-        <span>New patches now arrive from the Patch Library, no patcher update needed.</span>
-        <span class="announcement__arrow" aria-hidden="true">→</span>
-      </a>
-
       <div class="hero-stage">
         <div class="hero-heading">
           <h1 class="hero-heading__title">
@@ -105,11 +97,6 @@
             A free, community-built patcher that makes <strong>your own copy</strong> of Actions &amp; Stuff
             work with ray tracing: BetterRTX lighting, true reflections and PBR materials for every mob, item and block.
           </p>
-          <ul class="hero-heading__chips">
-            <li>Marketplace auto-detect</li>
-            <li>.zip &amp; .mcpack</li>
-            <li>No assets redistributed</li>
-          </ul>
         </div>
 
         <aside class="card installer" aria-labelledby="installer-title">
@@ -144,7 +131,7 @@
           </div>
 
           <div class="disclaimer-box disclaimer-box--warn" data-release="beta-warning" hidden>
-            <span class="disclaimer-icon" aria-hidden="true">⚠️</span>
+            <span class="disclaimer-icon" aria-hidden="true"><svg class="mc-icon" aria-hidden="true" focusable="false"><use href="assets/icons.svg?v=20261105#tnt"/></svg></span>
             <span>Beta builds get new features first and may still contain bugs.</span>
           </div>
 
@@ -307,32 +294,32 @@
 
         <div class="utils-grid">
           <article class="util-card feature">
-            <div class="feature__icon feature__icon--green" aria-hidden="true">⚡</div>
+            <div class="feature__icon feature__icon--green" aria-hidden="true"><svg class="mc-icon" aria-hidden="true" focusable="false"><use href="assets/icons.svg?v=20261105#compass"/></svg></div>
             <h3>Marketplace auto-detect</h3>
             <p>Finds your installed Actions &amp; Stuff copy automatically. No digging through hidden game folders.</p>
           </article>
           <article class="util-card feature">
-            <div class="feature__icon feature__icon--blue" aria-hidden="true">💡</div>
+            <div class="feature__icon feature__icon--blue" aria-hidden="true"><svg class="mc-icon" aria-hidden="true" focusable="false"><use href="assets/icons.svg?v=20261105#torch"/></svg></div>
             <h3>BetterRTX lighting &amp; PBR</h3>
             <p>Adds RTX materials, PBR textures and lighting fixes so every A&amp;S model looks right under ray tracing.</p>
           </article>
           <article class="util-card feature">
-            <div class="feature__icon feature__icon--teal" aria-hidden="true">📚</div>
+            <div class="feature__icon feature__icon--teal" aria-hidden="true"><svg class="mc-icon" aria-hidden="true" focusable="false"><use href="assets/icons.svg?v=20261105#book"/></svg></div>
             <h3>Remote Patch Library</h3>
             <p>New patch versions come straight from the Patch Library, so updates arrive without reinstalling the app.</p>
           </article>
           <article class="util-card feature">
-            <div class="feature__icon feature__icon--gold" aria-hidden="true">🎮</div>
+            <div class="feature__icon feature__icon--gold" aria-hidden="true"><svg class="mc-icon" aria-hidden="true" focusable="false"><use href="assets/icons.svg?v=20261105#redstone_torch"/></svg></div>
             <h3>RTX settings in one click</h3>
             <p>Applies recommended video settings, or open the full <code>options.txt</code> editor in Advanced Mode.</p>
           </article>
           <article class="util-card feature">
-            <div class="feature__icon feature__icon--green" aria-hidden="true">🧹</div>
+            <div class="feature__icon feature__icon--green" aria-hidden="true"><svg class="mc-icon" aria-hidden="true" focusable="false"><use href="assets/icons.svg?v=20261105#bucket"/></svg></div>
             <h3>Cleaner</h3>
             <p>Finds and removes old patched versions, so outdated packs don't pile up in your resource pack list.</p>
           </article>
           <article class="util-card feature">
-            <div class="feature__icon feature__icon--blue" aria-hidden="true">🔧</div>
+            <div class="feature__icon feature__icon--blue" aria-hidden="true"><svg class="mc-icon" aria-hidden="true" focusable="false"><use href="assets/icons.svg?v=20261105#pickaxe"/></svg></div>
             <h3>Creator tools</h3>
             <p>Build your own <code>.vcdiff</code> patches, extract brarchives and pack deterministic ZIPs for releases.</p>
           </article>
@@ -354,17 +341,17 @@
 
         <div class="pipeline" aria-label="Patching pipeline">
           <div class="pipeline__node">
-            <span class="pipeline__icon" aria-hidden="true">📦</span>
+            <span class="pipeline__icon" aria-hidden="true"><svg class="mc-icon" aria-hidden="true" focusable="false"><use href="assets/icons.svg?v=20261105#chest"/></svg></span>
             <span class="pipeline__label">Your A&amp;S copy</span>
           </div>
           <span class="pipeline__arrow" aria-hidden="true"></span>
           <div class="pipeline__node pipeline__node--accent">
-            <span class="pipeline__icon" aria-hidden="true">⚙️</span>
+            <span class="pipeline__icon" aria-hidden="true"><svg class="mc-icon" aria-hidden="true" focusable="false"><use href="assets/icons.svg?v=20261105#crafting_table"/></svg></span>
             <span class="pipeline__label">xdelta3 + <code>.vcdiff</code></span>
           </div>
           <span class="pipeline__arrow" aria-hidden="true"></span>
           <div class="pipeline__node">
-            <span class="pipeline__icon" aria-hidden="true"></span>
+            <span class="pipeline__icon" aria-hidden="true"><svg class="mc-icon" aria-hidden="true" focusable="false"><use href="assets/icons.svg?v=20261105#nether_star"/></svg></span>
             <span class="pipeline__label">A&amp;S for RTX <code>.mcpack</code></span>
           </div>
         </div>
@@ -388,22 +375,22 @@
 
         <div class="repos">
           <a class="util-card repo" href="https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher">
-            <span class="repo__icon" aria-hidden="true">⚡</span>
+            <span class="repo__icon" aria-hidden="true"><svg class="mc-icon" aria-hidden="true" focusable="false"><use href="assets/icons.svg?v=20261105#crafting_table"/></svg></span>
             <span class="repo__name">A&amp;S RTX Patcher</span>
             <span class="repo__desc">The desktop app: Marketplace &amp; ZIP support, GUI and automated patching.</span>
           </a>
           <a class="util-card repo" href="https://github.com/Felix-Chaos/AS-RTX-Patch-Library">
-            <span class="repo__icon" aria-hidden="true">📚</span>
+            <span class="repo__icon" aria-hidden="true"><svg class="mc-icon" aria-hidden="true" focusable="false"><use href="assets/icons.svg?v=20261105#book"/></svg></span>
             <span class="repo__name">Patch Library</span>
             <span class="repo__desc">The patch catalogue the patcher downloads from.</span>
           </a>
           <a class="util-card repo" href="https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher-Archive">
-            <span class="repo__icon" aria-hidden="true">🗄️</span>
+            <span class="repo__icon" aria-hidden="true"><svg class="mc-icon" aria-hidden="true" focusable="false"><use href="assets/icons.svg?v=20261105#chest"/></svg></span>
             <span class="repo__name">Archive</span>
             <span class="repo__desc">Every past <code>.vcdiff</code> patch and the legacy V1 patcher source.</span>
           </a>
           <a class="util-card repo" href="https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher-External_Tools">
-            <span class="repo__icon" aria-hidden="true">🧰</span>
+            <span class="repo__icon" aria-hidden="true"><svg class="mc-icon" aria-hidden="true" focusable="false"><use href="assets/icons.svg?v=20261105#pickaxe"/></svg></span>
             <span class="repo__name">External Tools</span>
             <span class="repo__desc">Brarchive extractor and helper tools used by the patcher.</span>
           </a>
@@ -433,7 +420,7 @@
           <article class="util-card person person--highlight">
             <h3>Demente Parker</h3>
             <p class="person__role">Original creator, source files provider</p>
-            <a class="btn btn-kofi" href="https://ko-fi.com/dementeparker">💙 Support on Ko-fi</a>
+            <a class="btn btn-kofi" href="https://ko-fi.com/dementeparker">Support on Ko-fi</a>
           </article>
           <article class="util-card person">
             <h3>Community Testers</h3>
