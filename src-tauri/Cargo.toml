@@ -34,7 +34,7 @@ uuid = { version = "1", features = ["v4"] }
 regex = "1"
 # Used by the optional, git-ignored src/private/encrypt.rs (see build.rs,
 # cfg has_encrypt). Unused in builds without it, but keep them.
-aes = "0.8"
+aes = "0.9"
 getrandom = "0.4"
 
 
