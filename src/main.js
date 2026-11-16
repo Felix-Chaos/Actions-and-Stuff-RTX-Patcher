@@ -2216,8 +2216,148 @@ document.getElementById('btn-run-cleaner').addEventListener('click', async () =>
   await deleteCleanerPaths(selected, t('tabCleaner.confirm.descSelected'));
 });
 
+// INSTALLED RTX PACK GUARD
+// An A&S or Minecraft update can write into the installed RTX pack (it keeps
+// the original pack's UUID) and leave a broken mix of both. The backend
+// (src-tauri/src/packguard.rs) records each install; this asks the user to
+// delete a pack that no longer matches its record, and offers its backup.
+
+let packBackups = [];
+
+async function refreshPackBackups() {
+  try {
+    packBackups = await invoke("list_pack_backups");
+  } catch (err) {
+    console.error("Failed to list pack backups", err);
+    packBackups = [];
+  }
+  renderPackBackups();
+}
+
+function renderPackBackups() {
+  const list = document.getElementById('pack-backups-list');
+  if (!list) return;
+  if (packBackups.length === 0) {
+    list.innerHTML = `<div class="placeholder-text" style="font-size: 0.8rem;">${t('tabAppSettings.packGuard.noBackups')}</div>`;
+    return;
+  }
+  list.innerHTML = '';
+  packBackups.forEach(b => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);';
+    const info = document.createElement('div');
+    info.style.minWidth = '0';
+    const name = document.createElement('div');
+    name.style.cssText = 'font-size:0.85rem;color:#ffffff;';
+    name.textContent = b.label;
+    const sub = document.createElement('div');
+    sub.style.cssText = 'font-size:0.72rem;color:#9aa0a6;';
+    sub.textContent = `${new Date(b.createdAt * 1000).toLocaleString(getLocale())} · ${(b.size / 1048576).toFixed(1)} MB`;
+    info.append(name, sub);
+    const actions = document.createElement('div');
+    actions.style.cssText = 'display:flex;gap:6px;flex-shrink:0;';
+    const restore = document.createElement('button');
+    restore.type = 'button';
+    restore.className = 'btn btn-secondary btn-xs';
+    restore.textContent = t('tabAppSettings.packGuard.restore');
+    restore.addEventListener('click', () => restorePackBackup(b, restore));
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'btn btn-secondary btn-xs';
+    del.textContent = t('tabAppSettings.packGuard.deleteBackup');
+    del.addEventListener('click', async () => {
+      del.disabled = true;
+      try {
+        await invoke("delete_pack_backup", { id: b.id });
+        log(msg('log.guard.backupDeleted', { label: b.label }), 'success');
+      } catch (err) {
+        log(msg('log.guard.backupDeleteFailed', { error: err }), 'error');
+      }
+      refreshPackBackups();
+    });
+    actions.append(restore, del);
+    row.append(info, actions);
+    list.appendChild(row);
+  });
+}
+
+async function restorePackBackup(backup, btn) {
+  const original = btn ? btn.textContent : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = t('tabAppSettings.packGuard.restoring');
+  }
+  try {
+    const dirs = await invoke("restore_pack_backup", { id: backup.id, lock: !!appSettings.packLock });
+    dirs.forEach(d => log(msg('log.guard.restored', { label: backup.label, path: d }), 'success'));
+    await showAlert(t('tabAppSettings.packGuard.restoredMessage', { label: backup.label }), t('tabAppSettings.packGuard.restoredTitle'));
+    return true;
+  } catch (err) {
+    log(msg('log.guard.restoreFailed', { error: err }), 'error');
+    await showAlert(t('tabAppSettings.packGuard.restoreFailedMessage', { error: String(err) }), t('tabAppSettings.packGuard.restoreFailedTitle'));
+    return false;
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = original;
+    }
+    refreshPackBackups();
+  }
+}
+
+let packCheckRunning = false;
+
+async function checkInstalledPacks({ manual }) {
+  if (packCheckRunning) return;
+  packCheckRunning = true;
+  const btn = document.getElementById('btn-check-packs');
+  if (btn) btn.disabled = true;
+  try {
+    const damaged = await invoke("check_installed_packs");
+    if (damaged.length === 0) {
+      if (manual) await showAlert(t('tabAppSettings.packGuard.allGood'), t('tabAppSettings.packGuard.heading'));
+      return;
+    }
+    for (const pack of damaged) {
+      log(msg('log.guard.damaged', { label: pack.label, path: pack.dir, changed: pack.changed, added: pack.added, missing: pack.missing }), 'warning');
+      pack.examples.forEach(e => log(msg('log.guard.example', { entry: e }), 'warning'));
+      const remove = await showModal(
+        t('tabPatcher.guard.damagedMessage', { label: pack.label, path: pack.dir, changed: pack.changed, added: pack.added, missing: pack.missing }),
+        { title: t('tabPatcher.guard.damagedTitle'), confirm: true, okText: t('tabPatcher.guard.delete'), cancelText: t('tabPatcher.guard.keep') }
+      );
+      if (!remove) {
+        log(msg('log.guard.kept', { path: pack.dir }), 'info');
+        continue;
+      }
+      try {
+        await invoke("remove_installed_pack", { dir: pack.dir });
+        log(msg('log.guard.removed', { path: pack.dir }), 'success');
+      } catch (err) {
+        log(msg('log.guard.removeFailed', { error: err }), 'error');
+        await showAlert(String(err), t('tabPatcher.guard.damagedTitle'));
+        continue;
+      }
+      const backup = pack.backupId && packBackups.find(b => b.id === pack.backupId);
+      if (backup) {
+        const restore = await showModal(
+          t('tabPatcher.guard.restoreMessage', { label: backup.label }),
+          { title: t('tabPatcher.guard.restoreTitle'), confirm: true, okText: t('tabPatcher.guard.restore'), cancelText: t('tabPatcher.guard.later') }
+        );
+        if (restore) await restorePackBackup(backup, null);
+      }
+    }
+  } catch (err) {
+    log(msg('log.guard.checkFailed', { error: err }), 'warning');
+  } finally {
+    packCheckRunning = false;
+    if (btn) btn.disabled = false;
+  }
+}
+
 // CORE PATCHER PIPELINE
 let finalPatchedPath = "";
+// What finalPatchedPath was patched from, recorded with the install.
+let lastPatchedMeta = null;
 
 document.getElementById('btn-start-patch').addEventListener('click', async () => {
   const mode = document.querySelector('input[name="patch-mode"]:checked').value;
@@ -2638,6 +2778,13 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
     updateProgress(100);
     
     finalPatchedPath = finalOutputPath;
+    lastPatchedMeta = patchConfigToUse
+      ? {
+          label: t('tabPatcher.cache.patchLabel', { packVersion: patchConfigToUse.packVersion, patchVersion: patchConfigToUse.patchVersion || "1.0" }),
+          packVersion: patchConfigToUse.packVersion || null,
+          patchVersion: patchConfigToUse.patchVersion || null,
+        }
+      : { label: (finalOutputPath.split(/[\\/]/).pop() || 'RTX pack').replace(/\.zip$/i, ''), packVersion: null, patchVersion: null };
     document.getElementById('progress-actions-container').classList.remove('hidden-group');
     document.getElementById('btn-install-pack').classList.remove('hidden-group');
     document.getElementById('btn-copy-log-large').classList.remove('hidden-group');
@@ -2678,10 +2825,15 @@ document.getElementById('btn-install-pack').addEventListener('click', async () =
 
   try {
     log(msg('log.patcher.launchingInstaller', { path: finalPatchedPath }));
-    const actualMcpack = await invoke("install_mcpack", { outputFile: finalPatchedPath });
+    const meta = lastPatchedMeta || { label: 'RTX pack', packVersion: null, patchVersion: null };
+    const actualMcpack = await invoke("install_mcpack", {
+      outputFile: finalPatchedPath,
+      guard: { ...meta, backup: !!appSettings.packBackup, lock: !!appSettings.packLock },
+    });
     log(msg('log.patcher.installed', { path: actualMcpack }), 'success');
     updateStepState(5, 'completed');
     btn.classList.add('hidden-group');
+    refreshPackBackups();
   } catch (err) {
     log(msg('log.patcher.installFailed', { error: err }), 'error');
     btn.disabled = false;
@@ -3437,6 +3589,9 @@ let appSettings = {
   betaUpdates: false,
   cleanOld: true,
   autoCleanPatchCache: false,
+  // Installed RTX pack guard (src-tauri/src/packguard.rs)
+  packBackup: true,
+  packLock: true,
   consoleHeight: 150,
   patchLibraryDir: '',
   publishAfterCreate: false,
@@ -3639,6 +3794,20 @@ window.addEventListener('DOMContentLoaded', async () => {
   syncToggle('set-advanced-mode', 'chk-advanced-mode', 'advancedMode', true);
   syncToggle('set-beta-updates', 'chk-beta-updates', 'betaUpdates', true);
   syncToggle('set-clean-patch-cache', null, 'autoCleanPatchCache');
+  syncToggle('set-pack-backup', null, 'packBackup');
+  syncToggle('set-pack-lock', 'chk-pack-lock', 'packLock');
+  // The lock switch applies to packs that are already installed, too.
+  ['set-pack-lock', 'chk-pack-lock'].forEach(id => {
+    document.getElementById(id)?.addEventListener('change', async (e) => {
+      try {
+        const n = await invoke("set_installed_packs_locked", { locked: e.target.checked });
+        if (n > 0) log(msg(e.target.checked ? 'log.guard.lockedExisting' : 'log.guard.unlockedExisting', { count: n }), 'info');
+      } catch (err) {
+        log(msg('log.guard.lockChangeFailed', { error: err }), 'warning');
+      }
+    });
+  });
+  document.getElementById('btn-check-packs')?.addEventListener('click', () => checkInstalledPacks({ manual: true }));
   syncToggle('set-publish-after-create', 'gen-publish-library', 'publishAfterCreate');
 
   // Patch library folder picker, reusing the same select_directory command as
@@ -3803,6 +3972,9 @@ window.addEventListener('DOMContentLoaded', async () => {
   await loadMotd();
   await loadOptionsProfiles();
   log(msg('log.app.ready'));
+  refreshPackBackups();
+  // Not awaited: hashing a changed pack can take a moment.
+  checkInstalledPacks({ manual: false });
   
   // Hide release builder tab in non-dev builds
   try {

@@ -56,6 +56,8 @@ pub fn robust_cleanup(path: &Path) -> bool {
     if !path.exists() {
         return true;
     }
+    // * Locked RTX packs (see packguard) cannot be deleted until unlocked.
+    crate::packguard::unlock_path(path);
     for _ in 0..3 {
         let res = if path.is_dir() {
             std::fs::remove_dir_all(path)

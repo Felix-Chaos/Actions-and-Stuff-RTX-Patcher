@@ -372,7 +372,29 @@
         "start": "Vorbereitung des Patch-Ziels wird gestartet...",
         "copying": "Geänderte Assets werden kopiert...",
         "ready": "Patch-Ziel bereit."
+      },
+      "guard": {
+        "backupSaved": "Backup von \"{label}\" gespeichert.",
+        "backupFailed": "Backup des gepatchten Packs konnte nicht gespeichert werden: {error}",
+        "locked": "Installiertes Pack gegen Änderungen gesperrt: {path}",
+        "lockFailed": "Installiertes Pack konnte nicht gesperrt werden: {error}",
+        "recordFailed": "Installiertes Pack konnte nicht für spätere Prüfungen erfasst werden: {error}"
       }
+    },
+    "guard": {
+      "lockedExisting": "{count} installierte(s) RTX-Pack(s) gesperrt.",
+      "unlockedExisting": "{count} installierte(s) RTX-Pack(s) entsperrt.",
+      "lockChangeFailed": "Pack-Sperre konnte nicht geändert werden: {error}",
+      "backupDeleted": "Backup \"{label}\" gelöscht.",
+      "backupDeleteFailed": "Backup konnte nicht gelöscht werden: {error}",
+      "restored": "\"{label}\" nach {path} wiederhergestellt",
+      "restoreFailed": "Wiederherstellen des Backups fehlgeschlagen: {error}",
+      "damaged": "Installiertes RTX-Pack \"{label}\" wurde durch ein Update verändert: {changed} geändert, {added} neu, {missing} fehlend ({path})",
+      "example": "  {entry}",
+      "kept": "Verändertes Pack behalten: {path}",
+      "removed": "Kaputtes Pack gelöscht: {path}",
+      "removeFailed": "Kaputtes Pack konnte nicht gelöscht werden: {error}",
+      "checkFailed": "Installiertes RTX-Pack konnte nicht geprüft werden: {error}"
     }
   },
   "tabPatcher": {

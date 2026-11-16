@@ -286,6 +286,11 @@
               <!-- Post-patch action buttons -->
               <div id="progress-actions-container" class="progress-actions hidden-group">
                 <button id="btn-install-pack" class="btn btn-success hidden-group" data-i18n="tabPatcher.actions.installPack">Install Pack</button>
+                <label id="pack-lock-inline" class="pack-lock-inline">
+                  <span data-i18n="tabPatcher.guard.lockInline">Lock pack</span>
+                  <span class="info-tip" tabindex="0" role="note" data-i18n-tip="tabAppSettings.packGuard.lockTip" data-tip="Write-protects the installed RTX pack with Windows permissions, so an Actions &amp; Stuff or Minecraft update cannot overwrite it and mix it with the normal A&amp;S. Minecraft still loads it. The patcher lifts the lock itself when it replaces or deletes the pack.">i</span>
+                  <span class="mc-toggle"><input type="checkbox" id="chk-pack-lock" /><span class="mc-slider"></span></span>
+                </label>
                 <button id="btn-copy-log-large" class="btn btn-secondary hidden-group" data-i18n="tabPatcher.actions.copyLog" data-i18n-title="tabPatcher.console.copyTooltip" title="Copy log to clipboard">📋 Copy Log</button>
                 <button id="btn-report-bug-quick" class="btn btn-danger hidden-group" data-i18n="tabPatcher.actions.reportBug">🐞 Report Bug</button>
                 <button id="btn-patch-back" class="btn btn-secondary" data-i18n="tabPatcher.actions.backToSelection">Back to Selection</button>
@@ -916,6 +921,32 @@
                   <span id="downloaded-patches-total" style="font-size: 0.75rem; color: #9aa0a6;"></span>
                   <button type="button" id="btn-clear-patch-cache" class="btn btn-secondary btn-xs" disabled data-i18n-html="tabAppSettings.downloadedPatches.removeAll">
                     <i class="fas fa-trash-can"></i> Remove all downloads
+                  </button>
+                </div>
+              </div>
+
+              <!-- Installed RTX Pack -->
+              <div class="settings-group card" style="background: rgba(0,0,0,0.2);">
+                <h3 style="margin-top: 0;" data-i18n="tabAppSettings.packGuard.heading">Installed RTX Pack</h3>
+                <p style="font-size: 0.78rem; color: #9aa0a6; margin-top: 0;" data-i18n="tabAppSettings.packGuard.description">On every start the patcher checks whether an Actions &amp; Stuff or Minecraft update changed your installed RTX pack, and offers to delete a broken one.</p>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
+                  <span style="font-size: 0.85rem; color: #ffffff;"><span data-i18n="tabAppSettings.packGuard.lock">Lock the installed pack</span> <span class="info-tip" tabindex="0" role="note" data-i18n-tip="tabAppSettings.packGuard.lockTip" data-tip="Write-protects the installed RTX pack with Windows permissions, so an Actions &amp; Stuff or Minecraft update cannot overwrite it and mix it with the normal A&amp;S. Minecraft still loads it. The patcher lifts the lock itself when it replaces or deletes the pack.">i</span></span>
+                  <label class="mc-toggle" style="margin-left: 0;">
+                    <input type="checkbox" id="set-pack-lock" />
+                    <span class="mc-slider"></span>
+                  </label>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
+                  <span style="font-size: 0.85rem; color: #ffffff;"><span data-i18n="tabAppSettings.packGuard.backup">Keep a backup of the patched pack</span> <span class="info-tip" tabindex="0" role="note" data-i18n-tip="tabAppSettings.packGuard.backupTip" data-tip="Saves the patched pack after installing, so it can be reinstalled in seconds without patching again. The last 3 are kept.">i</span></span>
+                  <label class="mc-toggle" style="margin-left: 0;">
+                    <input type="checkbox" id="set-pack-backup" />
+                    <span class="mc-slider"></span>
+                  </label>
+                </div>
+                <div id="pack-backups-list" style="margin-top: 8px;"></div>
+                <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 10px;">
+                  <button type="button" id="btn-check-packs" class="btn btn-secondary btn-xs" data-i18n-html="tabAppSettings.packGuard.checkNow">
+                    <i class="fas fa-stethoscope"></i> Check installed pack
                   </button>
                 </div>
               </div>
