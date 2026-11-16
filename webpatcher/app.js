@@ -26,6 +26,11 @@ const cmpNum = (a, b) => String(a).localeCompare(String(b), undefined, { numeric
 const isBeta = (e) => (typeof e.beta === "boolean" ? e.beta : /^v?0(\.|$)/i.test(String(e.patchVersion)));
 const mb = (n) => (n / 1048576).toFixed(n < 10485760 ? 1 : 0) + " MB";
 
+// Locked browsers only see the "not open yet" card (see unlock.js).
+const unlocked = await (window.rtxWebPatcherUnlocked || Promise.resolve(false));
+$("locked").hidden = unlocked;
+$("steps").hidden = !unlocked;
+
 let indexPromise = null;
 const loadIndex = () =>
   (indexPromise ||= fetch(`${LIBRARY}/patch_index.json`, { cache: "no-cache" })
@@ -35,7 +40,7 @@ const loadIndex = () =>
         .filter((e) => e.patches && e.patches.encrypted)
         .sort((a, b) => cmpNum(b.packVersion, a.packVersion) || cmpNum(b.patchVersion || "1.0", a.patchVersion || "1.0"))
     ));
-loadIndex().catch(() => {}); // warm up while the user picks the folder
+if (unlocked) loadIndex().catch(() => {}); // warm up while the user picks the folder
 
 let pack = null; // detected candidate
 let entries = [];

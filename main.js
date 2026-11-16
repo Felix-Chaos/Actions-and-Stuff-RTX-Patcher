@@ -308,22 +308,17 @@
   }
 })();
 
-// Web Patcher preview: hidden until unlocked with ?webpatcher=1 (?webpatcher=0 locks it again).
-// Only a per-browser switch, not access control: the page itself is public.
+// Web Patcher preview: the greyed-out button becomes a link in browsers
+// unlocked through webpatcher/unlock.js.
 (() => {
   const btn = document.querySelector("[data-webpatcher]");
-  if (!btn) return;
-  try {
-    const q = new URLSearchParams(location.search).get("webpatcher");
-    if (q === "1") localStorage.setItem("rtx-webpatcher", "1");
-    if (q === "0") localStorage.removeItem("rtx-webpatcher");
-    if (localStorage.getItem("rtx-webpatcher") !== "1") return;
-  } catch (_) {
-    return;
-  }
-  const link = document.createElement("a");
-  link.className = "btn btn-secondary";
-  link.href = "webpatcher/";
-  link.innerHTML = btn.innerHTML.replace(">Soon<", ">Preview<");
-  btn.replaceWith(link);
+  if (!btn || !window.rtxWebPatcherUnlocked) return;
+  window.rtxWebPatcherUnlocked.then((ok) => {
+    if (!ok) return;
+    const link = document.createElement("a");
+    link.className = "btn btn-secondary";
+    link.href = "webpatcher/";
+    link.innerHTML = btn.innerHTML.replace(">Soon<", ">Preview<");
+    btn.replaceWith(link);
+  });
 })();

@@ -75,3 +75,8 @@
   .wp-step { padding: 16px; }
   .wp-path { flex-direction: column; }
 }
+
+.wp-locked { padding: 20px; display: grid; gap: 12px; }
+.wp-locked h2 { margin: 0; font-size: 1.1rem; }
+.wp-locked p { margin: 0; line-height: 1.55; color: var(--text-muted); }
+[hidden] { display: none !important; }
