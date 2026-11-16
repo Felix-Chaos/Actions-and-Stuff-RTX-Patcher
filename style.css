@@ -477,7 +477,8 @@ kbd {
 .installer__head img { image-rendering: pixelated; }
 .installer__title { font-size: 1.25rem; font-weight: 600; margin-bottom: 6px; }
 .installer__row { display: flex; gap: 10px; flex-wrap: wrap; }
-.installer__row .btn { flex: 1 1 10rem; }
+.installer__row .btn { flex: 1 1 7rem; padding-inline: 10px; }
+.installer__row [data-webpatcher] { flex-basis: 100%; }
 .patch-info { border-top: 1px solid var(--panel-border); padding-top: 14px; }
 .patch-info__version { font-size: .85rem; font-weight: 600; color: #e5e7eb; }
 .installer__checklist { border-top: 1px solid var(--panel-border); padding-top: 14px; }

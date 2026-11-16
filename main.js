@@ -318,6 +318,7 @@
     const link = document.createElement("a");
     link.className = "btn btn-secondary";
     link.href = "webpatcher/";
+    link.dataset.webpatcher = "";
     link.innerHTML = btn.innerHTML.replace(">Soon<", ">Preview<");
     btn.replaceWith(link);
   });
