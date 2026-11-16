@@ -1,0 +1,77 @@
+.wp { width: min(46rem, 100% - 32px); margin-inline: auto; padding: 28px 0 48px; }
+
+.wp__back { display: inline-block; margin-bottom: 18px; color: var(--text-muted); font-size: .85rem; text-decoration: none; }
+.wp__back:hover { color: var(--primary-light); }
+.wp__title { display: flex; align-items: center; gap: 14px; }
+.wp__title img { image-rendering: pixelated; }
+.wp__title h1 { margin: 0 0 6px; font-size: clamp(1.6rem, 5vw, 2.1rem); line-height: 1.1; }
+.wp__lead { margin: 16px 0 24px; color: var(--text-main); font-size: 1.02rem; line-height: 1.6; }
+.wp__lead strong { color: var(--primary-light); }
+
+.wp__steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
+.wp-step { padding: 20px; transition: opacity .2s ease; }
+.wp-step h2 { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; font-size: 1.1rem; }
+.wp-step p { margin: 0 0 10px; line-height: 1.55; }
+.wp-step.is-locked { opacity: .45; }
+.wp-step.is-locked .btn, .wp-step.is-locked select { pointer-events: none; }
+.wp-step__num {
+  display: inline-grid; place-items: center; width: 26px; height: 26px; flex: 0 0 auto;
+  border-radius: 4px; background: var(--mc-green); color: #fff; font-size: .85rem;
+  box-shadow: inset 2px 2px 0 var(--mc-green-hi), inset -2px -3px 0 var(--mc-green-lo);
+}
+
+.wp-path { display: flex; gap: 8px; align-items: stretch; margin: 0 0 10px; }
+.wp-path code {
+  flex: 1; min-width: 0; padding: 8px 10px; overflow-x: auto; white-space: nowrap;
+  background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 6px; font-size: .8rem;
+}
+.btn-small { padding: 4px 10px 7px; font-size: .72rem; }
+.btn-small:active { padding-top: 6px; padding-bottom: 5px; }
+
+.wp-more { margin: 0 0 10px; font-size: .9rem; }
+.wp-more summary { cursor: pointer; color: var(--text-muted); margin-bottom: 8px; }
+.wp-more summary:hover { color: var(--text-main); }
+.wp-hint { font-size: .85rem; color: var(--text-muted); }
+.wp-muted { color: var(--text-muted); font-size: .85rem; }
+.wp-pick { margin-top: 6px; }
+
+.wp-result { margin-top: 14px; padding: 10px 12px; border-radius: 6px; border: 1px solid var(--subtle-border); background: var(--subtle-bg); font-size: .9rem; line-height: 1.5; }
+.wp-result--ok { border-color: rgba(34, 197, 94, .3); background: rgba(34, 197, 94, .07); }
+.wp-result--ok strong { color: var(--primary-light); }
+.wp-result--warn { border-color: rgba(251, 191, 36, .3); background: rgba(251, 191, 36, .08); color: #fbbf24; }
+
+.wp-select {
+  width: 100%; padding: 10px 12px; font: inherit; font-size: .95rem; color: var(--text-main);
+  background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 6px;
+}
+.wp-select:focus { outline: 2px solid var(--primary-color); outline-offset: 1px; }
+.wp-warn-text { color: var(--color-warning) !important; }
+
+.wp-progress { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 6px; font-size: .92rem; }
+.wp-progress li { display: flex; justify-content: space-between; gap: 12px; color: var(--text-muted); }
+.wp-progress li::before { content: "○"; width: 1.2em; flex: 0 0 auto; }
+.wp-progress li.is-active { color: var(--text-main); }
+.wp-progress li.is-active::before { content: "▶"; color: var(--color-warning); }
+.wp-progress li.is-done::before { content: "■"; color: var(--primary-color); }
+.wp-progress li.is-failed { color: var(--color-danger); }
+.wp-progress li.is-failed::before { content: "✕"; }
+.wp-progress__label { flex: 1; }
+.wp-progress__val { font-family: var(--font-mono); font-size: .8rem; }
+
+.wp-bar { height: 14px; margin-bottom: 14px; background: var(--panel-bg); border: 2px solid var(--mc-outline); border-radius: 3px; overflow: hidden; }
+.wp-bar span { display: block; height: 100%; width: 0; background: var(--primary-color); box-shadow: inset 0 -3px 0 var(--accent-color); transition: width .15s linear; }
+
+.wp-done { display: grid; gap: 12px; }
+.wp-done p { margin: 0; }
+#error { margin-bottom: 12px; }
+#error a { color: inherit; }
+
+.wp-foot { margin: 28px 0 0; color: var(--text-muted); font-size: .85rem; text-align: center; line-height: 1.6; }
+.wp-foot a { color: var(--primary-light); }
+.wp-foot--fine { margin-top: 10px; font-size: .78rem; font-family: var(--font-mono); }
+.wp-foot--fine a { color: inherit; }
+
+@media (max-width: 520px) {
+  .wp-step { padding: 16px; }
+  .wp-path { flex-direction: column; }
+}
