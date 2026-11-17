@@ -87,6 +87,18 @@ fn pack_version(path: &Path) -> Option<String> {
     }
 }
 
+/// manifest.json header version, the pack's Marketplace revision ("1.1.65").
+/// Silent updates keep name, file count and logo but re-encrypt everything,
+/// so only this tells revisions apart (same as the desktop patcher).
+fn manifest_version(path: &Path) -> Option<String> {
+    let manifest: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(path.join("manifest.json")).ok()?).ok()?;
+    match manifest.get("header")?.get("version")? {
+        serde_json::Value::String(s) => Some(s.trim().to_string()).filter(|s| !s.is_empty()),
+        serde_json::Value::Array(a) => a.iter().map(|v| v.as_u64().map(|n| n.to_string())).collect::<Option<Vec<_>>>().map(|p| p.join(".")),
+        _ => None,
+    }
+}
+
 /// "v1.11.0" and "1.11" name the same pack version.
 pub fn normalize_version(v: &str) -> String {
     let v = v.trim().trim_start_matches(['v', 'V']);
@@ -127,6 +139,7 @@ pub struct PackInfo {
     pub files: usize,
     pub dirs: usize,
     pub logo_hash: Option<String>,
+    pub manifest_version: Option<String>,
     #[serde(skip)]
     pub path: PathBuf,
 }
@@ -148,6 +161,7 @@ pub fn scan_packs() -> Vec<PackInfo> {
                 files,
                 dirs,
                 logo_hash: std::fs::read(path.join("pack_icon.png")).ok().map(|b| sha256_hex(&b)),
+                manifest_version: manifest_version(&path),
                 path,
             });
         }
