@@ -374,7 +374,29 @@
         "start": "Starting patch target preparation...",
         "copying": "Copying modified assets...",
         "ready": "Patch target ready."
+      },
+      "guard": {
+        "backupSaved": "Saved a backup of \"{label}\".",
+        "backupFailed": "Could not save a backup of the patched pack: {error}",
+        "locked": "Locked the installed pack against changes: {path}",
+        "lockFailed": "Could not lock the installed pack: {error}",
+        "recordFailed": "Could not record the installed pack for later checks: {error}"
       }
+    },
+    "guard": {
+      "lockedExisting": "Locked {count} installed RTX pack folder(s).",
+      "unlockedExisting": "Unlocked {count} installed RTX pack folder(s).",
+      "lockChangeFailed": "Could not change the pack lock: {error}",
+      "backupDeleted": "Deleted backup \"{label}\".",
+      "backupDeleteFailed": "Could not delete the backup: {error}",
+      "restored": "Restored \"{label}\" to {path}",
+      "restoreFailed": "Restoring the backup failed: {error}",
+      "damaged": "Installed RTX pack \"{label}\" was changed by an update: {changed} changed, {added} new, {missing} missing files ({path})",
+      "example": "  {entry}",
+      "kept": "Kept the changed pack at {path}",
+      "removed": "Deleted the broken pack at {path}",
+      "removeFailed": "Could not delete the broken pack: {error}",
+      "checkFailed": "Could not check the installed RTX pack: {error}"
     }
   },
   "tabPatcher": {

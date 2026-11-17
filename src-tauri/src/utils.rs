@@ -6,8 +6,6 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use tauri::Emitter;
 use tauri::Manager;
-use zip::write::SimpleFileOptions;
-use zip::ZipWriter;
 
 #[derive(Clone, serde::Serialize)]
 pub struct LogPayload {
@@ -58,6 +56,8 @@ pub fn robust_cleanup(path: &Path) -> bool {
     if !path.exists() {
         return true;
     }
+    // * Locked RTX packs (see packguard) cannot be deleted until unlocked.
+    crate::packguard::unlock_path(path);
     for _ in 0..3 {
         let res = if path.is_dir() {
             std::fs::remove_dir_all(path)
@@ -110,17 +110,6 @@ pub fn pack_folder_impl(
     container: &str,
     exclude_names: &[String],
 ) -> Result<(), String> {
-    let file = File::create(output_zip).map_err(|e| format!("Failed to create zip: {}", e))?;
-    let mut zip = ZipWriter::new(file);
-
-    // Fixed timestamp (Jan 1, 1980) for deterministic output
-    let fixed_time = zip::DateTime::from_date_and_time(1980, 1, 1, 0, 0, 0)
-        .map_err(|e| format!("Failed to parse zip time: {}", e))?;
-
-    let options = SimpleFileOptions::default()
-        .compression_method(zip::CompressionMethod::Stored)
-        .last_modified_time(fixed_time);
-
     let mut files: Vec<(PathBuf, String)> = Vec::new();
     collect_files(folder_path, folder_path, &mut files)?;
     if !exclude_names.is_empty() {
@@ -148,18 +137,7 @@ pub fn pack_folder_impl(
         );
     }
 
-    for (abs_path, rel_path) in files {
-        let mut f = File::open(&abs_path)
-            .map_err(|e| format!("Failed to open file {:?}: {}", abs_path, e))?;
-
-        zip.start_file(rel_path, options)
-            .map_err(|e| format!("Failed to start file in zip: {}", e))?;
-        std::io::copy(&mut f, &mut zip)
-            .map_err(|e| format!("Failed to write file to zip: {}", e))?;
-    }
-
-    zip.finish()
-        .map_err(|e| format!("Failed to finalize zip: {}", e))?;
+    write_stored_zip(&files, output_zip)?;
     if let Some(app_handle) = app {
         emit_msg(
             app_handle,
@@ -168,6 +146,95 @@ pub fn pack_folder_impl(
             "success",
         );
     }
+    Ok(())
+}
+
+// The RTX patches are xdelta diffs against the archive pack_folder_impl
+// writes, so its bytes must never change: not with a zip crate update (zip 9
+// writes "version made by" 0x000a where the 4.6.1 builds that made every
+// published patch wrote 0x030a), and not between the desktop app and the Web
+// Patcher (rtx.chaosdev.dev/webpatcher, webpatcher/lib/zipstore.js), which
+// builds the same archive in the browser. Hence a fixed, hand-written format,
+// byte-identical to zip 4.6.1 with CompressionMethod::Stored and a
+// 1980-01-01 00:00 timestamp:
+//   local header: version 10, flags 0 (0x0800 if the name is not ASCII),
+//     method 0, DOS time 0x0000, date 0x0021, CRC-32, sizes, no extra field
+//   central header: made by 0x030a (Unix, 1.0), external attrs 0o100644 << 16
+//   end of central directory without comment; no ZIP64.
+// `files` must already be sorted by name.
+const ZIP_DOS_TIME: u16 = 0x0000;
+const ZIP_DOS_DATE: u16 = 0x0021;
+
+pub fn write_stored_zip(files: &[(PathBuf, String)], output_zip: &Path) -> Result<(), String> {
+    let file = File::create(output_zip).map_err(|e| format!("Failed to create zip: {}", e))?;
+    let mut out = std::io::BufWriter::with_capacity(1 << 20, file);
+    let mut central: Vec<u8> = Vec::new();
+    let mut offset: u64 = 0;
+
+    if files.len() > 0xffff {
+        return Err("Too many files for a non-ZIP64 archive".to_string());
+    }
+
+    for (abs_path, rel_path) in files {
+        let data = std::fs::read(abs_path)
+            .map_err(|e| format!("Failed to read file {:?}: {}", abs_path, e))?;
+        let name = rel_path.as_bytes();
+        if data.len() as u64 >= 0xffff_ffff || offset >= 0xffff_ffff || name.len() > 0xffff {
+            return Err(format!("{} is too large for a non-ZIP64 archive", rel_path));
+        }
+        let crc = crc32fast::hash(&data);
+        let size = data.len() as u32;
+        let flags: u16 = if name.is_ascii() { 0 } else { 0x0800 };
+
+        let mut lfh = Vec::with_capacity(30 + name.len());
+        lfh.extend_from_slice(&0x0403_4b50u32.to_le_bytes());
+        lfh.extend_from_slice(&10u16.to_le_bytes());
+        lfh.extend_from_slice(&flags.to_le_bytes());
+        lfh.extend_from_slice(&0u16.to_le_bytes());
+        lfh.extend_from_slice(&ZIP_DOS_TIME.to_le_bytes());
+        lfh.extend_from_slice(&ZIP_DOS_DATE.to_le_bytes());
+        lfh.extend_from_slice(&crc.to_le_bytes());
+        lfh.extend_from_slice(&size.to_le_bytes());
+        lfh.extend_from_slice(&size.to_le_bytes());
+        lfh.extend_from_slice(&(name.len() as u16).to_le_bytes());
+        lfh.extend_from_slice(&0u16.to_le_bytes());
+        lfh.extend_from_slice(name);
+        out.write_all(&lfh).map_err(|e| format!("Failed to write zip: {}", e))?;
+        out.write_all(&data).map_err(|e| format!("Failed to write zip: {}", e))?;
+
+        central.extend_from_slice(&0x0201_4b50u32.to_le_bytes());
+        central.extend_from_slice(&0x030au16.to_le_bytes());
+        central.extend_from_slice(&10u16.to_le_bytes());
+        central.extend_from_slice(&flags.to_le_bytes());
+        central.extend_from_slice(&0u16.to_le_bytes());
+        central.extend_from_slice(&ZIP_DOS_TIME.to_le_bytes());
+        central.extend_from_slice(&ZIP_DOS_DATE.to_le_bytes());
+        central.extend_from_slice(&crc.to_le_bytes());
+        central.extend_from_slice(&size.to_le_bytes());
+        central.extend_from_slice(&size.to_le_bytes());
+        central.extend_from_slice(&(name.len() as u16).to_le_bytes());
+        central.extend_from_slice(&[0u8; 8]); // extra, comment, disk, internal attrs
+        central.extend_from_slice(&(0o100644u32 << 16).to_le_bytes());
+        central.extend_from_slice(&(offset as u32).to_le_bytes());
+        central.extend_from_slice(name);
+
+        offset += lfh.len() as u64 + data.len() as u64;
+    }
+
+    if offset >= 0xffff_ffff || central.len() as u64 >= 0xffff_ffff {
+        return Err("Pack too large for a non-ZIP64 archive".to_string());
+    }
+    out.write_all(&central).map_err(|e| format!("Failed to write zip: {}", e))?;
+    let mut eocd = Vec::with_capacity(22);
+    eocd.extend_from_slice(&0x0605_4b50u32.to_le_bytes());
+    eocd.extend_from_slice(&[0u8; 4]); // disk numbers
+    eocd.extend_from_slice(&(files.len() as u16).to_le_bytes());
+    eocd.extend_from_slice(&(files.len() as u16).to_le_bytes());
+    eocd.extend_from_slice(&(central.len() as u32).to_le_bytes());
+    eocd.extend_from_slice(&(offset as u32).to_le_bytes());
+    eocd.extend_from_slice(&0u16.to_le_bytes());
+    out.write_all(&eocd).map_err(|e| format!("Failed to write zip: {}", e))?;
+    out.flush().map_err(|e| format!("Failed to finalize zip: {}", e))?;
     Ok(())
 }
 
@@ -1126,5 +1193,56 @@ mod tests {
         std::fs::write(dir.join("texts/en_US.lang"), "pack.name=Actions & Stuff 1.12\n").unwrap();
         assert_eq!(get_pack_name_version(&dir).as_deref(), Some("1.12"));
         std::fs::remove_dir_all(&dir).unwrap();
+    }
+}
+
+#[cfg(test)]
+mod stored_zip_tests {
+    use super::*;
+    use sha2::{Digest, Sha256};
+
+    // Builds the same tree as the zip 4.6.1 reference this hash came from
+    // (non-ASCII and emoji names, an empty file, a 70 KB file, mixed case).
+    fn golden_tree(root: &Path) {
+        let w = |rel: &str, data: &[u8]| {
+            let p = root.join(rel);
+            std::fs::create_dir_all(p.parent().unwrap()).unwrap();
+            std::fs::write(p, data).unwrap();
+        };
+        w("manifest.json", b"{\"format_version\":2}\n");
+        w("a/empty.txt", b"");
+        w("a/B.lang", b"pack.name=Actions & Stuff 1.11\n");
+        w("a/a.txt", b"z");
+        w("\u{c4}pfel/\u{fc}.txt", "gr\u{fc}n".as_bytes());
+        w("a/\u{1f600}.txt", b"smile");
+        let big: Vec<u8> = (0..70000u32).map(|i| ((i * 31 + 7) % 251) as u8).collect();
+        w("textures/blocks/big.bin", &big);
+    }
+
+    #[test]
+    fn pack_folder_matches_zip_4_6_1_bytes() {
+        let dir = std::env::temp_dir().join(format!("rtx-zip-golden-{}", uuid::Uuid::new_v4()));
+        let src = dir.join("src");
+        golden_tree(&src);
+        let out = dir.join("out.zip");
+        pack_folder_impl(None, &src, &out, "test", &[]).unwrap();
+        let hash: String = Sha256::digest(std::fs::read(&out).unwrap())
+            .iter()
+            .map(|b| format!("{:02x}", b))
+            .collect();
+        let _ = std::fs::remove_dir_all(&dir);
+        // Changing this hash breaks every published patch and the Web Patcher.
+        assert_eq!(hash, "9ffee212e413021319bbc982bc580af12e59e0e4daee759d7e11ff5f7cfa984b");
+    }
+
+    // One-off check against a real pack: RTX_ZIP_CHECK_DIR=<folder>
+    // RTX_ZIP_CHECK_OUT=<file> cargo test -- --ignored, then compare the file
+    // with a zip 4.6.1 build.
+    #[test]
+    #[ignore]
+    fn pack_real_folder() {
+        let dir = std::env::var("RTX_ZIP_CHECK_DIR").unwrap();
+        let out = std::env::var("RTX_ZIP_CHECK_OUT").unwrap();
+        pack_folder_impl(None, Path::new(&dir), Path::new(&out), "test", &[]).unwrap();
     }
 }

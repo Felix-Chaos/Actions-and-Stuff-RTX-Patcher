@@ -386,53 +386,40 @@ pub async fn run_xdelta_patch(
     Ok("Patch applied successfully.".to_string())
 }
 
+/// Installs the patched archive into every Minecraft install on this PC.
+///
+/// With `guard` set (the normal patcher flow) the install is also recorded,
+/// backed up and locked as the options ask, see [`crate::packguard`].
 #[tauri::command]
-pub async fn install_mcpack(app: tauri::AppHandle, output_file: String) -> Result<String, String> {
-    let src_path = Path::new(&output_file);
-    if !src_path.exists() {
-        return Err("Output file not found".to_string());
-    }
+pub async fn install_mcpack(
+    app: tauri::AppHandle,
+    output_file: String,
+    guard: Option<crate::packguard::GuardOptions>,
+) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let src_path = Path::new(&output_file);
+        if !src_path.exists() {
+            return Err("Output file not found".to_string());
+        }
+        let file_stem = src_path
+            .file_stem()
+            .ok_or_else(|| "Invalid filename".to_string())?
+            .to_string_lossy()
+            .into_owned();
 
-    let file_stem = src_path
-        .file_stem()
-        .ok_or_else(|| "Invalid filename".to_string())?;
+        let dests = crate::packguard::install_archive_to_targets(&app, src_path, &file_stem)?;
 
-    let mojang_paths: Vec<PathBuf> = get_install_target_paths()
-        .into_iter()
-        .filter(|p| p.exists())
-        .collect();
-
-    if mojang_paths.is_empty() {
-        return Err("Could not find Minecraft installation directory.".to_string());
-    }
-
-    let mut last_dest = String::new();
-
-    for mojang_path in mojang_paths {
-        let packs_dir = mojang_path.join("resource_packs");
-        if !packs_dir.exists() {
-            let _ = std::fs::create_dir_all(&packs_dir);
+        if let Some(opts) = guard {
+            // ! Never fail the install over this: the pack is already in place.
+            if let Err(e) = crate::packguard::record_install(&app, &dests, Some(src_path), None, &opts) {
+                emit_msg(&app, "main", &log_msg!("log.backend.guard.recordFailed", error = e), "warning");
+            }
         }
 
-        let dest_dir = packs_dir.join(file_stem);
-
-        if let Err(e) = extract_archive_impl(Some(&app), src_path, &dest_dir, "main") {
-            emit_msg(
-                &app,
-                "main",
-                &log_msg!("log.backend.install.failed", path = format!("{:?}", dest_dir), error = e),
-                "error",
-            );
-        } else {
-            last_dest = dest_dir.to_string_lossy().into_owned();
-        }
-    }
-
-    if last_dest.is_empty() {
-        Err("Failed to install pack in any Minecraft directory.".to_string())
-    } else {
-        Ok(last_dest)
-    }
+        Ok(dests.last().map(|d| d.to_string_lossy().into_owned()).unwrap_or_default())
+    })
+    .await
+    .map_err(|e| format!("Install task failed: {}", e))?
 }
 
 #[tauri::command]

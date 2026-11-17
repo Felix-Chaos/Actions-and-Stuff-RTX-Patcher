@@ -135,6 +135,17 @@
       "copyTooltip": "Log in die Zwischenablage kopieren",
       "clearTooltip": "Konsole leeren",
       "resizeGripTooltip": "Nach unten ziehen, um die Konsole zu vergrößern. Doppelklick zum Zurücksetzen."
+    },
+    "guard": {
+      "lockInline": "Pack sperren",
+      "damagedTitle": "Kaputtes RTX-Pack gefunden",
+      "damagedMessage": "Ein Actions & Stuff- oder Minecraft-Update hat dein installiertes RTX-Pack \"{label}\" verändert ({changed} geänderte, {added} neue, {missing} fehlende Dateien). Es ist jetzt eine Mischung aus A&S und A&S RTX und sieht im Spiel kaputt aus.\n\nLöschen?\n\n{path}",
+      "delete": "Löschen",
+      "keep": "Behalten",
+      "restoreTitle": "Aus Backup wiederherstellen?",
+      "restoreMessage": "Für \"{label}\" gibt es ein Backup. Jetzt neu installieren? Das dauert nur ein paar Sekunden, ohne erneutes Patchen.",
+      "restore": "Wiederherstellen",
+      "later": "Nicht jetzt"
     }
   },
   "tabCleaner": {
@@ -486,6 +497,24 @@
       "notice": "Diese Daten sind <b>pseudonym</b>, nicht anonym",
       "noticeAfter": ", da Übermittlungen über eine dauerhafte Kennung verknüpft sind. Die Übermittlung ist ab dem ersten Start zustimmungspflichtig; danach wird nur dann eine Meldung gesendet, wenn sich dein Hardware-Hash ändert, nicht bei jedem Start. Hochgeladene Logs werden nach 30 Tagen automatisch gelöscht.",
       "openDiagnosticsFolder": "Diagnoseordner öffnen"
+    },
+    "packGuard": {
+      "heading": "Installiertes RTX-Pack",
+      "description": "Bei jedem Start prüft der Patcher, ob ein Actions & Stuff- oder Minecraft-Update dein installiertes RTX-Pack verändert hat, und bietet an, ein kaputtes zu löschen.",
+      "lock": "Installiertes Pack sperren",
+      "lockTip": "Schützt das installierte RTX-Pack per Windows-Berechtigungen vor Änderungen, damit ein Actions & Stuff- oder Minecraft-Update es nicht überschreibt und mit dem normalen A&S vermischt. Minecraft lädt es trotzdem. Zum Ersetzen oder Löschen hebt der Patcher die Sperre selbst auf.",
+      "backup": "Backup des gepatchten Packs behalten",
+      "backupTip": "Speichert das gepatchte Pack nach der Installation, damit es in Sekunden ohne erneutes Patchen wieder installiert werden kann. Die letzten 3 werden behalten.",
+      "noBackups": "Noch keine Backups. Beim nächsten Installieren eines gepatchten Packs wird eins gespeichert.",
+      "restore": "Wiederherstellen",
+      "restoring": "Wird wiederhergestellt...",
+      "deleteBackup": "Löschen",
+      "checkNow": "<i class=\"fas fa-stethoscope\"></i> Installiertes Pack prüfen",
+      "allGood": "Dein installiertes RTX-Pack ist intakt.",
+      "restoredTitle": "Pack wiederhergestellt",
+      "restoredMessage": "\"{label}\" ist wieder installiert. Aktiviere es in Minecraft unter Globale Ressourcen, falls es nicht aktiv ist.",
+      "restoreFailedTitle": "Wiederherstellen fehlgeschlagen",
+      "restoreFailedMessage": "Das Backup konnte nicht installiert werden: {error}"
     }
   }
 }
