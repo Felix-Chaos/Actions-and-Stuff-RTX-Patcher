@@ -94,7 +94,16 @@ function launch(url) {
 
 // ---------- matching (resolvePatchConfig's "solid hit") ----------
 
+// A patch fits only the exact Marketplace revision (manifest version) it was
+// built from: silent updates keep name, file count and logo but re-encrypt
+// every file. Entries without a recorded revision are not checked.
+function revOk(entry, cand) {
+  const want = entry.validation?.manifest_version;
+  return !(want && cand.manifestVersion) || String(want).trim() === String(cand.manifestVersion).trim();
+}
+
 function fits(entry, cand) {
+  if (!revOk(entry, cand)) return false;
   const valid = entry.validation || {};
   const stats = entry.stats || entry.marketplace_pack_stats?.v1 || {};
   const hashOk = !(valid.logo_hash && cand.logoHash) || valid.logo_hash === cand.logoHash;
@@ -217,7 +226,7 @@ function renderPatchChoice() {
   const box = $("patch-box");
   unlock("step-patch", true);
   const fitting = entries.filter((e) => fits(e, pack));
-  const versionOnly = entries.filter((e) => !fits(e, pack) && sameVersion(e, pack));
+  const versionOnly = entries.filter((e) => !fits(e, pack) && sameVersion(e, pack) && revOk(e, pack));
   const recommended = fitting.find((e) => !isBeta(e)) || fitting[0] || versionOnly.find((e) => !isBeta(e)) || versionOnly[0];
 
   if (!recommended) {
@@ -234,7 +243,7 @@ function renderPatchChoice() {
     `A&S ${normVer(e.packVersion)} · Patch ${e.patchVersion || "1.0"}` +
     (isBeta(e) ? " · Beta" : "") +
     (e.hotpatch ? " · Hotpatch" : "") +
-    (fits(e, pack) || sameVersion(e, pack) ? "" : " · other A&S version!");
+    (!revOk(e, pack) ? " · other revision!" : fits(e, pack) || sameVersion(e, pack) ? "" : " · other A&S version!");
   const opts = entries
     .map((e) => `<option value="${esc(e.slug)}"${e === recommended ? " selected" : ""}>${esc(label(e))}</option>`)
     .join("");
@@ -245,10 +254,12 @@ function renderPatchChoice() {
   const sel = $("patch-select");
   const update = () => {
     chosen = entries.find((e) => e.slug === sel.value);
-    const ok = fits(chosen, pack) || sameVersion(chosen, pack);
+    const ok = revOk(chosen, pack) && (fits(chosen, pack) || sameVersion(chosen, pack));
     $("patch-hint").textContent = ok
       ? `Fits your pack · download ${mb(chosen.patches.encrypted.size || 0)}`
-      : `Made for A&S ${normVer(chosen.packVersion)}, your pack is ${pack.version || "unknown"}: this will most likely fail.`;
+      : !revOk(chosen, pack)
+        ? `Your A&S ${pack.version || ""} is Marketplace revision ${pack.manifestVersion}, this patch was made for revision ${chosen.validation.manifest_version}. Oreville updated the pack without renaming it, so this patch cannot fit: wait for a new patch.`
+        : `Made for A&S ${normVer(chosen.packVersion)}, your pack is ${pack.version || "unknown"}: this will most likely fail.`;
     $("patch-hint").classList.toggle("wp-warn-text", !ok);
     resetRun();
   };
