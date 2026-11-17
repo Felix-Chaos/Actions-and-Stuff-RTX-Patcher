@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="../assets/fonts/fonts.css" />
   <script src="../consent.js?v=20261104"></script>
   <link rel="stylesheet" href="../style.css?v=20261116c" />
-  <link rel="stylesheet" href="webpatcher.css?v=20261116b" />
+  <link rel="stylesheet" href="webpatcher.css?v=20261117" />
   <script src="unlock.js?v=20261116"></script>
 </head>
 <body>
@@ -24,11 +24,11 @@
           <h1>Web Patcher</h1>
           <div class="logo-badges">
             <span class="update-badge state-available">Preview</span>
-            <span class="version-badge">Chrome · Edge · Firefox</span>
+            <span class="version-badge">Chrome · Edge</span>
           </div>
         </div>
       </div>
-      <p class="wp__lead">Turns <strong>your own</strong> Marketplace copy of Actions &amp; Stuff into the RTX version, right here in the browser. Your pack never leaves your PC.</p>
+      <p class="wp__lead">Turns <strong>your own</strong> Marketplace copy of Actions &amp; Stuff into the RTX version, right here in the browser, and installs it straight into Minecraft. Your pack never leaves your PC.</p>
     </header>
 
     <div class="card wp-locked" id="locked">
@@ -37,27 +37,30 @@
       <a class="btn btn-gold-3d btn--block btn--lg" href="https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/latest">Download the desktop patcher</a>
     </div>
 
+    <div class="card wp-locked" id="unsupported" hidden>
+      <h2>Please use Chrome or Edge</h2>
+      <p>The Web Patcher installs the pack straight into your Minecraft folder. Only Chrome and Edge let a website write to a folder you choose; this browser does not.</p>
+      <a class="btn btn-gold-3d btn--block btn--lg" href="https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/latest">Or use the desktop patcher</a>
+    </div>
+
     <ol class="wp__steps" id="steps" hidden>
       <!-- 1 -->
       <li class="card wp-step" id="step-pack">
-        <h2><span class="wp-step__num">1</span> Choose your Actions &amp; Stuff folder</h2>
-        <p>Open Minecraft once so the Marketplace pack is downloaded, then pick this folder:</p>
+        <h2><span class="wp-step__num">1</span> Choose your Minecraft folder</h2>
+        <p>Open Minecraft once so the Marketplace pack is downloaded, close it, then pick this folder:</p>
         <div class="wp-path">
-          <code id="path-main">%APPDATA%\Minecraft Bedrock\premium_cache\resource_packs</code>
+          <code id="path-main">%APPDATA%\Minecraft Bedrock</code>
           <button class="btn btn-secondary btn-small" type="button" data-copy="path-main">Copy</button>
         </div>
         <details class="wp-more">
           <summary>Older Minecraft (Microsoft Store) install?</summary>
           <div class="wp-path">
-            <code id="path-uwp">%LOCALAPPDATA%\Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\LocalState\premium_cache\resource_packs</code>
+            <code id="path-uwp">%LOCALAPPDATA%\Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\LocalState</code>
             <button class="btn btn-secondary btn-small" type="button" data-copy="path-uwp">Copy</button>
           </div>
         </details>
-        <p class="wp-hint">Tip: paste the path into the address bar of the folder dialog. Your browser will ask whether to "upload" the files: they are only read locally, nothing is sent anywhere.</p>
-        <label class="btn btn-gold-3d btn--block btn--lg wp-pick">
-          <input type="file" id="folder" webkitdirectory directory multiple hidden />
-          <span>Choose folder…</span>
-        </label>
+        <p class="wp-hint">Tip: paste the path into the address bar of the folder dialog. Your browser asks to let this site <em>view and edit</em> the folder: it reads your A&amp;S copy from <code>premium_cache</code> and writes the RTX pack into <code>resource_packs</code>. Nothing is uploaded.</p>
+        <button class="btn btn-gold-3d btn--block btn--lg wp-pick" type="button" id="folder">Choose folder…</button>
         <div class="wp-result" id="pack-result" hidden></div>
       </li>
 
@@ -71,31 +74,26 @@
 
       <!-- 3 -->
       <li class="card wp-step is-locked" id="step-run">
-        <h2><span class="wp-step__num">3</span> Patch &amp; download</h2>
+        <h2><span class="wp-step__num">3</span> Patch &amp; install</h2>
         <button class="btn btn-gold-3d btn--block btn--lg" type="button" id="start" disabled>Start patching</button>
         <ul class="wp-progress" id="progress" hidden>
           <li data-step="zip"><span class="wp-progress__label">Reading your pack</span><span class="wp-progress__val"></span></li>
           <li data-step="download"><span class="wp-progress__label">Downloading the patch</span><span class="wp-progress__val"></span></li>
           <li data-step="verify"><span class="wp-progress__label">Checking the download</span><span class="wp-progress__val"></span></li>
           <li data-step="apply"><span class="wp-progress__label">Applying the RTX patch</span><span class="wp-progress__val"></span></li>
+          <li data-step="install"><span class="wp-progress__label">Installing into Minecraft</span><span class="wp-progress__val"></span></li>
         </ul>
         <div class="wp-bar" id="bar" hidden><span></span></div>
         <div class="disclaimer-box disclaimer-box--warn" id="error" hidden></div>
         <div class="wp-done" id="done" hidden>
-          <a class="btn btn-primary btn--block btn--lg" id="save" download>Download .mcpack</a>
-          <p><strong>Install:</strong> double-click the downloaded <code>.mcpack</code>, Minecraft imports it. Then turn it on under <em>Settings → Global Resources</em>, together with BetterRTX.</p>
-          <details class="wp-more">
-            <summary>Import does not work?</summary>
-            <p>Rename the file to <code>.zip</code>, unzip it, and move the folder into</p>
-            <div class="wp-path"><code>%APPDATA%\Minecraft Bedrock\Users\Shared\games\com.mojang\resource_packs</code></div>
-            <p>Please don't share the patched pack: it is your copy of a paid Marketplace pack.</p>
-          </details>
+          <div class="wp-result wp-result--ok" id="done-text"></div>
+          <p><strong>Next:</strong> start Minecraft and turn the pack on under <em>Settings → Global Resources</em>, together with BetterRTX.</p>
         </div>
       </li>
     </ol>
 
     <p class="wp-foot">
-      Need .zip/.mcpack input, auto-install or cleanup? Use the <a href="https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/latest">desktop patcher</a>.
+      Need .zip/.mcpack input, backups or cleanup? Use the <a href="https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/latest">desktop patcher</a>.
       Problems? <a href="https://discord.gg/55nhtqdmYD" rel="noopener">Discord</a>
     </p>
     <p class="wp-foot wp-foot--fine">
@@ -104,6 +102,6 @@
       <a href="#" data-consent-open>Privacy settings</a>
     </p>
   </main>
-  <script type="module" src="app.js?v=20261116b"></script>
+  <script type="module" src="app.js?v=20261117"></script>
 </body>
 </html>
