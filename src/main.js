@@ -1204,6 +1204,17 @@ function detectedVersionOf(candidate, fallbackConfig) {
 
 }
 
+// True when the patch names the exact pack revision it was built from
+// (validation.manifest_version) and the scanned pack is a different one.
+// Silent Marketplace updates keep name, file count and logo but re-encrypt
+// every file, so without this check the patch fails later in xdelta with a
+// "checksum mismatch". Older configs carry no revision and are not checked.
+function revisionMismatch(config, candidate) {
+  const want = config?.validation?.manifest_version;
+  const have = candidate?.manifest_version;
+  return Boolean(want && have && String(want).trim() !== String(have).trim());
+}
+
 function resolvePatchConfig(selectionMode, detectedCandidate) {
   // Sort patchConfigs descending by packVersion and then by patchVersion
   const sortedConfigs = [...patchConfigs].sort((a, b) => {
@@ -1238,7 +1249,7 @@ function resolvePatchConfig(selectionMode, detectedCandidate) {
         }
 
         // If we have any of these fields to compare, and they match, it's a solid hit
-        return (valid.logo_hash || stats.files) && hashMatch && fileMatch && dirMatch;
+        return (valid.logo_hash || stats.files) && hashMatch && fileMatch && dirMatch && !revisionMismatch(c, detectedCandidate);
       });
 
       if (exactMatch) {
@@ -1633,6 +1644,8 @@ function setupUtilities() {
               has_lang_file: patchStats ? patchStats.has_lang_file : true
           }
       };
+      // The exact pack revision this patch fits (see revisionMismatch).
+      if (patchStats && patchStats.manifest_version) configData.validation.manifest_version = patchStats.manifest_version;
       // A hotpatch carries the RTX work of an older A&S version over to a new one.
       if (hotpatch) {
           configData.hotpatch = true;
@@ -2353,6 +2366,17 @@ document.getElementById('btn-start-patch').addEventListener('click', async () =>
         log(msg('log.patcher.selComplexity', { files: best.files_count, dirs: best.dirs_count }));
 
         patchConfigToUse = resolvePatchConfig(selectionMode, best);
+        if (best.manifest_version) log(msg('log.patcher.selRevision', { revision: best.manifest_version }));
+
+        // A patch built from another revision of the same A&S version cannot fit:
+        // stop here with a clear reason instead of xdelta's checksum error.
+        if (revisionMismatch(patchConfigToUse, best)) {
+          throw msg('log.patcher.errors.revisionMismatch', {
+            version: best.name_version || best.version,
+            installed: best.manifest_version,
+            expected: patchConfigToUse.validation.manifest_version,
+          });
+        }
 
         if (selectionMode === 'auto' && patchConfigToUse && patchConfigToUse.stats) {
           const stats = patchConfigToUse.stats;

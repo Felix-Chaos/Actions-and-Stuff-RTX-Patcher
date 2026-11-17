@@ -329,6 +329,23 @@ pub fn normalize_pack_version(v: &str) -> String {
     parts.join(".")
 }
 
+/// The pack's own revision from manifest.json `header.version`, e.g. "1.1.65".
+/// Oreville ships silent Marketplace updates that keep the display name
+/// ("Actions & Stuff 1.12"), the file count and the logo but re-encrypt every
+/// file; only this number tells such revisions apart, and a patch only fits
+/// the exact revision it was built from.
+pub fn get_manifest_version(path: &Path) -> Option<String> {
+    let content = std::fs::read_to_string(path.join("manifest.json")).ok()?;
+    let val: serde_json::Value = serde_json::from_str(&content).ok()?;
+    let version = val.get("header")?.get("version")?;
+    if let Some(arr) = version.as_array() {
+        let parts: Vec<String> = arr.iter().map(|v| v.as_u64().map(|n| n.to_string())).collect::<Option<_>>()?;
+        (!parts.is_empty()).then(|| parts.join("."))
+    } else {
+        version.as_str().map(|s| s.trim().to_string()).filter(|s| !s.is_empty())
+    }
+}
+
 pub fn get_lang_version(path: &Path) -> Option<String> {
     let lang_path = path.join("texts").join("en_US.lang");
     if !lang_path.exists() {
@@ -523,6 +540,8 @@ pub struct MarketplaceCandidate {
     pub files_count: usize,
     pub dirs_count: usize,
     pub logo_hash: String,
+    /// manifest.json header version (pack revision), see `get_manifest_version`.
+    pub manifest_version: Option<String>,
     pub score: i32,
 }
 
@@ -1067,11 +1086,28 @@ pub struct PatchStats {
     pub dirs: usize,
     pub logo_hash: String,
     pub has_lang_file: bool,
+    /// Revision of the pack the patch is built from; stored as
+    /// validation.manifest_version in patch_config.json.
+    pub manifest_version: Option<String>,
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn reads_manifest_revision() {
+        let dir = std::env::temp_dir().join(format!("asrtx_manifest_rev_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let m = dir.join("manifest.json");
+        std::fs::write(&m, r#"{"header":{"uuid":"x","version":"1.1.66"}}"#).unwrap();
+        assert_eq!(get_manifest_version(&dir).as_deref(), Some("1.1.66"));
+        std::fs::write(&m, r#"{"header":{"uuid":"x","version":[1,1,65]}}"#).unwrap();
+        assert_eq!(get_manifest_version(&dir).as_deref(), Some("1.1.65"));
+        std::fs::write(&m, r#"{"header":{"uuid":"x"}}"#).unwrap();
+        assert_eq!(get_manifest_version(&dir), None);
+        std::fs::remove_dir_all(&dir).ok();
+    }
 
     #[test]
     fn pack_versions_compare_without_prefix_or_trailing_zeros() {

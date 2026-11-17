@@ -216,6 +216,7 @@ pub async fn scan_marketplace_packs(
                             files_count,
                             dirs_count,
                             logo_hash,
+                            manifest_version: get_manifest_version(&path),
                             score,
                         });
                     }
@@ -1655,6 +1656,7 @@ pub async fn calculate_patch_stats(folder_path: String) -> Result<PatchStats, St
         dirs,
         logo_hash,
         has_lang_file,
+        manifest_version: get_manifest_version(path),
     })
 }
 
