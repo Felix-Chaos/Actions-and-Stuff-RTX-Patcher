@@ -19,7 +19,7 @@
       },
       "custom": {
         "title": "Patch Personalizado",
-        "desc": "Selecione os arquivos de origem, destino e aquivos de patch .Vcdiff específicos manualmente"
+        "desc": "Selecione os arquivos de origem, destino e arquivos de patch .Vcdiff específicos manualmente"
       },
       "advancedHint": "Ative o Modo Avançado para usar esse recurso"
     },
@@ -40,7 +40,7 @@
       "removeDownloadTooltip": "Exclua este patch baixado do disco. Ele será baixado novamente na próxima vez que for usado.",
       "refreshing": "Recarregando...",
       "latestRecommended": "Mais recente (Recomendado)",
-      "patchItem": "Patch v{version}",
+      "patchItem": "Versão do Patch:",
       "versionOption": "Versão {version}",
       "newPatchesAvailable": {
         "one": "✨ {count} novo patch disponível",
@@ -80,7 +80,7 @@
       "noPatchSelected": "Nenhum patch selecionado"
     },
     "options": {
-      "cleanOld": "Deletar versões antigas corregidas automaticamente"
+      "cleanOld": "Excluir versões antigas corrigidas automaticamente"
     },
     "actions": {
       "applyPatch": "Aplicar Patch de RTX",
@@ -111,7 +111,7 @@
       "compressingCustomTitle": "Compactando customizado",
       "compressingCustomText": "Compactando pasta customizada...",
       "cleaningTitle": "Limpando os Restos",
-      "cleaningText": "Escaneando e deletando diretórios de antigos pacotes de recursos corregidos...",
+      "cleaningText": "Escaneando e deletando diretórios de antigos pacotes de recursos corrigidos...",
       "applyingTitle": "Aplicando Patch de RTX",
       "applyingText": "Executando decodificador XDelta em alto desempenho...",
       "doneTitle": "Patch Feito",
@@ -126,7 +126,7 @@
       "scan": "Escanear / Verificar conteúdos de origem",
       "normalize": "Compressão determinística e normalização",
       "cleanOld": "Limpar versões antigas",
-      "ensurePatch": "Garantir que aquivo de patch esta disponível",
+      "ensurePatch": "Garantir que arquivo de patch esta disponível",
       "executePatch": "Executar XDelta RTX patch",
       "importPack": "Importar Pacote de Minecraft"
     },
@@ -288,7 +288,7 @@
   },
   "tabSupport": {
     "title": "💬 Suporte e Comunidade",
-    "description": "Precisa de ajuda ou quer entrar na comunidade? De uma olhada nos servidores abaixo.",
+    "description": "Precisa de ajuda ou quer entrar na comunidade? Dê uma olhada nos servidores abaixo.",
     "chaosServer": {
       "title": "Chaos dev Projects Server <span class=\"badge\" style=\"background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; margin-left: 8px;\">Recomendado</span>",
       "desc": "O servidor oficial do desenvolvimento e atualizações de Actions & Stuff RTX Patcher. A comunidade de impressão 3D e de jogos também estão lá!"
@@ -360,13 +360,13 @@
       "notSentStatus": "⏸️ Relatório não enviado ainda. Minecraft precisa gerar um registro de conteúdo primeiro.",
       "modalTitle": "Um passo a mais: Registro de Conteúdo",
       "reasons": {
-        "loggingOff": "O registro de conteúdo do Minecraft estava desligado, então não tem nenhum registro útil existente ainda.\n\n✅ Eu já o-ativei nas suas configurações do Minecraft para você.",
+        "loggingOff": "O registro de conteúdo do Minecraft estava desligado, então não tem nenhum registro útil existente ainda.\n\n✅ Eu já o ativei nas suas configurações do Minecraft para você.",
         "tooSmall": "Seu novo registro de conteúdo é apenas {size} MB, muito pequeno para conter os detalhes do erro (precisa > 5 MB)",
         "tooOld": "Seu registro de conteúdo mais recente é mais velho do que uma hora, então possivelmente não mostra o bug atual.",
         "tooLarge": "Seu registro de conteúdo mais recente é {size} MB, sendo acima do limite de 500 MB, e é bem provável cheio de spam não relacionado. Reiniciando o Minecraft faz um registro limpo",
         "noLog": "Registro de conteúdo esta ativo, porém não existe nenhum arquivo de registro ainda."
       },
-      "steps": "Por favor:\n1. Reinicie o Minecraft\n2. Entre no mundo onde o bug acontece\n3. Tenha certeza de que o(a) bloco/entidade seja carregada (anda até ele(a)) e jogue por um minuto\n4. Volte em volta de uma hora e pressione 'Enviar Relatório de Bug' novamente\n\n(Ou desative 'Enviar Registro de Conteúdo do Minecraft' para enviar sem.)"
+      "steps": "Por favor:\n1. Reinicie o Minecraft\n2. Entre no mundo onde o bug acontece\n3. Tenha certeza de que o(a) bloco/entidade seja carregada (anda até ele(a)) e jogue por um minuto\n4. Volte dentro de uma hora e pressione 'Enviar Relatório de Bug' novamente\n\n(Ou desative 'Enviar Registro de Conteúdo do Minecraft' para enviar sem.)"
     },
     "telemetry": {
       "enabledStatus": "Obrigado! Ping de hardware está ativo (verificado a cada inicialização, só enviado quando algo muda).",
@@ -374,7 +374,7 @@
       "errorTitle": "Erro",
       "openDiagnosticsError": "Falhou ao abrir a pasta de diagnósticos: {error}",
       "deleteConfirmTitle": "Deletar Meus Dados",
-      "deleteConfirmMessage": "Isso deleta todas as telemetrias e dados de relatório de bug vinculado ao seu ID aleatório de instalação do nosso servidor, e depois troca o ID localmente para que os dados antigos nunca mais possam ser ligados a você. Proceder?",
+      "deleteConfirmMessage": "Isso deleta todas as telemetrias e dados de relatório de bug vinculados ao seu ID aleatório de instalação do nosso servidor, e depois troca o ID localmente para que os dados antigos nunca mais possam ser ligados a você. Proceder?",
       "deleteBtn": "Deletar",
       "deleteSuccess": "✅ Seus dados foram deletados e seu ID foi trocado.",
       "deleteError": "❌ Falha na deleção: {error}",
@@ -390,7 +390,7 @@
     "confirmTitle": "Confirmar",
     "telemetryConsent": {
       "title": "Ajude-Nos a Diagnosticar Problemas Raros com RTX",
-      "intro": "Certos problemas de renderização só ocorre em GPU especificas e combinações de drivers. Com seu consentimento, o patcher pode enviar um <b>resumo de hardware pseudônimo</b>",
+      "intro": "Certos problemas de renderização só ocorrem em GPUs específicas e combinações de drivers. Com seu consentimento, o patcher pode enviar um <b>resumo de hardware pseudônimo</b>",
       "whatsTheDifference": "qual é a diferença?",
       "introAfter": "para ajudar a identificar esse caso. O envio de relatórios é opcional e é solicitado apenas uma vez, na primeira execução. Posteriormente, seu hardware é verificado a cada inicialização, e uma nova submissão é feito apenas quando o resultado difere do anterior, por exemplo, após uma alteração de GPU, driver ou predefinição do BetterRTX:",
       "notCollected": "<b>Não coletado:</b> Seu nome, arquivos, ou números de série. Cada submissão é identificado pelo <b>ID de instalação</b> gerado automaticamente e um hash unidirecional derivado da sua máquina, usado apenas para reconhecer submissões repetidas da mesma instalação, para que não seja contado duas vezes após uma reinstalação. Porque os identificadores persistem e vinculam submissões ao longo do tempo, isso é descrito como pseudônimo e não anônimo. Ambos identificadores podem ser deletados a qualquer momento em \"Deletar Meus Dados\" nas configurações, o que também remove registro correspondente do servidor. Cada carga útil é adicionalmente salva localmente como <code>last_hardware_ping.json</code> para análise. Os registros de relatórios de erros enviados são excluídos após 30 dias.",
@@ -410,7 +410,7 @@
       "pack": "Compactador de ZIP",
       "extract": "Extrair ZIP",
       "genpatch": "Criar Patch",
-      "brarchive": "Brachives Ext"
+      "brarchive": "Extrair Brarchives"
     },
     "support": "Suporte",
     "release": "Lançamento",
@@ -461,14 +461,14 @@
       "description": "Define o quão alto o console de saída da execução é. Você também pode arrastar a alça acima do próprio console, ou clicar duas vezes nela para redefinir.",
       "heightLabel": "Altura do Console",
       "presetSmall": "Pequena",
-      "presetMedium": "Mediá",
+      "presetMedium": "Média",
       "presetLarge": "Grande",
       "presetTall": "Alta",
       "currently": "Atualmente {px}px."
     },
     "downloadedPatches": {
       "heading": "Patches Baixados",
-      "description": "Patches são baixados enquanto os-usam e mantidos para uso offline. Deletando um apenas libera espaço no disco; ele é baixado novamente automaticamente próxima vez. Patches incluídos com o aplicativo nunca são removidos.",
+      "description": "Patches são baixados conforme você os usa e mantidos para uso offline. Deletando um apenas libera espaço no disco; ele é baixado novamente automaticamente próxima vez. Patches incluídos com o aplicativo nunca são removidos.",
       "keepOnlyRecent": "Manter apenas o patch mais recentemente usado",
       "removeAll": "<i class=\"fas fa-trash-can\"></i> Remover todos os downloads"
     },
@@ -483,7 +483,7 @@
     "privacy": {
       "heading": "Privacidade e Telemetria",
       "pingLabel": "Ping de Hardware Pseudônimo <span style=\"color: #94a3b8;\">(verificado a cada início, enviado apenas em alterações)</span>",
-      "notice": "Esses dados são <b>Pseudônimo</b>, não anonimo",
+      "notice": "Esses dados são <b>Pseudônimo</b>, não anônimos",
       "noticeAfter": ", já que as submissões são vinculados por um identificador persistente. A geração de relatórios é opcional desde o primeiro lançamento; posteriormente, uma submissão é enviada apenas quando o hash do seu hardware mudar, e não a cada inicialização. Os registros enviados são deletados automaticamente após 30 dias.",
       "openDiagnosticsFolder": "Abrir Pasta de Diagnósticos"
     }
