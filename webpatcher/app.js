@@ -34,7 +34,7 @@ const mb = (n) => (n / 1048576).toFixed(n < 10485760 ? 1 : 0) + " MB";
 // Locked browsers only see the "not open yet" card (see unlock.js).
 const unlocked = await (window.rtxWebPatcherUnlocked || Promise.resolve(false));
 $("locked").hidden = unlocked;
-$("steps").hidden = !unlocked;
+$("modes").hidden = !unlocked; // browser.js picks helper vs. browser-only steps
 
 let indexPromise = null;
 const loadIndex = () =>

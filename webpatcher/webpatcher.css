@@ -80,3 +80,18 @@
 .wp-locked h2 { margin: 0; font-size: 1.1rem; }
 .wp-locked p { margin: 0; line-height: 1.55; color: var(--text-muted); }
 [hidden] { display: none !important; }
+
+/* helper vs. browser-only switch */
+.wp-modes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 16px; }
+.wp-mode {
+  display: grid; gap: 2px; padding: 12px 14px; text-align: left; cursor: pointer; font: inherit;
+  color: var(--text-muted); background: var(--panel-bg); border: 2px solid var(--panel-border); border-radius: 8px;
+}
+.wp-mode strong { color: var(--text-main); font-size: .98rem; }
+.wp-mode em { font-style: normal; font-size: .7rem; padding: 1px 6px; margin-left: 4px; border-radius: 4px; background: rgba(251, 191, 36, .15); color: #fbbf24; vertical-align: 2px; }
+.wp-mode span { font-size: .8rem; }
+.wp-mode[aria-pressed="true"] { border-color: var(--primary-color); background: rgba(34, 197, 94, .08); }
+.wp-mode:disabled { opacity: .45; cursor: not-allowed; }
+.wp-mode:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 2px; }
+.wp-mode-note { margin: -8px 0 16px; }
+@media (max-width: 520px) { .wp-modes { grid-template-columns: 1fr; } }
