@@ -1,10 +1,7 @@
 // Web Patcher UI: find the A&S pack in the picked folder, choose the matching
 // patch from the Patch Library, hand the work to worker.js.
 // Mirrors the desktop patcher's Marketplace mode (scan_marketplace_packs,
-// resolvePatchConfig, pack_folder + run_xdelta_patch with encrypted.vcdiff,
-// install_mcpack). Needs the File System Access API: Chrome / Edge only.
-
-import { locateMinecraft, listFiles, installZip } from "./lib/fsinstall.js?v=20261117";
+// resolvePatchConfig, pack_folder + run_xdelta_patch with encrypted.vcdiff).
 
 const LIBRARY = (() => {
   const real = "https://raw.githubusercontent.com/Felix-Chaos/AS-RTX-Patch-Library/main";
@@ -30,12 +27,9 @@ const isBeta = (e) => (typeof e.beta === "boolean" ? e.beta : /^v?0(\.|$)/i.test
 const mb = (n) => (n / 1048576).toFixed(n < 10485760 ? 1 : 0) + " MB";
 
 // Locked browsers only see the "not open yet" card (see unlock.js).
-// Writing into the Minecraft folder needs showDirectoryPicker (not in Firefox).
 const unlocked = await (window.rtxWebPatcherUnlocked || Promise.resolve(false));
-const supported = typeof window.showDirectoryPicker === "function";
 $("locked").hidden = unlocked;
-$("unsupported").hidden = !unlocked || supported;
-$("steps").hidden = !unlocked || !supported;
+$("steps").hidden = !unlocked;
 
 let indexPromise = null;
 const loadIndex = () =>
@@ -46,10 +40,9 @@ const loadIndex = () =>
         .filter((e) => e.patches && e.patches.encrypted)
         .sort((a, b) => cmpNum(b.packVersion, a.packVersion) || cmpNum(b.patchVersion || "1.0", a.patchVersion || "1.0"))
     ));
-if (unlocked && supported) loadIndex().catch(() => {}); // warm up while the user picks the folder
+if (unlocked) loadIndex().catch(() => {}); // warm up while the user picks the folder
 
 let pack = null; // detected candidate
-let mc = null; // {source, targets} of the picked Minecraft folder
 let entries = [];
 let chosen = null;
 
@@ -113,8 +106,11 @@ async function describePack(root, files) {
 }
 
 // Every folder holding a manifest.json is a pack; nested ones belong to their parent.
-// all: [{segs, file}] relative to premium_cache/resource_packs.
-function splitPacks(all) {
+function splitPacks(fileList) {
+  const all = Array.from(fileList, (file) => {
+    const rel = (file.webkitRelativePath || file.name).split("/");
+    return { segs: rel.slice(1), file }; // drop the picked folder's own name
+  });
   const roots = new Set();
   for (const f of all) {
     if (f.segs[f.segs.length - 1] === "manifest.json") roots.add(f.segs.slice(0, -1).join("/"));
@@ -158,34 +154,27 @@ function setResult(html, kind = "") {
   el.innerHTML = html;
 }
 
-$("folder").addEventListener("click", async () => {
-  let root;
-  try {
-    root = await window.showDirectoryPicker({ id: "minecraft-bedrock", mode: "readwrite" });
-  } catch (err) {
-    if (err.name !== "AbortError") setResult(`Could not open the folder: ${esc(err.message)}`, "warn");
-    return;
-  }
+$("folder").addEventListener("change", async (ev) => {
+  const list = ev.target.files;
   resetRun();
   pack = null;
-  mc = null;
   chosen = null;
   unlock("step-patch", false);
   unlock("step-run", false);
   $("start").disabled = true;
+  if (!list || list.length === 0) return;
 
-  setResult("Looking for Actions &amp; Stuff…");
+  setResult(`Looking at ${list.length} files…`);
   try {
-    mc = await locateMinecraft(root);
-    const packs = splitPacks(await listFiles(mc.source));
+    const packs = splitPacks(list);
     const described = [];
     for (const p of packs) described.push(await describePack(p.root, p.files));
     const candidates = described.filter((d) => d.isAS);
     if (candidates.length === 0) {
       setResult(
         packs.length
-          ? `No Actions &amp; Stuff pack in <code>premium_cache\resource_packs</code> (found ${packs.length} other pack${packs.length > 1 ? "s" : ""}). Start Minecraft once so it downloads A&amp;S.`
-          : "No Marketplace packs downloaded yet. Start Minecraft once so it downloads A&amp;S, close it, and try again.",
+          ? `No Actions &amp; Stuff pack in this folder (found ${packs.length} other pack${packs.length > 1 ? "s" : ""}). Did you pick <code>premium_cache\\resource_packs</code>?`
+          : "This folder contains no resource packs. Pick <code>premium_cache\\resource_packs</code>.",
         "warn"
       );
       return;
@@ -207,13 +196,11 @@ $("folder").addEventListener("click", async () => {
     setResult(
       `Found <strong>Actions &amp; Stuff ${esc(pack.version || "(unknown version)")}</strong>` +
         ` · ${pack.filesCount} files · ${mb(pack.size)}` +
-        `<br><span class="wp-muted">Installs into ${mc.targets.map((t) => `<code>${esc(t.label)}</code>`).join(" and ")}</span>` +
         (candidates.length > 1 ? `<br><span class="wp-muted">${candidates.length} A&amp;S copies found, using the one that fits a patch best.</span>` : ""),
       "ok"
     );
     renderPatchChoice();
   } catch (err) {
-    mc = null;
     setResult(`Could not read the folder: ${esc(err.message)}`, "warn");
   }
 });
@@ -267,11 +254,16 @@ function renderPatchChoice() {
 // ---------- run ----------
 
 let worker = null;
+let resultUrl = null;
 
 function resetRun() {
   if (worker) {
     worker.terminate();
     worker = null;
+  }
+  if (resultUrl) {
+    URL.revokeObjectURL(resultUrl);
+    resultUrl = null;
   }
   $("progress").hidden = true;
   $("bar").hidden = true;
@@ -286,7 +278,7 @@ function resetRun() {
   }
 }
 
-const STEPS = ["zip", "download", "verify", "apply", "install"];
+const STEPS = ["zip", "download", "verify", "apply"];
 
 function markStep(step) {
   const idx = STEPS.indexOf(step);
@@ -303,7 +295,7 @@ function setBar(frac) {
 }
 
 $("start").addEventListener("click", () => {
-  if (!pack || !chosen || !mc) return;
+  if (!pack || !chosen) return;
   resetRun();
   $("start").hidden = true;
   $("folder").disabled = true;
@@ -313,7 +305,7 @@ $("start").addEventListener("click", () => {
   const enc = chosen.patches.encrypted;
   const folder = chosen.folder_name.split("/").map(encodeURIComponent).join("/");
   const patch = { url: `${LIBRARY}/Patches/${folder}/encrypted.vcdiff`, sha256: enc.sha256, size: enc.size };
-  const folderName = `Actions & Stuff RTX ${normVer(chosen.packVersion)} P${chosen.patchVersion || "1.0"}`;
+  const outName = `Actions & Stuff RTX ${normVer(chosen.packVersion)} P${chosen.patchVersion || "1.0"}.mcpack`;
 
   worker = new Worker(new URL("worker.js?v=20261116", import.meta.url), { type: "module" });
   worker.onmessage = (ev) => {
@@ -325,9 +317,20 @@ $("start").addEventListener("click", () => {
       if (li && (m.step === "zip" || m.step === "download")) li.textContent = `${mb(m.done)} / ${mb(m.total)}`;
       else if (li) li.textContent = `${Math.round((m.done / m.total) * 100)}%`;
     } else if (m.type === "done") {
+      for (const li of $("progress").children) {
+        li.className = "is-done";
+        li.querySelector(".wp-progress__val").textContent = "✓";
+      }
+      setBar(1);
+      resultUrl = URL.createObjectURL(m.result);
+      const a = $("save");
+      a.href = resultUrl;
+      a.download = outName;
+      a.textContent = `Download .mcpack (${mb(m.result.size)})`;
+      $("done").hidden = false;
+      $("folder").disabled = false;
       worker.terminate();
       worker = null;
-      install(m.result, folderName);
     } else if (m.type === "error") {
       fail(m.message);
     }
@@ -335,27 +338,6 @@ $("start").addEventListener("click", () => {
   worker.onerror = (e) => fail(e.message || "The patch worker crashed (out of memory?)");
   worker.postMessage({ files: pack.files, patch });
 });
-
-async function install(result, folderName) {
-  markStep("install");
-  try {
-    const written = await installZip(result, mc.targets, folderName, (done, total) => {
-      setBar(done / total);
-      $("progress").querySelector('[data-step="install"] .wp-progress__val').textContent = `${done} / ${total}`;
-    });
-    for (const li of $("progress").children) {
-      li.className = "is-done";
-      li.querySelector(".wp-progress__val").textContent = "✓";
-    }
-    setBar(1);
-    $("done-text").innerHTML =
-      `<strong>Installed.</strong> The pack is now in<br>` + written.map((w) => `<code>${esc(w)}</code>`).join("<br>");
-    $("done").hidden = false;
-    $("folder").disabled = false;
-  } catch (err) {
-    fail(err && err.message ? err.message : String(err));
-  }
-}
 
 function fail(message) {
   if (worker) {
