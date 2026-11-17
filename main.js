@@ -308,8 +308,6 @@
   }
 })();
 
-// Web Patcher preview: the greyed-out button becomes a link in browsers
-// unlocked through webpatcher/unlock.js.
 // Web Patcher entry points (download card button, header icon), shown once
 // the browser is unlocked through webpatcher/unlock.js.
 (() => {
