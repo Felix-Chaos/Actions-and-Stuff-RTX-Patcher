@@ -26,23 +26,30 @@ pub fn premium_resource_pack_dirs() -> Vec<PathBuf> {
     dirs
 }
 
-/// Every com.mojang folder the RTX pack is installed into (same list as
-/// `utils::get_install_target_paths`). Only existing ones are returned.
+/// The com.mojang folder(s) the RTX pack goes into. GDK Minecraft reads
+/// global packs from `Users\Shared` (that is also where a .mcpack import
+/// lands); `Minecraft Bedrock\games\com.mojang` is not used for them, so
+/// nothing is put there. The old Store (UWP) folders are only a fallback for
+/// PCs without the GDK version. Only existing folders are returned.
 pub fn install_target_dirs() -> Vec<PathBuf> {
-    let mut paths = Vec::new();
-    if let Ok(lad) = std::env::var("LOCALAPPDATA") {
-        let lad = PathBuf::from(lad);
-        paths.push(lad.join(r"Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\LocalState\games\com.mojang"));
-        paths.push(lad.join(r"Packages\Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe\LocalState\games\com.mojang"));
-    }
+    let mut gdk = Vec::new();
     if let Ok(ad) = std::env::var("APPDATA") {
         let ad = PathBuf::from(ad);
-        paths.push(ad.join(r"Minecraft Bedrock\games\com.mojang"));
-        paths.push(ad.join(r"Minecraft Bedrock Preview\games\com.mojang"));
-        paths.push(ad.join(r"Minecraft Bedrock\Users\Shared\games\com.mojang"));
+        gdk.push(ad.join(r"Minecraft Bedrock\Users\Shared\games\com.mojang"));
+        gdk.push(ad.join(r"Minecraft Bedrock Preview\Users\Shared\games\com.mojang"));
     }
-    paths.retain(|p| p.exists());
-    paths
+    gdk.retain(|p| p.exists());
+    if !gdk.is_empty() {
+        return gdk;
+    }
+    let mut uwp = Vec::new();
+    if let Ok(lad) = std::env::var("LOCALAPPDATA") {
+        let lad = PathBuf::from(lad);
+        uwp.push(lad.join(r"Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\LocalState\games\com.mojang"));
+        uwp.push(lad.join(r"Packages\Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe\LocalState\games\com.mojang"));
+    }
+    uwp.retain(|p| p.exists());
+    uwp
 }
 
 fn is_actions_and_stuff_pack(path: &Path) -> bool {
