@@ -23,7 +23,7 @@ pre{white-space:pre-wrap;font-size:13px;background:#000;padding:8px;border-radiu
 </div>
 <script>
 const B64="UEsDBBQAAAAIAHyscV3AolNu9AAAAE0BAAANAAAAbWFuaWZlc3QuanNvbm2PQWrDMBBF9znFoLVEZFm2FUMoLWRdsA0tBBNkWWpFK9nIcqGEnKf36MmK0kWz6Pb/P8N75w0AMlNwMp4+dFjs5FENDKf4VctRB1TDGZCXTqMa0PfXcN823TM8NI9P7aGB7tB2CAMa9aKCnePvA9TpJdbgrNcqSBPr7fbOunkKcZbqbZ8O1tWOaUkrxUojJVGS7QjnfCSCs4rwsipyOXBDhyLt/+iOGaaY9hiQs/6k/Yv1+gb+mGGWYdrD5WrhpnF910sqkkj8nK8iQS/TGpRebllMwQQvKkE4zQ3h2SDIrhSGyJzlQ1ZQoXj+LwtcoN9cfgBQSwECFAAUAAAACAB8rHFdwKJTbvQAAABNAQAADQAAAAAAAAAAAAAAAAAAAAAAbWFuaWZlc3QuanNvblBLBQYAAAAAAQABADsAAAAfAQAAAAA=";
-const NAME="asrtx-browser-test.mcpack", PATH="C:\Users\Public\Documents\\"+NAME;
+const NAME="asrtx-browser-test.mcpack", PATH=["C:","Users","Public","Documents",NAME].join(String.fromCharCode(92));
 const logEl=document.getElementById("tlog"); const log=s=>{logEl.textContent+=s+"\n";};
 let dir=null;
 document.getElementById("t1").onclick=async()=>{try{
