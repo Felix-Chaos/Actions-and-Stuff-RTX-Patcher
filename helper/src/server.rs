@@ -2,6 +2,11 @@
 //!
 //! - `GET  /status?s=<session>`                      state, found packs, progress
 //! - `POST /patch?s=<session>&pack=<id>&slug=<slug>` start patching
+//!
+//! Started by double-click right after the download (no link, so no session),
+//! the helper is "unpaired" and adopts the session of the first `/status` call
+//! from the Web Patcher's origin, so the page can carry on by itself.
+//!
 //! - `POST /takeover?s=<session>`                    a second `asrtx://` launch hands
 //!   its session to the running helper (no browser can send this: it carries no Origin)
 //!
@@ -80,9 +85,17 @@ fn start_scan(job: &Shared) {
     });
 }
 
-pub fn run(session: String) {
+/// The page makes 32 hex chars; accept what a link or takeover may carry.
+pub fn valid_session(s: &str) -> bool {
+    (16..=64).contains(&s.len()) && s.bytes().all(|b| b.is_ascii_alphanumeric())
+}
+
+/// `session` empty = unpaired (started by double-click). Returns false if
+/// another helper already owns the port.
+pub fn run(session: String) -> bool {
     let server = match Server::http(("127.0.0.1", PORT)) {
         Ok(s) => s,
+        Err(_) if session.is_empty() => return false,
         Err(_) => {
             // Another helper is running: hand it the new session and quit.
             let url = format!("http://127.0.0.1:{PORT}/takeover?s={session}");
@@ -93,7 +106,7 @@ pub fn run(session: String) {
                     true,
                 );
             }
-            return;
+            return false;
         }
     };
 
@@ -111,7 +124,22 @@ pub fn run(session: String) {
             break;
         }
     }
+    true
 }
+
+/// True once a page has paired with this helper.
+pub fn wait_paired(timeout: Duration) -> bool {
+    let start = Instant::now();
+    while start.elapsed() < timeout {
+        if PAIRED.load(std::sync::atomic::Ordering::Relaxed) {
+            return true;
+        }
+        std::thread::sleep(Duration::from_millis(250));
+    }
+    false
+}
+
+static PAIRED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 fn allowed_origin(origin: &str) -> bool {
     origin == "https://rtx.chaosdev.dev"
@@ -166,7 +194,7 @@ fn handle(req: Request, job: &Shared) {
             let mut j = job.lock().unwrap();
             if j.state == State::Running {
                 err(409, "busy")
-            } else if session.len() < 16 || !session.bytes().all(|b| b.is_ascii_alphanumeric()) {
+            } else if !valid_session(session) {
                 err(400, "bad session")
             } else {
                 *j = Job::new(session.to_string());
@@ -177,7 +205,13 @@ fn handle(req: Request, job: &Shared) {
         }
         (Method::Get, "/status") => {
             let mut j = job.lock().unwrap();
-            if session != j.session {
+            if j.session.is_empty() && valid_session(session) {
+                j.session = session.to_string();
+            }
+            if !j.session.is_empty() {
+                PAIRED.store(true, std::sync::atomic::Ordering::Relaxed);
+            }
+            if session.is_empty() || session != j.session {
                 err(409, if j.state == State::Running { "busy" } else { "session" })
             } else {
                 j.last_seen = Instant::now();
@@ -188,7 +222,7 @@ fn handle(req: Request, job: &Shared) {
             let mut j = job.lock().unwrap();
             let slug = get("slug").unwrap_or("");
             let pack = get("pack").and_then(|id| j.packs.iter().find(|p| p.id == id).cloned());
-            if session != j.session {
+            if session.is_empty() || session != j.session {
                 err(409, "session")
             } else if j.state != State::Ready && j.state != State::Error && j.state != State::Done {
                 err(409, "busy")

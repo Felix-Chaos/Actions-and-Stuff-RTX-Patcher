@@ -8,8 +8,9 @@
 //! through a small HTTP API on 127.0.0.1 (see `server`).
 //!
 //! Run without arguments (double-click after downloading) it installs itself
-//! to %LOCALAPPDATA%\ASRTX and registers the asrtx:// link for the current
-//! user; `--uninstall` undoes that.
+//! to %LOCALAPPDATA%\ASRTX, registers the asrtx:// link for the current user
+//! and starts right away: the Web Patcher, already waiting since the download
+//! click, pairs with it and carries on. `--uninstall` undoes the install.
 
 #![cfg_attr(not(test), windows_subsystem = "windows")]
 
@@ -21,7 +22,9 @@ fn main() {
     let arg = std::env::args().nth(1).unwrap_or_default();
     if arg.to_ascii_lowercase().starts_with("asrtx:") {
         match session_from_link(&arg) {
-            Some(s) => server::run(s),
+            Some(s) => {
+                server::run(s);
+            }
             None => message("A&S RTX Helper", "This link is not valid. Start again from the Web Patcher.", true),
         }
     } else if arg == "--uninstall" {
@@ -31,12 +34,22 @@ fn main() {
         }
     } else {
         match setup::install() {
-            Ok(()) => message(
-                "A&S RTX Helper",
-                "The helper is ready.\n\nGo back to the Web Patcher in your browser and click \"Find my Actions & Stuff\". \
-                 When the browser asks whether to open the A&S RTX Helper, allow it.",
-                false,
-            ),
+            Ok(()) => {
+                // If no page pairs soon, the user probably ran it without the
+                // Web Patcher open: say where to go (the server keeps running).
+                std::thread::spawn(|| {
+                    if !server::wait_paired(std::time::Duration::from_secs(30)) {
+                        message(
+                            "A&S RTX Helper",
+                            "The helper is installed.\n\nOpen the Web Patcher (rtx.chaosdev.dev/webpatcher/) and click \"Find my Actions & Stuff\".",
+                            false,
+                        );
+                    }
+                });
+                // Returns false at once if another helper already owns the port;
+                // the page then talks to that one.
+                server::run(String::new());
+            }
             Err(e) => message("A&S RTX Helper", &format!("Setting up the helper failed: {e}"), true),
         }
     }
@@ -46,7 +59,7 @@ fn main() {
 fn session_from_link(link: &str) -> Option<String> {
     let query = link.split_once('?')?.1;
     let s = query.split('&').find_map(|kv| kv.strip_prefix("s="))?;
-    (s.len() >= 16 && s.len() <= 64 && s.bytes().all(|b| b.is_ascii_alphanumeric())).then(|| s.to_string())
+    server::valid_session(s).then(|| s.to_string())
 }
 
 pub fn message(title: &str, text: &str, error: bool) {

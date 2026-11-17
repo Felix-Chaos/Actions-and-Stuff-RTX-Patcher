@@ -1,6 +1,6 @@
 [package]
 name = "asrtx-helper"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "Small local helper for the A&S RTX Web Patcher: patches the user's own Marketplace copy and installs it straight into Minecraft"
 license = "MIT"
