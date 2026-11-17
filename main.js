@@ -310,36 +310,16 @@
 
 // Web Patcher preview: the greyed-out button becomes a link in browsers
 // unlocked through webpatcher/unlock.js.
-// The Web Patcher writes into the Minecraft folder (showDirectoryPicker), which
-// only Chrome / Edge offer: elsewhere both entry points stay greyed out.
+// Web Patcher entry points (download card button, header icon), shown once
+// the browser is unlocked through webpatcher/unlock.js.
 (() => {
   const btn = document.querySelector("[data-webpatcher]");
   const nav = document.querySelector("[data-webpatcher-nav]");
   if (!window.rtxWebPatcherUnlocked) return;
   window.rtxWebPatcherUnlocked.then((ok) => {
     if (!ok) return;
-    const supported = typeof window.showDirectoryPicker === "function";
-    const tip = "Please use Chrome or Edge";
-
-    if (nav) {
-      nav.hidden = false;
-      if (!supported) {
-        nav.removeAttribute("href");
-        nav.classList.add("is-disabled");
-        nav.setAttribute("role", "link");
-        nav.setAttribute("aria-disabled", "true");
-        nav.setAttribute("tabindex", "0");
-        nav.dataset.tip = tip;
-        nav.setAttribute("aria-label", `Web Patcher: ${tip}`);
-      }
-    }
-
+    if (nav) nav.hidden = false;
     if (!btn) return;
-    if (!supported) {
-      btn.dataset.tip = tip;
-      btn.innerHTML = btn.innerHTML.replace(">Soon<", ">Chrome / Edge<");
-      return;
-    }
     const link = document.createElement("a");
     link.className = "btn btn-secondary";
     link.href = "webpatcher/";
