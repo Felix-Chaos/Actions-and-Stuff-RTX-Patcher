@@ -1,7 +1,9 @@
 // Web Patcher UI. The work happens in the A&S RTX Helper (asrtx-helper.exe,
 // source: AS-RTX-Patcher-Main/helper): this page starts it through an
 // asrtx://start?s=<session> link, then follows it over its local API on
-// 127.0.0.1. The helper finds A&S in the Marketplace cache, downloads the
+// 127.0.0.1. Right after the download click the page already waits: the
+// freshly downloaded helper, opened by double-click, pairs with the first
+// session it is asked about, so first-time users need no second click. The helper finds A&S in the Marketplace cache, downloads the
 // chosen patch, applies it and extracts the result into resource_packs, so no
 // shareable .mcpack is ever created.
 
@@ -50,6 +52,7 @@ let pack = null; // chosen candidate from the helper's scan
 let entries = [];
 let chosen = null;
 let busy = false;
+let connectRun = 0; // a newer connect() cancels an older one
 
 // ---------- helper API ----------
 
@@ -116,8 +119,11 @@ function setResult(html, kind = "") {
   el.innerHTML = html;
 }
 
-$("find").addEventListener("click", async () => {
+// mode "launch": start the installed helper through asrtx://.
+// mode "wait": the helper was just downloaded; wait until the user opens it.
+async function connect(mode) {
   if (busy) return;
+  const run = ++connectRun;
   resetRun();
   pack = null;
   chosen = null;
@@ -126,14 +132,23 @@ $("find").addEventListener("click", async () => {
   $("patch-box").innerHTML = `<p class="wp-hint">Find your pack first.</p>`;
 
   session = newSession();
-  launch(`asrtx://start?s=${session}`);
-  setResult("Starting the helper… allow <em>Open A&amp;S RTX Helper</em> if your browser asks.");
-  $("find").disabled = true;
+  if (mode === "launch") {
+    launch(`asrtx://start?s=${session}`);
+    setResult("Starting the helper… allow <em>Open A&amp;S RTX Helper</em> if your browser asks.");
+  } else {
+    setResult(
+      "Waiting for the helper… open <code>asrtx-helper.exe</code> from your browser's downloads. " +
+        "Windows warns? <em>More info → Run anyway</em>. Chrome/Edge: allow access to apps on this device."
+    );
+  }
 
+  const limit = mode === "launch" ? 120000 : 600000;
   const started = Date.now();
   let status = null;
   let hinted = false;
-  while (Date.now() - started < 120000) {
+  let tookOver = false;
+  while (Date.now() - started < limit) {
+    if (run !== connectRun) return; // superseded by a newer click
     try {
       status = await helper("/status");
       if (status.state !== "scanning") break;
@@ -141,10 +156,14 @@ $("find").addEventListener("click", async () => {
     } catch (err) {
       if (err.code === "busy") {
         setResult("The helper is busy with a patch started in another tab. Wait until it is done, then try again.", "warn");
-        $("find").disabled = false;
         return;
       }
-      if (!hinted && Date.now() - started > 10000) {
+      if (err.code === "session" && !tookOver) {
+        // An older helper still runs for another tab; the link hands it this session.
+        tookOver = true;
+        launch(`asrtx://start?s=${session}`);
+      }
+      if (mode === "launch" && !hinted && Date.now() - started > 10000) {
         hinted = true;
         setResult(
           "Still waiting for the helper. Not installed yet? Do step 1 first. " +
@@ -153,11 +172,16 @@ $("find").addEventListener("click", async () => {
         );
       }
     }
-    await sleep(700);
+    await sleep(mode === "launch" ? 700 : 1000);
   }
-  $("find").disabled = false;
+  if (run !== connectRun) return;
   if (!status || status.state === "scanning") {
-    setResult("The helper did not answer. Run <code>asrtx-helper.exe</code> once (step 1) and click the button again.", "warn");
+    setResult(
+      mode === "launch"
+        ? "The helper did not answer. Run <code>asrtx-helper.exe</code> once (step 1) and click the button again."
+        : "The helper did not start. Open <code>asrtx-helper.exe</code> from your downloads, then click <em>Find my Actions &amp; Stuff</em>.",
+      "warn"
+    );
     return;
   }
 
@@ -183,7 +207,11 @@ $("find").addEventListener("click", async () => {
     "ok"
   );
   renderPatchChoice();
-});
+}
+
+$("find").addEventListener("click", () => connect("launch"));
+// The download itself goes ahead normally; the page just starts listening.
+$("helper-download").addEventListener("click", () => connect("wait"));
 
 function renderPatchChoice() {
   const box = $("patch-box");

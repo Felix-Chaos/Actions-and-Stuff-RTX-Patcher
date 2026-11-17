@@ -41,19 +41,19 @@
       <!-- 1 -->
       <li class="card wp-step" id="step-helper">
         <h2><span class="wp-step__num">1</span> Get the helper</h2>
-        <p>A 2&nbsp;MB program that patches your pack locally and puts it into Minecraft's <code>resource_packs</code>. Download it and run it <strong>once</strong>; after that this page starts it by itself.</p>
-        <a class="btn btn-gold-3d btn--block btn--lg" id="helper-download" href="asrtx-helper.exe?v=0.1.0" download="asrtx-helper.exe">Download helper (asrtx-helper.exe)</a>
+        <p>A 2&nbsp;MB program that patches your pack locally and puts it into Minecraft's <code>resource_packs</code>. Download it and open it from your downloads: this page waits and carries on by itself. Next time it starts the helper without a download.</p>
+        <a class="btn btn-gold-3d btn--block btn--lg" id="helper-download" href="asrtx-helper.exe?v=0.2.0" download="asrtx-helper.exe">Download helper (asrtx-helper.exe)</a>
         <details class="wp-more">
           <summary>Windows says "Windows protected your PC"?</summary>
           <p>The helper is not code-signed yet. Click <em>More info → Run anyway</em>. It installs itself to <code>%LOCALAPPDATA%\ASRTX</code> and registers the <code>asrtx://</code> link for your user only; run it with <code>--uninstall</code> to remove it.</p>
         </details>
-        <p class="wp-hint">Already done this before? Go straight to step 2.</p>
+        <p class="wp-hint">Got the helper already? Go straight to step 2.</p>
       </li>
 
       <!-- 2 -->
       <li class="card wp-step" id="step-pack">
         <h2><span class="wp-step__num">2</span> Find your Actions &amp; Stuff</h2>
-        <p>Open Minecraft once so the Marketplace pack is downloaded, then close it. Your browser asks to <em>open the A&amp;S RTX Helper</em>; allow it. Chrome and Edge may also ask to let this site access apps on your device: allow that too, it only talks to the helper.</p>
+        <p>Open Minecraft once so the Marketplace pack is downloaded, then close it. Right after step 1 this happens by itself; otherwise click the button and allow <em>Open A&amp;S RTX Helper</em>. Chrome and Edge may also ask to let this site access apps on your device: allow that too, it only talks to the helper.</p>
         <button class="btn btn-gold-3d btn--block btn--lg wp-pick" type="button" id="find">Find my Actions &amp; Stuff</button>
         <div class="wp-result" id="pack-result" hidden></div>
       </li>
@@ -91,6 +91,6 @@
       <a href="#" data-consent-open>Privacy settings</a>
     </p>
   </main>
-  <script type="module" src="app.js?v=20261117d"></script>
+  <script type="module" src="app.js?v=20261117e"></script>
 </body>
 </html>
