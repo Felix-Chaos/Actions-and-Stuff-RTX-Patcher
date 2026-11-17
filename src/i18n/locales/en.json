@@ -135,6 +135,17 @@
       "copyTooltip": "Copy log to clipboard",
       "clearTooltip": "Clear console",
       "resizeGripTooltip": "Drag down to enlarge the console. Double-click to reset."
+    },
+    "guard": {
+      "lockInline": "Lock pack",
+      "damagedTitle": "Broken RTX pack found",
+      "damagedMessage": "An Actions & Stuff or Minecraft update has changed your installed RTX pack \"{label}\" ({changed} changed, {added} new, {missing} missing files). It is now a mix of A&S and A&S RTX and will look broken in game.\n\nDelete it?\n\n{path}",
+      "delete": "Delete",
+      "keep": "Keep",
+      "restoreTitle": "Restore from backup?",
+      "restoreMessage": "A backup of \"{label}\" is available. Reinstall it now? This takes a few seconds, no patching needed.",
+      "restore": "Restore",
+      "later": "Not now"
     }
   },
   "tabCleaner": {
@@ -486,6 +497,24 @@
       "notice": "This data is <b>pseudonymous</b>, not anonymous",
       "noticeAfter": ", since submissions are linked by a persistent identifier. Reporting is opt-in from first launch; afterward, a submission is sent only when your hardware hash changes, not on every launch. Uploaded logs are deleted automatically after 30 days.",
       "openDiagnosticsFolder": "Open Diagnostics Folder"
+    },
+    "packGuard": {
+      "heading": "Installed RTX Pack",
+      "description": "On every start the patcher checks whether an Actions & Stuff or Minecraft update changed your installed RTX pack, and offers to delete a broken one.",
+      "lock": "Lock the installed pack",
+      "lockTip": "Write-protects the installed RTX pack with Windows permissions, so an Actions & Stuff or Minecraft update cannot overwrite it and mix it with the normal A&S. Minecraft still loads it. The patcher lifts the lock itself when it replaces or deletes the pack.",
+      "backup": "Keep a backup of the patched pack",
+      "backupTip": "Saves the patched pack after installing, so it can be reinstalled in seconds without patching again. The last 3 are kept.",
+      "noBackups": "No backups yet. One is saved the next time you install a patched pack.",
+      "restore": "Restore",
+      "restoring": "Restoring...",
+      "deleteBackup": "Delete",
+      "checkNow": "<i class=\"fas fa-stethoscope\"></i> Check installed pack",
+      "allGood": "Your installed RTX pack is intact.",
+      "restoredTitle": "Pack restored",
+      "restoredMessage": "\"{label}\" is installed again. Turn it on in Minecraft under Global Resources if it is not active.",
+      "restoreFailedTitle": "Restore failed",
+      "restoreFailedMessage": "The backup could not be installed: {error}"
     }
   }
 }

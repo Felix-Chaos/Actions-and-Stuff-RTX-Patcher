@@ -5,11 +5,13 @@ pub mod commands;
 #[path = "private/encrypt.rs"]
 pub mod encrypt;
 pub mod logmsg;
+pub mod packguard;
 pub mod patches;
 pub mod renamer;
 pub mod telemetry;
 pub mod utils;
 use commands::*;
+use packguard::*;
 use patches::*;
 use telemetry::*;
 
@@ -77,7 +79,13 @@ pub fn run() {
             list_cached_patches,
             delete_cached_patch,
             clear_patch_cache,
-            publish_patch_to_library
+            publish_patch_to_library,
+            check_installed_packs,
+            remove_installed_pack,
+            list_pack_backups,
+            delete_pack_backup,
+            restore_pack_backup,
+            set_installed_packs_locked
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

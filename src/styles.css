@@ -1994,3 +1994,72 @@ button.btn-square:active {
   padding-top: 10px;
   padding-bottom: 8px;
 }
+
+/* Info tooltips: <span class="info-tip" data-tip="..."> (see data-i18n-tip) */
+.info-tip {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  margin-left: 4px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: #d1d5db;
+  font: italic 700 11px/1 Georgia, serif;
+  cursor: help;
+  vertical-align: middle;
+  user-select: none;
+}
+.info-tip:hover,
+.info-tip:focus-visible {
+  background: var(--primary-color, #22c55e);
+  color: #fff;
+  outline: none;
+}
+.info-tip::after {
+  content: attr(data-tip);
+  position: absolute;
+  z-index: 50;
+  bottom: calc(100% + 8px);
+  left: -8px;
+  width: max-content;
+  max-width: 280px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  background: #111214;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+  color: #e5e7eb;
+  font: normal 400 0.78rem/1.45 var(--font-family-sans, sans-serif);
+  text-align: left;
+  white-space: normal;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+.info-tip:hover::after,
+.info-tip:focus-visible::after {
+  opacity: 1;
+}
+
+/* Lock switch next to "Install Pack"; hidden together with the button */
+.pack-lock-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.85rem;
+  color: #e5e7eb;
+  cursor: pointer;
+}
+.pack-lock-inline .mc-toggle {
+  margin-left: 6px;
+}
+#btn-install-pack.hidden-group + .pack-lock-inline {
+  display: none;
+}
+
+/* Long paths in dialogs (e.g. the broken-pack prompt) must wrap */
+#modal-message {
+  overflow-wrap: anywhere;
+}
