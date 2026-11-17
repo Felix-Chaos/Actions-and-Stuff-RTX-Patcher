@@ -363,6 +363,18 @@ kbd {
 }
 .nav__download { padding: 7px 14px 11px; }
 .nav__download:active { padding-top: 9px; padding-bottom: 9px; }
+[data-webpatcher-nav][hidden] { display: none; }
+
+/* Small tooltip under a button (the nav sits at the top of the page). */
+[data-tip] { position: relative; }
+[data-tip]:hover::after, [data-tip]:focus-visible::after {
+  content: attr(data-tip); position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+  padding: 6px 9px; white-space: nowrap; z-index: 60; pointer-events: none;
+  font: 600 .75rem/1.2 var(--font-mono, monospace); color: var(--text-main); letter-spacing: 0; text-transform: none;
+  background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 6px; box-shadow: 0 6px 18px rgba(0, 0, 0, .35);
+}
+.btn.is-disabled[data-tip] { opacity: 1; }
+.btn.is-disabled[data-tip] > * { opacity: .45; }
 .btn.is-disabled { opacity: .45; cursor: not-allowed; filter: grayscale(1); user-select: none; }
 .btn-secondary.is-disabled:hover { background-color: var(--mc-grey); }
 .btn.is-disabled:active {
