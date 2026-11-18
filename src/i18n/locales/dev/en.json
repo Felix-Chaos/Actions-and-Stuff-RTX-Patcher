@@ -149,6 +149,7 @@
       "selPath": "  Path: \"{path}\"",
       "selVersion": "  Version: {version}",
       "selComplexity": "  Complexity: {files} files and {dirs} folders",
+      "selRevision": "  Revision: {revision}",
       "versionMismatch": "Warning: Target patch version ({selected}) does not match detected pack version ({detected}).",
       "zipStart": "Starting deterministic ZIP compression...",
       "sourceZipCreated": "Successfully created deterministic source ZIP: \"{path}\"",
@@ -198,6 +199,7 @@
         "installedMismatch": "The installed pack is Actions & Stuff {version}, which does not match the selected patch version. Pick that version, or switch version selection to automatic.",
         "browseCancelled": "User cancelled manual browse. Patch aborted.",
         "validationFailed": "Validation failed: Pack seems corrupted or modified! Expected ~{expectedFiles} files and {expectedDirs} folders, but found {files} files and {dirs} folders.",
+        "revisionMismatch": "This Actions & Stuff {version} is a different Marketplace revision ({installed}) than the patch was made for ({expected}). Oreville updated the pack without changing its name, so this patch cannot fit it. Wait for a patch for revision {installed}, or ask in the Discord.",
         "versionMismatchAborted": "User aborted due to version mismatch.",
         "noFileSelected": "No file selected. Patch aborted.",
         "customMissingPaths": "Custom mode requires specifying source, target, and patch paths.",
@@ -372,7 +374,29 @@
         "start": "Starting patch target preparation...",
         "copying": "Copying modified assets...",
         "ready": "Patch target ready."
+      },
+      "guard": {
+        "backupSaved": "Saved a backup of \"{label}\".",
+        "backupFailed": "Could not save a backup of the patched pack: {error}",
+        "locked": "Locked the installed pack against changes: {path}",
+        "lockFailed": "Could not lock the installed pack: {error}",
+        "recordFailed": "Could not record the installed pack for later checks: {error}"
       }
+    },
+    "guard": {
+      "lockedExisting": "Locked {count} installed RTX pack folder(s).",
+      "unlockedExisting": "Unlocked {count} installed RTX pack folder(s).",
+      "lockChangeFailed": "Could not change the pack lock: {error}",
+      "backupDeleted": "Deleted backup \"{label}\".",
+      "backupDeleteFailed": "Could not delete the backup: {error}",
+      "restored": "Restored \"{label}\" to {path}",
+      "restoreFailed": "Restoring the backup failed: {error}",
+      "damaged": "Installed RTX pack \"{label}\" was changed by an update: {changed} changed, {added} new, {missing} missing files ({path})",
+      "example": "  {entry}",
+      "kept": "Kept the changed pack at {path}",
+      "removed": "Deleted the broken pack at {path}",
+      "removeFailed": "Could not delete the broken pack: {error}",
+      "checkFailed": "Could not check the installed RTX pack: {error}"
     }
   },
   "tabPatcher": {
