@@ -135,6 +135,17 @@
       "copyTooltip": "Copiar registro para área de transferência",
       "clearTooltip": "Limpar console",
       "resizeGripTooltip": "Puxe para baixo para aumentar o console. Clique duas vezes para resetá-lo."
+    },
+    "guard": {
+      "lockInline": "Bloquear pacote",
+      "damagedTitle": "Pacote RTX danificado encontrado",
+      "damagedMessage": "Uma atualização do Actions & Stuff ou Minecraft alterou seu pacote RTX \"{label}\" instalado ({changed} alterado(s), {added} novo(s), {missing} arquivos faltando). Agora ele é uma mistura de A&S e A&S RTX e vai parecer quebrado no jogo.\n\nExclui-lo?\n\n{path}",
+      "delete": "Deletar",
+      "keep": "Manter",
+      "restoreTitle": "Restaurar do backup?",
+      "restoreMessage": "Um backup de \"{label}\" está disponível. Reinstalá-lo agora? Isso leva alguns segundos, sem necessidade de corrigir.",
+      "restore": "Restaurar",
+      "later": "Não agora"
     }
   },
   "tabCleaner": {
@@ -486,6 +497,24 @@
       "notice": "Esses dados são <b>Pseudônimo</b>, não anônimos",
       "noticeAfter": ", já que as submissões são vinculados por um identificador persistente. A geração de relatórios é opcional desde o primeiro lançamento; posteriormente, uma submissão é enviada apenas quando o hash do seu hardware mudar, e não a cada inicialização. Os registros enviados são deletados automaticamente após 30 dias.",
       "openDiagnosticsFolder": "Abrir Pasta de Diagnósticos"
+    },
+    "packGuard": {
+      "heading": "Instalado Pacote RTX",
+      "description": "A cada inicialização, o patcher verifica se uma atualização do Actions & Stuff ou do Minecraft alterou seu pacote RTX instalado, e oferece a opção de excluir um que esteja danificado.",
+      "lock": "Bloquear o pacote instalado",
+      "lockTip": "Protege contra gravação o pacote RTX instalado usando as permissões do Windows, para que uma atualização do Actions & Stuff ou do Minecraft não possa sobrescrevê-lo ou misturá-lo com o A&S normal. O Minecraft ainda consegue carregá-lo. O patcher remove a proteção automaticamente ao substituir ou excluir o pacote.",
+      "backup": "Manter um backup do pacote corrigido",
+      "backupTip": "Salva o pacote corrigido após a instalação, permitindo que ele seja reinstalado em segundos sem precisar ser corrigido novamente. Os últimos 3 são mantidos.",
+      "noBackups": "Ainda não há backups. Um será salvo na próxima vez que você instalar um pacote corrigido.",
+      "restore": "Restaurar",
+      "restoring": "Restaurando...",
+      "deleteBackup": "Excluir",
+      "checkNow": "<i class=\"fas fa-stethoscope\"></i> Analisar pacote instalado",
+      "allGood": "Seu pacote RTX instado está intacto.",
+      "restoredTitle": "Pacote restaurado",
+      "restoredMessage": "\"{label}\" está instalado novamente. Ative-o no Minecraft em Recursos Globais se não estiver ativo.",
+      "restoreFailedTitle": "Restauração falhou",
+      "restoreFailedMessage": "O backup não pôde ser instalado: {error}"
     }
   }
 }
