@@ -25,7 +25,7 @@ The preferred channel is **[GitHub Private Vulnerability Reporting](https://gith
 see until it's resolved, and lets us coordinate a fix and a disclosure date with you directly.
 
 If you'd rather not use GitHub, DM **@felixchaos** on Discord (the
-[ChaosDev Projects](https://discord.gg/YrMMmN2kc7) server), or open a private thread there. Please
+[ChaosDev Projects](https://discord.gg/bkUdUU5Vn2) server), or open a private thread there. Please
 don't post details in a public channel first.
 
 When reporting, include what you'd include in any good bug report, plus the security-specific

@@ -11,7 +11,7 @@
 
 [![Back to Main README](https://img.shields.io/badge/←_Back_to_README-333?style=flat-square)](../README.md)
 [![Download Latest](https://img.shields.io/badge/⬇_Download-Latest_Release-2ea44f?style=flat-square&logo=github)](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/latest)
-[![Discord](https://img.shields.io/discord/1432653252171661364?logo=discord&style=flat-square&label=Discord)](https://discord.gg/YrMMmN2kc7)
+[![Discord](https://img.shields.io/discord/1432653252171661364?logo=discord&style=flat-square&label=Discord)](https://discord.gg/bkUdUU5Vn2)
 
 </td>
 </tr>
@@ -206,7 +206,7 @@ Version bump + build automation for cutting a new patcher release: edit the app 
 
 ## 🩹 FAQ & Troubleshooting
 
-The most common issues, sorted by category. Nothing here match what you're seeing? Ask in the [Discord](https://discord.gg/YrMMmN2kc7) or send a Bug Report (Support tab).
+The most common issues, sorted by category. Nothing here match what you're seeing? Ask in the [Discord](https://discord.gg/bkUdUU5Vn2) or send a Bug Report (Support tab).
 
 ### 📥 Installation & Patcher Errors
 
@@ -242,7 +242,7 @@ The most common issues, sorted by category. Nothing here match what you're seein
 
 - **Texture issues that only happen in multiplayer.** On servers or friends' worlds, entity textures (chests, shulker boxes, horses, etc.) frequently break. Multiplayer worlds often stack many server-side resource packs at once, which hits the RTX engine's texture limits. There's currently no reliable client-side fix for this.
 
-**Still stuck?** Ask in the [Discord](https://discord.gg/YrMMmN2kc7) or check the pinned [FAQ thread](https://discord.com/channels/691547840463241267/1360688874388455504/1376325634246049792).
+**Still stuck?** Ask in the [Discord](https://discord.gg/bkUdUU5Vn2) or check the pinned [FAQ thread](https://discord.com/channels/691547840463241267/1360688874388455504/1376325634246049792).
 
 ---
 

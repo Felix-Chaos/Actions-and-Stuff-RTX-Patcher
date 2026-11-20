@@ -187,6 +187,10 @@ export function applyTranslations(root = document) {
   root.querySelectorAll('[data-i18n-alt]').forEach(el => {
     el.setAttribute('alt', t(el.getAttribute('data-i18n-alt')));
   });
+  // * Hover/focus tooltips (.info-tip) read their text from data-tip.
+  root.querySelectorAll('[data-i18n-tip]').forEach(el => {
+    el.setAttribute('data-tip', t(el.getAttribute('data-i18n-tip')));
+  });
   // * Icon-only controls carry their name here instead of as visible text.
   root.querySelectorAll('[data-i18n-aria-label]').forEach(el => {
     el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria-label')));

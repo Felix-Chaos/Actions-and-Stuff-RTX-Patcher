@@ -11,7 +11,7 @@
 
 [![Back to Main README](https://img.shields.io/badge/←_Back_to_README-333?style=flat-square)](../README.md)
 [![Download Latest](https://img.shields.io/badge/⬇_Download-Latest_Release-2ea44f?style=flat-square&logo=github)](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases/latest)
-[![Discord](https://img.shields.io/discord/1432653252171661364?logo=discord&style=flat-square&label=Discord)](https://discord.gg/YrMMmN2kc7)
+[![Discord](https://img.shields.io/discord/1432653252171661364?logo=discord&style=flat-square&label=Discord)](https://discord.gg/bkUdUU5Vn2)
 
 </td>
 </tr>

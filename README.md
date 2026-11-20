@@ -12,7 +12,7 @@
 [![Release](https://img.shields.io/github/v/release/Felix-Chaos/Actions-and-Stuff-RTX-Patcher?style=flat-square&color=blue&label=Release)](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/releases)
 [![Stars](https://img.shields.io/github/stars/Felix-Chaos/Actions-and-Stuff-RTX-Patcher?style=flat-square&color=yellow)](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/stargazers)
 [![Issues](https://img.shields.io/github/issues/Felix-Chaos/Actions-and-Stuff-RTX-Patcher?style=flat-square)](https://github.com/Felix-Chaos/Actions-and-Stuff-RTX-Patcher/issues)
-[![Discord](https://img.shields.io/discord/1432653252171661364?logo=discord&style=flat-square&label=Discord)](https://discord.gg/YrMMmN2kc7)
+[![Discord](https://img.shields.io/discord/1432653252171661364?logo=discord&style=flat-square&label=Discord)](https://discord.gg/bkUdUU5Vn2)
 [![FAQ](https://img.shields.io/badge/FAQ-5865F2?style=flat-square)](https://discord.com/channels/691547840463241267/1360688874388455504/1376325634246049792)
 [![BetterRTX](https://img.shields.io/badge/BetterRTX-5865F2?style=flat-square)](https://discord.gg/HPP6J4qFPu)
 [![Discord Thread](https://img.shields.io/badge/Discord_Thread-5865F2?style=flat-square)](https://discord.com/channels/691547840463241267/1360688874388455504)
@@ -166,7 +166,7 @@ Full details: [Privacy Policy](https://legal.chaosdev.dev/privacy)
 | **Community Testers** | Bug reporting, testing, feedback | Various Discord contributors |
 | **Translators** | The Patcher in other languages | [Crowdin project](https://crowdin.com/project/ans-rtx-patcher) |
 
-> Contributions welcome! Open a PR or join the [BetterRTX Discord](https://discord.gg/HPP6J4qFPu) / [ChaosDev Projects](https://discord.gg/YrMMmN2kc7).
+> Contributions welcome! Open a PR or join the [BetterRTX Discord](https://discord.gg/HPP6J4qFPu) / [ChaosDev Projects](https://discord.gg/bkUdUU5Vn2).
 
 ### Translations
 

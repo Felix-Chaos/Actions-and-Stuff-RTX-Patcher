@@ -24,7 +24,9 @@ tauri-plugin-updater = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
 zip = "9"
-rfd = "0.17"
+# CRC-32 for the hand-written patch-source zip (utils::write_stored_zip).
+crc32fast = "1"
+rfd = "0.18"
 reqwest = { version = "0.13.4", features = ["json", "stream"] }
 futures-util = "0.3"
 sha2 = "0.11.0"
@@ -34,7 +36,7 @@ uuid = { version = "1", features = ["v4"] }
 regex = "1"
 # Used by the optional, git-ignored src/private/encrypt.rs (see build.rs,
 # cfg has_encrypt). Unused in builds without it, but keep them.
-aes = "0.8"
+aes = "0.9"
 getrandom = "0.4"
 
 
